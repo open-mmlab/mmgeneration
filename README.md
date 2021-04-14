@@ -15,7 +15,7 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 ## Major Features
 
 - **High-quality Training Performance:** We currently support training on Unconditional GANs, Internal GANs, and Image Translation Models. Support for conditional models will come soon.
-- **Useful Application Toolkit:** A plentiful toolkit containing multiple applications in GANs are provided to users. GAN interpolation, GAN projection, and GAN manipulations are integrated in our framework. It's time to play with your GANs!
+- **Powerful Application Toolkit:** A plentiful toolkit containing multiple applications in GANs are provided to users. GAN interpolation, GAN projection, and GAN manipulations are integrated in our framework. It's time to play with your GANs!
 - **Efficient Distributed Training for Generative Models:** For the highly dynamic training in generative models, we adopt a new way to train dynamic models with `MMDDP`.
 - **New Modular Design for Flexible Combination:** A new design for complex loss modules is proposed for customizing the links between modules, which can achieve flexible combination among different modules.
 
