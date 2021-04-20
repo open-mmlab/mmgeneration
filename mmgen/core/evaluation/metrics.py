@@ -417,14 +417,17 @@ class FID(Metric):
                 dist.all_gather(placeholder, feat)
                 feat = torch.cat(placeholder, dim=0)
 
-        if mode == 'reals':
-            self.real_feats.append(feat.cpu())
-        elif mode == 'fakes':
-            self.fake_feats.append(feat.cpu())
-        else:
-            raise ValueError(
-                f"The expected mode should be set to 'reals' or 'fakes,\
-                but got '{mode}'")
+        # in distributed training, we only collect features at rank-0.
+        if (dist.is_initialized()
+                and dist.get_rank() == 0) or not dist.is_initialized():
+            if mode == 'reals':
+                self.real_feats.append(feat.cpu())
+            elif mode == 'fakes':
+                self.fake_feats.append(feat.cpu())
+            else:
+                raise ValueError(
+                    f"The expected mode should be set to 'reals' or 'fakes,\
+                    but got '{mode}'")
 
     @staticmethod
     def _calc_fid(sample_mean, sample_cov, real_mean, real_cov, eps=1e-6):
