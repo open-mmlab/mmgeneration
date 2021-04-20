@@ -65,6 +65,8 @@ class GenerativeEvalHook(Hook):
         # sample fake images
         max_num_images = max(metric.num_images for metric in self.metrics)
         for metric in self.metrics:
+            if metric.num_real_feeded >= metric.num_real_need:
+                continue
             mmcv.print_log(f'Feed reals to {metric.name} metric.', 'mmgen')
             # feed in real images
             for data in self.dataloader:
@@ -94,11 +96,11 @@ class GenerativeEvalHook(Hook):
                     return_loss=False,
                     **self.sample_kwargs)
 
-            for metric in self.metrics:
-                # feed in fake images
-                num_left = metric.feed(fakes, 'fakes')
-                if num_left <= 0:
-                    break
+                for metric in self.metrics:
+                    # feed in fake images
+                    num_left = metric.feed(fakes, 'fakes')
+                    if num_left <= 0:
+                        break
 
             if rank == 0:
                 pbar.update(total_batch_size)
@@ -108,7 +110,8 @@ class GenerativeEvalHook(Hook):
         if rank == 0:
             sys.stdout.write('\n')
             for metric in self.metrics:
-                metric.summary()
+                with torch.no_grad():
+                    metric.summary()
                 for name, val in metric._result_dict.items():
                     runner.log_buffer.output[name] = val
 
