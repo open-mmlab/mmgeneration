@@ -119,7 +119,7 @@ If you find this project useful in your research, please consider cite:
     title={{MMGeneration}: OpenMMLab Generative Model Toolbox and Benchmark},
     author={MMGeneration Contributors},
     howpublished = {\url{https://github.com/open-mmlab/mmgeneration}},
-    year={2020}
+    year={2021}
 }
 ```
 
