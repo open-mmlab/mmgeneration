@@ -1,0 +1,8 @@
+mmcv-full>=1.2.7
+numpy
+prettytable
+scikit-image
+scipy
+tensorboard
+tqdm
+yapf
