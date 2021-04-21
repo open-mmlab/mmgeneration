@@ -97,6 +97,9 @@ class StaticUnconditionalGAN(BaseGAN):
             # use deepcopy to guarantee the consistency
             self.generator_ema = deepcopy(self.generator)
 
+        # fp16 settings
+        self.clamp_inf_nan_grad = self.train_cfg('clamp_inf_nan_grad', False)
+
     def _parse_test_cfg(self):
         """Parsing test config and set some attributes for testing."""
         if self.test_cfg is None:
@@ -182,6 +185,8 @@ class StaticUnconditionalGAN(BaseGAN):
         if ddp_reducer is not None:
             ddp_reducer.prepare_for_backward(_find_tensors(loss_disc))
         loss_disc.backward()
+        if self.clamp_inf_nan_grad:
+            self._clamp_inf_nan_grad(self.discriminator)
         optimizer['discriminator'].step()
 
         # skip generator training if only train discriminator for current
@@ -222,6 +227,8 @@ class StaticUnconditionalGAN(BaseGAN):
             ddp_reducer.prepare_for_backward(_find_tensors(loss_gen))
 
         loss_gen.backward()
+        if self.clamp_inf_nan_grad:
+            self._clamp_inf_nan_grad(self.generator)
         optimizer['generator'].step()
 
         log_vars = {}

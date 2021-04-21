@@ -86,6 +86,7 @@ class StyleGANv2Generator(nn.Module):
                  default_style_mode='mix',
                  eval_style_mode='single',
                  mix_prob=0.9,
+                 num_fp16_scales=0,
                  pretrained=None):
         super().__init__()
         self.out_size = out_size
@@ -97,6 +98,7 @@ class StyleGANv2Generator(nn.Module):
         self.default_style_mode = default_style_mode
         self.eval_style_mode = eval_style_mode
         self.mix_prob = mix_prob
+        self.num_fp16_scales = num_fp16_scales
 
         # define style mapping layers
         mapping_layers = [PixelNorm()]
@@ -147,6 +149,8 @@ class StyleGANv2Generator(nn.Module):
         for i in range(3, self.log_size + 1):
             out_channels_ = self.channels[2**i]
 
+            _use_fp16 = (self.log_size - i) < num_fp16_scales
+
             self.convs.append(
                 ModulatedStyleConv(
                     in_channels_,
@@ -154,7 +158,8 @@ class StyleGANv2Generator(nn.Module):
                     3,
                     style_channels,
                     upsample=True,
-                    blur_kernel=blur_kernel))
+                    blur_kernel=blur_kernel,
+                    fp16_enabled=_use_fp16))
             self.convs.append(
                 ModulatedStyleConv(
                     out_channels_,
@@ -162,9 +167,14 @@ class StyleGANv2Generator(nn.Module):
                     3,
                     style_channels,
                     upsample=False,
-                    blur_kernel=blur_kernel))
+                    blur_kernel=blur_kernel,
+                    fp16_enabled=_use_fp16))
             self.to_rgbs.append(
-                ModulatedToRGB(out_channels_, style_channels, upsample=True))
+                ModulatedToRGB(
+                    out_channels_,
+                    style_channels,
+                    upsample=True,
+                    fp16_enabled=_use_fp16))
 
             in_channels_ = out_channels_
 

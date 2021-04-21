@@ -11,6 +11,7 @@ from mmcv.ops.fused_bias_leakyrelu import (FusedBiasLeakyReLU,
                                            fused_bias_leakyrelu)
 from mmcv.ops.upfirdn2d import upfirdn2d
 from mmcv.runner.dist_utils import get_dist_info
+from mmcv.runner.fp16_utils import auto_fp16
 
 from mmgen.models.architectures.pggan import (EqualizedLRConvModule,
                                               EqualizedLRLinearModule,
@@ -649,8 +650,12 @@ class ModulatedStyleConv(nn.Module):
                  blur_kernel=[1, 3, 3, 1],
                  demodulate=True,
                  style_mod_cfg=dict(bias_init=1.),
-                 style_bias=0.):
+                 style_bias=0.,
+                 fp16_enabled=False):
         super().__init__()
+
+        # add support for fp16
+        self.fp16_enabled = fp16_enabled
 
         self.conv = ModulatedConv2d(
             in_channels,
@@ -666,6 +671,7 @@ class ModulatedStyleConv(nn.Module):
         self.noise_injector = NoiseInjection()
         self.activate = FusedBiasLeakyReLU(out_channels)
 
+    @auto_fp16(apply_to=('x', 'style', 'noise'))
     def forward(self, x, style, noise=None, return_noise=False):
         """Forward Function.
 
@@ -806,11 +812,15 @@ class ModulatedToRGB(nn.Module):
                  upsample=True,
                  blur_kernel=[1, 3, 3, 1],
                  style_mod_cfg=dict(bias_init=1.),
-                 style_bias=0.):
+                 style_bias=0.,
+                 fp16_enabled=False):
         super().__init__()
 
         if upsample:
             self.upsample = UpsampleUpFIRDn(blur_kernel)
+
+        # add support for fp16
+        self.fp16_enabled = fp16_enabled
 
         self.conv = ModulatedConv2d(
             in_channels,
@@ -823,6 +833,7 @@ class ModulatedToRGB(nn.Module):
 
         self.bias = nn.Parameter(torch.zeros(1, 3, 1, 1))
 
+    @auto_fp16()
     def forward(self, x, style, skip=None):
         """Forward Function.
 
@@ -867,8 +878,10 @@ class ConvDownLayer(nn.Sequential):
                  downsample=False,
                  blur_kernel=[1, 3, 3, 1],
                  bias=True,
-                 act_cfg=dict(type='fused_bias')):
+                 act_cfg=dict(type='fused_bias'),
+                 fp16_enabled=False):
 
+        self.fp16_enabled = fp16_enabled
         layers = []
 
         if downsample:
@@ -907,6 +920,10 @@ class ConvDownLayer(nn.Sequential):
 
         super(ConvDownLayer, self).__init__(*layers)
 
+    @auto_fp16()
+    def forward(self, *args, **kwargs):
+        return super().forward(*args, **kwargs)
+
 
 class ResBlock(nn.Module):
     """Residual block used in the discriminator of StyleGAN2.
@@ -917,8 +934,14 @@ class ResBlock(nn.Module):
         kernel_size (int): Kernel size, same as :obj:`nn.Con2d`.
     """
 
-    def __init__(self, in_channels, out_channels, blur_kernel=[1, 3, 3, 1]):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 blur_kernel=[1, 3, 3, 1],
+                 fp16_enabled=False):
         super().__init__()
+
+        self.fp16_enabled = fp16_enabled
 
         self.conv1 = ConvDownLayer(
             in_channels, in_channels, 3, blur_kernel=blur_kernel)
@@ -938,6 +961,7 @@ class ResBlock(nn.Module):
             bias=False,
             blur_kernel=blur_kernel)
 
+    @auto_fp16()
     def forward(self, input):
         """Forward function.
 
