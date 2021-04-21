@@ -481,8 +481,10 @@ class StyleGAN2Discriminator(nn.Module):
                  channel_multiplier=2,
                  blur_kernel=[1, 3, 3, 1],
                  mbstd_cfg=dict(group_size=4, channel_groups=1),
+                 num_fp16_scales=0,
                  pretrained=None):
         super().__init__()
+        self.num_fp16_scale = num_fp16_scales
 
         channels = {
             4: 512,
@@ -505,7 +507,15 @@ class StyleGAN2Discriminator(nn.Module):
         for i in range(log_size, 2, -1):
             out_channel = channels[2**(i - 1)]
 
-            convs.append(ResBlock(in_channels, out_channel, blur_kernel))
+            # add fp16 training for higher resolutions
+            _use_fp16 = (log_size - i) < num_fp16_scales
+
+            convs.append(
+                ResBlock(
+                    in_channels,
+                    out_channel,
+                    blur_kernel,
+                    fp16_enabled=_use_fp16))
 
             in_channels = out_channel
 
