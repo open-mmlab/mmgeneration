@@ -99,6 +99,8 @@ class StaticUnconditionalGAN(BaseGAN):
 
         # fp16 settings
         self.clamp_inf_nan_grad = self.train_cfg('clamp_inf_nan_grad', False)
+        if self.clamp_inf_nan_grad:
+            self.nan2num_cfg = self.train_cfg.get('nan2num_cfg', dict())
 
     def _parse_test_cfg(self):
         """Parsing test config and set some attributes for testing."""

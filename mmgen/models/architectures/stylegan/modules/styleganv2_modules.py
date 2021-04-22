@@ -142,7 +142,8 @@ class UpsampleUpFIRDn(nn.Module):
         Returns:
             Tensor: Output feature map.
         """
-        out = upfirdn2d(x, self.kernel, up=self.factor, down=1, pad=self.pad)
+        out = upfirdn2d(
+            x, self.kernel.to(x.dtype), up=self.factor, down=1, pad=self.pad)
 
         return out
 
@@ -181,7 +182,11 @@ class DownsampleUpFIRDn(nn.Module):
             Tensor: Output feature map.
         """
         out = upfirdn2d(
-            input, self.kernel, up=1, down=self.factor, pad=self.pad)
+            input,
+            self.kernel.to(input.dtype),
+            up=1,
+            down=self.factor,
+            pad=self.pad)
 
         return out
 
@@ -216,7 +221,7 @@ class Blur(nn.Module):
         Returns:
             Tensor: Output feature map.
         """
-        return upfirdn2d(x, self.kernel, pad=self.pad)
+        return upfirdn2d(x, self.kernel.to(x.dtype), pad=self.pad)
 
 
 class ModulatedConv2d(nn.Module):
@@ -382,7 +387,7 @@ class NoiseInjection(nn.Module):
         if noise is None:
             batch, _, height, width = image.shape
             noise = image.new_empty(batch, 1, height, width).normal_()
-
+        noise = noise.to(image.dtype)
         if return_noise:
             return image + self.weight * noise, noise
 
@@ -671,6 +676,9 @@ class ModulatedStyleConv(nn.Module):
         self.noise_injector = NoiseInjection()
         self.activate = FusedBiasLeakyReLU(out_channels)
 
+        if self.fp16_enabled:
+            self.half()
+
     @auto_fp16(apply_to=('x', 'style', 'noise'))
     def forward(self, x, style, noise=None, return_noise=False):
         """Forward Function.
@@ -686,6 +694,7 @@ class ModulatedStyleConv(nn.Module):
             Tensor: Output features with shape of (N, C, H, W)
         """
         out = self.conv(x, style)
+
         if return_noise:
             out, noise = self.noise_injector(
                 out, noise=noise, return_noise=return_noise)
@@ -833,6 +842,9 @@ class ModulatedToRGB(nn.Module):
 
         self.bias = nn.Parameter(torch.zeros(1, 3, 1, 1))
 
+        if self.fp16_enabled:
+            self.half()
+
     @auto_fp16()
     def forward(self, x, style, skip=None):
         """Forward Function.
@@ -920,6 +932,9 @@ class ConvDownLayer(nn.Sequential):
 
         super(ConvDownLayer, self).__init__(*layers)
 
+        if self.fp16_enabled:
+            self.half()
+
     @auto_fp16()
     def forward(self, *args, **kwargs):
         return super().forward(*args, **kwargs)
@@ -961,6 +976,9 @@ class ResBlock(nn.Module):
             bias=False,
             blur_kernel=blur_kernel)
 
+        if self.fp16_enabled:
+            self.half()
+
     @auto_fp16()
     def forward(self, input):
         """Forward function.
@@ -971,6 +989,8 @@ class ResBlock(nn.Module):
         Returns:
             Tensor: Output feature map.
         """
+        if not self.fp16_enabled:
+            input = input.to(torch.float32)
         out = self.conv1(input)
         out = self.conv2(out)
 
