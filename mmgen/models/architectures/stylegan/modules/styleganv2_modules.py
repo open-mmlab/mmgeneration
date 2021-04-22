@@ -656,11 +656,13 @@ class ModulatedStyleConv(nn.Module):
                  demodulate=True,
                  style_mod_cfg=dict(bias_init=1.),
                  style_bias=0.,
-                 fp16_enabled=False):
+                 fp16_enabled=False,
+                 conv_clamp=256):
         super().__init__()
 
         # add support for fp16
         self.fp16_enabled = fp16_enabled
+        self.conv_clamp = float(conv_clamp)
 
         self.conv = ModulatedConv2d(
             in_channels,
@@ -703,6 +705,9 @@ class ModulatedStyleConv(nn.Module):
                 out, noise=noise, return_noise=return_noise)
 
         out = self.activate(out)
+
+        if self.fp16_enabled:
+            out = torch.clamp(out, min=-self.conv_clamp, max=self.conv_clamp)
 
         if return_noise:
             return out, noise
@@ -822,7 +827,8 @@ class ModulatedToRGB(nn.Module):
                  blur_kernel=[1, 3, 3, 1],
                  style_mod_cfg=dict(bias_init=1.),
                  style_bias=0.,
-                 fp16_enabled=False):
+                 fp16_enabled=False,
+                 conv_clamp=256):
         super().__init__()
 
         if upsample:
@@ -830,6 +836,7 @@ class ModulatedToRGB(nn.Module):
 
         # add support for fp16
         self.fp16_enabled = fp16_enabled
+        self.conv_clamp = float(conv_clamp)
 
         self.conv = ModulatedConv2d(
             in_channels,
@@ -859,6 +866,9 @@ class ModulatedToRGB(nn.Module):
         """
         out = self.conv(x, style)
         out = out + self.bias
+
+        if self.fp16_enabled:
+            out = torch.clamp(out, min=-self.conv_clamp, max=self.conv_clamp)
 
         if skip is not None:
             skip = self.upsample(skip)
@@ -891,9 +901,11 @@ class ConvDownLayer(nn.Sequential):
                  blur_kernel=[1, 3, 3, 1],
                  bias=True,
                  act_cfg=dict(type='fused_bias'),
-                 fp16_enabled=False):
+                 fp16_enabled=False,
+                 conv_clamp=256):
 
         self.fp16_enabled = fp16_enabled
+        self.conv_clamp = float(conv_clamp)
         layers = []
 
         if downsample:
@@ -937,7 +949,10 @@ class ConvDownLayer(nn.Sequential):
 
     @auto_fp16(apply_to=('x', ))
     def forward(self, x):
-        return super().forward(x)
+        x = super().forward(x)
+        if self.fp16_enabled:
+            x = torch.clamp(x, min=-self.conv_clamp, max=self.conv_clamp)
+        return x
 
 
 class ResBlock(nn.Module):
