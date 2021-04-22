@@ -41,5 +41,8 @@ def nan_to_num(x, nan=0.0, posinf=None, neginf=None, *, out=None):
         if neginf is None:
             neginf = torch.finfo(x.dtype).min
         assert nan == 0
-        return torch.clamp(
-            x.unsqueeze(0).nansum(0), min=neginf, max=posinf, out=out)
+        # a better choice is to use nansum, but this function is not supported
+        # in PyTorch 1.5
+        # x.unsqueeze(0).nansum(0)
+        x[torch.isnan(x)] = 0.
+        return torch.clamp(x, min=neginf, max=posinf, out=out)
