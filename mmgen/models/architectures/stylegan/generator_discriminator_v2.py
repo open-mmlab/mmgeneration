@@ -502,7 +502,10 @@ class StyleGAN2Discriminator(nn.Module):
 
         in_channels = channels[in_size]
 
-        convs = [ConvDownLayer(3, channels[in_size], 1)]
+        _use_fp16 = num_fp16_scales > 0
+        convs = [
+            ConvDownLayer(3, channels[in_size], 1, fp16_enabled=_use_fp16)
+        ]
 
         for i in range(log_size, 2, -1):
             out_channel = channels[2**(i - 1)]

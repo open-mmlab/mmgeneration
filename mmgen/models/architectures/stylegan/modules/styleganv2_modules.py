@@ -935,9 +935,9 @@ class ConvDownLayer(nn.Sequential):
         if self.fp16_enabled:
             self.half()
 
-    @auto_fp16()
-    def forward(self, *args, **kwargs):
-        return super().forward(*args, **kwargs)
+    @auto_fp16(apply_to=('x', ))
+    def forward(self, x):
+        return super().forward(x)
 
 
 class ResBlock(nn.Module):
