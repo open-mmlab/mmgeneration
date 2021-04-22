@@ -320,8 +320,8 @@ class ModulatedConv2d(nn.Module):
 
     def forward(self, x, style):
         n, c, h, w = x.shape
-        weight = self.weight
 
+        weight = self.weight
         # Pre-normalize inputs to avoid FP16 overflow.
         if x.dtype == torch.float16 and self.demodulate:
             weight = weight * (
@@ -345,6 +345,7 @@ class ModulatedConv2d(nn.Module):
         weight = weight.view(n * self.out_channels, c, self.kernel_size,
                              self.kernel_size)
 
+        weight = weight.to(x.dtype)
         if self.upsample:
             x = x.reshape(1, n * c, h, w)
             weight = weight.view(n, self.out_channels, c, self.kernel_size,
@@ -402,9 +403,9 @@ class NoiseInjection(nn.Module):
             noise = image.new_empty(batch, 1, height, width).normal_()
         noise = noise.to(image.dtype)
         if return_noise:
-            return image + self.weight * noise, noise
+            return image + self.weight.to(image.dtype) * noise, noise
 
-        return image + self.weight * noise
+        return image + self.weight.to(image.dtype) * noise
 
 
 class ConstantInput(nn.Module):
@@ -691,10 +692,10 @@ class ModulatedStyleConv(nn.Module):
         self.noise_injector = NoiseInjection()
         self.activate = FusedBiasLeakyReLU(out_channels)
 
-        if self.fp16_enabled:
-            self.half()
+        # if self.fp16_enabled:
+        #     self.half()
 
-    @auto_fp16(apply_to=('x', 'style', 'noise'))
+    @auto_fp16(apply_to=('x', ))
     def forward(self, x, style, noise=None, return_noise=False):
         """Forward Function.
 
@@ -717,7 +718,8 @@ class ModulatedStyleConv(nn.Module):
             out = self.noise_injector(
                 out, noise=noise, return_noise=return_noise)
 
-        out = self.activate(out)
+        # TODO: FP16 in activate layers
+        out = self.activate(out.to(torch.float32))
 
         if self.fp16_enabled:
             out = torch.clamp(out, min=-self.conv_clamp, max=self.conv_clamp)
@@ -862,10 +864,10 @@ class ModulatedToRGB(nn.Module):
 
         self.bias = nn.Parameter(torch.zeros(1, 3, 1, 1))
 
-        if self.fp16_enabled:
-            self.half()
+        # if self.fp16_enabled:
+        #     self.half()
 
-    @auto_fp16()
+    @auto_fp16(apply_to=('x', ))
     def forward(self, x, style, skip=None):
         """Forward Function.
 
