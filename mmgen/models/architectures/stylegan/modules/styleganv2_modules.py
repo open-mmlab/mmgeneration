@@ -3,6 +3,7 @@ from copy import deepcopy
 from functools import partial
 
 import mmcv
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -319,12 +320,24 @@ class ModulatedConv2d(nn.Module):
 
     def forward(self, x, style):
         n, c, h, w = x.shape
+        weight = self.weight
+
+        # Pre-normalize inputs to avoid FP16 overflow.
+        if x.dtype == torch.float16 and self.demodulate:
+            weight = weight * (
+                1 / np.sqrt(
+                    self.in_channels * self.kernel_size * self.kernel_size) /
+                weight.norm(float('inf'), dim=[1, 2, 3], keepdim=True)
+            )  # max_Ikk
+            style = style / style.norm(
+                float('inf'), dim=1, keepdim=True)  # max_I
+
         # process style code
         style = self.style_modulation(style).view(n, 1, c, 1,
                                                   1) + self.style_bias
 
         # combine weight and style
-        weight = self.weight * style
+        weight = weight * style
         if self.demodulate:
             demod = torch.rsqrt(weight.pow(2).sum([2, 3, 4]) + self.eps)
             weight = weight * demod.view(n, self.out_channels, 1, 1, 1)
