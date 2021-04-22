@@ -98,7 +98,8 @@ class StaticUnconditionalGAN(BaseGAN):
             self.generator_ema = deepcopy(self.generator)
 
         # fp16 settings
-        self.clamp_inf_nan_grad = self.train_cfg('clamp_inf_nan_grad', False)
+        self.clamp_inf_nan_grad = self.train_cfg.get('clamp_inf_nan_grad',
+                                                     False)
         if self.clamp_inf_nan_grad:
             self.nan2num_cfg = self.train_cfg.get('nan2num_cfg', dict())
 
