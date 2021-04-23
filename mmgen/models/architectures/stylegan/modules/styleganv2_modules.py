@@ -12,12 +12,19 @@ from mmcv.ops.fused_bias_leakyrelu import (FusedBiasLeakyReLU,
                                            fused_bias_leakyrelu)
 from mmcv.ops.upfirdn2d import upfirdn2d
 from mmcv.runner.dist_utils import get_dist_info
-from mmcv.runner.fp16_utils import auto_fp16
 
+from mmgen.core.runners.fp16_utils import auto_fp16
 from mmgen.models.architectures.pggan import (EqualizedLRConvModule,
                                               EqualizedLRLinearModule,
                                               equalized_lr)
 from mmgen.models.common import AllGatherLayer
+
+
+class _FusedBiasLeakyReLU(FusedBiasLeakyReLU):
+
+    def forward(self, x):
+        return fused_bias_leakyrelu(x, self.bias.to(x.dtype),
+                                    self.negative_slope, self.scale)
 
 
 class EqualLinearActModule(nn.Module):
@@ -222,6 +229,8 @@ class Blur(nn.Module):
         Returns:
             Tensor: Output feature map.
         """
+
+        # In Tero's implementation, he uses fp32
         return upfirdn2d(x, self.kernel.to(x.dtype), pad=self.pad)
 
 
@@ -690,12 +699,12 @@ class ModulatedStyleConv(nn.Module):
             style_bias=style_bias)
 
         self.noise_injector = NoiseInjection()
-        self.activate = FusedBiasLeakyReLU(out_channels)
+        self.activate = _FusedBiasLeakyReLU(out_channels)
 
         # if self.fp16_enabled:
         #     self.half()
 
-    @auto_fp16(apply_to=('x', ))
+    @auto_fp16(apply_to=('x', 'noise'))
     def forward(self, x, style, noise=None, return_noise=False):
         """Forward Function.
 
@@ -719,7 +728,7 @@ class ModulatedStyleConv(nn.Module):
                 out, noise=noise, return_noise=return_noise)
 
         # TODO: FP16 in activate layers
-        out = self.activate(out.to(torch.float32))
+        out = self.activate(out)
 
         if self.fp16_enabled:
             out = torch.clamp(out, min=-self.conv_clamp, max=self.conv_clamp)
@@ -784,7 +793,7 @@ class ModulatedPEStyleConv(nn.Module):
             **kwargs)
 
         self.noise_injector = NoiseInjection()
-        self.activate = FusedBiasLeakyReLU(out_channels)
+        self.activate = _FusedBiasLeakyReLU(out_channels)
 
     def forward(self, x, style, noise=None, return_noise=False):
         """Forward Function.
@@ -843,7 +852,8 @@ class ModulatedToRGB(nn.Module):
                  style_mod_cfg=dict(bias_init=1.),
                  style_bias=0.,
                  fp16_enabled=False,
-                 conv_clamp=256):
+                 conv_clamp=256,
+                 out_fp32=True):
         super().__init__()
 
         if upsample:
@@ -864,10 +874,10 @@ class ModulatedToRGB(nn.Module):
 
         self.bias = nn.Parameter(torch.zeros(1, 3, 1, 1))
 
-        # if self.fp16_enabled:
-        #     self.half()
+        # enforece the output to be fp32 (follow Tero's implementation)
+        self.out_fp32 = out_fp32
 
-    @auto_fp16(apply_to=('x', ))
+    @auto_fp16(apply_to=('x', 'style'))
     def forward(self, x, style, skip=None):
         """Forward Function.
 
@@ -880,15 +890,15 @@ class ModulatedToRGB(nn.Module):
             Tensor: Output features with shape of (N, C, H, W)
         """
         out = self.conv(x, style)
-        out = out + self.bias
+        out = out + self.bias.to(x.dtype)
 
         if self.fp16_enabled:
             out = torch.clamp(out, min=-self.conv_clamp, max=self.conv_clamp)
 
+        # Here, Tero adopts FP16 at `skip`.
         if skip is not None:
             skip = self.upsample(skip)
             out = out + skip
-
         return out
 
 
@@ -955,12 +965,12 @@ class ConvDownLayer(nn.Sequential):
                 act_cfg=conv_act_cfg,
                 equalized_lr_cfg=dict(mode='fan_in', gain=1.)))
         if self.with_fused_bias:
-            layers.append(FusedBiasLeakyReLU(out_channels))
+            layers.append(_FusedBiasLeakyReLU(out_channels))
 
         super(ConvDownLayer, self).__init__(*layers)
 
-        if self.fp16_enabled:
-            self.half()
+        # if self.fp16_enabled:
+        #     self.half()
 
     @auto_fp16(apply_to=('x', ))
     def forward(self, x):
@@ -1005,9 +1015,6 @@ class ResBlock(nn.Module):
             act_cfg=None,
             bias=False,
             blur_kernel=blur_kernel)
-
-        if self.fp16_enabled:
-            self.half()
 
     @auto_fp16()
     def forward(self, input):

@@ -336,7 +336,8 @@ class GradientPenaltyLoss(nn.Module):
 def r1_gradient_penalty_loss(discriminator,
                              real_data,
                              mask=None,
-                             norm_mode='pixel'):
+                             norm_mode='pixel',
+                             loss_scaler=None):
     """Calculate R1 gradient penalty for WGAN-GP.
 
     R1 regularizer comes from:
@@ -361,6 +362,8 @@ def r1_gradient_penalty_loss(discriminator,
     real_data = real_data.clone().requires_grad_()
 
     disc_pred = discriminator(real_data)
+    if loss_scaler:
+        disc_pred = loss_scaler.scale(disc_pred)
     gradients = autograd.grad(
         outputs=disc_pred,
         inputs=real_data,
@@ -368,6 +371,11 @@ def r1_gradient_penalty_loss(discriminator,
         create_graph=True,
         retain_graph=True,
         only_inputs=True)[0]
+
+    if loss_scaler:
+        # unscale the gradient
+        inv_scale = 1. / loss_scaler.get_scale()
+        gradients = gradients * inv_scale
 
     if mask is not None:
         gradients = gradients * mask

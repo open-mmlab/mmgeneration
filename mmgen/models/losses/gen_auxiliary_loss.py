@@ -15,7 +15,8 @@ def gen_path_regularizer(generator,
                          decay=0.01,
                          weight=1.,
                          pl_batch_size=None,
-                         sync_mean_buffer=False):
+                         sync_mean_buffer=False,
+                         loss_scaler=None):
     """Generator Path Regularization.
 
     Path regularization is proposed in StyelGAN2, which can help the improve
@@ -60,13 +61,26 @@ def gen_path_regularizer(generator,
     noise = torch.randn_like(fake_img) / math.sqrt(
         fake_img.shape[2] * fake_img.shape[3])
 
-    grad = autograd.grad(
-        outputs=(fake_img * noise).sum(),
-        inputs=latents,
-        grad_outputs=torch.ones(()).to(fake_img),
-        create_graph=True,
-        retain_graph=True,
-        only_inputs=True)[0]
+    if loss_scaler:
+        grad = autograd.grad(
+            outputs=loss_scaler.scale((fake_img * noise).sum()),
+            inputs=latents,
+            grad_outputs=torch.ones(()).to(fake_img),
+            create_graph=True,
+            retain_graph=True,
+            only_inputs=True)[0]
+
+        # unsacle the grad
+        inv_scale = 1. / loss_scaler.get_scale()
+        grad = grad * inv_scale
+    else:
+        grad = autograd.grad(
+            outputs=(fake_img * noise).sum(),
+            inputs=latents,
+            grad_outputs=torch.ones(()).to(fake_img),
+            create_graph=True,
+            retain_graph=True,
+            only_inputs=True)[0]
 
     path_lengths = torch.sqrt(grad.pow(2).sum(2).mean(1))
     # update mean path

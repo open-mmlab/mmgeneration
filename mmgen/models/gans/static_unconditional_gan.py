@@ -119,6 +119,7 @@ class StaticUnconditionalGAN(BaseGAN):
                    data_batch,
                    optimizer,
                    ddp_reducer=None,
+                   loss_scaler=None,
                    running_status=None):
         """Train step function.
 
@@ -178,7 +179,8 @@ class StaticUnconditionalGAN(BaseGAN):
             fake_imgs=fake_imgs,
             real_imgs=real_imgs,
             iteration=curr_iter,
-            batch_size=batch_size)
+            batch_size=batch_size,
+            loss_scaler=loss_scaler)
 
         loss_disc, log_vars_disc = self._get_disc_loss(data_dict_)
 
@@ -187,10 +189,23 @@ class StaticUnconditionalGAN(BaseGAN):
         # in current computation.
         if ddp_reducer is not None:
             ddp_reducer.prepare_for_backward(_find_tensors(loss_disc))
-        loss_disc.backward()
+
+        if loss_scaler:
+            # add support for fp16
+            loss_scaler.scale(loss_disc).backward()
+        else:
+            loss_disc.backward()
+
         if self.clamp_inf_nan_grad:
             self._clamp_inf_nan_grad(self.discriminator)
-        optimizer['discriminator'].step()
+
+        if loss_scaler:
+            loss_scaler.unscale_(optimizer['discriminator'])
+            # note that we do not contain clip_grad procedure
+            loss_scaler.step(optimizer['discriminator'])
+            # loss_scaler.update will be called in runner.train()
+        else:
+            optimizer['discriminator'].step()
 
         # skip generator training if only train discriminator for current
         # iteration
@@ -219,7 +234,8 @@ class StaticUnconditionalGAN(BaseGAN):
             fake_imgs=fake_imgs,
             disc_pred_fake_g=disc_pred_fake_g,
             iteration=curr_iter,
-            batch_size=batch_size)
+            batch_size=batch_size,
+            loss_scaler=loss_scaler)
 
         loss_gen, log_vars_g = self._get_gen_loss(data_dict_)
 
@@ -229,10 +245,21 @@ class StaticUnconditionalGAN(BaseGAN):
         if ddp_reducer is not None:
             ddp_reducer.prepare_for_backward(_find_tensors(loss_gen))
 
-        loss_gen.backward()
+        if loss_scaler:
+            loss_scaler.scale(loss_gen).backward()
+        else:
+            loss_gen.backward()
+
         if self.clamp_inf_nan_grad:
             self._clamp_inf_nan_grad(self.generator)
-        optimizer['generator'].step()
+
+        if loss_scaler:
+            loss_scaler.unscale_(optimizer['generator'])
+            # note that we do not contain clip_grad procedure
+            loss_scaler.step(optimizer['generator'])
+            # loss_scaler.update will be called in runner.train()
+        else:
+            optimizer['generator'].step()
 
         log_vars = {}
         log_vars.update(log_vars_g)
