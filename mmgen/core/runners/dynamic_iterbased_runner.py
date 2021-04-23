@@ -156,6 +156,8 @@ class DynamicIterBasedRunner(IterBasedRunner):
         self.with_fp16_grad_scaler = False
         if fp16_loss_scaler is not None:
             self.loss_scaler = GradScaler(**fp16_loss_scaler)
+            self.with_fp16_grad_scaler = True
+            mmcv.print_log('Use FP16 grad scaler in Training', 'mmgen')
 
     def call_hook(self, fn_name):
         """Call all hooks.
