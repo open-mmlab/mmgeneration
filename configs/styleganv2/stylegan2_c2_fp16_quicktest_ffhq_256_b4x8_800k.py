@@ -11,7 +11,7 @@ model = dict(
 
 dataset_type = 'QuickTestImageDataset'
 data = dict(
-    samples_per_gpu=1,
+    samples_per_gpu=2,
     train=dict(type=dataset_type, size=(256, 256)),
     val=dict(type=dataset_type, size=(256, 256)))
 

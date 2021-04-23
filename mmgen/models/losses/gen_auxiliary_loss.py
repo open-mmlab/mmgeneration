@@ -62,10 +62,11 @@ def gen_path_regularizer(generator,
         fake_img.shape[2] * fake_img.shape[3])
 
     if loss_scaler:
+        loss = loss_scaler.scale((fake_img * noise).sum())[0]
         grad = autograd.grad(
-            outputs=loss_scaler.scale((fake_img * noise).sum()),
+            outputs=loss,
             inputs=latents,
-            grad_outputs=torch.ones(()).to(fake_img),
+            grad_outputs=torch.ones(()).to(loss),
             create_graph=True,
             retain_graph=True,
             only_inputs=True)[0]
