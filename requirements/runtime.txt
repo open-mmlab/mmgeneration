@@ -1,8 +1,6 @@
-mmcv-full>=1.3.0
 numpy
 prettytable
 scikit-image
 scipy
-tensorboard
 tqdm
 yapf

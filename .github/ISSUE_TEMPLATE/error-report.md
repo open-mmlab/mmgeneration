@@ -12,7 +12,7 @@ Thanks for your error report and we appreciate it a lot.
 **Checklist**
 
 1. I have searched related issues but cannot get the expected help.
-2. I have read the [FAQ documentation](https://mmdetection.readthedocs.io/en/latest/faq.html) but cannot get the expected help.
+2. I have read the [FAQ documentation](https://mmgeneration.readthedocs.io/en/latest/faq.html) but cannot get the expected help.
 3. The bug has not been fixed in the latest version.
 
 **Describe the bug**
@@ -31,7 +31,7 @@ A placeholder for the command.
 
 **Environment**
 
-1. Please run `python mmdet/utils/collect_env.py` to collect necessary environment information and paste it here.
+1. Please run `python mmgen/utils/collect_env.py` to collect necessary environment information and paste it here.
 2. You may add addition that may be helpful for locating the problem, such as
     - How you installed PyTorch [e.g., pip, conda, source]
     - Other environment variables that may be related (such as `$PATH`, `$LD_LIBRARY_PATH`, `$PYTHONPATH`, etc.)
