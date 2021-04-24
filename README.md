@@ -59,7 +59,7 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 * **Positional Encoding as Spatial Inductive Bias in GANs (CVPR2021)** has been released in `MMGeneration`.  [\[Config\]](configs/positional_encoding_in_gans/README.md), [\[Project Page\]](https://nbei.github.io/gan-pos-encoding.html)
 ## Changelog
 
-v0.1.0 was released in 20/04/2021. Please refer to [changelog.md](docs/changelog.md) for details and release history.
+v0.1.0 was released on 20/04/2021. Please refer to [changelog.md](docs/changelog.md) for details and release history.
 
 ## ModelZoo
 

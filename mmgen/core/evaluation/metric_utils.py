@@ -140,7 +140,7 @@ def gaussian_pyramid(original, n_pyramids, gaussian_k):
 
 
 def laplacian_pyramid(original, n_pyramids, gaussian_k):
-    """Calculate laplacian pyramid.
+    """Calculate Laplacian pyramid.
 
     Ref: https://github.com/koshian2/swd-pytorch/blob/master/swd.py
 

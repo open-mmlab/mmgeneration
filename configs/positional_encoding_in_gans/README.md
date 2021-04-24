@@ -15,7 +15,7 @@
 ## Results and models for MS-PIE
 
 <div align="center">
-  <b> 896x896 results generated from an 256 generator using MS-PIE</b>
+  <b> 896x896 results generated from a 256 generator using MS-PIE</b>
   <br/>
   <img src="http://download.openmmlab.com/mmgen/pe_in_gans/mspie_256-896_demo.png" width="800"/>
 </div>

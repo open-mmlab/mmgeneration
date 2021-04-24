@@ -16,7 +16,7 @@ python apps/interpolate_sample.py \
     [--samples-path ${SAMPLES_PATH}] \
     [--batch-size ${BATCH_SIZE}] \
 ```
-Here, we provide two kinds of `show-mode`, `sequence`, and `group`. In `sequence` mode, we sample a sequence of endpoints first, then interpolate points between two endpoints in order, generated images will be saved individually. In `group` mode, we sample several pairs of endpoints, then interpolate points between two endpoints in a pair, generated images will be saved in a single picture.  What's more, `space` refer to the latent code space, you can choose 'z' or 'w'(especially refer to style space in StyleGAN series), `endpoint` indicates the number of endpoints you want to sample(should be set to even number in `group` mode), `interval` means the number of points(include endpoints) you interpolate between two endpoints.
+Here, we provide two kinds of `show-mode`, `sequence`, and `group`. In `sequence` mode, we sample a sequence of endpoints first, then interpolate points between two endpoints in order, generated images will be saved individually. In `group` mode, we sample several pairs of endpoints, then interpolate points between two endpoints in a pair, generated images will be saved in a single picture. What's more, `space` refers to the latent code space, you can choose 'z' or 'w' (especially refer to style space in StyleGAN series), `endpoint` indicates the number of endpoints you want to sample (should be set to even number in `group` mode), `interval` means the number of points (include endpoints) you interpolate between two endpoints.
 
 Note that more customized arguments are also offered to customizing your interpolating procedure.
 Please use `python apps/interpolate_sample.py --help` to check more details.
