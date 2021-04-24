@@ -1,9 +1,7 @@
 try:
     from apex import amp
 except ImportError:
-    raise ImportError(
-        'Please install apex from https://www.github.com/nvidia/apex'
-        ' to run this example.')
+    amp = None
 
 
 def apex_amp_initialize(models, optimizers, init_args=None, mode='gan'):
