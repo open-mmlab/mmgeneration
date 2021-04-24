@@ -1,7 +1,7 @@
 # Improved Training of Wasserstein GANs
 
 ## Introduction
-[ALGORITHM]
+<!-- [ALGORITHM] -->
 
 ```latex
 @article{gulrajani2017improved,
