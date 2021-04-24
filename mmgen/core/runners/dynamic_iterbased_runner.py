@@ -133,6 +133,7 @@ class DynamicIterBasedRunner(IterBasedRunner):
                  is_dynamic_ddp=False,
                  pass_training_status=False,
                  fp16_loss_scaler=None,
+                 use_apex_amp=False,
                  **kwargs):
         super().__init__(*args, **kwargs)
         if is_module_wrapper(self.model):
@@ -153,11 +154,15 @@ class DynamicIterBasedRunner(IterBasedRunner):
             self.optimizer_from_model = True
             self.optimizer = _model.optimizer
 
+        # add fp16 grad scaler, using pytorch official GradScaler
         self.with_fp16_grad_scaler = False
         if fp16_loss_scaler is not None:
             self.loss_scaler = GradScaler(**fp16_loss_scaler)
             self.with_fp16_grad_scaler = True
             mmcv.print_log('Use FP16 grad scaler in Training', 'mmgen')
+
+        # flag to use amp in apex (NVIDIA)
+        self.use_apex_amp = use_apex_amp
 
     def call_hook(self, fn_name):
         """Call all hooks.
@@ -198,6 +203,9 @@ class DynamicIterBasedRunner(IterBasedRunner):
 
         if self.with_fp16_grad_scaler:
             kwargs.update(dict(loss_scaler=self.loss_scaler))
+
+        if self.use_apex_amp:
+            kwargs.update(dict(use_apex_amp=True))
 
         outputs = self.model.train_step(data_batch, self.optimizer, **kwargs)
 
@@ -316,6 +324,10 @@ class DynamicIterBasedRunner(IterBasedRunner):
         if 'loss_scaler' in checkpoint and resume_loss_scaler:
             self.loss_scaler.load_state_dict(checkpoint['loss_scaler'])
 
+        if self.use_apex_amp:
+            from apex import amp
+            amp.load_state_dict(checkpoint['amp'])
+
         self.logger.info(f'resumed from epoch: {self.epoch}, iter {self.iter}')
 
     def save_checkpoint(self,
@@ -350,7 +362,14 @@ class DynamicIterBasedRunner(IterBasedRunner):
         filename = filename_tmpl.format(self.iter + 1)
         filepath = osp.join(out_dir, filename)
         optimizer = self.optimizer if save_optimizer else None
-        save_checkpoint(self.model, filepath, optimizer=optimizer, meta=meta)
+        _loss_scaler = self.loss_scaler if self.with_fp16_grad_scaler else None
+        save_checkpoint(
+            self.model,
+            filepath,
+            optimizer=optimizer,
+            loss_scaler=_loss_scaler,
+            save_apex_amp=self.use_apex_amp,
+            meta=meta)
         # in some environments, `os.symlink` is not supported, you may need to
         # set `create_symlink` to False
         if create_symlink:

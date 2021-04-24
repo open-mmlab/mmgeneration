@@ -337,7 +337,8 @@ def r1_gradient_penalty_loss(discriminator,
                              real_data,
                              mask=None,
                              norm_mode='pixel',
-                             loss_scaler=None):
+                             loss_scaler=None,
+                             use_apex_amp=False):
     """Calculate R1 gradient penalty for WGAN-GP.
 
     R1 regularizer comes from:
@@ -364,6 +365,11 @@ def r1_gradient_penalty_loss(discriminator,
     disc_pred = discriminator(real_data)
     if loss_scaler:
         disc_pred = loss_scaler.scale(disc_pred)
+    elif use_apex_amp:
+        from apex.amp._amp_state import _amp_state
+        _loss_scaler = _amp_state.loss_scalers[0]
+        disc_pred = _loss_scaler.loss_scale() * disc_pred.float()
+
     gradients = autograd.grad(
         outputs=disc_pred,
         inputs=real_data,
@@ -375,6 +381,9 @@ def r1_gradient_penalty_loss(discriminator,
     if loss_scaler:
         # unscale the gradient
         inv_scale = 1. / loss_scaler.get_scale()
+        gradients = gradients * inv_scale
+    elif use_apex_amp:
+        inv_scale = 1. / _loss_scaler.loss_scale()
         gradients = gradients * inv_scale
 
     if mask is not None:
@@ -461,12 +470,14 @@ class R1GradientPenalty(nn.Module):
                  norm_mode='pixel',
                  interval=1,
                  data_info=None,
+                 use_apex_amp=False,
                  loss_name='loss_r1_gp'):
         super().__init__()
         self.loss_weight = loss_weight
         self.norm_mode = norm_mode
         self.interval = interval
         self.data_info = data_info
+        self.use_apex_amp = use_apex_amp
         self._loss_name = loss_name
 
     def forward(self, *args, **kwargs):
@@ -511,7 +522,10 @@ class R1GradientPenalty(nn.Module):
             }
             kwargs.update(loss_input_dict)
             kwargs.update(
-                dict(weight=self.loss_weight, norm_mode=self.norm_mode))
+                dict(
+                    weight=self.loss_weight,
+                    norm_mode=self.norm_mode,
+                    use_apex_amp=self.use_apex_amp))
             return r1_gradient_penalty_loss(**kwargs)
         else:
             # if you have not define how to build computational graph, this

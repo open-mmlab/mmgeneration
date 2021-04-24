@@ -13,6 +13,7 @@ def save_checkpoint(model,
                     filename,
                     optimizer=None,
                     loss_scaler=None,
+                    save_apex_amp=False,
                     meta=None):
     """Save checkpoint to file.
 
@@ -52,6 +53,10 @@ def save_checkpoint(model,
 
     if loss_scaler is not None:
         checkpoint['loss_scaler'] = loss_scaler.state_dict()
+
+    if save_apex_amp:
+        from apex import amp
+        checkpoint['amp'] = amp.state_dict()
 
     if filename.startswith('pavi://'):
         try:

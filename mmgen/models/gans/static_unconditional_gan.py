@@ -120,6 +120,7 @@ class StaticUnconditionalGAN(BaseGAN):
                    optimizer,
                    ddp_reducer=None,
                    loss_scaler=None,
+                   use_apex_amp=False,
                    running_status=None):
         """Train step function.
 
@@ -193,6 +194,12 @@ class StaticUnconditionalGAN(BaseGAN):
         if loss_scaler:
             # add support for fp16
             loss_scaler.scale(loss_disc).backward()
+        elif use_apex_amp:
+            from apex import amp
+            with amp.scale_loss(
+                    loss_disc, optimizer['discriminator'],
+                    loss_id=0) as scaled_loss_disc:
+                scaled_loss_disc.backward()
         else:
             loss_disc.backward()
 
@@ -247,6 +254,12 @@ class StaticUnconditionalGAN(BaseGAN):
 
         if loss_scaler:
             loss_scaler.scale(loss_gen).backward()
+        elif use_apex_amp:
+            from apex import amp
+            with amp.scale_loss(
+                    loss_gen, optimizer['generator'],
+                    loss_id=1) as scaled_loss_disc:
+                scaled_loss_disc.backward()
         else:
             loss_gen.backward()
 
