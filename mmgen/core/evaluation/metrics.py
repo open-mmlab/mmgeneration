@@ -198,7 +198,7 @@ def sliced_wasserstein(distribution_a,
                        distribution_b,
                        dir_repeats=4,
                        dirs_per_repeat=128):
-    r"""sliced wasserstein distance of two sets of patches.
+    r"""sliced Wasserstein distance of two sets of patches.
 
     Ref: https://github.com/tkarras/progressive_growing_of_gans/blob/master/metrics/ms_ssim.py  # noqa
 
@@ -210,7 +210,7 @@ def sliced_wasserstein(distribution_a,
             Default to 128.
 
     Returns:
-        float: sliced wasserstein distance.
+        float: sliced Wasserstein distance.
     """
     if torch.cuda.is_available():
         distribution_b = distribution_b.cuda()
@@ -572,11 +572,11 @@ class MS_SSIM(Metric):
 class SWD(Metric):
     """SWD (Sliced Wasserstein distance) metric. We calculate the SWD of two
     sets of images in the following way. In every 'feed', we obtain the
-    laplacian pyramids of every images and extract patches from the laplacian
+    Laplacian pyramids of every images and extract patches from the Laplacian
     pyramids as descriptors. In 'summary', we normalize these descriptors along
     channel, and reshape them so that we can use these descriptors to represent
     the distribution of real/fake images. And we can calculate the sliced
-    wasserstein distance of the real and fake descriptors as the SWD of the
+    Wasserstein distance of the real and fake descriptors as the SWD of the
     real and fake images.
 
     Ref: https://github.com/tkarras/progressive_growing_of_gans/blob/master/metrics/sliced_wasserstein.py # noqa

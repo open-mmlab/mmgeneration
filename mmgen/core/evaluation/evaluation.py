@@ -74,7 +74,7 @@ def single_gpu_evaluation(model,
 
     Args:
         model (nn.Module): Model to be tested.
-        data_loader (nn.Dataloader): Pytorch data loader.
+        data_loader (nn.Dataloader): PyTorch data loader.
         metrics (list): List of metric objects.
         logger (Logger): logger used to record results of evaluation.
         batch_size (int): Batch size of images fed into metrics.
@@ -189,7 +189,7 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
 
     Args:
         model (nn.Module): Model to be tested.
-        data_loader (nn.Dataloader): Pytorch data loader.
+        data_loader (nn.Dataloader): PyTorch data loader.
         metrics (list): List of metric objects.
         logger (Logger): logger used to record results of evaluation.
         batch_size (int): Batch size of images fed into metrics.

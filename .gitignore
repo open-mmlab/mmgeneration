@@ -114,5 +114,5 @@ data
 *.log.json
 work_dirs/
 *.DS_Store
-# Pytorch
+# PyTorch
 *.pth

@@ -95,8 +95,8 @@ If mmcv and mmcv-full are both installed, there will be `ModuleNotFoundError`.
 
 Note:
 
-a. Following the above instructions, MMGeneration is installed on `dev` mode
-, any local modifications made to the code will take effect without the need to reinstall it.
+a. Following the above instructions, MMGeneration is installed on `dev` mode,
+any local modifications made to the code will take effect without the need to reinstall it.
 
 b. If you would like to use `opencv-python-headless` instead of `opencv
 -python`,
