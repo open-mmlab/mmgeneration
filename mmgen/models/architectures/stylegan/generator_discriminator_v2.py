@@ -89,7 +89,6 @@ class StyleGANv2Generator(nn.Module):
                  mix_prob=0.9,
                  num_fp16_scales=0,
                  fp16_enabled=False,
-                 out_fp32=True,
                  pretrained=None):
         super().__init__()
         self.out_size = out_size
@@ -103,7 +102,6 @@ class StyleGANv2Generator(nn.Module):
         self.mix_prob = mix_prob
         self.num_fp16_scales = num_fp16_scales
         self.fp16_enabled = fp16_enabled
-        self.out_fp32 = out_fp32
 
         # define style mapping layers
         mapping_layers = [PixelNorm()]
@@ -140,7 +138,10 @@ class StyleGANv2Generator(nn.Module):
             style_channels=style_channels,
             blur_kernel=blur_kernel)
         self.to_rgb1 = ModulatedToRGB(
-            self.channels[4], style_channels, upsample=False)
+            self.channels[4],
+            style_channels,
+            upsample=False,
+            fp16_enabled=fp16_enabled)
 
         # generator backbone (8x8 --> higher resolutions)
         self.log_size = int(math.log2(self.out_size))
@@ -154,7 +155,7 @@ class StyleGANv2Generator(nn.Module):
         for i in range(3, self.log_size + 1):
             out_channels_ = self.channels[2**i]
 
-            _use_fp16 = (self.log_size - i) < num_fp16_scales
+            _use_fp16 = (self.log_size - i) < num_fp16_scales or fp16_enabled
 
             self.convs.append(
                 ModulatedStyleConv(
@@ -179,7 +180,7 @@ class StyleGANv2Generator(nn.Module):
                     out_channels_,
                     style_channels,
                     upsample=True,
-                    fp16_enabled=_use_fp16))
+                    fp16_enabled=_use_fp16))  # set to global fp16
 
             in_channels_ = out_channels_
 
@@ -419,7 +420,7 @@ class StyleGANv2Generator(nn.Module):
             skip = to_rgb(out, latent[:, _index + 2], skip)
             _index += 2
 
-        img = skip
+        img = skip.to(torch.float32)
 
         if return_latents or return_noise:
             output_dict = dict(
@@ -521,7 +522,7 @@ class StyleGAN2Discriminator(nn.Module):
             out_channel = channels[2**(i - 1)]
 
             # add fp16 training for higher resolutions
-            _use_fp16 = (log_size - i) < num_fp16_scales
+            _use_fp16 = (log_size - i) < num_fp16_scales or fp16_enabled
 
             convs.append(
                 ResBlock(
@@ -570,6 +571,8 @@ class StyleGAN2Discriminator(nn.Module):
         x = self.convs(x)
 
         x = self.mbstd_layer(x)
+        if not self.final_conv.fp16_enabled:
+            x = x.to(torch.float32)
         x = self.final_conv(x)
         x = x.view(x.shape[0], -1)
         x = self.final_linear(x)
