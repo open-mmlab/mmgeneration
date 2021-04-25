@@ -49,7 +49,9 @@ def nan_to_num(x, nan=0.0, posinf=None, neginf=None, *, out=None):
         return torch.nan_to_num(
             x, nan=nan, posinf=posinf, neginf=neginf, out=out)
     except AttributeError:
-        assert isinstance(x, torch.Tensor)
+        if not isinstance(x, torch.Tensor):
+            raise TypeError(
+                f'argument input (position 1) must be Tensor, not {type(x)}')
         if posinf is None:
             posinf = torch.finfo(x.dtype).max
         if neginf is None:

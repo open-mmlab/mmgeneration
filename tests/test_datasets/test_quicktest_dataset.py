@@ -10,4 +10,4 @@ class TestQuickTest:
     def test_quicktest_dataset(self):
         assert len(self.dataset) == 10000
         img = self.dataset[2]
-        assert img.shape == (3, 256, 256)
+        assert img['real_img'].shape == (3, 256, 256)
