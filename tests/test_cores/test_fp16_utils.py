@@ -19,9 +19,6 @@ def test_nan_to_num():
     with pytest.raises(TypeError):
         nan_to_num(1)
 
-    with pytest.raises(AssertionError):
-        res = nan_to_num(a, nan=2, posinf=255., neginf=-255.)
-
 
 def test_cast_tensor_type():
     inputs = torch.FloatTensor([5.])
