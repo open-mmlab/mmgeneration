@@ -58,7 +58,12 @@ def train_model(model,
     ]
 
     # dirty code for use apex amp
-    model = model.cuda()
+    # apex.amp request that models should be in cuda device before
+    # initialization.
+    if cfg.get('apex_amp', None):
+        assert distributed, (
+            'Currently, apex.amp is only supported with DDP training.')
+        model = model.cuda()
 
     # build optimizer
     if cfg.optimizer:

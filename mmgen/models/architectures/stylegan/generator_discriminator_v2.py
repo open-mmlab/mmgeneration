@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
 
+from mmgen.core.runners.fp16_utils import auto_fp16
 from mmgen.models.architectures import PixelNorm
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.builder import MODULES
@@ -87,6 +88,8 @@ class StyleGANv2Generator(nn.Module):
                  eval_style_mode='single',
                  mix_prob=0.9,
                  num_fp16_scales=0,
+                 fp16_enabled=False,
+                 out_fp32=True,
                  pretrained=None):
         super().__init__()
         self.out_size = out_size
@@ -99,6 +102,8 @@ class StyleGANv2Generator(nn.Module):
         self.eval_style_mode = eval_style_mode
         self.mix_prob = mix_prob
         self.num_fp16_scales = num_fp16_scales
+        self.fp16_enabled = fp16_enabled
+        self.out_fp32 = out_fp32
 
         # define style mapping layers
         mapping_layers = [PixelNorm()]
@@ -187,6 +192,7 @@ class StyleGANv2Generator(nn.Module):
             shape = [1, 1, 2**res, 2**res]
             self.register_buffer(f'injected_noise_{layer_idx}',
                                  torch.randn(*shape))
+
         if pretrained is not None:
             self._load_pretrained_model(**pretrained)
 
@@ -260,6 +266,7 @@ class StyleGANv2Generator(nn.Module):
             truncation_latent=truncation_latent,
             style_channels=self.style_channels)
 
+    @auto_fp16()
     def forward(self,
                 styles,
                 num_batches=-1,
@@ -410,7 +417,6 @@ class StyleGANv2Generator(nn.Module):
             out = up_conv(out, latent[:, _index], noise=noise1)
             out = conv(out, latent[:, _index + 1], noise=noise2)
             skip = to_rgb(out, latent[:, _index + 2], skip)
-
             _index += 2
 
         img = skip
@@ -482,9 +488,13 @@ class StyleGAN2Discriminator(nn.Module):
                  blur_kernel=[1, 3, 3, 1],
                  mbstd_cfg=dict(group_size=4, channel_groups=1),
                  num_fp16_scales=0,
+                 fp16_enabled=False,
+                 out_fp32=True,
                  pretrained=None):
         super().__init__()
         self.num_fp16_scale = num_fp16_scales
+        self.fp16_enabled = fp16_enabled
+        self.out_fp32 = out_fp32
 
         channels = {
             4: 512,
@@ -547,6 +557,7 @@ class StyleGAN2Discriminator(nn.Module):
         self.load_state_dict(state_dict, strict=strict)
         mmcv.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
 
+    @auto_fp16()
     def forward(self, x):
         """Forward function.
 

@@ -178,9 +178,13 @@ class TestStyleGAN2Generator:
         assert res.shape == (2, 3, 256, 256)
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
-    def test_fp16_cuda(self):
+    def test_fp16_stylegan2_G_cuda(self):
 
         g = StyleGANv2Generator(**self.default_cfg, num_fp16_scales=2).cuda()
+        res = g(None, num_batches=2)
+        assert res.dtype == torch.float32
+
+        g = StyleGANv2Generator(**self.default_cfg, fp16_enabled=True).cuda()
         res = g(None, num_batches=2)
         assert res.dtype == torch.float32
 
