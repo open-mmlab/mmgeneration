@@ -1,7 +1,7 @@
 # A Style-Based Generator Architecture for Generative Adversarial Networks (CVPR'2019)
 
 ## Introduction
-[ALGORITHM]
+<!-- [ALGORITHM] -->
 ```latex
 @inproceedings{karras2019style,
   title={A style-based generator architecture for generative adversarial networks},

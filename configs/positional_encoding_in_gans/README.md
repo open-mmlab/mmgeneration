@@ -1,7 +1,7 @@
 # Positional Encoding as Spatial Inductive Bias in GANs (CVPR'2021)
 
 ## Introduction
-[ALGORITHM]
+<!-- [ALGORITHM] -->
 
 ```latex
 @article{xu2020positional,
