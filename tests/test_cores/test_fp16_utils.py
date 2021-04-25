@@ -16,7 +16,7 @@ def test_nan_to_num():
     res = nan_to_num(a)
     assert res.shape == (3, )
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(TypeError):
         nan_to_num(1)
 
     with pytest.raises(AssertionError):
