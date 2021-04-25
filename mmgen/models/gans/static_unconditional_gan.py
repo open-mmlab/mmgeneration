@@ -97,12 +97,6 @@ class StaticUnconditionalGAN(BaseGAN):
             # use deepcopy to guarantee the consistency
             self.generator_ema = deepcopy(self.generator)
 
-        # fp16 settings
-        self.clamp_inf_nan_grad = self.train_cfg.get('clamp_inf_nan_grad',
-                                                     False)
-        if self.clamp_inf_nan_grad:
-            self.nan2num_cfg = self.train_cfg.get('nan2num_cfg', dict())
-
     def _parse_test_cfg(self):
         """Parsing test config and set some attributes for testing."""
         if self.test_cfg is None:
@@ -203,9 +197,6 @@ class StaticUnconditionalGAN(BaseGAN):
         else:
             loss_disc.backward()
 
-        if self.clamp_inf_nan_grad:
-            self._clamp_inf_nan_grad(self.discriminator)
-
         if loss_scaler:
             loss_scaler.unscale_(optimizer['discriminator'])
             # note that we do not contain clip_grad procedure
@@ -262,9 +253,6 @@ class StaticUnconditionalGAN(BaseGAN):
                 scaled_loss_disc.backward()
         else:
             loss_gen.backward()
-
-        if self.clamp_inf_nan_grad:
-            self._clamp_inf_nan_grad(self.generator)
 
         if loss_scaler:
             loss_scaler.unscale_(optimizer['generator'])

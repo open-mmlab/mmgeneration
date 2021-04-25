@@ -5,26 +5,13 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 
-from mmgen.core.runners.fp16_utils import nan_to_num
-
 
 class BaseGAN(nn.Module, metaclass=ABCMeta):
+    """BaseGAN Module."""
 
     def __init__(self):
         super().__init__()
         self.fp16_enabled = False
-
-        # whether to clamp grad. This is commonly used in FP16 training.
-        self.clamp_inf_nan_grad = False
-
-    def _clamp_inf_nan_grad(self, model):
-        clamp_args = dict(posinf=1e5, neginf=1e-5)
-        if hasattr(self, 'nan2num_cfg'):
-            clamp_args.update(self.nan2num_cfg)
-
-        for param in model.parameters():
-            if param.grad is not None:
-                nan_to_num(param.grad, nan=0, out=param.grad, **clamp_args)
 
     @property
     def with_disc(self):
