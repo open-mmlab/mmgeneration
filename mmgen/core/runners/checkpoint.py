@@ -17,13 +17,19 @@ def save_checkpoint(model,
                     meta=None):
     """Save checkpoint to file.
 
-    The checkpoint will have 3 fields: ``meta``, ``state_dict`` and
+    The checkpoint will have 3 or more fields: ``meta``, ``state_dict`` and
     ``optimizer``. By default ``meta`` will contain version and time info.
+
+    In mixed-precision training, ``loss_scaler`` or ``amp.state_dict`` will be
+    saved in checkpoint.
 
     Args:
         model (Module): Module whose params are to be saved.
         filename (str): Checkpoint filename.
         optimizer (:obj:`Optimizer`, optional): Optimizer to be saved.
+        loss_scaler (Object, optional): Loss scaler used for FP16 training.
+        save_apex_amp (bool, optional): Whether to save apex.amp
+            ``state_dict``.
         meta (dict, optional): Metadata to be saved in checkpoint.
     """
     if meta is None:
@@ -51,9 +57,11 @@ def save_checkpoint(model,
         for name, optim in optimizer.items():
             checkpoint['optimizer'][name] = optim.state_dict()
 
+    # save loss scaler for mixed-precision (FP16) training
     if loss_scaler is not None:
         checkpoint['loss_scaler'] = loss_scaler.state_dict()
 
+    # save state_dict from apex.amp
     if save_apex_amp:
         from apex import amp
         checkpoint['amp'] = amp.state_dict()

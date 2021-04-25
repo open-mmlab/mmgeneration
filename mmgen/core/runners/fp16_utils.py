@@ -4,6 +4,7 @@ from inspect import getfullargspec
 
 import numpy as np
 import torch
+import torch.nn as nn
 from mmcv.utils import TORCH_VERSION
 
 try:
@@ -74,6 +75,8 @@ def cast_tensor_type(inputs, src_type, dst_type):
     """
     if isinstance(inputs, torch.Tensor):
         return inputs.to(dst_type)
+    if isinstance(inputs, nn.Module):
+        return inputs
     elif isinstance(inputs, str):
         return inputs
     elif isinstance(inputs, np.ndarray):

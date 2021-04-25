@@ -6,20 +6,11 @@ from .builder import DATASETS
 
 @DATASETS.register_module()
 class QuickTestImageDataset(Dataset):
-    """Uncoditional Image Dataset.
-
-    This dataset contains raw images for training unconditional GANs. Given
-    a root dir, we will recursively find all images in this root. The
-    transformation on data is defined by the pipeline.
+    """Dataset for quickly testing the correctness.
 
     Args:
-        imgs_root (str): Root path for unconditional images.
-        pipeline (list[dict | callable]): A sequence of data transforms.
-        test_mode (bool, optional): If True, the dataset will work in test
-            mode. Otherwise, in train mode. Default to False.
+        size (tuple[int]): The size of the images. Defaults to `None`.
     """
-
-    _VALID_IMG_SUFFIX = ('.jpg', '.png', '.jpeg', '.JPEG')
 
     def __init__(self, *args, size=None, **kwargs):
         super().__init__()

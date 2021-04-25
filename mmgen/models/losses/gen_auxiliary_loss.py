@@ -77,7 +77,10 @@ def gen_path_regularizer(generator,
         grad = grad * inv_scale
     elif use_apex_amp:
         from apex.amp._amp_state import _amp_state
-        _loss_scaler = _amp_state.loss_scalers[0]
+
+        # by default, we use loss_scalers[0] for discriminator and
+        # loss_scalers[1] for generator
+        _loss_scaler = _amp_state.loss_scalers[1]
         loss = _loss_scaler.loss_scale() * ((fake_img * noise).sum()).float()
 
         grad = autograd.grad(
