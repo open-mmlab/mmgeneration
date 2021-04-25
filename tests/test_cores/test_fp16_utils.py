@@ -4,7 +4,23 @@ import torch
 import torch.nn as nn
 from mmcv.utils import TORCH_VERSION
 
-from mmgen.core.runners.fp16_utils import auto_fp16, cast_tensor_type
+from mmgen.core.runners.fp16_utils import (auto_fp16, cast_tensor_type,
+                                           nan_to_num)
+
+
+def test_nan_to_num():
+    a = torch.tensor([float('inf'), float('nan'), 2.])
+    res = nan_to_num(a, posinf=255., neginf=-255.)
+    assert (res == torch.tensor([255., 0., 2.])).all()
+
+    res = nan_to_num(a)
+    assert res.shape == (3, )
+
+    with pytest.raises(AssertionError):
+        nan_to_num(1)
+
+    with pytest.raises(AssertionError):
+        res = nan_to_num(a, nan=2, posinf=255., neginf=-255.)
 
 
 def test_cast_tensor_type():
