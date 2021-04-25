@@ -21,8 +21,17 @@ from mmgen.models.common import AllGatherLayer
 
 
 class _FusedBiasLeakyReLU(FusedBiasLeakyReLU):
+    """Wrap FusedBiasLeakyReLU to support FP16 training."""
 
     def forward(self, x):
+        """Forward function.
+
+        Args:
+            x (Tensor): Input feature map with shape of (N, C, ...).
+
+        Returns:
+            Tensor: Output feature map.
+        """
         return fused_bias_leakyrelu(x, self.bias.to(x.dtype),
                                     self.negative_slope, self.scale)
 
