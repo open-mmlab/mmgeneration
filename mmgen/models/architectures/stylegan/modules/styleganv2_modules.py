@@ -675,7 +675,11 @@ class ModulatedStyleConv(nn.Module):
         style_mod_cfg (dict, optional): Configs for style modulation module.
             Defaults to dict(bias_init=1.).
         style_bias (float, optional): Bias value for style code.
-            Defaults to 0..
+            Defaults to ``0.``.
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. Defaults to False.
+        conv_clamp (float, optional): Clamp the convolutional layer results to
+            avoid gradient overflow. Defaults to `256.0`.
     """
 
     def __init__(self,
@@ -850,6 +854,12 @@ class ModulatedToRGB(nn.Module):
             Defaults to dict(bias_init=1.).
         style_bias (float, optional): Bias value for style code.
             Defaults to 0..
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. Defaults to False.
+        conv_clamp (float, optional): Clamp the convolutional layer results to
+            avoid gradient overflow. Defaults to `256.0`.
+        out_fp32 (bool, optional): Whether to convert the output feature map to
+            `torch.float32`. Defaults to `True`.
     """
 
     def __init__(self,
@@ -925,6 +935,10 @@ class ConvDownLayer(nn.Sequential):
         bias (bool, optional): Whether to use bias parameter. Defaults to True.
         act_cfg (dict, optional): Activation configs.
             Defaults to dict(type='fused_bias').
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. Defaults to False.
+        conv_clamp (float, optional): Clamp the convolutional layer results to
+            avoid gradient overflow. Defaults to `256.0`.
     """
 
     def __init__(self,
@@ -936,7 +950,7 @@ class ConvDownLayer(nn.Sequential):
                  bias=True,
                  act_cfg=dict(type='fused_bias'),
                  fp16_enabled=False,
-                 conv_clamp=256):
+                 conv_clamp=256.):
 
         self.fp16_enabled = fp16_enabled
         self.conv_clamp = float(conv_clamp)
@@ -978,9 +992,6 @@ class ConvDownLayer(nn.Sequential):
 
         super(ConvDownLayer, self).__init__(*layers)
 
-        # if self.fp16_enabled:
-        #     self.half()
-
     @auto_fp16(apply_to=('x', ))
     def forward(self, x):
         x = super().forward(x)
@@ -996,16 +1007,24 @@ class ResBlock(nn.Module):
         in_channels (int): Input channels.
         out_channels (int): Output channels.
         kernel_size (int): Kernel size, same as :obj:`nn.Con2d`.
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. Defaults to False.
+        convert_input_fp32 (bool, optional): Whether to convert input type to
+            fp32 if not `fp16_enabled`. This argument is designed to deal with
+            the cases where some modules are run in FP16 and others in FP32.
+            Defaults to True.
     """
 
     def __init__(self,
                  in_channels,
                  out_channels,
                  blur_kernel=[1, 3, 3, 1],
-                 fp16_enabled=False):
+                 fp16_enabled=False,
+                 convert_input_fp32=True):
         super().__init__()
 
         self.fp16_enabled = fp16_enabled
+        self.convert_input_fp32 = convert_input_fp32
 
         self.conv1 = ConvDownLayer(
             in_channels, in_channels, 3, blur_kernel=blur_kernel)
@@ -1035,7 +1054,9 @@ class ResBlock(nn.Module):
         Returns:
             Tensor: Output feature map.
         """
-        if not self.fp16_enabled:
+        # TODO: study whether this explicit datatype transfer will harm the
+        # apex training speed
+        if not self.fp16_enabled and self.convert_input_fp32:
             input = input.to(torch.float32)
         out = self.conv1(input)
         out = self.conv2(out)

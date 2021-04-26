@@ -4,9 +4,9 @@ _base_ = ['./stylegan2_c2_ffhq_256_b4x8_800k.py']
 
 model = dict(
     generator=dict(out_size=256),
-    discriminator=dict(in_size=256),
-    disc_auxiliary_loss=dict(use_apex_amp=True),
-    gen_auxiliary_loss=dict(use_apex_amp=True),
+    discriminator=dict(in_size=256, convert_input_fp32=False),
+    # disc_auxiliary_loss=dict(use_apex_amp=True),
+    # gen_auxiliary_loss=dict(use_apex_amp=True),
 )
 
 dataset_type = 'QuickTestImageDataset'

@@ -70,7 +70,11 @@ class StyleGANv2Generator(nn.Module):
         eval_style_mode (str, optional): The evaluation mode of style mixing.
             Defaults to 'single'.
         mix_prob (float, optional): Mixing probability. The value should be
-            in range of [0, 1]. Defaults to 0.9.
+            in range of [0, 1]. Defaults to ``0.9``.
+        num_fp16_scales (int, optional): The number of resolutions to use auto
+            fp16 training. Defaults to 0.
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. Defaults to False.
         pretrained (dict | None, optional): Information for pretained models.
             The necessary key is 'ckpt_path'. Besides, you can also provide
             'prefix' to load the generator part from the whole state dict.
@@ -420,6 +424,8 @@ class StyleGANv2Generator(nn.Module):
             skip = to_rgb(out, latent[:, _index + 2], skip)
             _index += 2
 
+        # make sure the output image is torch.float32 to avoid RunTime Error
+        # in other modules
         img = skip.to(torch.float32)
 
         if return_latents or return_noise:
@@ -477,6 +483,16 @@ class StyleGAN2Discriminator(nn.Module):
             to [1, 3, 3, 1].
         mbstd_cfg (dict, optional): Configs for minibatch-stddev layer.
             Defaults to dict(group_size=4, channel_groups=1).
+        num_fp16_scales (int, optional): The number of resolutions to use auto
+            fp16 training. Defaults to 0.
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. Defaults to False.
+        out_fp32 (bool, optional): Whether to convert the output feature map to
+            `torch.float32`. Defaults to `True`.
+        convert_input_fp32 (bool, optional): Whether to convert input type to
+            fp32 if not `fp16_enabled`. This argument is designed to deal with
+            the cases where some modules are run in FP16 and others in FP32.
+            Defaults to True.
         pretrained (dict | None, optional): Information for pretained models.
             The necessary key is 'ckpt_path'. Besides, you can also provide
             'prefix' to load the generator part from the whole state dict.
@@ -491,10 +507,12 @@ class StyleGAN2Discriminator(nn.Module):
                  num_fp16_scales=0,
                  fp16_enabled=False,
                  out_fp32=True,
+                 convert_input_fp32=True,
                  pretrained=None):
         super().__init__()
         self.num_fp16_scale = num_fp16_scales
         self.fp16_enabled = fp16_enabled
+        self.convert_input_fp32 = convert_input_fp32
         self.out_fp32 = out_fp32
 
         channels = {
@@ -529,7 +547,8 @@ class StyleGAN2Discriminator(nn.Module):
                     in_channels,
                     out_channel,
                     blur_kernel,
-                    fp16_enabled=_use_fp16))
+                    fp16_enabled=_use_fp16,
+                    convert_input_fp32=convert_input_fp32))
 
             in_channels = out_channel
 
@@ -571,7 +590,7 @@ class StyleGAN2Discriminator(nn.Module):
         x = self.convs(x)
 
         x = self.mbstd_layer(x)
-        if not self.final_conv.fp16_enabled:
+        if not self.final_conv.fp16_enabled and self.convert_input_fp32:
             x = x.to(torch.float32)
         x = self.final_conv(x)
         x = x.view(x.shape[0], -1)
