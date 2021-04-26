@@ -8,9 +8,9 @@ We basically categorize our supported models into 3 main streams according to ta
 - Image Translation Models: Pix2Pix, CycleGAN
 - Internal Learning (Single Image Model): SinGAN
 
-Of course, some methods, like WGAN-GP, focus on the design of loss functions or learning schedule may be adopted into multiple generative models. Different from `MMDetection`, only two basic categories, `MODULES` and `MODELS`, exist in our repo. In other word, each of the module will be registered as `MODULES` or `MODELS`.
+Of course, some methods, like WGAN-GP, focus on the design of loss functions or learning schedule may be adopted into multiple generative models. Different from `MMDetection`, only two basic categories, `MODULES` and `MODELS`, exist in our repo. In other words, each module will be registered as `MODULES` or `MODELS`.
 
-`MODELS` only contains all of the toppest wrapper for a generative model. It supports the commonly used `train_step` and other sampling interface, which can be directly called during training. For static architectures in unconditional GANs, `StaticUnconditionalGAN` is the model that you can use for training your generator and discriminator.
+`MODELS` only contains all of the topmost wrappers for generative models. It supports the commonly used `train_step` and other sampling interface, which can be directly called during training. For static architectures in unconditional GANs, `StaticUnconditionalGAN` is the model that you can use for training your generator and discriminator.
 
 All of the other modules in `MMGeneration` will be registered as `MODULES`, including components of loss functions, generators and discriminators.
 

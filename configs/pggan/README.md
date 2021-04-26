@@ -1,6 +1,7 @@
 # Progressive Growing of GANs for Improved Quality, Stability, and Variation
 
 ## Introduction
+<!-- [ALGORITHM] -->
 ```latex
 @article{karras2017progressive,
   title={Progressive growing of gans for improved quality, stability, and variation},

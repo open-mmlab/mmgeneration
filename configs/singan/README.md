@@ -1,7 +1,7 @@
 # Singan: Learning a Generative Model from a Single Natural Image (ICCV'2019)
 
 ## Introduction
-[ALGORITHM]
+<!-- [ALGORITHM] -->
 
 ```latex
 @inproceedings{shaham2019singan,

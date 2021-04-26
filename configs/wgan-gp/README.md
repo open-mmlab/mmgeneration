@@ -1,11 +1,11 @@
 # Improved Training of Wasserstein GANs
 
 ## Introduction
-[ALGORITHM]
+<!-- [ALGORITHM] -->
 
 ```latex
 @article{gulrajani2017improved,
-  title={Improved training of wasserstein gans},
+  title={Improved Training of Wasserstein GANs},
   author={Gulrajani, Ishaan and Ahmed, Faruk and Arjovsky, Martin and Dumoulin, Vincent and Courville, Aaron},
   journal={arXiv preprint arXiv:1704.00028},
   year={2017}

@@ -1,6 +1,6 @@
 # Tutorial 4: Design of Our Loss Modules
 
-As shown in the last tutorial for customizing models, `losses` are regarded/registered as `MODULES` in `MMGeneration`. Customizing losses is similar to customizing any other models. This section is mainly for clarifying the design of loss modules in our repo. Importantly, when writing your own loss modules, you should following the same design, so that the new loss module can be adopted in our framework without extra efforts.
+As shown in the last tutorial for customizing models, `losses` are regarded/registered as `MODULES` in `MMGeneration`. Customizing losses is similar to customizing any other models. This section is mainly for clarifying the design of loss modules in our repo. Importantly, when writing your own loss modules, you should follow the same design, so that the new loss module can be adopted in our framework without extra efforts.
 
 ## Design of loss modules
 

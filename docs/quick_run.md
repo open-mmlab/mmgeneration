@@ -80,7 +80,7 @@ This section details how to prepare the dataset for MMGeneration and provides a 
 
 ### Datasets for unconditional models
 
-It's much easier to prepare dataset for unconditional models. Firstly, please make a directory, named `data`, in the MMGeneration project. After that, all of datasets can be used by adopting the technology of symlink(soft link).
+It's much easier to prepare dataset for unconditional models. Firstly, please make a directory, named `data`, in the MMGeneration project. After that, all of datasets can be used by adopting the technology of symlink (soft link).
 
 ```bash
 mkdir data
@@ -88,7 +88,7 @@ mkdir data
 ln -s absolute_path_to_dataset ./data/dataset_name
 ```
 
-Since, unconditional models only need real images for training and testing. The only way you need to do is link your dataset to the `data` directory. Our dataset will automatically check all of the images in a specified path (recursively).
+Since unconditional models only need real images for training and testing, all you need to do is link your dataset to the `data` directory. Our dataset will automatically check all of the images in a specified path (recursively).
 
 Here, we provide several download links of datasets frequently used in unconditional models: [LSUN](http://dl.yf.io/lsun/), [CelebA](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html), [CelebA-HQ](https://drive.google.com/drive/folders/11Vz0fqHS2rXDb5pprgTjpD7S2BAJhi1P), [FFHQ](https://drive.google.com/drive/folders/1u2xu7bSrWxrbUxk-dT-UvEJq8IjdmNTP).
 
@@ -96,7 +96,7 @@ Here, we provide several download links of datasets frequently used in unconditi
 
 For translation models, now we offer two settings for datasets called paired image dataset and unpaired image dataset.
 
-For paired image dataset, every image is formed by concatenating two corresponding images from two domains along the width dimension. You are supposed to make two folders "train" and "test" filled with images of this format for training and testing. Folder structure are presented below.
+For paired image dataset, every image is formed by concatenating two corresponding images from two domains along the width dimension. You are supposed to make two folders "train" and "test" filled with images of this format for training and testing. Folder structure is presented below.
 ```
 ./data/dataset_name/
 ├── test
@@ -106,7 +106,7 @@ For paired image dataset, every image is formed by concatenating two correspondi
 
 ```
 
-For unpaired image dataset, you are supposed to make two folders "trainA" and "testA" filled with images from domain A and two folders "trainB" and "testB" filled with images from domain B. Folder structure are presented below.
+For unpaired image dataset, you are supposed to make two folders "trainA" and "testA" filled with images from domain A and two folders "trainB" and "testB" filled with images from domain B. Folder structure is presented below.
 
 ```
 ./data/dataset_name/
@@ -121,7 +121,7 @@ For unpaired image dataset, you are supposed to make two folders "trainA" and "t
 
 ```
 
-Please read the section `Datasets for unconditional models` and also use the symlink(soft link) to build up the dataset.
+Please read the section `Datasets for unconditional models` and also use the symlink (soft link) to build up the dataset.
 
 Here, we provide download links of datasets used in [Pix2Pix](http://efrosgans.eecs.berkeley.edu/pix2pix/datasets/) and [CycleGAN](https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/).
 
@@ -295,7 +295,7 @@ python tools/evaluation.py ./configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py \
 ```
 
 ## SWD
-Sliced Wasserstein distance is an discrepancy measure for probability distributions, and smaller distance indicates generated images look like the real ones. We obtain the laplacian pyramids of every image and extract patches from the laplacian pyramids as descriptors, then SWD can be calculated by taking the sliced wasserstein distance of the real and fake descriptors.
+Sliced Wasserstein distance is a discrepancy measure for probability distributions, and smaller distance indicates generated images look like the real ones. We obtain the Laplacian pyramids of every image and extract patches from the Laplacian pyramids as descriptors, then SWD can be calculated by taking the sliced Wasserstein distance of the real and fake descriptors.
 You can see the complete implementation in `metrics.py`, which refers to https://github.com/tkarras/progressive_growing_of_gans/blob/master/metrics/sliced_wasserstein.py.
 If you want to evaluate models with `SWD` metrics, you can add the `metrics` into your config file like this:
 ```python
@@ -328,7 +328,7 @@ python tools/evaluation.py ./configs/pggan/pggan_celeba-cropped_128_g8_12Mimgs.p
 
 # 5: Evaluation during training
 
-In this section, we will discuss how to evaluate the generative models, especially for GANs, in the training. Note that `MMGeneration` only supports distributed training and the evaluation metric adopted in the training procedure should also be run in a distributed style. Currently, only `FID` has been implemented and tested in an efficient distributed version. Other metric with efficient distributed version will be supported in the recent future. Thus, in the following part, we will specify how to evaluate your models with `FID` metric in training.
+In this section, we will discuss how to evaluate the generative models, especially for GANs, in the training. Note that `MMGeneration` only supports distributed training and the evaluation metric adopted in the training procedure should also be run in a distributed style. Currently, only `FID` has been implemented and tested in an efficient distributed version. Other metrics with efficient distributed version will be supported in the recent future. Thus, in the following part, we will specify how to evaluate your models with `FID` metric in training.
 
 In [eval_hooks.py](https://github.com/open-mmlab/mmgeneration/blob/master/mmgen/core/evaluation/eval_hooks.py), `GenerativeEvalHook` is provided to evaluate generative models duiring training. The most important argument for this hook is `metrics`. In fact, users can directly copy the configs in the last section to define the evaluation metric. To evaluate the model with `FID` metric, please add the following python codes in your config file:
 
