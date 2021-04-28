@@ -65,7 +65,7 @@ def parse_args():
         'in xxx=yyy format will be merged into config file.')
     parser.add_argument(
         '--sample-cfg',
-        nargs='+', 
+        nargs='+',
         action=DictAction,
         help='Other customized kwargs for sampling function')
     args = parser.parse_args()
