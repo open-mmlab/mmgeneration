@@ -8,7 +8,7 @@ class TestLSGANGenerator(object):
 
     @classmethod
     def setup_class(cls):
-        cls.noise = torch.randn((2, 100))
+        cls.noise = torch.randn((3, 128))
         cls.default_config = dict(
             type='LSGANGenerator', noise_size=128, output_scale=128)
 
@@ -20,6 +20,10 @@ class TestLSGANGenerator(object):
         x = g(None, num_batches=3)
         assert x.shape == (3, 3, 128, 128)
         x = g(None, num_batches=3, return_noise=True)
+        assert x['noise_batch'].shape == (3, 128)
+        x = g(self.noise, return_noise=True)
+        assert x['noise_batch'].shape == (3, 128)
+        x = g(torch.randn, num_batches=3, return_noise=True)
         assert x['noise_batch'].shape == (3, 128)
 
         # test different output_scale
@@ -38,6 +42,10 @@ class TestLSGANGenerator(object):
         x = g(None, num_batches=3)
         assert x.shape == (3, 3, 128, 128)
         x = g(None, num_batches=3, return_noise=True)
+        assert x['noise_batch'].shape == (3, 128)
+        x = g(self.noise.cuda(), return_noise=True)
+        assert x['noise_batch'].shape == (3, 128)
+        x = g(torch.randn, num_batches=3, return_noise=True)
         assert x['noise_batch'].shape == (3, 128)
 
         # test different output_scale
