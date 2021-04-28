@@ -17,7 +17,9 @@ class LSGANGenerator(nn.Module):
 
     #. Adopt transposed convolution in the generator;
     #. Use batchnorm in the generator except for the final output layer;
-    #. Use ReLU in the generator in addition to the final output layer.
+    #. Use ReLU in the generator in addition to the final output layer;
+    #. Keep channels of feature maps unchanged in the convolution backbone;
+    #. Use one more 3x3 conv every upsampling in the convolution backbone.
 
     We follow the implementation details of the origin paper:
     Least Squares Generative Adversarial Networks
@@ -192,7 +194,9 @@ class LSGANDiscriminator(nn.Module):
     #. Adopt convolution in the discriminator;
     #. Use batchnorm in the discriminator except for the input and final \
        output layer;
-    #. Use LeakyReLU in the discriminator in addition to the output layer.
+    #. Use LeakyReLU in the discriminator in addition to the output layer;
+    #. Use fully connected layer in the output layer;
+    #. Use 5x5 conv rather than 4x4 conv in DCGAN.
 
     Args:
         input_scale (int, optional): The scale of the input image. Defaults to
@@ -235,7 +239,7 @@ class LSGANDiscriminator(nn.Module):
         self.output_scale = output_scale
         self.out_channels = out_channels
         self.base_channels = base_channels
-        self.with_activation = out_act_cfg is not None
+        self.with_out_activation = out_act_cfg is not None
 
         self.conv_blocks = nn.ModuleList()
         self.conv_blocks.append(
@@ -271,8 +275,8 @@ class LSGANDiscriminator(nn.Module):
         self.decision = nn.Sequential(
             nn.Linear(output_scale * output_scale * curr_channels,
                       out_channels))
-        if self.with_activation:
-            self.activation = build_activation_layer(out_act_cfg)
+        if self.with_out_activation:
+            self.out_activation = build_activation_layer(out_act_cfg)
 
     def forward(self, x):
         """Forward function.
@@ -291,7 +295,7 @@ class LSGANDiscriminator(nn.Module):
         x = x.reshape(n, -1)
         x = self.decision(x)
 
-        if self.with_activation:
-            x = self.activation(x)
+        if self.with_out_activation:
+            x = self.out_activation(x)
 
         return x
