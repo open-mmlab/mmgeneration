@@ -2,6 +2,7 @@ from .cyclegan import ResnetGenerator
 from .dcgan import DCGANDiscriminator, DCGANGenerator
 from .fid_inception import InceptionV3
 from .lpips import PerceptualLoss
+from .lsgan import LSGANDiscriminator, LSGANGenerator
 from .pggan import (EqualizedLR, EqualizedLRConvDownModule,
                     EqualizedLRConvModule, EqualizedLRConvUpModule,
                     EqualizedLRLinearModule, MiniBatchStddevLayer,
@@ -26,5 +27,6 @@ __all__ = [
     'StyleGANv2Generator', 'StyleGANv1Generator', 'StyleGAN1Discriminator',
     'MSStyleGAN2Discriminator', 'MSStyleGANv2Generator',
     'generation_init_weights', 'PatchDiscriminator', 'ResnetGenerator',
-    'PerceptualLoss', 'WGANGPDiscriminator', 'WGANGPGenerator'
+    'PerceptualLoss', 'WGANGPDiscriminator', 'WGANGPGenerator',
+    'LSGANDiscriminator', 'LSGANGenerator'
 ]
