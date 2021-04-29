@@ -22,15 +22,6 @@ custom_hooks = [
         interval=10000)
 ]
 
-log_config = dict(
-    interval=100,
-    hooks=[
-        dict(type='TextLoggerHook'),
-        dict(
-            type='PaviLoggerHook',
-            init_kwargs=dict(project='lsgan-ori_archi-128'))
-    ])
-
 evaluation = dict(
     type='GenerativeEvalHook',
     interval=10000,
