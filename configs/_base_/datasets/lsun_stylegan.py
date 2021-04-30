@@ -1,3 +1,4 @@
+# Style-based GANs do not perform any augmentation for the LSUN datasets
 dataset_type = 'UnconditionalImageDataset'
 
 train_pipeline = [
