@@ -1,8 +1,8 @@
 """Note that this config is just for testing."""
 
 _base_ = [
-    '../_base_/datasets/ffhq_flip.py', '../_base_/models/stylegan2_base.py',
-    '../_base_/default_runtime.py'
+    '../_base_/datasets/lsun_stylegan.py',
+    '../_base_/models/stylegan2_base.py', '../_base_/default_runtime.py'
 ]
 
 model = dict(generator=dict(out_size=256), discriminator=dict(in_size=256))
@@ -25,11 +25,6 @@ custom_hooks = [
         priority='VERY_HIGH')
 ]
 
-metrics = dict(
-    fid50k=dict(
-        inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
-        bgr2rgb=True))
-
 checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=30)
 lr_config = None
 
@@ -43,6 +38,7 @@ log_config = dict(
 total_iters = 800002  # need to modify
 
 metrics = dict(
-    fid50k=dict(type='FID', num_images=50000, bgr2rgb=True),
+    fid50k=dict(
+        type='FID', num_images=50000, inception_pkl=None, bgr2rgb=True),
     pr50k3=dict(type='PR', num_images=50000, k=3),
     ppl_wend=dict(type='PPL', space='W', sampling='end', num_images=50000))
