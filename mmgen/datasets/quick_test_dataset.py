@@ -15,9 +15,10 @@ class QuickTestImageDataset(Dataset):
     def __init__(self, *args, size=None, **kwargs):
         super().__init__()
         self.size = size
+        self.img_tensor = torch.randn(3, self.size[0], self.size[1])
 
     def __len__(self):
         return 10000
 
     def __getitem__(self, idx):
-        return dict(real_img=torch.randn(3, self.size[0], self.size[1]))
+        return dict(real_img=self.img_tensor)
