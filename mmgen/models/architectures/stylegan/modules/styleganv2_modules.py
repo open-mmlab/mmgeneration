@@ -18,6 +18,7 @@ from mmgen.models.architectures.pggan import (EqualizedLRConvModule,
                                               EqualizedLRLinearModule,
                                               equalized_lr)
 from mmgen.models.common import AllGatherLayer
+from mmgen.ops import conv2d, conv_transpose2d
 
 
 class _FusedBiasLeakyReLU(FusedBiasLeakyReLU):
@@ -371,18 +372,18 @@ class ModulatedConv2d(nn.Module):
             weight = weight.transpose(1, 2).reshape(n * c, self.out_channels,
                                                     self.kernel_size,
                                                     self.kernel_size)
-            x = F.conv_transpose2d(x, weight, padding=0, stride=2, groups=n)
+            x = conv_transpose2d(x, weight, padding=0, stride=2, groups=n)
             x = x.reshape(n, self.out_channels, *x.shape[-2:])
             x = self.blur(x)
 
         elif self.downsample:
             x = self.blur(x)
             x = x.view(1, n * self.in_channels, *x.shape[-2:])
-            x = F.conv2d(x, weight, stride=2, padding=0, groups=n)
+            x = conv2d(x, weight, stride=2, padding=0, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
         else:
             x = x.view(1, n * c, h, w)
-            x = F.conv2d(x, weight, stride=1, padding=self.padding, groups=n)
+            x = conv2d(x, weight, stride=1, padding=self.padding, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
 
         return x
@@ -613,13 +614,13 @@ class ModulatedPEConv2d(nn.Module):
             weight = weight.transpose(1, 2).reshape(n * c, self.out_channels,
                                                     self.kernel_size,
                                                     self.kernel_size)
-            x = F.conv_transpose2d(x, weight, padding=0, stride=2, groups=n)
+            x = conv_transpose2d(x, weight, padding=0, stride=2, groups=n)
             x = x.reshape(n, self.out_channels, *x.shape[-2:])
             x = self.blur(x)
         elif self.upsample and self.deconv2conv:
             if self.up_after_conv:
                 x = x.reshape(1, n * c, h, w)
-                x = F.conv2d(x, weight, padding=self.padding, groups=n)
+                x = conv2d(x, weight, padding=self.padding, groups=n)
                 x = x.view(n, self.out_channels, *x.shape[2:4])
 
             if self.with_interp_pad:
@@ -635,17 +636,17 @@ class ModulatedPEConv2d(nn.Module):
             if not self.up_after_conv:
                 h_, w_ = x.shape[-2:]
                 x = x.view(1, n * c, h_, w_)
-                x = F.conv2d(x, weight, padding=self.padding, groups=n)
+                x = conv2d(x, weight, padding=self.padding, groups=n)
                 x = x.view(n, self.out_channels, *x.shape[2:4])
 
         elif self.downsample:
             x = self.blur(x)
             x = x.view(1, n * self.in_channels, *x.shape[-2:])
-            x = F.conv2d(x, weight, stride=2, padding=0, groups=n)
+            x = conv2d(x, weight, stride=2, padding=0, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
         else:
             x = x.view(1, n * c, h, w)
-            x = F.conv2d(x, weight, stride=1, padding=self.padding, groups=n)
+            x = conv2d(x, weight, stride=1, padding=self.padding, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
 
         return x
