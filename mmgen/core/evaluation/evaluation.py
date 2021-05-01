@@ -168,19 +168,18 @@ def single_gpu_evaluation(model,
             if reals.shape[1] == 1:
                 reals = torch.cat([reals] * 3, dim=1)
             num_left = metric.feed(reals, 'reals')
+            pbar.update(reals.shape[0])
             if num_left <= 0:
                 break
-            pbar.update(min(reals.shape[0], max(num_left, 0)))
         # feed in fake images
         for data in fake_dataloader:
             fakes = data['real_img']
             if fakes.shape[1] == 1:
                 fakes = torch.cat([fakes] * 3, dim=1)
             num_left = metric.feed(fakes, 'fakes')
+            pbar.update(fakes.shape[0])
             if num_left <= 0:
                 break
-            pbar.update(min(fakes.shape[0], max(num_left, 0)))
-
         metric.summary()
         sys.stdout.write('\n')
     table_str = make_metrics_table(basic_table_info['train_cfg'],
@@ -285,9 +284,9 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         pbar = mmcv.ProgressBar(metric.num_images)
         for fakes in fakedata_iterator:
             num_left = metric.feed(fakes, 'fakes')
+            pbar.update(fakes.shape[0])
             if num_left <= 0:
                 break
-            pbar.update(min(fakes.shape[0]), max(num_left, 0))
 
         # finish the pbar stdout
         sys.stdout.write('\n')
