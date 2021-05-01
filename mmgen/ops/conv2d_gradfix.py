@@ -249,6 +249,8 @@ def _conv2d_gradfix(transpose, weight_shape, stride, padding, output_padding,
         @staticmethod
         def forward(ctx, input, weight, bias):
             assert weight.shape == weight_shape
+            # keep the consistent datatype for FP16 training
+            weight = weight.to(input.dtype)
             if not transpose:
                 output = torch.nn.functional.conv2d(
                     input=input, weight=weight, bias=bias, **common_kwargs)
@@ -307,6 +309,9 @@ def _conv2d_gradfix(transpose, weight_shape, stride, padding, output_padding,
                     torch.backends.cudnn.benchmark,
                     torch.backends.cudnn.deterministic
                 ]
+
+            # keep the consistent datatype for FP16 training
+            input = input.to(grad_output.dtype)
             grad_weight = op(weight_shape, grad_output, input, padding, stride,
                              dilation, groups, *flags)
             assert grad_weight.shape == weight_shape
