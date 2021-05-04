@@ -87,7 +87,7 @@ These methods have been carefully studied and supported in our frameworks:
 </details>
 
 <details open>
-<summary>Internal Learing (click to collapse)</summary>
+<summary>Internal Learning (click to collapse)</summary>
 
 - ✅ [SinGAN](configs/singan/README.md) (ICCV'2019)
 
