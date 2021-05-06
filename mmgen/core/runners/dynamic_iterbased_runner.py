@@ -126,6 +126,10 @@ class DynamicIterBasedRunner(IterBasedRunner):
             Defaults to False.
         pass_training_status (bool, optional): Whether to pass the training
             status. Defaults to False.
+        fp16_loss_scalar (dict | None, optional): Config for fp16 GradScaler
+            from ``torch.cuda.amp``. Defaults to None.
+        use_apex_amp (bool, optional): Whether to use apex.amp to start mixed
+            precision training. Defaults to False.
     """
 
     def __init__(self,
@@ -294,6 +298,8 @@ class DynamicIterBasedRunner(IterBasedRunner):
             checkpoint (str): Checkpoint to resume from.
             resume_optimizer (bool, optional): Whether resume the optimizer(s)
                 if the checkpoint file includes optimizer(s). Default to True.
+            resume_loss_scaler (bool, optional): Whether to resume the loss
+                scaler (GradScaler) from ``torch.cuda.amp``. Defaults to True.
             map_location (str, optional): Same as :func:`torch.load`.
                 Default to 'default'.
         """

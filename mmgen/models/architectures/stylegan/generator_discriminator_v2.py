@@ -72,9 +72,13 @@ class StyleGANv2Generator(nn.Module):
         mix_prob (float, optional): Mixing probability. The value should be
             in range of [0, 1]. Defaults to ``0.9``.
         num_fp16_scales (int, optional): The number of resolutions to use auto
-            fp16 training. Defaults to 0.
+            fp16 training. Different from ``fp16_enabled``, this argument
+            allows users to adopt FP16 training only in several blocks.
+            This behaviour is much more similar to the offical implementation
+            by Tero. Defaults to 0.
         fp16_enabled (bool, optional): Whether to use fp16 training in this
-            module. Defaults to False.
+            module. If this flag is `True`, the whole module will be wrapped
+            with ``auto_fp16``. Defaults to False.
         pretrained (dict | None, optional): Information for pretained models.
             The necessary key is 'ckpt_path'. Besides, you can also provide
             'prefix' to load the generator part from the whole state dict.
@@ -159,6 +163,9 @@ class StyleGANv2Generator(nn.Module):
         for i in range(3, self.log_size + 1):
             out_channels_ = self.channels[2**i]
 
+            # If `fp16_enabled` is True, all of layers will be run in auto
+            # FP16. In the case of `num_fp16_sacles` > 0, only partial
+            # layers will be run in fp16.
             _use_fp16 = (self.log_size - i) < num_fp16_scales or fp16_enabled
 
             self.convs.append(
