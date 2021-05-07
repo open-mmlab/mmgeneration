@@ -31,10 +31,7 @@ evaluation = dict(
     type='GenerativeEvalHook',
     interval=10000,
     metrics=dict(
-        type='FID',
-        num_images=50000,
-        inception_pkl=None,
-        bgr2rgb=True),
+        type='FID', num_images=50000, inception_pkl=None, bgr2rgb=True),
     sample_kwargs=dict(sample_model='orig'))
 
 total_iters = 100000
