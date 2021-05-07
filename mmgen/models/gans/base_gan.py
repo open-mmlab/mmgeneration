@@ -7,6 +7,7 @@ import torch.nn as nn
 
 
 class BaseGAN(nn.Module, metaclass=ABCMeta):
+    """BaseGAN Module."""
 
     def __init__(self):
         super().__init__()
