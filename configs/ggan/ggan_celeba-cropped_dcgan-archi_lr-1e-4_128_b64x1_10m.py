@@ -19,29 +19,21 @@ optimizer = dict(
 
 # adjust running config
 lr_config = None
-checkpoint_config = dict(interval=3000, by_epoch=False, max_keep_ckpts=20)
+checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=20)
 custom_hooks = [
     dict(
         type='VisualizeUnconditionalSamples',
         output_dir='training_samples',
-        interval=3000)
+        interval=5000)
 ]
-
-log_config = dict(
-    interval=100,
-    hooks=[
-        dict(type='TextLoggerHook'),
-        dict(
-            type='PaviLoggerHook', init_kwargs=dict(project='ggan-celeba-128'))
-    ])
 
 evaluation = dict(
     type='GenerativeEvalHook',
-    interval=3000,
+    interval=10000,
     metrics=dict(
         type='FID',
         num_images=50000,
-        inception_pkl='work_dirs/fid_pkl/celeba-crop-128-50k-rgb.pkl',
+        inception_pkl=None,
         bgr2rgb=True),
     sample_kwargs=dict(sample_model='orig'))
 
@@ -57,4 +49,5 @@ runner = dict(
 
 metrics = dict(
     ms_ssim10k=dict(type='MS_SSIM', num_images=10000),
-    swd16k=dict(type='SWD', num_images=16384, image_shape=(3, 128, 128)))
+    swd16k=dict(type='SWD', num_images=16384, image_shape=(3, 128, 128)),
+    fid50k=dict(type='FID', num_images=50000, inception_pkl=None))

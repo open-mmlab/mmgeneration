@@ -33,7 +33,7 @@ evaluation = dict(
     metrics=dict(
         type='FID',
         num_images=50000,
-        inception_pkl='work_dirs/fid_pkl/celeba-crop-64-50k-rgb.pkl',
+        inception_pkl=None,
         bgr2rgb=True),
     sample_kwargs=dict(sample_model='orig'))
 
@@ -49,4 +49,5 @@ runner = dict(
 
 metrics = dict(
     ms_ssim10k=dict(type='MS_SSIM', num_images=10000),
-    swd16k=dict(type='SWD', num_images=16384, image_shape=(3, 64, 64)))
+    swd16k=dict(type='SWD', num_images=16384, image_shape=(3, 64, 64)),
+    fid50k=dict(type='FID', num_images=50000, inception_pkl=None))
