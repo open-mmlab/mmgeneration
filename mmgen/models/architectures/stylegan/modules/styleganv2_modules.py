@@ -3,6 +3,7 @@ from copy import deepcopy
 from functools import partial
 
 import mmcv
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,10 +13,28 @@ from mmcv.ops.fused_bias_leakyrelu import (FusedBiasLeakyReLU,
 from mmcv.ops.upfirdn2d import upfirdn2d
 from mmcv.runner.dist_utils import get_dist_info
 
+from mmgen.core.runners.fp16_utils import auto_fp16
 from mmgen.models.architectures.pggan import (EqualizedLRConvModule,
                                               EqualizedLRLinearModule,
                                               equalized_lr)
 from mmgen.models.common import AllGatherLayer
+from mmgen.ops import conv2d, conv_transpose2d
+
+
+class _FusedBiasLeakyReLU(FusedBiasLeakyReLU):
+    """Wrap FusedBiasLeakyReLU to support FP16 training."""
+
+    def forward(self, x):
+        """Forward function.
+
+        Args:
+            x (Tensor): Input feature map with shape of (N, C, ...).
+
+        Returns:
+            Tensor: Output feature map.
+        """
+        return fused_bias_leakyrelu(x, self.bias.to(x.dtype),
+                                    self.negative_slope, self.scale)
 
 
 class EqualLinearActModule(nn.Module):
@@ -141,7 +160,8 @@ class UpsampleUpFIRDn(nn.Module):
         Returns:
             Tensor: Output feature map.
         """
-        out = upfirdn2d(x, self.kernel, up=self.factor, down=1, pad=self.pad)
+        out = upfirdn2d(
+            x, self.kernel.to(x.dtype), up=self.factor, down=1, pad=self.pad)
 
         return out
 
@@ -180,7 +200,11 @@ class DownsampleUpFIRDn(nn.Module):
             Tensor: Output feature map.
         """
         out = upfirdn2d(
-            input, self.kernel, up=1, down=self.factor, pad=self.pad)
+            input,
+            self.kernel.to(input.dtype),
+            up=1,
+            down=self.factor,
+            pad=self.pad)
 
         return out
 
@@ -215,7 +239,9 @@ class Blur(nn.Module):
         Returns:
             Tensor: Output feature map.
         """
-        return upfirdn2d(x, self.kernel, pad=self.pad)
+
+        # In Tero's implementation, he uses fp32
+        return upfirdn2d(x, self.kernel.to(x.dtype), pad=self.pad)
 
 
 class ModulatedConv2d(nn.Module):
@@ -313,12 +339,24 @@ class ModulatedConv2d(nn.Module):
 
     def forward(self, x, style):
         n, c, h, w = x.shape
+
+        weight = self.weight
+        # Pre-normalize inputs to avoid FP16 overflow.
+        if x.dtype == torch.float16 and self.demodulate:
+            weight = weight * (
+                1 / np.sqrt(
+                    self.in_channels * self.kernel_size * self.kernel_size) /
+                weight.norm(float('inf'), dim=[1, 2, 3], keepdim=True)
+            )  # max_Ikk
+            style = style / style.norm(
+                float('inf'), dim=1, keepdim=True)  # max_I
+
         # process style code
         style = self.style_modulation(style).view(n, 1, c, 1,
                                                   1) + self.style_bias
 
         # combine weight and style
-        weight = self.weight * style
+        weight = weight * style
         if self.demodulate:
             demod = torch.rsqrt(weight.pow(2).sum([2, 3, 4]) + self.eps)
             weight = weight * demod.view(n, self.out_channels, 1, 1, 1)
@@ -326,6 +364,7 @@ class ModulatedConv2d(nn.Module):
         weight = weight.view(n * self.out_channels, c, self.kernel_size,
                              self.kernel_size)
 
+        weight = weight.to(x.dtype)
         if self.upsample:
             x = x.reshape(1, n * c, h, w)
             weight = weight.view(n, self.out_channels, c, self.kernel_size,
@@ -333,18 +372,18 @@ class ModulatedConv2d(nn.Module):
             weight = weight.transpose(1, 2).reshape(n * c, self.out_channels,
                                                     self.kernel_size,
                                                     self.kernel_size)
-            x = F.conv_transpose2d(x, weight, padding=0, stride=2, groups=n)
+            x = conv_transpose2d(x, weight, padding=0, stride=2, groups=n)
             x = x.reshape(n, self.out_channels, *x.shape[-2:])
             x = self.blur(x)
 
         elif self.downsample:
             x = self.blur(x)
             x = x.view(1, n * self.in_channels, *x.shape[-2:])
-            x = F.conv2d(x, weight, stride=2, padding=0, groups=n)
+            x = conv2d(x, weight, stride=2, padding=0, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
         else:
             x = x.view(1, n * c, h, w)
-            x = F.conv2d(x, weight, stride=1, padding=self.padding, groups=n)
+            x = conv2d(x, weight, stride=1, padding=self.padding, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
 
         return x
@@ -381,11 +420,11 @@ class NoiseInjection(nn.Module):
         if noise is None:
             batch, _, height, width = image.shape
             noise = image.new_empty(batch, 1, height, width).normal_()
-
+        noise = noise.to(image.dtype)
         if return_noise:
-            return image + self.weight * noise, noise
+            return image + self.weight.to(image.dtype) * noise, noise
 
-        return image + self.weight * noise
+        return image + self.weight.to(image.dtype) * noise
 
 
 class ConstantInput(nn.Module):
@@ -575,13 +614,13 @@ class ModulatedPEConv2d(nn.Module):
             weight = weight.transpose(1, 2).reshape(n * c, self.out_channels,
                                                     self.kernel_size,
                                                     self.kernel_size)
-            x = F.conv_transpose2d(x, weight, padding=0, stride=2, groups=n)
+            x = conv_transpose2d(x, weight, padding=0, stride=2, groups=n)
             x = x.reshape(n, self.out_channels, *x.shape[-2:])
             x = self.blur(x)
         elif self.upsample and self.deconv2conv:
             if self.up_after_conv:
                 x = x.reshape(1, n * c, h, w)
-                x = F.conv2d(x, weight, padding=self.padding, groups=n)
+                x = conv2d(x, weight, padding=self.padding, groups=n)
                 x = x.view(n, self.out_channels, *x.shape[2:4])
 
             if self.with_interp_pad:
@@ -597,17 +636,17 @@ class ModulatedPEConv2d(nn.Module):
             if not self.up_after_conv:
                 h_, w_ = x.shape[-2:]
                 x = x.view(1, n * c, h_, w_)
-                x = F.conv2d(x, weight, padding=self.padding, groups=n)
+                x = conv2d(x, weight, padding=self.padding, groups=n)
                 x = x.view(n, self.out_channels, *x.shape[2:4])
 
         elif self.downsample:
             x = self.blur(x)
             x = x.view(1, n * self.in_channels, *x.shape[-2:])
-            x = F.conv2d(x, weight, stride=2, padding=0, groups=n)
+            x = conv2d(x, weight, stride=2, padding=0, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
         else:
             x = x.view(1, n * c, h, w)
-            x = F.conv2d(x, weight, stride=1, padding=self.padding, groups=n)
+            x = conv2d(x, weight, stride=1, padding=self.padding, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
 
         return x
@@ -637,7 +676,11 @@ class ModulatedStyleConv(nn.Module):
         style_mod_cfg (dict, optional): Configs for style modulation module.
             Defaults to dict(bias_init=1.).
         style_bias (float, optional): Bias value for style code.
-            Defaults to 0..
+            Defaults to ``0.``.
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. Defaults to False.
+        conv_clamp (float, optional): Clamp the convolutional layer results to
+            avoid gradient overflow. Defaults to `256.0`.
     """
 
     def __init__(self,
@@ -649,8 +692,14 @@ class ModulatedStyleConv(nn.Module):
                  blur_kernel=[1, 3, 3, 1],
                  demodulate=True,
                  style_mod_cfg=dict(bias_init=1.),
-                 style_bias=0.):
+                 style_bias=0.,
+                 fp16_enabled=False,
+                 conv_clamp=256):
         super().__init__()
+
+        # add support for fp16
+        self.fp16_enabled = fp16_enabled
+        self.conv_clamp = float(conv_clamp)
 
         self.conv = ModulatedConv2d(
             in_channels,
@@ -664,8 +713,12 @@ class ModulatedStyleConv(nn.Module):
             style_bias=style_bias)
 
         self.noise_injector = NoiseInjection()
-        self.activate = FusedBiasLeakyReLU(out_channels)
+        self.activate = _FusedBiasLeakyReLU(out_channels)
 
+        # if self.fp16_enabled:
+        #     self.half()
+
+    @auto_fp16(apply_to=('x', 'noise'))
     def forward(self, x, style, noise=None, return_noise=False):
         """Forward Function.
 
@@ -680,6 +733,7 @@ class ModulatedStyleConv(nn.Module):
             Tensor: Output features with shape of (N, C, H, W)
         """
         out = self.conv(x, style)
+
         if return_noise:
             out, noise = self.noise_injector(
                 out, noise=noise, return_noise=return_noise)
@@ -687,7 +741,11 @@ class ModulatedStyleConv(nn.Module):
             out = self.noise_injector(
                 out, noise=noise, return_noise=return_noise)
 
+        # TODO: FP16 in activate layers
         out = self.activate(out)
+
+        if self.fp16_enabled:
+            out = torch.clamp(out, min=-self.conv_clamp, max=self.conv_clamp)
 
         if return_noise:
             return out, noise
@@ -749,7 +807,7 @@ class ModulatedPEStyleConv(nn.Module):
             **kwargs)
 
         self.noise_injector = NoiseInjection()
-        self.activate = FusedBiasLeakyReLU(out_channels)
+        self.activate = _FusedBiasLeakyReLU(out_channels)
 
     def forward(self, x, style, noise=None, return_noise=False):
         """Forward Function.
@@ -797,6 +855,12 @@ class ModulatedToRGB(nn.Module):
             Defaults to dict(bias_init=1.).
         style_bias (float, optional): Bias value for style code.
             Defaults to 0..
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. Defaults to False.
+        conv_clamp (float, optional): Clamp the convolutional layer results to
+            avoid gradient overflow. Defaults to `256.0`.
+        out_fp32 (bool, optional): Whether to convert the output feature map to
+            `torch.float32`. Defaults to `True`.
     """
 
     def __init__(self,
@@ -806,11 +870,18 @@ class ModulatedToRGB(nn.Module):
                  upsample=True,
                  blur_kernel=[1, 3, 3, 1],
                  style_mod_cfg=dict(bias_init=1.),
-                 style_bias=0.):
+                 style_bias=0.,
+                 fp16_enabled=False,
+                 conv_clamp=256,
+                 out_fp32=True):
         super().__init__()
 
         if upsample:
             self.upsample = UpsampleUpFIRDn(blur_kernel)
+
+        # add support for fp16
+        self.fp16_enabled = fp16_enabled
+        self.conv_clamp = float(conv_clamp)
 
         self.conv = ModulatedConv2d(
             in_channels,
@@ -823,6 +894,10 @@ class ModulatedToRGB(nn.Module):
 
         self.bias = nn.Parameter(torch.zeros(1, 3, 1, 1))
 
+        # enforece the output to be fp32 (follow Tero's implementation)
+        self.out_fp32 = out_fp32
+
+    @auto_fp16(apply_to=('x', 'style'))
     def forward(self, x, style, skip=None):
         """Forward Function.
 
@@ -835,12 +910,15 @@ class ModulatedToRGB(nn.Module):
             Tensor: Output features with shape of (N, C, H, W)
         """
         out = self.conv(x, style)
-        out = out + self.bias
+        out = out + self.bias.to(x.dtype)
 
+        if self.fp16_enabled:
+            out = torch.clamp(out, min=-self.conv_clamp, max=self.conv_clamp)
+
+        # Here, Tero adopts FP16 at `skip`.
         if skip is not None:
             skip = self.upsample(skip)
             out = out + skip
-
         return out
 
 
@@ -858,6 +936,10 @@ class ConvDownLayer(nn.Sequential):
         bias (bool, optional): Whether to use bias parameter. Defaults to True.
         act_cfg (dict, optional): Activation configs.
             Defaults to dict(type='fused_bias').
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. Defaults to False.
+        conv_clamp (float, optional): Clamp the convolutional layer results to
+            avoid gradient overflow. Defaults to `256.0`.
     """
 
     def __init__(self,
@@ -867,8 +949,12 @@ class ConvDownLayer(nn.Sequential):
                  downsample=False,
                  blur_kernel=[1, 3, 3, 1],
                  bias=True,
-                 act_cfg=dict(type='fused_bias')):
+                 act_cfg=dict(type='fused_bias'),
+                 fp16_enabled=False,
+                 conv_clamp=256.):
 
+        self.fp16_enabled = fp16_enabled
+        self.conv_clamp = float(conv_clamp)
         layers = []
 
         if downsample:
@@ -903,9 +989,16 @@ class ConvDownLayer(nn.Sequential):
                 act_cfg=conv_act_cfg,
                 equalized_lr_cfg=dict(mode='fan_in', gain=1.)))
         if self.with_fused_bias:
-            layers.append(FusedBiasLeakyReLU(out_channels))
+            layers.append(_FusedBiasLeakyReLU(out_channels))
 
         super(ConvDownLayer, self).__init__(*layers)
+
+    @auto_fp16(apply_to=('x', ))
+    def forward(self, x):
+        x = super().forward(x)
+        if self.fp16_enabled:
+            x = torch.clamp(x, min=-self.conv_clamp, max=self.conv_clamp)
+        return x
 
 
 class ResBlock(nn.Module):
@@ -915,10 +1008,24 @@ class ResBlock(nn.Module):
         in_channels (int): Input channels.
         out_channels (int): Output channels.
         kernel_size (int): Kernel size, same as :obj:`nn.Con2d`.
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. Defaults to False.
+        convert_input_fp32 (bool, optional): Whether to convert input type to
+            fp32 if not `fp16_enabled`. This argument is designed to deal with
+            the cases where some modules are run in FP16 and others in FP32.
+            Defaults to True.
     """
 
-    def __init__(self, in_channels, out_channels, blur_kernel=[1, 3, 3, 1]):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 blur_kernel=[1, 3, 3, 1],
+                 fp16_enabled=False,
+                 convert_input_fp32=True):
         super().__init__()
+
+        self.fp16_enabled = fp16_enabled
+        self.convert_input_fp32 = convert_input_fp32
 
         self.conv1 = ConvDownLayer(
             in_channels, in_channels, 3, blur_kernel=blur_kernel)
@@ -938,6 +1045,7 @@ class ResBlock(nn.Module):
             bias=False,
             blur_kernel=blur_kernel)
 
+    @auto_fp16()
     def forward(self, input):
         """Forward function.
 
@@ -947,6 +1055,10 @@ class ResBlock(nn.Module):
         Returns:
             Tensor: Output feature map.
         """
+        # TODO: study whether this explicit datatype transfer will harm the
+        # apex training speed
+        if not self.fp16_enabled and self.convert_input_fp32:
+            input = input.to(torch.float32)
         out = self.conv1(input)
         out = self.conv2(out)
 

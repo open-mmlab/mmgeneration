@@ -4,6 +4,7 @@ from .grow_scale_image_dataset import GrowScaleImgDataset
 from .paired_image_dataset import PairedImageDataset
 from .pipelines import (Collect, Compose, Flip, ImageToTensor,
                         LoadImageFromFile, Normalize, Resize, ToTensor)
+from .quick_test_dataset import QuickTestImageDataset
 from .samplers import DistributedSampler
 from .singan_dataset import SinGANDataset
 from .unconditional_image_dataset import UnconditionalImageDataset
@@ -14,5 +15,5 @@ __all__ = [
     'DistributedSampler', 'UnconditionalImageDataset', 'Compose', 'ToTensor',
     'ImageToTensor', 'Collect', 'Flip', 'Resize', 'RepeatDataset', 'Normalize',
     'GrowScaleImgDataset', 'SinGANDataset', 'PairedImageDataset',
-    'UnpairedImageDataset'
+    'UnpairedImageDataset', 'QuickTestImageDataset'
 ]
