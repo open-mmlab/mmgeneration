@@ -469,10 +469,10 @@ class StyleGAN2Discriminator(nn.Module):
     .. code-block:: python
 
         # ckpt_http is one of the valid path from http source
-        generator = StyleGANv2Generator(1024, 512,
-                                        pretrained=dict(
-                                            ckpt_path=ckpt_http,
-                                            prefix='discriminator'))
+        discriminator = StyleGAN2Discriminator(1024, 512,
+                                               pretrained=dict(
+                                                   ckpt_path=ckpt_http,
+                                                   prefix='discriminator'))
 
     Of course, you can also download the checkpoint in advance and set
     ``ckpt_path`` with local path.
