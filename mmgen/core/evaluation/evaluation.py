@@ -136,8 +136,12 @@ def single_gpu_evaluation(model,
         # save as three-channel
         if fakes.size(1) == 3:
             fakes = fakes[:, [2, 1, 0], ...]
-        else:
+        elif fakes.size(1) == 1:
             fakes = torch.cat([fakes] * 3, dim=1)
+        else:
+            raise RuntimeError('Generated images must have one or three '
+                               'channels in the first dimension, '
+                               'not %d' % fakes.size(1))
 
         for i in range(end - begin):
             images = fakes[i:i + 1]
@@ -161,7 +165,7 @@ def single_gpu_evaluation(model,
         metric.prepare()
         # prepare for pbar
         total_need = metric.num_real_need + metric.num_fake_need
-        pbar = mmcv.ProgressBar(metric.num_real_need + metric.num_fake_need)
+        pbar = mmcv.ProgressBar(total_need)
         # feed in real images
         for data in data_loader:
             reals = data['real_img']
@@ -236,6 +240,10 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         # feed in real images
         for data in data_loader:
             reals = data['real_img']
+
+            assert reals.shape[1] in [1, 3], \
+                'real images should have one or three channels in ' \
+                'the first dimension, not %d ' % reals.shape[1]
             if reals.shape[1] == 1:
                 reals = torch.cat([reals] * 3, dim=1)
             num_feed = metric.feed(reals, 'reals')
@@ -263,6 +271,9 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
             sample_model=basic_table_info['sample_model'],
             **kwargs)
 
+        assert fakes.shape[1] in [1, 3], \
+            'generated images should have one or three channels in ' \
+            'the first dimension, not %d ' % fakes.shape[1]
         if fakes.shape[1] == 1:
             fakes = torch.cat([fakes] * 3, dim=1)
         pbar.update(end - begin)
