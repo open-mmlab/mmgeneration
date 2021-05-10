@@ -82,7 +82,7 @@ class GenerativeEvalHook(Hook):
         Args:
             runner (``mmcv.runner.BaseRunner``): The runner.
         """
-        if self.save_best is not None:
+        if self.save_best_ckpt is not None:
             if runner.meta is None:
                 warnings.warn('runner.meta is None. Creating an empty one.')
                 runner.meta = dict()
@@ -168,7 +168,7 @@ class GenerativeEvalHook(Hook):
 
         if self.compare_func(new_score, self._curr_best_score):
             best_ckpt_name = f'best_{self.best_metric}_{curr_iter}.pth'
-            runner.meta['hooks_msgs']['best_score'] = new_score
+            runner.meta['hook_msgs']['best_score'] = new_score
 
             if self._curr_best_ckpt_path and osp.isfile(
                     self._curr_best_ckpt_path):
