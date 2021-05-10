@@ -20,8 +20,6 @@ class GenerativeEvalHook(Hook):
     training now. In the future, we will support more metrics for evaluation
     during the training procedure.
 
-    TODO: Support ``save_best_ckpt`` feature.
-
     Args:
         dataloader (DataLoader): A PyTorch dataloader.
         interval (int): Evaluation interval. Default: 1.
@@ -31,6 +29,10 @@ class GenerativeEvalHook(Hook):
             used in evaluation hook. Defaults to None.
         sample_kwargs (dict | None, optional): Additional keyword arguments for
             sampling images. Defaults to None.
+        save_best_ckpt (bool, optional): Whether to save the best checkpoint
+            according to ``best_metric``. Defaults to ``True``.
+        best_metric (str, optional): Which metric to be used in saving the best
+            checkpoint. Defaults to ``'fid'``.
     """
     rule_map = {'greater': lambda x, y: x > y, 'less': lambda x, y: x < y}
     init_value_map = {'greater': -math.inf, 'less': math.inf}
