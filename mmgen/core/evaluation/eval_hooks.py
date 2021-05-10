@@ -1,4 +1,8 @@
+import math
+import os
+import os.path as osp
 import sys
+import warnings
 
 import mmcv
 import torch
@@ -28,6 +32,11 @@ class GenerativeEvalHook(Hook):
         sample_kwargs (dict | None, optional): Additional keyword arguments for
             sampling images. Defaults to None.
     """
+    rule_map = {'greater': lambda x, y: x > y, 'less': lambda x, y: x < y}
+    init_value_map = {'greater': -math.inf, 'less': math.inf}
+    greater_keys = ['acc', 'top', 'AR@', 'auc', 'precision', 'mAP']
+    less_keys = ['loss', 'fid']
+    _supported_best_metrics = ['fid']
 
     def __init__(self,
                  dataloader,
@@ -35,13 +44,19 @@ class GenerativeEvalHook(Hook):
                  dist=True,
                  metrics=None,
                  sample_kwargs=None,
-                 save_best_ckpt=True):
+                 save_best_ckpt=True,
+                 best_metric='fid'):
         assert metrics is not None
         self.dataloader = dataloader
         self.interval = interval
         self.dist = dist
         self.sample_kwargs = sample_kwargs if sample_kwargs else dict()
-        self.save_best_ckp = save_best_ckpt
+        self.save_best_ckpt = save_best_ckpt
+        self.best_metric = best_metric
+
+        if self.save_best_ckpt:
+            assert self.best_metric in self._supported_best_metrics, (
+                f'{self.best_metric} is not supported for saving best ckpt')
 
         self.metrics = build_metric(metrics)
 
@@ -50,6 +65,28 @@ class GenerativeEvalHook(Hook):
 
         for metric in self.metrics:
             metric.prepare()
+
+        # add support for saving best ckpt
+        if self.save_best_ckpt:
+            if best_metric in self.greater_keys:
+                self.rule = 'greater'
+            else:
+                self.rule = 'less'
+            self.compare_func = self.rule_map[self.rule]
+            self._curr_best_score = self.init_value_map[self.rule]
+            self._curr_best_ckpt_path = None
+
+    def before_run(self, runner):
+        """The behavior before running.
+
+        Args:
+            runner (``mmcv.runner.BaseRunner``): The runner.
+        """
+        if self.save_best is not None:
+            if runner.meta is None:
+                warnings.warn('runner.meta is None. Creating an empty one.')
+                runner.meta = dict()
+            runner.meta.setdefault('hook_msgs', dict())
 
     def after_train_iter(self, runner):
         """The behavior after each train iteration.
@@ -115,9 +152,36 @@ class GenerativeEvalHook(Hook):
                 for name, val in metric._result_dict.items():
                     runner.log_buffer.output[name] = val
 
+                    # record best metric and save the best ckpt
+                    if self.save_best_ckpt and name == self.best_metric:
+                        self._save_best_ckpt(runner, val)
+
             runner.log_buffer.ready = True
         runner.model.train()
 
         # clear all current states for next evaluation
         for metric in self.metrics:
             metric.clear()
+
+    def _save_best_ckpt(self, runner, new_score):
+        curr_iter = f'iter_{runner.iter + 1}'
+
+        if self.compare_func(new_score, self._curr_best_score):
+            best_ckpt_name = f'best_{self.best_metric}_{curr_iter}.pth'
+            runner.meta['hooks_msgs']['best_score'] = new_score
+
+            if self._curr_best_ckpt_path and osp.isfile(
+                    self._curr_best_ckpt_path):
+                os.remove(self._curr_best_ckpt_path)
+
+            self._curr_best_ckpt_path = osp.join(runner.work_dir,
+                                                 best_ckpt_name)
+            runner.save_checkpoint(
+                runner.work_dir, best_ckpt_name, create_symlink=False)
+            runner.meta['hook_msgs']['best_ckpt'] = self._curr_best_ckpt_path
+
+            self._curr_best_score = new_score
+            runner.logger.info(
+                f'Now best checkpoint is saved as {best_ckpt_name}.')
+            runner.logger.info(f'Best {self.best_metric} is {new_score:0.4f} '
+                               f'at {curr_iter}.')
