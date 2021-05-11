@@ -88,7 +88,7 @@ v0.1.0 在 20/04/2021 发布。 关于细节和发布历史，请参考 [changel
 </details>
 
 <details open>
-<summary>Internal Learing (点击折叠)</summary>
+<summary>Internal Learning (点击折叠)</summary>
 
 - ✅ [SinGAN](configs/dcgan/README.md) (ICCV'2019)
 
