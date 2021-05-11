@@ -241,9 +241,10 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         for data in data_loader:
             reals = data['real_img']
 
-            assert reals.shape[1] in [1, 3], \
-                'real images should have one or three channels in ' \
-                'the first dimension, not %d ' % reals.shape[1]
+            if reals.shape not in [1, 3]:
+                raise ValueError('real images should have one or three '
+                                 'channels in the first, '
+                                 'not % d' % reals.shape[1])
             if reals.shape[1] == 1:
                 reals = torch.cat([reals] * 3, dim=1)
             num_feed = metric.feed(reals, 'reals')
@@ -271,9 +272,10 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
             sample_model=basic_table_info['sample_model'],
             **kwargs)
 
-        assert fakes.shape[1] in [1, 3], \
-            'generated images should have one or three channels in ' \
-            'the first dimension, not %d ' % fakes.shape[1]
+        if fakes.shape not in [1, 3]:
+            raise ValueError('fakes images should have one or three '
+                             'channels in the first, '
+                             'not % d' % fakes.shape[1])
         if fakes.shape[1] == 1:
             fakes = torch.cat([fakes] * 3, dim=1)
         pbar.update(end - begin)
