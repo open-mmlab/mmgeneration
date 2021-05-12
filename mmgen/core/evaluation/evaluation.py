@@ -241,7 +241,7 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         for data in data_loader:
             reals = data['real_img']
 
-            if reals.shape not in [1, 3]:
+            if reals.shape[1] not in [1, 3]:
                 raise ValueError('real images should have one or three '
                                  'channels in the first, '
                                  'not % d' % reals.shape[1])
@@ -272,7 +272,7 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
             sample_model=basic_table_info['sample_model'],
             **kwargs)
 
-        if fakes.shape not in [1, 3]:
+        if fakes.shape[1] not in [1, 3]:
             raise ValueError('fakes images should have one or three '
                              'channels in the first, '
                              'not % d' % fakes.shape[1])
