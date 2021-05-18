@@ -6,6 +6,35 @@ from mmcv.runner import HOOKS, Hook, master_only
 
 @HOOKS.register_module()
 class PetrelUploadHook(Hook):
+    """Upload Data with Petrel.
+
+    With this hook, users can easily upload datas to the cloud server for
+    saving local spaces. Please read the notes below for using this hook,
+    especially for the declaration of ``petrel``.
+
+    One of the major functions is to transfer the checkpoint files from the
+    local directory to the cloud server.
+
+    .. note::
+
+        ``petrel`` is a private package containing several commonly used
+        ``AWS`` python API. Currently, this package will not be released to the
+        public. We will support ``boto3`` in the future. We think this hook is
+        an easy template for you to transfer to ``boto3``.
+
+    Args:
+        data_path (str, optional): Relative path of the data according to
+            current working directory. Defaults to 'ckpt'.
+        suffix (str, optional): Suffix for the data files. Defaults to '.pth'.
+        ceph_path (str | None, optional): Path in the cloud server.
+            Defaults to None.
+        interval (int, optional): Uploading interval (by iterations).
+            Default: -1.
+        upload_after_run (bool, optional): Whether to upload after running.
+            Defaults to True.
+        rm_orig (bool, optional): Whether to removing the local files after
+            uploading. Defaults to True.
+    """
 
     cfg_path = '~/petreloss.conf'
 
@@ -78,23 +107,3 @@ class PetrelUploadHook(Hook):
             exp_name=exp_name,
             suffix=self.suffix,
             remove_local_file=self.rm_orig)
-
-        # files = mmcv.scandir(_data_path, suffix=self.suffix, recursive=False)
-        # files = [os.path.join(_data_path, x) for x in files]
-        # # remove the rebundant symlinks in the data directory
-        # files = [x for x in files if not os.path.islink(x)]
-
-        # mmcv.print_log(f'Uploading {len(files)} files to ceph.', 'mmgen')
-
-        # for file in files:
-        #     with open(file, 'rb') as f:
-        #         data = f.read()
-        #         _path_splits = file.split('/')
-        #         idx = _path_splits.index(exp_name)
-        #         _rel_path = '/'.join(_path_splits[idx:])
-        #         _ceph_path = os.path.join(self.ceph_path, _rel_path)
-        #         self.client.put(_ceph_path, data)
-
-        #     # remove the local file to save space
-        #     if self.rm_orig:
-        #         os.remove(file)
