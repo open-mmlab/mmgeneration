@@ -67,6 +67,18 @@ class PetrelUploadHook(Hook):
                    exp_name=None,
                    suffix=None,
                    remove_local_file=True):
+        """Upload a directory to the cloud server.
+
+        Args:
+            client (obj): AWS client.
+            local_dir (str): Path for the local data.
+            remote_dir (str): Path for the remote server.
+            exp_name (str, optional): The experiment name. Defaults to None.
+            suffix (str, optional): Suffix for the data files.
+                Defaults to None.
+            remove_local_file (bool, optional): Whether to removing the local
+                files after uploading. Defaults to True.
+        """
         files = mmcv.scandir(local_dir, suffix=suffix, recursive=False)
         files = [os.path.join(local_dir, x) for x in files]
         # remove the rebundant symlinks in the data directory
@@ -93,6 +105,11 @@ class PetrelUploadHook(Hook):
 
     @master_only
     def after_run(self, runner):
+        """The behavior after the whole running.
+
+        Args:
+            runner (object): The runner.
+        """
         if not self.upload_after_run:
             return
 
