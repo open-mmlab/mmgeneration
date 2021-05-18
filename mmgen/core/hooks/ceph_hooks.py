@@ -1,7 +1,7 @@
 import os
 
 import mmcv
-from mmcv.runner import HOOKS, Hook
+from mmcv.runner import HOOKS, Hook, master_only
 
 
 @HOOKS.register_module()
@@ -13,12 +13,10 @@ class PetrelUploadHook(Hook):
                  data_path='ckpt',
                  suffix='.pth',
                  ceph_path=None,
-                 num_retry=5,
                  interval=-1,
                  upload_after_run=True,
                  rm_orig=True):
         super().__init__()
-        self.num_retry = num_retry
         self.interval = interval
         self.upload_after_run = upload_after_run
         self.data_path = data_path
@@ -33,19 +31,21 @@ class PetrelUploadHook(Hook):
             raise ImportError('Please install petrel in advance.')
         self.client = Client(self.cfg_path)
 
-    def after_run(self, runner):
-        if not self.upload_after_run:
-            return
-
-        _data_path = os.path.join(runner.work_dir, self.data_path)
-
-        files = mmcv.scandir(_data_path, suffix=self.suffix, recursive=False)
-        files = [os.path.join(_data_path, x) for x in files]
+    @staticmethod
+    def upload_dir(client,
+                   local_dir,
+                   remote_dir,
+                   exp_name=None,
+                   suffix=None,
+                   remove_local_file=True):
+        files = mmcv.scandir(local_dir, suffix=suffix, recursive=False)
+        files = [os.path.join(local_dir, x) for x in files]
         # remove the rebundant symlinks in the data directory
         files = [x for x in files if not os.path.islink(x)]
 
         # get the actual exp_name in work_dir
-        exp_name = runner.work_dir.split('/')[-1]
+        if exp_name is None:
+            exp_name = local_dir.split('/')[-1]
 
         mmcv.print_log(f'Uploading {len(files)} files to ceph.', 'mmgen')
 
@@ -55,8 +55,46 @@ class PetrelUploadHook(Hook):
                 _path_splits = file.split('/')
                 idx = _path_splits.index(exp_name)
                 _rel_path = '/'.join(_path_splits[idx:])
-                _ceph_path = os.path.join(self.ceph_path, _rel_path)
-                self.client.put(_ceph_path, data)
+                _ceph_path = os.path.join(remote_dir, _rel_path)
+                client.put(_ceph_path, data)
 
-            if self.rm_orig:
+            # remove the local file to save space
+            if remove_local_file:
                 os.remove(file)
+
+    @master_only
+    def after_run(self, runner):
+        if not self.upload_after_run:
+            return
+
+        _data_path = os.path.join(runner.work_dir, self.data_path)
+        # get the actual exp_name in work_dir
+        exp_name = runner.work_dir.split('/')[-1]
+
+        self.upload_dir(
+            self.client,
+            _data_path,
+            self.ceph_path,
+            exp_name=exp_name,
+            suffix=self.suffix,
+            remove_local_file=self.rm_orig)
+
+        # files = mmcv.scandir(_data_path, suffix=self.suffix, recursive=False)
+        # files = [os.path.join(_data_path, x) for x in files]
+        # # remove the rebundant symlinks in the data directory
+        # files = [x for x in files if not os.path.islink(x)]
+
+        # mmcv.print_log(f'Uploading {len(files)} files to ceph.', 'mmgen')
+
+        # for file in files:
+        #     with open(file, 'rb') as f:
+        #         data = f.read()
+        #         _path_splits = file.split('/')
+        #         idx = _path_splits.index(exp_name)
+        #         _rel_path = '/'.join(_path_splits[idx:])
+        #         _ceph_path = os.path.join(self.ceph_path, _rel_path)
+        #         self.client.put(_ceph_path, data)
+
+        #     # remove the local file to save space
+        #     if self.rm_orig:
+        #         os.remove(file)
