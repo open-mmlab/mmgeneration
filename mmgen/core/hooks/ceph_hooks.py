@@ -18,9 +18,10 @@ class PetrelUploadHook(Hook):
     .. note::
 
         ``petrel`` is a private package containing several commonly used
-        ``AWS`` python API. Currently, this package will not be released to the
-        public. We will support ``boto3`` in the future. We think this hook is
-        an easy template for you to transfer to ``boto3``.
+        ``AWS`` python API. Currently, this package is only for internal usage
+        and will not be released to the public. We will support ``boto3`` in
+        the future. We think this hook is an easy template for you to transfer
+        to ``boto3``.
 
     Args:
         data_path (str, optional): Relative path of the data according to
