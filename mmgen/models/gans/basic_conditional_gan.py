@@ -14,9 +14,9 @@ from .base_gan import BaseGAN
 @MODELS.register_module('BasiccGAN')
 @MODELS.register_module()
 class BasicConditionalGAN(BaseGAN):
-    """Unconditional GANs with static architecture in training.
+    """Basic conditional GANs.
 
-    This is the standard GAN model containing standard adversarial training
+    This is the conditional GAN model containing standard adversarial training
     schedule. To fulfill the requirements of various GAN algorithms,
     ``disc_auxiliary_loss`` and ``gen_auxiliary_loss`` are provided to
     customize auxiliary losses, e.g., gradient penalty loss, and discriminator
