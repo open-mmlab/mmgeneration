@@ -43,13 +43,12 @@ def build_dataset(cfg, default_args=None):
         dataset = RepeatDataset(
             build_dataset(cfg['dataset'], default_args), cfg['times'])
     # add support for using datasets from `MMClassification`
-    elif cfg['type'].startwsith('mmcls::'):
+    elif cfg['type'].startswith('mmcls::'):
         try:
-            from mmcls.datsets import build_dataset as build_dataset_mmcls
+            from mmcls.datasets import build_dataset as build_dataset_mmcls
         except ImportError:
             raise ImportError(
-                f'Please import MMClassification to use {cfg["type"]} dataset.'
-            )
+                f'Please install mmcls to use {cfg["type"]} dataset.')
         _cfg = deepcopy(cfg)
         _cfg['type'] = _cfg['type'][7:]
         dataset = build_dataset_mmcls(_cfg, default_args)

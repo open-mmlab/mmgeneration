@@ -25,9 +25,8 @@ class Compose:
                     try:
                         from mmcls.datasets import PIPELINES as MMCLSPIPELINE
                     except ImportError:
-                        raise ImportError(
-                            'Please import MMClassification to use '
-                            f'{transform["type"]} dataset.')
+                        raise ImportError('Please install mmcls to use '
+                                          f'{transform["type"]} dataset.')
                     pipeline_source = MMCLSPIPELINE
                     # remove prefix
                     transform_cfg = deepcopy(transform)
