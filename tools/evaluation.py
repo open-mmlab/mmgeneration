@@ -149,12 +149,18 @@ def main():
         else:
             basic_table_info['num_samples'] = -1
             # build the dataloader
-            if cfg.data.get('test', None):
+            if cfg.data.get('test', None) and cfg.data.test.get(
+                    'imgs_root', None):
                 dataset = build_dataset(cfg.data.test)
-            elif cfg.data.get('val', None):
+            elif cfg.data.get('val', None) and cfg.data.val.get(
+                    'imgs_root', None):
                 dataset = build_dataset(cfg.data.val)
-            else:
+            elif cfg.data.get('train', None):
+                # we assume that the train part should work well
                 dataset = build_dataset(cfg.data.train)
+            else:
+                raise RuntimeError('There is no valid dataset config to run, '
+                                   'please check your dataset configs.')
             data_loader = build_dataloader(
                 dataset,
                 samples_per_gpu=args.batch_size,
