@@ -155,10 +155,8 @@ def main():
             elif cfg.data.get('val', None) and cfg.data.val.get(
                     'imgs_root', None):
                 dataset = build_dataset(cfg.data.val)
-            elif cfg.data.get('train', None) and \
-                    (cfg.data.train.type == 'RepeatDataset' and
-                     cfg.data.train.dataset.get('imgs_root', None)) or \
-                    cfg.data.train.get('imgs_root', None):
+            elif cfg.data.get('train', None):
+                # we assume that the train part should work well
                 dataset = build_dataset(cfg.data.train)
             else:
                 raise RuntimeError('There is no valid dataset config to run, '
