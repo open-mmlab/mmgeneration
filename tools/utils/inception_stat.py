@@ -110,7 +110,7 @@ if __name__ == '__main__':
     elif args.data_cfg is not None:
         # Please make sure the dataset will sample images in `RGB` order.
         data_config = Config.fromfile(args.data_cfg)
-        dataset = build_dataset(args.data.test)
+        dataset = build_dataset(data_config.data.test)
     else:
         raise RuntimeError('Please provide imgsdir or data_cfg')
     data_loader = build_dataloader(dataset, args.batch_size, 4, dist=False)
