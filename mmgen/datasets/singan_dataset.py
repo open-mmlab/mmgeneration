@@ -1,6 +1,5 @@
-import math
-
 import mmcv
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 
@@ -21,33 +20,36 @@ def create_real_pyramid(real, min_size, max_size, scale_factor_init):
         scale_factor_init (float): The initial scale factor.
     """
 
-    num_scales = math.ceil(
-        math.log(
-            math.pow(min_size / min(real.shape[0], real.shape[1]), 1),
-            scale_factor_init)) + 1
+    num_scales = int(
+        np.ceil(
+            np.log(
+                np.power(min_size / min(real.shape[0], real.shape[1]), 1),
+                scale_factor_init))) + 1
 
-    scale2stop = math.ceil(
-        math.log(
-            min([max_size, max([real.shape[0], real.shape[1]])]) /
-            max([real.shape[0], real.shape[1]]), scale_factor_init))
+    scale2stop = int(
+        np.ceil(
+            np.log(
+                min([max_size, max([real.shape[0], real.shape[1]])]) /
+                max([real.shape[0], real.shape[1]]), scale_factor_init)))
 
     stop_scale = num_scales - scale2stop
 
     scale1 = min(max_size / max([real.shape[0], real.shape[1]]), 1)
     real_max = mmcv.imrescale(real, scale1)
-    scale_factor = math.pow(
+    scale_factor = np.power(
         min_size / (min(real_max.shape[0], real_max.shape[1])),
         1 / (stop_scale))
 
-    scale2stop = math.ceil(
-        math.log(
-            min([max_size, max([real.shape[0], real.shape[1]])]) /
-            max([real.shape[0], real.shape[1]]), scale_factor_init))
+    scale2stop = int(
+        np.ceil(
+            np.log(
+                min([max_size, max([real.shape[0], real.shape[1]])]) /
+                max([real.shape[0], real.shape[1]]), scale_factor_init)))
     stop_scale = num_scales - scale2stop
 
     reals = []
     for i in range(stop_scale + 1):
-        scale = math.pow(scale_factor, stop_scale - i)
+        scale = np.power(scale_factor, stop_scale - i)
         curr_real = mmcv.imrescale(real, scale)
         reals.append(curr_real)
 

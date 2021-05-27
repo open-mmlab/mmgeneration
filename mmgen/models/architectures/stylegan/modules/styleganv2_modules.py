@@ -1,8 +1,8 @@
-import math
 from copy import deepcopy
 from functools import partial
 
 import mmcv
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -951,7 +951,7 @@ class ResBlock(nn.Module):
         out = self.conv2(out)
 
         skip = self.skip(input)
-        out = (out + skip) / math.sqrt(2)
+        out = (out + skip) / np.sqrt(2)
 
         return out
 

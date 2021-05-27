@@ -1,5 +1,4 @@
-import math
-
+import numpy as np
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
@@ -74,7 +73,7 @@ class LSGANGenerator(nn.Module):
                 'act', build_activation_layer(default_act_cfg))
 
         # the number of times for upsampling
-        self.num_upsamples = int(math.log2(output_scale // input_scale)) - 2
+        self.num_upsamples = int(np.log2(output_scale // input_scale)) - 2
 
         # build up convolution backbone (excluding the output layer)
         self.conv_blocks = nn.ModuleList()
@@ -254,7 +253,7 @@ class LSGANDiscriminator(nn.Module):
                 act_cfg=default_act_cfg))
 
         # the number of times for downsampling
-        self.num_downsamples = int(math.log2(input_scale // output_scale)) - 1
+        self.num_downsamples = int(np.log2(input_scale // output_scale)) - 1
 
         # build up downsampling backbone (excluding the output layer)
         curr_channels = base_channels

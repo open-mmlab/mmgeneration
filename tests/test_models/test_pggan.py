@@ -1,6 +1,6 @@
-import math
 from copy import deepcopy
 
+import numpy as np
 import pytest
 import torch
 import torch.nn as nn
@@ -69,24 +69,21 @@ class TestPGGAN:
                 assert results['fake_imgs'].shape == (3, 3, 4, 4)
             elif iter_num == 2:
                 assert results['fake_imgs'].shape == (3, 3, 8, 8)
-                assert math.isclose(
-                    pggan._actual_nkimgs[0], 0.006, abs_tol=1e-8)
+                assert np.isclose(pggan._actual_nkimgs[0], 0.006, atol=1e-8)
             elif iter_num == 3:
                 assert results['fake_imgs'].shape == (3, 3, 8, 8)
-                assert math.isclose(
-                    pggan._actual_nkimgs[0], 0.006, abs_tol=1e-8)
-                assert math.isclose(
+                assert np.isclose(pggan._actual_nkimgs[0], 0.006, atol=1e-8)
+                assert np.isclose(
                     pggan.optimizer['generator'].defaults['lr'],
                     0.0001,
-                    abs_tol=1e-8)
+                    atol=1e-8)
             elif iter_num == 5:
                 assert results['fake_imgs'].shape == (3, 3, 16, 16)
-                assert math.isclose(
-                    pggan._actual_nkimgs[-1], 0.012, abs_tol=1e-8)
-                assert math.isclose(
+                assert np.isclose(pggan._actual_nkimgs[-1], 0.012, atol=1e-8)
+                assert np.isclose(
                     pggan.optimizer['generator'].defaults['lr'],
                     0.00005,
-                    abs_tol=1e-8)
+                    atol=1e-8)
 
         # test sample from noise
         outputs = pggan.sample_from_noise(None, num_batches=2)
@@ -146,8 +143,7 @@ class TestPGGAN:
                 assert results['fake_imgs'].shape == (3, 3, 4, 4)
             elif iter_num == 2:
                 assert results['fake_imgs'].shape == (3, 3, 8, 8)
-                assert math.isclose(
-                    pggan._actual_nkimgs[0], 0.006, abs_tol=1e-8)
+                assert np.isclose(pggan._actual_nkimgs[0], 0.006, atol=1e-8)
 
         train_cfg_ = deepcopy(self.train_cfg)
         train_cfg_['optimizer_cfg'] = dict(
@@ -189,13 +185,10 @@ class TestPGGAN:
                 assert results['fake_imgs'].shape == (3, 3, 4, 4)
             elif iter_num == 2:
                 assert results['fake_imgs'].shape == (3, 3, 8, 8)
-                assert math.isclose(
-                    pggan._actual_nkimgs[0], 0.006, abs_tol=1e-8)
+                assert np.isclose(pggan._actual_nkimgs[0], 0.006, atol=1e-8)
             elif iter_num == 3:
                 assert results['fake_imgs'].shape == (3, 3, 8, 8)
-                assert math.isclose(
-                    pggan._actual_nkimgs[0], 0.006, abs_tol=1e-8)
+                assert np.isclose(pggan._actual_nkimgs[0], 0.006, atol=1e-8)
             elif iter_num == 5:
                 assert results['fake_imgs'].shape == (3, 3, 16, 16)
-                assert math.isclose(
-                    pggan._actual_nkimgs[-1], 0.012, abs_tol=1e-8)
+                assert np.isclose(pggan._actual_nkimgs[-1], 0.012, atol=1e-8)
