@@ -857,6 +857,14 @@ class IS(Metric):
 
     Ref: https://github.com/sbarratt/inception-score-pytorch/blob/master/inception_score.py # noqa
 
+    Note that we highly recommend that users should download the Inception V3
+    script module from the following address. Then, the `inception_pkl` can
+    be set with user's local path. If not given, we will use the Inception V3 from
+    pytorch model zoo. However, this may bring significant different in the
+    final results.
+
+    Tero's Inception V3: https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt # noqa
+
     Args:
         num_images (int): The number of evaluated generated samples.
         image_shape (tuple, optional): Image shape in order "CHW". Defaults to
@@ -864,6 +872,8 @@ class IS(Metric):
         resize (bool, optional): Whether resize image to 299x299. Defaults to
             True.
         splits (int, optional): The number of groups. Defaults to 10.
+        inception_pkl (str, optional): Path for the Tero's Inception V3 module.
+            Defaults to 'work_dirs/cache/inception-2015-12-05.pt'.
     """
     name = 'IS'
 
@@ -872,19 +882,80 @@ class IS(Metric):
                  image_shape=None,
                  bgr2rgb=False,
                  resize=True,
-                 splits=10):
+                 splits=10,
+                 use_pil_resize=False,
+                 inception_pkl='work_dirs/cache/inception-2015-12-05.pt'):
         super().__init__(num_images, image_shape)
+        mmcv.print_log('Loading Inception V3 for IS...', 'mmgen')
+
+        if os.path.isfile(inception_pkl):
+            self.inception_model = torch.jit.load(inception_pkl)
+            self.use_tero_script = True
+        else:
+            self.inception_model = inception_v3(
+                pretrained=True, transform_input=False)
+            self.use_tero_script = False
+            mmcv.print_log(
+                'Load InceptionV3 Network from Pytorch Model Zoo '
+                'for IS calculation. The results can only used '
+                'for monitoring purposes. To get more accuracy IS, '
+                'please use Tero\'s Inception V3 checkpoints '
+                'and use Bicubic Interpolation with Pillow backend '
+                'for image resizing. More detail may refer to '
+                'https://github.com/open-mmlab/mmgeneration/blob/master/docs/quick_run.md#is.',  # noqa
+                'mmgen')
+
         self.num_real_feeded = self.num_images
         self.resize = resize
         self.splits = splits
         self.bgr2rgb = bgr2rgb
-        self.inception_model = inception_v3(
-            pretrained=True, transform_input=False)
+        self.use_pil_resize = use_pil_resize
+        self._pil_resize_warned = False
+
         self.device = 'cpu'
         if torch.cuda.is_available():
             self.inception_model = self.inception_model.cuda()
             self.device = 'cuda'
         self.inception_model.eval()
+
+    def pil_resize(self, x):
+        """Apply Bicubic interpolation with Pillow backend. Before and after
+        interpolation operation, we have to perform a type convertion beteen
+        torch.tensor and PIL.Image, and these operations make resize process a
+        bit slow.
+
+        # TODO: does this function need to be staticmethod?
+
+        Args:
+            x (Tensor): Input tensor, should have four dimension and
+                        range in [-1, 1].
+
+        Returns:
+            torch.FloatTensor: Resized tensor.
+        """
+        if not self._pil_resize_warned:
+            mmcv.print_log(
+                '`use_pil_resize` is set as True, apply Bicubic '
+                'interpolation with Pillow backend. We perform '
+                'type conversion between torch.tensor and '
+                'PIL.Image in this function and make this process '
+                'a little bit slow.', 'mmgen')
+            self._pil_resize_warned = True
+
+        from PIL import Image
+        if x.ndim != 4:
+            raise ValueError('Input images should have 4 dimensions, '
+                             'here receive input with {} dimensions.'.format(
+                                 x.ndim))
+        # TODO: how to check input tensor is in [-1, 1]?
+        x = (x.clone() * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+        x_np = [x_.permute(1, 2, 0).detach().cpu().numpy() for x_ in x]
+        x_pil = [Image.fromarray(x_).resize((299, 299)) for x_ in x_np]
+        x_ten = torch.cat([torch.FloatTensor(np.array(x_)) for x_ in x_pil])
+        if x_ten.ndim == 3:
+            x_ten = x_ten.unsqueeze(0)
+        x_ten = (x_ten / 127.5 - 1).to(torch.float)
+        return x_ten.permute(0, 3, 1, 2)
 
     def get_pred(self, x):
         """Get prediction from inception model.
@@ -895,10 +966,11 @@ class IS(Metric):
         Returns:
             np.array: Inception score.
         """
-        if self.resize:
-            x = F.interpolate(x, size=(299, 299), mode='bilinear')
-        x = self.inception_model(x)
-        return F.softmax(x).data.cpu().numpy()
+        if self.use_tero_script:
+            x = self.inception_model(x, no_output_bias=True)
+        else:
+            x = F.softmax(self.inception_model(x))
+        return x.data.cpu().numpy()
 
     def prepare(self):
         """Prepare for evaluating models with this metric."""
@@ -912,12 +984,21 @@ class IS(Metric):
             batch (Tensor): Input tensor.
             mode (str): The mode of current data batch. 'reals' or 'fakes'.
         """
-        batch = batch.to(self.device)
-        if self.bgr2rgb:
-            batch = batch[:, [2, 1, 0], ...]
         if mode == 'reals':
             pass
         elif mode == 'fakes':
+            if self.bgr2rgb:
+                batch = batch[:, [2, 1, 0], ...]
+            if self.resize:
+                if self.use_pil_resize:
+                    batch = self.pil_resize(batch)
+                else:
+                    batch = F.interpolate(
+                        batch, size=(299, 299), mode='bilinear')
+            if self.use_tero_script:
+                batch = (batch * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+
+            batch = batch.to(self.device)
             self.preds.append(self.get_pred(batch))
         else:
             raise ValueError(f'{mode} is not a implemented feed mode.')
