@@ -1,9 +1,9 @@
 dataset_type = 'mmcls::CIFAR10'
 
-# different from mmcls, we adopt the norm setting used in BigGAN
+# different from mmcls, we adopt the setting used in BigGAN
 # Note that the pipelines below are from MMClassification
 img_norm_cfg = dict(
-    mean=[127.5, 127.5, 127.5], std=[127.5, 127.5, 127.5], to_rgb=True)
+    mean=[127.5, 127.5, 127.5], std=[127.5, 127.5, 127.5], to_rgb=False)
 train_pipeline = [
     dict(type='RandomCrop', size=32, padding=4),
     dict(type='RandomFlip', flip_prob=0.5, direction='horizontal'),
