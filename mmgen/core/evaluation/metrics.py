@@ -886,7 +886,7 @@ class IS(Metric):
                  bgr2rgb=False,
                  resize=True,
                  splits=10,
-                 use_pil_resize=False,
+                 use_pil_resize=True,
                  inception_pkl='work_dirs/cache/inception-2015-12-05.pt'):
         super().__init__(num_images, image_shape)
         mmcv.print_log('Loading Inception V3 for IS...', 'mmgen')
@@ -899,12 +899,12 @@ class IS(Metric):
                 pretrained=True, transform_input=False)
             self.use_tero_script = False
             mmcv.print_log(
-                'Load InceptionV3 Network from Pytorch Model Zoo '
+                'Load Inception V3 Network from Pytorch Model Zoo '
                 'for IS calculation. The results can only used '
                 'for monitoring purposes. To get more accuracy IS, '
                 'please use Tero\'s Inception V3 checkpoints '
                 'and use Bicubic Interpolation with Pillow backend '
-                'for image resizing. More detail may refer to '
+                'for image resizing. More details may refer to '
                 'https://github.com/open-mmlab/mmgeneration/blob/master/docs/quick_run.md#is.',  # noqa
                 'mmgen')
 
@@ -927,8 +927,6 @@ class IS(Metric):
         torch.tensor and PIL.Image, and these operations make resize process a
         bit slow.
 
-        # TODO: does this function need to be staticmethod?
-
         Args:
             x (Tensor): Input tensor, should have four dimension and
                         range in [-1, 1].
@@ -950,7 +948,7 @@ class IS(Metric):
             raise ValueError('Input images should have 4 dimensions, '
                              'here receive input with {} '
                              'dimensions.'.format(x.ndim))
-        # TODO: how to check input tensor is in [-1, 1]?
+
         x = (x.clone() * 127.5 + 128).clamp(0, 255).to(torch.uint8)
         x_np = [x_.permute(1, 2, 0).detach().cpu().numpy() for x_ in x]
         x_pil = [Image.fromarray(x_).resize((299, 299)) for x_ in x_np]
