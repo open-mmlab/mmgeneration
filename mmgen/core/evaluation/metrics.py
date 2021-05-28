@@ -872,6 +872,9 @@ class IS(Metric):
         resize (bool, optional): Whether resize image to 299x299. Defaults to
             True.
         splits (int, optional): The number of groups. Defaults to 10.
+        use_pil_resize (bool, optional): Whether use Bicubic interpolation with
+            Pillow's backend. If set as True, the evaluation process may be a
+            little bit slow, but achieve a more accurate IS result. Defaults to False.
         inception_pkl (str, optional): Path for the Tero's Inception V3 module.
             Defaults to 'work_dirs/cache/inception-2015-12-05.pt'.
     """
@@ -945,8 +948,8 @@ class IS(Metric):
         from PIL import Image
         if x.ndim != 4:
             raise ValueError('Input images should have 4 dimensions, '
-                             'here receive input with {} dimensions.'.format(
-                                 x.ndim))
+                             'here receive input with {} '
+                             'dimensions.'.format(x.ndim))
         # TODO: how to check input tensor is in [-1, 1]?
         x = (x.clone() * 127.5 + 128).clamp(0, 255).to(torch.uint8)
         x_np = [x_.permute(1, 2, 0).detach().cpu().numpy() for x_ in x]
