@@ -2,7 +2,7 @@
 # Model Zoo Statistics
 
 * Number of papers: 9
-* Number of checkpoints: 50
+* Number of checkpoints: 51
 
 	* [CycleGAN: Unpaired Image-to-Image Translation Using Cycle-Consistent Adversarial Networks](https://github.com/open-mmlab/mmgeneration/blob/master/configs/cyclegan) (6 ckpts)
 
