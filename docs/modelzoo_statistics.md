@@ -2,12 +2,12 @@
 # Model Zoo Statistics
 
 * Number of papers: 9
-* Number of checkpoints: 50
+* Number of checkpoints: 51
 
 	* [CycleGAN: Unpaired Image-to-Image Translation Using Cycle-Consistent Adversarial Networks](https://github.com/open-mmlab/mmgeneration/blob/master/configs/cyclegan) (6 ckpts)
 
 
-	* [Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks](https://github.com/open-mmlab/mmgeneration/blob/master/configs/dcgan) (2 ckpts)
+	* [Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks](https://github.com/open-mmlab/mmgeneration/blob/master/configs/dcgan) (3 ckpts)
 
 
 	* [Progressive Growing of GANs for Improved Quality, Stability, and Variation](https://github.com/open-mmlab/mmgeneration/blob/master/configs/pggan) (3 ckpts)
