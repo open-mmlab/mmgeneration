@@ -58,9 +58,10 @@ MMGeneration 是一个基于 PyTorch 和[MMCV](https://github.com/open-mmlab/mmc
 ## 亮点
 
 * **Positional Encoding as Spatial Inductive Bias in GANs (CVPR2021)** 已在 `MMGeneration` 中发布.  [\[配置文件\]](configs/positional_encoding_in_gans/README.md), [\[项目主页\]](https://nbei.github.io/gan-pos-encoding.html)
+* 混合精度训练已经在 `StyleGAN2` 中进行了初步支持，请到[这里](configs/styleganv2/README.md)查看各种实现方式的详细比较。
 ## 更新日志
 
-v0.1.0 在 20/04/2021 发布。 关于细节和发布历史，请参考 [changelog.md](docs/changelog.md)。
+v0.2.0 在 30/05/2021 发布。 关于细节和发布历史，请参考 [changelog.md](docs/changelog.md)。
 
 ## 模型库
 
@@ -72,6 +73,8 @@ v0.1.0 在 20/04/2021 发布。 关于细节和发布历史，请参考 [changel
 
 - ✅ [DCGAN](configs/dcgan/README.md) (ICLR'2016)
 - ✅ [WGAN-GP](configs/wgan-gp/README.md) (NIPS'2017)
+- ✅ [LSGAN](configs/lsgan/README.md) (ICCV'2017)
+- ✅ [GGAN](configs/ggan/README.md) (Axiv'2017)
 - ✅ [PGGAN](configs/pggan/README.md) (ICLR'2018)
 - ✅ [StyleGANV1](configs/styleganv1/README.md) (CVPR'2019)
 - ✅ [StyleGANV2](configs/styleganv2/README.md) (CVPR'2020)
