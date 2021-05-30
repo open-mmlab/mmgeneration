@@ -952,9 +952,8 @@ class IS(Metric):
         x = (x.clone() * 127.5 + 128).clamp(0, 255).to(torch.uint8)
         x_np = [x_.permute(1, 2, 0).detach().cpu().numpy() for x_ in x]
         x_pil = [Image.fromarray(x_).resize((299, 299)) for x_ in x_np]
-        x_ten = torch.cat([torch.FloatTensor(np.array(x_)) for x_ in x_pil])
-        if x_ten.ndim == 3:
-            x_ten = x_ten.unsqueeze(0)
+        x_ten = torch.cat(
+            [torch.FloatTensor(np.array(x_)[None, ...]) for x_ in x_pil])
         x_ten = (x_ten / 127.5 - 1).to(torch.float)
         return x_ten.permute(0, 3, 1, 2)
 
