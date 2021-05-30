@@ -1,5 +1,4 @@
-import math
-
+import numpy as np
 import torch
 import torch.autograd as autograd
 import torch.distributed as dist
@@ -59,7 +58,7 @@ def gen_path_regularizer(generator,
     output_dict = generator(None, num_batches=num_batches, return_latents=True)
     fake_img, latents = output_dict['fake_img'], output_dict['latent']
 
-    noise = torch.randn_like(fake_img) / math.sqrt(
+    noise = torch.randn_like(fake_img) / np.sqrt(
         fake_img.shape[2] * fake_img.shape[3])
 
     if loss_scaler:

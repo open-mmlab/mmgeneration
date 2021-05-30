@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 import torch
 from torchvision.utils import make_grid
@@ -53,7 +51,7 @@ def tensor2img(tensor, out_type=np.uint8, min_max=(0, 1)):
         n_dim = _tensor.dim()
         if n_dim == 4:
             img_np = make_grid(
-                _tensor, nrow=int(math.sqrt(_tensor.size(0))),
+                _tensor, nrow=int(np.sqrt(_tensor.size(0))),
                 normalize=False).numpy()
             img_np = np.transpose(img_np[[2, 1, 0], :, :], (1, 2, 0))
         elif n_dim == 3:

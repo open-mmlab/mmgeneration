@@ -5,10 +5,10 @@ r"""
     Ref: https://github.com/rosinality/stylegan2-pytorch/blob/master/projector.py # noqa
 """
 import argparse
-import math
 import os
 
 import mmcv
+import numpy as np
 import torch
 import torch.nn.functional as F
 from mmcv import Config
@@ -124,7 +124,7 @@ def noise_normalize_(noises):
 
 def get_lr(t, initial_lr, rampdown=0.25, rampup=0.05):
     lr_ramp = min(1, (1 - t) / rampdown)
-    lr_ramp = 0.5 - 0.5 * math.cos(lr_ramp * math.pi)
+    lr_ramp = 0.5 - 0.5 * np.cos(lr_ramp * np.pi)
     lr_ramp = lr_ramp * min(1, t / rampup)
     return initial_lr * lr_ramp
 

@@ -1,5 +1,4 @@
-import math
-
+import numpy as np
 import pytest
 import torch
 
@@ -60,14 +59,12 @@ class TestStyleGANV1:
                 assert results['fake_imgs'].shape == (3, 3, 8, 8)
             elif iter_num == 2:
                 assert results['fake_imgs'].shape == (3, 3, 16, 16)
-                assert math.isclose(
-                    stylegan._actual_nkimgs[0], 0.006, abs_tol=1e-8)
+                assert np.isclose(stylegan._actual_nkimgs[0], 0.006, atol=1e-8)
             elif iter_num == 3:
                 assert results['fake_imgs'].shape == (3, 3, 16, 16)
             elif iter_num == 4:
                 assert results['fake_imgs'].shape == (3, 3, 32, 32)
-                assert math.isclose(
-                    stylegan._actual_nkimgs[1], 0.012, abs_tol=1e-8)
+                assert np.isclose(stylegan._actual_nkimgs[1], 0.012, atol=1e-8)
 
     def test_stylegan1_cpu(self):
         # test default config
@@ -85,11 +82,9 @@ class TestStyleGANV1:
                 assert results['fake_imgs'].shape == (3, 3, 8, 8)
             elif iter_num == 2:
                 assert results['fake_imgs'].shape == (3, 3, 16, 16)
-                assert math.isclose(
-                    stylegan._actual_nkimgs[0], 0.006, abs_tol=1e-8)
+                assert np.isclose(stylegan._actual_nkimgs[0], 0.006, atol=1e-8)
             elif iter_num == 3:
                 assert results['fake_imgs'].shape == (3, 3, 16, 16)
             elif iter_num == 4:
                 assert results['fake_imgs'].shape == (3, 3, 32, 32)
-                assert math.isclose(
-                    stylegan._actual_nkimgs[1], 0.012, abs_tol=1e-8)
+                assert np.isclose(stylegan._actual_nkimgs[1], 0.012, atol=1e-8)

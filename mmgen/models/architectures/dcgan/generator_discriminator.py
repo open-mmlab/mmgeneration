@@ -1,5 +1,4 @@
-import math
-
+import numpy as np
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, normal_init
@@ -74,7 +73,7 @@ class DCGANGenerator(nn.Module):
         self.noise_size = noise_size
 
         # the number of times for upsampling
-        self.num_upsamples = int(math.log2(output_scale // input_scale))
+        self.num_upsamples = int(np.log2(output_scale // input_scale))
 
         # output 4x4 feature map
         self.noise2feat = ConvModule(
@@ -244,7 +243,7 @@ class DCGANDiscriminator(nn.Module):
         self.base_channels = base_channels
 
         # the number of times for downsampling
-        self.num_downsamples = int(math.log2(input_scale // output_scale))
+        self.num_downsamples = int(np.log2(input_scale // output_scale))
 
         # build up downsampling backbone (excluding the output layer)
         downsamples = []
