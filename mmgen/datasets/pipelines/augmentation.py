@@ -103,6 +103,9 @@ class Resize:
         interpolation (str): Algorithm used for interpolation:
             "nearest" | "bilinear" | "bicubic" | "area" | "lanczos".
             Default: "bilinear".
+        backend (str | None): The image resize backend type. Options are `cv2`,
+            `pillow`, `None`. If backend is None, the global imread_backend
+            specified by ``mmcv.use_backend()`` will be used. Default: None.
     """
 
     def __init__(self,
@@ -111,7 +114,8 @@ class Resize:
                  keep_ratio=False,
                  size_factor=None,
                  max_size=None,
-                 interpolation='bilinear'):
+                 interpolation='bilinear',
+                 backend=None):
         assert keys, 'Keys should not be empty.'
         if size_factor:
             assert scale is None, ('When size_factor is used, scale should ',
@@ -141,6 +145,7 @@ class Resize:
         self.max_size = max_size
         self.keep_ratio = keep_ratio
         self.interpolation = interpolation
+        self.backend = backend
 
     def _resize(self, img):
         if self.keep_ratio:
@@ -148,13 +153,15 @@ class Resize:
                 img,
                 self.scale,
                 return_scale=True,
-                interpolation=self.interpolation)
+                interpolation=self.interpolation,
+                backend=self.backend)
         else:
             img, w_scale, h_scale = mmcv.imresize(
                 img,
                 self.scale,
                 return_scale=True,
-                interpolation=self.interpolation)
+                interpolation=self.interpolation,
+                backend=self.backend)
             self.scale_factor = np.array((w_scale, h_scale), dtype=np.float32)
         return img
 

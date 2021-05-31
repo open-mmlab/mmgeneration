@@ -264,6 +264,29 @@ python tools/utils/translation_eval.py ./configs/pix2pix/pix2pix_vanilla_unet_bn
     https://download.openmmlab.com/mmgen/pix2pix/pix2pix_vanilla_unet_bn_1x1_80k_facades.py_20210410_174537-36d956f1.pth \
     --eval IS
 ```
+To be noted that, the selection of Inception V3 and image resize method can significantly influence the final IS score. Therefore, we strongly recommend users may download the [Tero's script model of Inception V3](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt) (load this script model need torch >= 1.6) and use `Bicubic` interpolation with `Pillow` backend. We provide a template for the [data process pipline](https://github.com/open-mmlab/mmgeneration/tree/master/configs/_base_/datasets/Inception_Score.py) as well.
+
+We also perform a survey on the influence of data loading pipeline and the version of pretrained Inception V3 on the IS result. All IS are evaluated on the same group of images which are randomly selected from the ImageNet dataset.
+
+<details> <summary> Show the Comparsion Results </summary>
+
+| Code Base | Inception V3 Version | Data Loader Backend | Resize Interpolation Method | IS |
+| -- | -- | -- | -- | -- |
+| [OpenAI (baseline)](https://github.com/openai/improved-gan) | Tensorflow | Pillow | Pillow Bicubic | **312.255 +/- 4.970** |
+| [StyleGAN-Ada](https://github.com/NVlabs/stylegan2-ada-pytorch) | Tero's Script Model | Pillow | Pillow Bicubic | 311.895 +/ 4.844 |
+| mmgen (Ours) | Pytorch Pretrained | cv2 | cv2 Bilinear | 322.932 +/- 2.317 |
+| mmgen (Ours) | Pytorch Pretrained | cv2 | cv2 Bicubic | 324.604 +/- 5.157 |
+| mmgen (Ours) | Pytorch Pretrained | cv2 | Pillow Bicubic | 318.161 +/- 5.330 |
+| mmgen (Ours) | Pytorch Pretrained | Pillow | Pillow Bilinear | 313.126 +/- 5.449 |
+| mmgen (Ours) | Pytorch Pretrained | Pillow | cv2 Bilinear | 318.021+/-3.864 |
+| mmgen (Ours) | Pytorch Pretrained | Pillow | Pillow Bicubic | 317.997 +/- 5.350 |
+| mmgen (Ours) | Tero's Script Model | cv2 | cv2 Bilinear | 318.879 +/- 2.433 |
+| mmgen (Ours) | Tero's Script Model | cv2 | cv2 Bicubic | 316.125 +/- 5.718 |
+| mmgen (Ours) | Tero's Script Model | cv2 | Pillow Bicubic | **312.045 +/- 5.440** |
+| mmgen (Ours) | Tero's Script Model | Pillow | Pillow Bilinear | 308.645 +/- 5.374 |
+| mmgen (Ours) | Tero's Script Model | Pillow | Pillow Bicubic | 311.733 +/- 5.375 |
+
+</details>
 
 ## PPL
 Perceptual path length measures the difference between consecutive images (their VGG16 embeddings) when interpolating between two random inputs. Drastic changes mean that multiple features have changed together and that they might be entangled. Thus, a smaller PPL score appears to indicate higher overall image quality by experiments. \
