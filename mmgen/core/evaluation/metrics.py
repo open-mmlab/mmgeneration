@@ -375,7 +375,7 @@ class FID(Metric):
             self.device = 'cuda'
         self.inception_net.eval()
 
-        mmcv.print_log(f'Adopt Inception in {self.inception_style} style',
+        mmcv.print_log(f'FID: Adopt Inception in {self.inception_style} style',
                        'mmgen')
 
     def prepare(self):
@@ -973,7 +973,8 @@ class IS(Metric):
         if self.use_tero_script:
             x = self.inception_model(x, no_output_bias=True)
         else:
-            x = F.softmax(self.inception_model(x))
+            # specify the dimension to avoid warning
+            x = F.softmax(self.inception_model(x), dim=1)
         return x
 
     def prepare(self):
@@ -1029,7 +1030,6 @@ class IS(Metric):
         Returns:
             dict | list: Summarized results.
         """
-        self.check()
         split_scores = []
         self.preds = np.concatenate(self.preds, axis=0)
         # check for the size

@@ -31,8 +31,10 @@ class GenerativeEvalHook(Hook):
             sampling images. Defaults to None.
         save_best_ckpt (bool, optional): Whether to save the best checkpoint
             according to ``best_metric``. Defaults to ``True``.
-        best_metric (str, optional): Which metric to be used in saving the best
-            checkpoint. Defaults to ``'fid'``.
+        best_metric (str | list, optional): Which metric to be used in saving
+            the best checkpoint. Multiple metrics have been supported by
+            inputing a list of metric names, e.g., ``['fid', 'is']``.
+            Defaults to ``'fid'``.
     """
     rule_map = {'greater': lambda x, y: x > y, 'less': lambda x, y: x < y}
     init_value_map = {'greater': -math.inf, 'less': math.inf}
@@ -84,8 +86,9 @@ class GenerativeEvalHook(Hook):
                     self.rule[name] = 'greater'
                 else:
                     self.rule[name] = 'less'
-                self.compare_func[name] = self.rule_map[self.rule]
-                self._curr_best_score[name] = self.init_value_map[self.rule]
+                self.compare_func[name] = self.rule_map[self.rule[name]]
+                self._curr_best_score[name] = self.init_value_map[
+                    self.rule[name]]
                 self._curr_best_ckpt_path[name] = None
 
     def before_run(self, runner):
