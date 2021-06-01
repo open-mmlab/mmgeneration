@@ -29,7 +29,7 @@ use_ddp_wrapper = True
 total_iters = 80000
 workflow = [('train', 1)]
 exp_name = 'cyclegan_facades'
-work_dir = f'./work_dirs/{exp_name}'
+work_dir = f'./work_dirs/experiments/{exp_name}'
 metrics = dict(
     FID=dict(type='FID', num_images=106, image_shape=(3, 256, 256)),
     IS=dict(type='IS', num_images=106, image_shape=(3, 256, 256)))

@@ -19,7 +19,7 @@ custom_hooks = [
     dict(
         type='VisualizationHook',
         output_dir='training_samples',
-        res_name_list=['fake_b'],
+        res_name_list=['fake_a'],
         interval=5000)
 ]
 
@@ -28,7 +28,7 @@ use_ddp_wrapper = True
 total_iters = 250000
 workflow = [('train', 1)]
 exp_name = 'cyclegan_summer2winter'
-work_dir = f'./work_dirs/{exp_name}'
+work_dir = f'./work_dirs/experiments/{exp_name}'
 # testA: 309, testB:238
 metrics = dict(
     FID=dict(type='FID', num_images=309, image_shape=(3, 256, 256)),
