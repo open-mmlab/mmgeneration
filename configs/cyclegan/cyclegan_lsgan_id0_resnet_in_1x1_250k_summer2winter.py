@@ -3,7 +3,7 @@ _base_ = [
     '../_base_/datasets/unpaired_imgs_256x256.py',
     '../_base_/default_runtime.py'
 ]
-test_cfg = dict(test_direction='a2b', show_input=False)
+model = dict(id_loss=dict(type='L1Loss', loss_weight=0, reduction='mean'))
 dataroot = './data/summer2winter_yosemite'
 data = dict(
     train=dict(dataroot=dataroot),
@@ -14,15 +14,21 @@ optimizer = dict(
     generators=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)),
     discriminators=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)))
 lr_config = None
-checkpoint_config = dict(interval=12310, save_optimizer=True, by_epoch=False)
-log_config = dict(
-    interval=100, hooks=[dict(type='TextLoggerHook', by_epoch=False)])
+checkpoint_config = dict(interval=10000, save_optimizer=True, by_epoch=False)
+custom_hooks = [
+    dict(
+        type='VisualizationHook',
+        output_dir='training_samples',
+        res_name_list=['fake_b'],
+        interval=5000)
+]
 
-total_iters = 246200
-cudnn_benchmark = True
+runner = None
+use_ddp_wrapper = True
+total_iters = 250000
 workflow = [('train', 1)]
-exp_name = 'cyclegan_summer2winter'
-work_dir = f'./work_dirs/{exp_name}'
+exp_name = 'cyclegan_summer2winter_id0'
+work_dir = f'./work_dirs/experiments/{exp_name}'
 # testA: 309, testB:238
 metrics = dict(
     FID=dict(type='FID', num_images=238, image_shape=(3, 256, 256)),

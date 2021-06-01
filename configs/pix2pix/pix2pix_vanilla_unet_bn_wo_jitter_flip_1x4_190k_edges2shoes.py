@@ -16,26 +16,19 @@ optimizer = dict(
 lr_config = None
 
 # checkpoint saving
-checkpoint_config = dict(interval=12456, save_optimizer=True, by_epoch=False)
+checkpoint_config = dict(interval=10000, save_optimizer=True, by_epoch=False)
 custom_hooks = [
     dict(
         type='VisualizationHook',
         output_dir='training_samples',
         res_name_list=['fake_b'],
-        interval=100)
+        interval=5000)
 ]
-log_config = dict(
-    interval=100,
-    hooks=[
-        dict(type='TextLoggerHook', by_epoch=False),
-        # dict(type='TensorboardLoggerHook')
-        # dict(type='PaviLoggerHook', init_kwargs=dict(project='mmgen'))
-    ])
-visual_config = None
+runner = None
+use_ddp_wrapper = True
 
 # runtime settings
-total_iters = 186840
-cudnn_benchmark = True
+total_iters = 190000
 workflow = [('train', 1)]
 exp_name = 'pix2pix_edges2shoes_wo_jitter_flip'
 work_dir = f'./work_dirs/experiments/{exp_name}'
