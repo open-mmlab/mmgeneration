@@ -21,7 +21,7 @@ class Compose:
         for transform in transforms:
             if isinstance(transform, dict):
                 # add support for using pipelines from `MMClassification`
-                if transform['type'].startswith('mmcls::'):
+                if transform['type'].startswith('mmcls.'):
                     try:
                         from mmcls.datasets import PIPELINES as MMCLSPIPELINE
                     except ImportError:

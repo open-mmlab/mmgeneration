@@ -1,4 +1,4 @@
-dataset_type = 'mmcls::CIFAR10'
+dataset_type = 'mmcls.CIFAR10'
 
 # different from mmcls, we adopt the setting used in BigGAN
 # Note that the pipelines below are from MMClassification
