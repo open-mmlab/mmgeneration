@@ -21,7 +21,7 @@ custom_hooks = [
         type='VisualizationHook',
         output_dir='training_samples',
         res_name_list=['fake_b'],
-        interval=100)
+        interval=5000)
 ]
 
 runner = None
