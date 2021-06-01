@@ -1046,7 +1046,10 @@ class IS(Metric):
             split_scores.append(np.exp(np.mean(scores)))
 
         mean, std = np.mean(split_scores), np.std(split_scores)
+        # results for print/table
         self._result_str = f'mean: {mean:.3f}, std: {std:.3f}'
+        # results for log_buffer
+        self._result_dict = {'is': mean, 'is_std': std}
         return mean, std
 
     def clear_fake_data(self):

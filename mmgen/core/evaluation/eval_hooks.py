@@ -36,9 +36,9 @@ class GenerativeEvalHook(Hook):
     """
     rule_map = {'greater': lambda x, y: x > y, 'less': lambda x, y: x < y}
     init_value_map = {'greater': -math.inf, 'less': math.inf}
-    greater_keys = ['acc', 'top', 'AR@', 'auc', 'precision', 'mAP']
+    greater_keys = ['acc', 'top', 'AR@', 'auc', 'precision', 'mAP', 'is']
     less_keys = ['loss', 'fid']
-    _supported_best_metrics = ['fid']
+    _supported_best_metrics = ['fid', 'is']
 
     def __init__(self,
                  dataloader,
@@ -56,9 +56,14 @@ class GenerativeEvalHook(Hook):
         self.save_best_ckpt = save_best_ckpt
         self.best_metric = best_metric
 
+        if isinstance(best_metric, str):
+            self.best_metric = [self.best_metric]
+
         if self.save_best_ckpt:
-            assert self.best_metric in self._supported_best_metrics, (
-                f'{self.best_metric} is not supported for saving best ckpt')
+            not_supported = set(self.best_metric) - set(
+                self._supported_best_metrics)
+            assert len(not_supported) == 0, (
+                f'{not_supported} is not supported for saving best ckpt')
 
         self.metrics = build_metric(metrics)
 
@@ -70,13 +75,18 @@ class GenerativeEvalHook(Hook):
 
         # add support for saving best ckpt
         if self.save_best_ckpt:
-            if best_metric in self.greater_keys:
-                self.rule = 'greater'
-            else:
-                self.rule = 'less'
-            self.compare_func = self.rule_map[self.rule]
-            self._curr_best_score = self.init_value_map[self.rule]
-            self._curr_best_ckpt_path = None
+            self.rule = {}
+            self.compare_func = {}
+            self._curr_best_score = {}
+            self._curr_best_ckpt_path = {}
+            for name in self.best_metric:
+                if name in self.greater_keys:
+                    self.rule[name] = 'greater'
+                else:
+                    self.rule[name] = 'less'
+                self.compare_func[name] = self.rule_map[self.rule]
+                self._curr_best_score[name] = self.init_value_map[self.rule]
+                self._curr_best_ckpt_path[name] = None
 
     def before_run(self, runner):
         """The behavior before running.
@@ -155,8 +165,8 @@ class GenerativeEvalHook(Hook):
                     runner.log_buffer.output[name] = val
 
                     # record best metric and save the best ckpt
-                    if self.save_best_ckpt and name == self.best_metric:
-                        self._save_best_ckpt(runner, val)
+                    if self.save_best_ckpt and name in self.best_metric:
+                        self._save_best_ckpt(runner, val, name)
 
             runner.log_buffer.ready = True
         runner.model.train()
@@ -165,25 +175,28 @@ class GenerativeEvalHook(Hook):
         for metric in self.metrics:
             metric.clear()
 
-    def _save_best_ckpt(self, runner, new_score):
+    def _save_best_ckpt(self, runner, new_score, metric_name):
         curr_iter = f'iter_{runner.iter + 1}'
 
-        if self.compare_func(new_score, self._curr_best_score):
-            best_ckpt_name = f'best_{self.best_metric}_{curr_iter}.pth'
-            runner.meta['hook_msgs']['best_score'] = new_score
+        if self.compare_func[metric_name](new_score,
+                                          self._curr_best_score[metric_name]):
+            best_ckpt_name = f'best_{metric_name}_{curr_iter}.pth'
+            runner.meta['hook_msgs'][f'best_score_{metric_name}'] = new_score
 
-            if self._curr_best_ckpt_path and osp.isfile(
-                    self._curr_best_ckpt_path):
-                os.remove(self._curr_best_ckpt_path)
+            if self._curr_best_ckpt_path[metric_name] and osp.isfile(
+                    self._curr_best_ckpt_path[metric_name]):
+                os.remove(self._curr_best_ckpt_path[metric_name])
 
-            self._curr_best_ckpt_path = osp.join(runner.work_dir,
-                                                 best_ckpt_name)
+            self._curr_best_ckpt_path[metric_name] = osp.join(
+                runner.work_dir, best_ckpt_name)
             runner.save_checkpoint(
                 runner.work_dir, best_ckpt_name, create_symlink=False)
-            runner.meta['hook_msgs']['best_ckpt'] = self._curr_best_ckpt_path
+            runner.meta['hook_msgs'][
+                f'best_ckpt_{metric_name}'] = self._curr_best_ckpt_path[
+                    metric_name]
 
-            self._curr_best_score = new_score
+            self._curr_best_score[metric_name] = new_score
             runner.logger.info(
                 f'Now best checkpoint is saved as {best_ckpt_name}.')
-            runner.logger.info(f'Best {self.best_metric} is {new_score:0.4f} '
+            runner.logger.info(f'Best {metric_name} is {new_score:0.4f} '
                                f'at {curr_iter}.')
