@@ -50,7 +50,7 @@ def build_dataset(cfg, default_args=None):
             raise ImportError(
                 f'Please install mmcls to use {cfg["type"]} dataset.')
         _cfg = deepcopy(cfg)
-        _cfg['type'] = _cfg['type'][7:]
+        _cfg['type'] = _cfg['type'][6:]
         dataset = build_dataset_mmcls(_cfg, default_args)
     else:
         dataset = build_from_cfg(cfg, DATASETS, default_args)
