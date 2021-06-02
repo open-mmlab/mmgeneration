@@ -30,7 +30,7 @@ class Compose:
                     pipeline_source = MMCLSPIPELINE
                     # remove prefix
                     transform_cfg = deepcopy(transform)
-                    transform_cfg['type'] = transform_cfg['type'][7:]
+                    transform_cfg['type'] = transform_cfg['type'][6:]
                 else:
                     pipeline_source = PIPELINES
                     transform_cfg = deepcopy(transform)
