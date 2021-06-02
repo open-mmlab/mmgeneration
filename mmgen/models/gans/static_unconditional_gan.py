@@ -97,6 +97,8 @@ class StaticUnconditionalGAN(BaseGAN):
             # use deepcopy to guarantee the consistency
             self.generator_ema = deepcopy(self.generator)
 
+        self.real_img_key = self.train_cfg.get('real_img_key', 'real_img')
+
     def _parse_test_cfg(self):
         """Parsing test config and set some attributes for testing."""
         if self.test_cfg is None:
@@ -141,7 +143,7 @@ class StaticUnconditionalGAN(BaseGAN):
             dict: Contains 'log_vars', 'num_samples', and 'results'.
         """
         # get data from data_batch
-        real_imgs = data_batch['real_img']
+        real_imgs = data_batch[self.real_img_key]
         # If you adopt ddp, this batch size is local batch size for each GPU.
         # If you adopt dp, this batch size is the global batch size as usual.
         batch_size = real_imgs.shape[0]

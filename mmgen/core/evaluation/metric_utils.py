@@ -36,7 +36,17 @@ def extract_inception_features(dataloader,
     feature_list = []
     curr_iter = 1
     for data in dataloader:
-        img = data['real_img']
+        # a dirty walkround to support multiple datasets (mainly for the
+        # unconditional dataset and conditional dataset). In our
+        # implementation, unconditioanl dataset will return real images with
+        # the key "real_img". However, the conditional dataset contains a key
+        # "img" denoting the real images.
+        if 'real_img' in data:
+            # Mainly for the unconditional dataset in our MMGeneration
+            img = data['real_img']
+        else:
+            # Mainly for conditional dataset in MMClassification
+            img = data['img']
         pbar.update()
 
         # the inception network is not wrapped with module wrapper.
