@@ -147,8 +147,8 @@ class BasicConditionalGAN(BaseGAN):
             ddp_reducer (:obj:`Reducer` | None, optional): Reducer from ddp.
                 It is used to prepare for ``backward()`` in ddp. Defaults to
                 None.
-            loss_scaler (:obj:`torch.cuda.amp.GradScalar` | None, optional):
-                The loss/gradient scalar used for auto mixed-precision
+            loss_scaler (:obj:`torch.cuda.amp.GradScaler` | None, optional):
+                The loss/gradient scaler used for auto mixed-precision
                 training. Defaults to ``None``.
             use_apex_amp (bool, optional). Whether to use apex.amp. Defaults to
                 ``False``.

@@ -126,7 +126,7 @@ class DynamicIterBasedRunner(IterBasedRunner):
             Defaults to False.
         pass_training_status (bool, optional): Whether to pass the training
             status. Defaults to False.
-        fp16_loss_scalar (dict | None, optional): Config for fp16 GradScaler
+        fp16_loss_scaler (dict | None, optional): Config for fp16 GradScaler
             from ``torch.cuda.amp``. Defaults to None.
         use_apex_amp (bool, optional): Whether to use apex.amp to start mixed
             precision training. Defaults to False.
