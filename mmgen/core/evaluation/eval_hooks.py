@@ -58,8 +58,6 @@ class GenerativeEvalHook(Hook):
             best_metric=['fid', 'is'],
             sample_kwargs=dict(sample_model='ema'))
 
-
-
     Args:
         dataloader (DataLoader): A PyTorch dataloader.
         interval (int): Evaluation interval. Default: 1.
