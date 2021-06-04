@@ -16,9 +16,49 @@ class GenerativeEvalHook(Hook):
     """Evaluation Hook for Generative Models.
 
     Currently, this evaluation hook can be used to evaluate unconditional
-    models. Note that only ``FID`` metric is supported for the distributed
-    training now. In the future, we will support more metrics for evaluation
-    during the training procedure.
+    models. Note that only ``FID`` and ``IS`` metric is supported for the
+    distributed training now. In the future, we will support more metrics for
+    the evaluation during the training procedure.
+
+    In our config system, you only need to add `evaluation` with the detailed
+    configureations. Below is serveral usage cases for different situations.
+    What you need to do is to add these lines at the end of your config file.
+    Then, you can use this evaluation hook in the training procedure.
+
+    #. Only use FID for evaluation
+
+    .. code-blcok:: python
+        :linenos
+
+        evaluation = dict(
+            type='GenerativeEvalHook',
+            interval=10000,
+            metrics=dict(
+                type='FID',
+                num_images=50000,
+                inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
+                bgr2rgb=True),
+            sample_kwargs=dict(sample_model='ema'))
+
+    #. Use FID and IS simutaneously and save the best checkpoints respectively
+
+    .. code-block:: python
+        :linenos
+
+        evaluation = dict(
+            type='GenerativeEvalHook',
+            interval=10000,
+            metrics=[dict(
+                type='FID',
+                num_images=50000,
+                inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
+                bgr2rgb=True),
+                dict(type='IS',
+                num_images=50000)],
+            best_metric=['fid', 'is'],
+            sample_kwargs=dict(sample_model='ema'))
+
+
 
     Args:
         dataloader (DataLoader): A PyTorch dataloader.
