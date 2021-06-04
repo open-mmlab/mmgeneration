@@ -11,7 +11,7 @@ from .pggan import (EqualizedLR, EqualizedLRConvDownModule,
 from .pix2pix import PatchDiscriminator, generation_init_weights
 from .positional_encoding import CatersianGrid, SinusoidalPositionalEmbedding
 from .singan import SinGANMultiScaleDiscriminator, SinGANMultiScaleGenerator
-from .sngan_proj import SNGANDiscriminator, SNGANGenerator
+from .sngan_proj import ProjDiscriminator, SNGANGenerator
 from .stylegan import (MSStyleGAN2Discriminator, MSStyleGANv2Generator,
                        StyleGAN1Discriminator, StyleGAN2Discriminator,
                        StyleGANv1Generator, StyleGANv2Generator)
@@ -29,6 +29,6 @@ __all__ = [
     'MSStyleGAN2Discriminator', 'MSStyleGANv2Generator',
     'generation_init_weights', 'PatchDiscriminator', 'ResnetGenerator',
     'PerceptualLoss', 'WGANGPDiscriminator', 'WGANGPGenerator',
-    'LSGANDiscriminator', 'LSGANGenerator', 'SNGANDiscriminator',
+    'LSGANDiscriminator', 'LSGANGenerator', 'ProjDiscriminator',
     'SNGANGenerator'
 ]

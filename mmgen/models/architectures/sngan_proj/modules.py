@@ -10,10 +10,11 @@ from mmgen.utils import check_dist_init
 
 
 @MODULES.register_module()
-class SNGAN_GenResBlock(nn.Module):
+class SNGANGenResBlock(nn.Module):
 
-    # _default_conv_cfg = dict(kernel=3, stride=1, padding=1, act_cfg=None)
-    # _default_shortcut_cfg = dict(kernel=1, stride=1, padding=0, act_cfg=None)
+    _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
+    _default_shortcut_cfg = dict(
+        kernel_size=1, stride=1, padding=0, act_cfg=None)
 
     def __init__(self,
                  in_channels,
@@ -21,10 +22,10 @@ class SNGAN_GenResBlock(nn.Module):
                  hidden_channels=None,
                  num_classes=0,
                  use_cbn=True,
-                 use_norm_para=False,
+                 use_norm_affine=False,
                  act_cfg=dict(type='ReLU'),
                  norm_cfg=dict(type='BN'),
-                 upsample_cfg=dict(type='nearest'),
+                 upsample_cfg=dict(type='nearest', scale_factor=2),
                  upsample=True,
                  auto_sync_bn=True,
                  conv_cfg=None,
@@ -32,37 +33,46 @@ class SNGAN_GenResBlock(nn.Module):
 
         super().__init__()
         self.learnable_sc = in_channels != out_channels or upsample
+        self.with_upsample = upsample
 
         self.activateion = build_activation_layer(act_cfg)
         hidden_channels = out_channels if hidden_channels is None \
             else hidden_channels
 
-        if upsample:
+        if self.with_upsample:
             self.upsample = build_upsample_layer(upsample_cfg)
 
+        self.conv_cfg = self._default_conv_cfg
+        if conv_cfg is not None:
+            self.conv_cfg.update(conv_cfg)
+
+        self.shortcut_cfg = self._default_shortcut_cfg
+        if shortcut_cfg is not None:
+            self.shortcut_cfg.update(shortcut_cfg)
+
         conv_blocks = [
-            ConvModule(in_channels, hidden_channels, **conv_cfg),
-            ConvModule(hidden_channels, out_channels, **conv_cfg)
+            ConvModule(in_channels, hidden_channels, **self.conv_cfg),
+            ConvModule(hidden_channels, out_channels, **self.conv_cfg)
         ]
         self.conv_blocks = nn.ModuleList(conv_blocks)
 
         norm_blocks = [
             SNcBatchNorm(in_channels, num_classes, use_cbn, norm_cfg,
-                         use_norm_para, auto_sync_bn),
+                         use_norm_affine, auto_sync_bn),
             SNcBatchNorm(hidden_channels, num_classes, use_cbn, norm_cfg,
-                         use_norm_para, auto_sync_bn)
+                         use_norm_affine, auto_sync_bn)
         ]
         self.norm_blocks = nn.ModuleList(norm_blocks)
 
         if self.learnable_sc:
             self.shortcut = ConvModule(in_channels, out_channels,
-                                       **shortcut_cfg)
+                                       **self.shortcut_cfg)
         self._init_weight()
 
     def forward(self, x, y=None):
         out = self.norm_blocks[0](x, y)
         out = self.activateion(out)
-        if self.upsample:
+        if self.with_upsample:
             out = self.upsample(out)
         out = self.conv_blocks[0](out)
 
@@ -89,13 +99,18 @@ class SNGAN_GenResBlock(nn.Module):
 
 
 @MODULES.register_module()
-class SNGAN_DisResBlock(nn.Module):
+class SNGANDiscResBlock(nn.Module):
+
+    _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
+    _default_shortcut_cfg = dict(
+        kernel_size=1, stride=1, padding=0, act_cfg=None)
 
     def __init__(self,
                  in_channels,
                  out_channels,
                  hidden_channels=None,
                  downsample=False,
+                 with_spectral_norm=True,
                  act_cfg=dict(type='ReLU'),
                  conv_cfg=None,
                  shortcut_cfg=None):
@@ -103,29 +118,40 @@ class SNGAN_DisResBlock(nn.Module):
         super().__init__()
         hidden_channels = in_channels if hidden_channels is None \
             else hidden_channels
+        self.with_downsample = downsample
+
+        self.conv_cfg = self._default_conv_cfg
+        if conv_cfg is not None:
+            self.conv_cfg.update(conv_cfg)
+        self.conv_cfg['with_spectral_norm'] = with_spectral_norm
+
+        self.shortcut_cfg = self._default_shortcut_cfg
+        if shortcut_cfg is not None:
+            self.shortcut_cfg.update(conv_cfg)
+        self.shortcut_cfg['with_spectral_norm'] = with_spectral_norm
 
         self.activate = build_activation_layer(act_cfg)
 
         conv_blocks = [
-            ConvModule(in_channels, hidden_channels, **conv_cfg),
-            ConvModule(hidden_channels, out_channels, **conv_cfg)
+            ConvModule(in_channels, hidden_channels, **self.conv_cfg),
+            ConvModule(hidden_channels, out_channels, **self.conv_cfg)
         ]
         self.conv_blocks = nn.ModuleList(conv_blocks)
 
-        if downsample:
+        if self.with_downsample:
             self.downsample = nn.AvgPool2d(2, 2)
 
         self.learnable_sc = in_channels != out_channels or downsample
         if self.learnable_sc:
             self.shortcut = ConvModule(in_channels, out_channels,
-                                       **shortcut_cfg)
+                                       **self.shortcut_cfg)
 
     def forward(self, x):
         out = self.activate(x)
         out = self.conv_blocks[0](out)
         out = self.activate(out)
         out = self.conv_blocks[1](out)
-        if self.downsample:
+        if self.with_downsample:
             out = self.downsample(out)
 
         shortcut = self.forward_shortcut(x)
@@ -146,26 +172,43 @@ class SNGAN_DisResBlock(nn.Module):
 
 
 @MODULES.register_module()
-class SNGAN_DisHeadResBlock(nn.Module):
+class SNGANDiscHeadResBlock(nn.Module):
+
+    _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
+    _default_shortcut_cfg = dict(
+        kernel_size=1, stride=1, padding=0, act_cfg=None)
 
     def __init__(self,
                  in_channels,
                  out_channels,
                  conv_cfg=None,
                  shortcut_cfg=None,
+                 with_spectral_norm=True,
                  act_cfg=dict(type='ReLU')):
 
         super().__init__()
+
+        self.conv_cfg = self._default_conv_cfg
+        if conv_cfg is not None:
+            self.conv_cfg.update(conv_cfg)
+        self.conv_cfg['with_spectral_norm'] = with_spectral_norm
+
+        self.shortcut_cfg = self._default_shortcut_cfg
+        if shortcut_cfg is not None:
+            self.shortcut_cfg.update(shortcut_cfg)
+        self.shortcut_cfg['with_spectral_norm'] = with_spectral_norm
+
         self.activate = build_activation_layer(act_cfg)
         conv_blocks = [
-            ConvModule(in_channels, out_channels, **conv_cfg),
-            ConvModule(out_channels, out_channels, **conv_cfg)
+            ConvModule(in_channels, out_channels, **self.conv_cfg),
+            ConvModule(out_channels, out_channels, **self.conv_cfg)
         ]
         self.conv_blocks = nn.ModuleList(conv_blocks)
 
         self.downsample = nn.AvgPool2d(2, 2)
 
-        self.shortcut = ConvModule(in_channels, out_channels, **shortcut_cfg)
+        self.shortcut = ConvModule(in_channels, out_channels,
+                                   **self.shortcut_cfg)
 
     def forward(self, x):
         out = self.conv_blocks[0](x)
@@ -233,4 +276,4 @@ class SNcBatchNorm(nn.Module):
     def _init_weight(self):
         if self.use_cbn:
             constant_init(self.weight_embedding, 1)
-            constant_init(self.biase_embedding, 1)
+            constant_init(self.biase_embedding, 0)
