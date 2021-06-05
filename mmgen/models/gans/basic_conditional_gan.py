@@ -11,12 +11,12 @@ from .base_gan import BaseGAN
 # _SUPPORT_METHODS_ = ['DCGAN', 'STYLEGANv2']
 
 
-# @MODELS.register_module(_SUPPORT_METHODS_)
+@MODELS.register_module('BasiccGAN')
 @MODELS.register_module()
-class StaticUnconditionalGAN(BaseGAN):
-    """Unconditional GANs with static architecture in training.
+class BasicConditionalGAN(BaseGAN):
+    """Basic conditional GANs.
 
-    This is the standard GAN model containing standard adversarial training
+    This is the conditional GAN model containing standard adversarial training
     schedule. To fulfill the requirements of various GAN algorithms,
     ``disc_auxiliary_loss`` and ``gen_auxiliary_loss`` are provided to
     customize auxiliary losses, e.g., gradient penalty loss, and discriminator
@@ -35,6 +35,8 @@ class StaticUnconditionalGAN(BaseGAN):
             Defaults to None.
         test_cfg (dict | None, optional): Config for testing schedule. Defaults
             to None.
+        num_classes (int | None, optional): The number of conditional classes.
+            Defaults to None.
     """
 
     def __init__(self,
@@ -44,8 +46,10 @@ class StaticUnconditionalGAN(BaseGAN):
                  disc_auxiliary_loss=None,
                  gen_auxiliary_loss=None,
                  train_cfg=None,
-                 test_cfg=None):
+                 test_cfg=None,
+                 num_classes=None):
         super().__init__()
+        self.num_classes = num_classes
         self._gen_cfg = deepcopy(generator)
         self.generator = build_module(generator)
 
@@ -90,14 +94,22 @@ class StaticUnconditionalGAN(BaseGAN):
             self.train_cfg = dict()
         # control the work flow in train step
         self.disc_steps = self.train_cfg.get('disc_steps', 1)
+        self.gen_steps = self.train_cfg.get('gen_steps', 1)
+
+        # add support for accumulating gradients within multiple steps. This
+        # feature aims to simulate large `batch_sizes` (but may have some
+        # detailed differences in BN). Note that `self.disc_steps` should be
+        # set according to the batch accumulation strategy.
+        # In addition, in the detailed implementation, there is a difference
+        # bwtween the batch accumulation in the generator and discriminator.
+        self.batch_accumulation_steps = self.train_cfg.get(
+            'batch_accumulation_steps', 1)
 
         # whether to use exponential moving average for training
         self.use_ema = self.train_cfg.get('use_ema', False)
         if self.use_ema:
             # use deepcopy to guarantee the consistency
             self.generator_ema = deepcopy(self.generator)
-
-        self.real_img_key = self.train_cfg.get('real_img_key', 'real_img')
 
     def _parse_test_cfg(self):
         """Parsing test config and set some attributes for testing."""
@@ -148,7 +160,9 @@ class StaticUnconditionalGAN(BaseGAN):
             dict: Contains 'log_vars', 'num_samples', and 'results'.
         """
         # get data from data_batch
-        real_imgs = data_batch[self.real_img_key]
+        real_imgs = data_batch['img']
+        # get the ground-truth label, torch.Tensor (N, )
+        gt_label = data_batch['gt_label']
         # If you adopt ddp, this batch size is local batch size for each GPU.
         # If you adopt dp, this batch size is the global batch size as usual.
         batch_size = real_imgs.shape[0]
@@ -164,14 +178,20 @@ class StaticUnconditionalGAN(BaseGAN):
 
         # disc training
         set_requires_grad(self.discriminator, True)
-        optimizer['discriminator'].zero_grad()
+
+        # do not `zero_grad` during batch accumulation
+        if curr_iter % self.batch_accumulation_steps == 0:
+            optimizer['discriminator'].zero_grad()
         # TODO: add noise sampler to customize noise sampling
         with torch.no_grad():
-            fake_imgs = self.generator(None, num_batches=batch_size)
+            fake_data = self.generator(
+                None, num_batches=batch_size, label=None, return_noise=True)
+            # fake_label should be in the same data type with the gt_label
+            fake_imgs, fake_label = fake_data['fake_img'], fake_data['label']
 
         # disc pred for fake imgs and real_imgs
-        disc_pred_fake = self.discriminator(fake_imgs)
-        disc_pred_real = self.discriminator(real_imgs)
+        disc_pred_fake = self.discriminator(fake_imgs, label=fake_label)
+        disc_pred_real = self.discriminator(real_imgs, label=gt_label)
         # get data dict to compute losses for disc
         data_dict_ = dict(
             gen=self.generator,
@@ -182,9 +202,12 @@ class StaticUnconditionalGAN(BaseGAN):
             real_imgs=real_imgs,
             iteration=curr_iter,
             batch_size=batch_size,
+            gt_label=gt_label,
+            fake_label=fake_label,
             loss_scaler=loss_scaler)
 
         loss_disc, log_vars_disc = self._get_disc_loss(data_dict_)
+        loss_disc = loss_disc / float(self.batch_accumulation_steps)
 
         # prepare for backward in ddp. If you do not call this function before
         # back propagation, the ddp will not dynamically find the used params
@@ -204,13 +227,14 @@ class StaticUnconditionalGAN(BaseGAN):
         else:
             loss_disc.backward()
 
-        if loss_scaler:
-            loss_scaler.unscale_(optimizer['discriminator'])
-            # note that we do not contain clip_grad procedure
-            loss_scaler.step(optimizer['discriminator'])
-            # loss_scaler.update will be called in runner.train()
-        else:
-            optimizer['discriminator'].step()
+        if (curr_iter + 1) % self.batch_accumulation_steps == 0:
+            if loss_scaler:
+                loss_scaler.unscale_(optimizer['discriminator'])
+                # note that we do not contain clip_grad procedure
+                loss_scaler.step(optimizer['discriminator'])
+                # loss_scaler.update will be called in runner.train()
+            else:
+                optimizer['discriminator'].step()
 
         # skip generator training if only train discriminator for current
         # iteration
@@ -227,47 +251,56 @@ class StaticUnconditionalGAN(BaseGAN):
 
         # generator training
         set_requires_grad(self.discriminator, False)
-        optimizer['generator'].zero_grad()
+        # allow for training the generator with multiple steps
+        for _ in range(self.gen_steps):
+            optimizer['generator'].zero_grad()
+            for _ in range(self.batch_accumulation_steps):
+                # TODO: add noise sampler to customize noise sampling
+                fake_data = self.generator(
+                    None, num_batches=batch_size, return_noise=True)
+                # fake_label should be in the same data type with the gt_label
+                fake_imgs, fake_label = fake_data['fake_img'], fake_data[
+                    'label']
+                disc_pred_fake_g = self.discriminator(
+                    fake_imgs, label=fake_label)
 
-        # TODO: add noise sampler to customize noise sampling
-        fake_imgs = self.generator(None, num_batches=batch_size)
-        disc_pred_fake_g = self.discriminator(fake_imgs)
+                data_dict_ = dict(
+                    gen=self.generator,
+                    disc=self.discriminator,
+                    fake_imgs=fake_imgs,
+                    disc_pred_fake_g=disc_pred_fake_g,
+                    iteration=curr_iter,
+                    batch_size=batch_size,
+                    fake_label=fake_label,
+                    loss_scaler=loss_scaler)
 
-        data_dict_ = dict(
-            gen=self.generator,
-            disc=self.discriminator,
-            fake_imgs=fake_imgs,
-            disc_pred_fake_g=disc_pred_fake_g,
-            iteration=curr_iter,
-            batch_size=batch_size,
-            loss_scaler=loss_scaler)
+                loss_gen, log_vars_g = self._get_gen_loss(data_dict_)
+                loss_gen = loss_gen / float(self.batch_accumulation_steps)
 
-        loss_gen, log_vars_g = self._get_gen_loss(data_dict_)
+                # prepare for backward in ddp. If you do not call this function
+                # before back propagation, the ddp will not dynamically find
+                # the used params in current computation.
+                if ddp_reducer is not None:
+                    ddp_reducer.prepare_for_backward(_find_tensors(loss_gen))
 
-        # prepare for backward in ddp. If you do not call this function before
-        # back propagation, the ddp will not dynamically find the used params
-        # in current computation.
-        if ddp_reducer is not None:
-            ddp_reducer.prepare_for_backward(_find_tensors(loss_gen))
+                if loss_scaler:
+                    loss_scaler.scale(loss_gen).backward()
+                elif use_apex_amp:
+                    from apex import amp
+                    with amp.scale_loss(
+                            loss_gen, optimizer['generator'],
+                            loss_id=1) as scaled_loss_disc:
+                        scaled_loss_disc.backward()
+                else:
+                    loss_gen.backward()
 
-        if loss_scaler:
-            loss_scaler.scale(loss_gen).backward()
-        elif use_apex_amp:
-            from apex import amp
-            with amp.scale_loss(
-                    loss_gen, optimizer['generator'],
-                    loss_id=1) as scaled_loss_disc:
-                scaled_loss_disc.backward()
-        else:
-            loss_gen.backward()
-
-        if loss_scaler:
-            loss_scaler.unscale_(optimizer['generator'])
-            # note that we do not contain clip_grad procedure
-            loss_scaler.step(optimizer['generator'])
-            # loss_scaler.update will be called in runner.train()
-        else:
-            optimizer['generator'].step()
+                if loss_scaler:
+                    loss_scaler.unscale_(optimizer['generator'])
+                    # note that we do not contain clip_grad procedure
+                    loss_scaler.step(optimizer['generator'])
+                    # loss_scaler.update will be called in runner.train()
+                else:
+                    optimizer['generator'].step()
 
         log_vars = {}
         log_vars.update(log_vars_g)
@@ -279,4 +312,56 @@ class StaticUnconditionalGAN(BaseGAN):
 
         if hasattr(self, 'iteration'):
             self.iteration += 1
+        return outputs
+
+    def sample_from_noise(self,
+                          noise,
+                          num_batches=0,
+                          sample_model='ema/orig',
+                          label=None,
+                          **kwargs):
+        """Sample images from noises by using the generator.
+
+        Args:
+            noise (torch.Tensor | callable | None): You can directly give a
+                batch of noise through a ``torch.Tensor`` or offer a callable
+                function to sample a batch of noise data. Otherwise, the
+                ``None`` indicates to use the default noise sampler.
+            num_batches (int, optional): The number of batch size.
+                Defaults to 0.
+            sampel_model (str, optional): Use which model to sample fake
+                images. Defaults to `'ema/orig'`.
+            label (torch.Tensor | None , optional): The conditional label.
+                Defaults to None.
+
+        Returns:
+            torch.Tensor | dict: The output may be the direct synthesized
+                images in ``torch.Tensor``. Otherwise, a dict with queried
+                data, including generated images, will be returned.
+        """
+        if sample_model == 'ema':
+            assert self.use_ema
+            _model = self.generator_ema
+        elif sample_model == 'ema/orig' and self.use_ema:
+            _model = self.generator_ema
+        else:
+            _model = self.generator
+
+        outputs = _model(noise, num_batches=num_batches, label=label, **kwargs)
+
+        if isinstance(outputs, dict) and 'noise_batch' in outputs:
+            noise = outputs['noise_batch']
+            label = outputs['label']
+
+        if sample_model == 'ema/orig' and self.use_ema:
+            _model = self.generator
+            outputs_ = _model(
+                noise, num_batches=num_batches, label=label, **kwargs)
+
+            if isinstance(outputs_, dict):
+                outputs['fake_img'] = torch.cat(
+                    [outputs['fake_img'], outputs_['fake_img']], dim=0)
+            else:
+                outputs = torch.cat([outputs, outputs_], dim=0)
+
         return outputs
