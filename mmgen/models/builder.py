@@ -31,6 +31,6 @@ def build_model(cfg, train_cfg=None, test_cfg=None):
     return build(cfg, MODELS, dict(train_cfg=train_cfg, test_cfg=test_cfg))
 
 
-def build_module(cfg):
+def build_module(cfg, default_args=None):
     """Build a module or modules from a list."""
-    return build(cfg, MODULES)
+    return build(cfg, MODULES, default_args)
