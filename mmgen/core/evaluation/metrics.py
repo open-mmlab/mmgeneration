@@ -375,7 +375,7 @@ class FID(Metric):
             self.device = 'cuda'
         self.inception_net.eval()
 
-        mmcv.print_log(f'Adopt Inception in {self.inception_style} style',
+        mmcv.print_log(f'FID: Adopt Inception in {self.inception_style} style',
                        'mmgen')
 
     def prepare(self):
@@ -869,6 +869,10 @@ class IS(Metric):
         num_images (int): The number of evaluated generated samples.
         image_shape (tuple, optional): Image shape in order "CHW". Defaults to
             None.
+        bgr2rgb (bool, optional): If True, reformat the BGR image to RGB
+            format. In default, our model generate images in the BGR order.
+            Thus, we use `True` as the default behavior. Please switch to
+            `False`, if the input is in the `RGB` order. Defaults to True.
         resize (bool, optional): Whether resize image to 299x299. Defaults to
             True.
         splits (int, optional): The number of groups. Defaults to 10.
@@ -883,7 +887,7 @@ class IS(Metric):
     def __init__(self,
                  num_images,
                  image_shape=None,
-                 bgr2rgb=False,
+                 bgr2rgb=True,
                  resize=True,
                  splits=10,
                  use_pil_resize=True,
@@ -969,8 +973,9 @@ class IS(Metric):
         if self.use_tero_script:
             x = self.inception_model(x, no_output_bias=True)
         else:
-            x = F.softmax(self.inception_model(x))
-        return x.data.cpu().numpy()
+            # specify the dimension to avoid warning
+            x = F.softmax(self.inception_model(x), dim=1)
+        return x
 
     def prepare(self):
         """Prepare for evaluating models with this metric."""
@@ -999,7 +1004,20 @@ class IS(Metric):
                 batch = (batch * 127.5 + 128).clamp(0, 255).to(torch.uint8)
 
             batch = batch.to(self.device)
-            self.preds.append(self.get_pred(batch))
+
+            # get prediction
+            pred = self.get_pred(batch)
+
+            if dist.is_initialized():
+                ws = dist.get_world_size()
+                placeholder = [torch.zeros_like(pred) for _ in range(ws)]
+                dist.all_gather(placeholder, pred)
+                pred = torch.cat(placeholder, dim=0)
+
+            # in distributed training, we only collect features at rank-0.
+            if (dist.is_initialized()
+                    and dist.get_rank() == 0) or not dist.is_initialized():
+                self.preds.append(pred.cpu().numpy())
         else:
             raise ValueError(f'{mode} is not a implemented feed mode.')
 
@@ -1007,12 +1025,16 @@ class IS(Metric):
     def summary(self):
         """Summarize the results.
 
+        TODO: support `master_only`
+
         Returns:
             dict | list: Summarized results.
         """
-        self.check()
         split_scores = []
         self.preds = np.concatenate(self.preds, axis=0)
+        # check for the size
+        assert self.preds.shape[0] >= self.num_images
+        self.preds = self.preds[:self.num_images]
         for k in range(self.splits):
             part = self.preds[k * (self.num_images // self.splits):(k + 1) *
                               (self.num_images // self.splits), :]
@@ -1024,8 +1046,25 @@ class IS(Metric):
             split_scores.append(np.exp(np.mean(scores)))
 
         mean, std = np.mean(split_scores), np.std(split_scores)
+        # results for print/table
         self._result_str = f'mean: {mean:.3f}, std: {std:.3f}'
+        # results for log_buffer
+        self._result_dict = {'is': mean, 'is_std': std}
         return mean, std
+
+    def clear_fake_data(self):
+        """Clear fake data."""
+        self.preds = []
+        self.num_fake_feeded = 0
+
+    def clear(self, clear_reals=False):
+        """Clear data buffers.
+
+        Args:
+            clear_reals (bool, optional): Whether to clear real data.
+                Defaults to False.
+        """
+        self.clear_fake_data()
 
 
 @METRICS.register_module()

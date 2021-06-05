@@ -1,5 +1,6 @@
 import platform
 import random
+from copy import deepcopy
 from functools import partial
 
 import numpy as np
@@ -41,6 +42,16 @@ def build_dataset(cfg, default_args=None):
     if cfg['type'] == 'RepeatDataset':
         dataset = RepeatDataset(
             build_dataset(cfg['dataset'], default_args), cfg['times'])
+    # add support for using datasets from `MMClassification`
+    elif cfg['type'].startswith('mmcls.'):
+        try:
+            from mmcls.datasets import build_dataset as build_dataset_mmcls
+        except ImportError:
+            raise ImportError(
+                f'Please install mmcls to use {cfg["type"]} dataset.')
+        _cfg = deepcopy(cfg)
+        _cfg['type'] = _cfg['type'][6:]
+        dataset = build_dataset_mmcls(_cfg, default_args)
     else:
         dataset = build_from_cfg(cfg, DATASETS, default_args)
 
