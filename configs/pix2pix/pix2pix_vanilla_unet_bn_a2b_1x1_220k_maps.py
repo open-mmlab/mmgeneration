@@ -20,7 +20,7 @@ lr_config = None
 checkpoint_config = dict(interval=10000, save_optimizer=True, by_epoch=False)
 custom_hooks = [
     dict(
-        type='VisualizationHook',
+        type='MMGenVisualizationHook',
         output_dir='training_samples',
         res_name_list=['fake_b'],
         interval=5000)
