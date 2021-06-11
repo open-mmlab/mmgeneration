@@ -37,6 +37,8 @@ def download_from_url(url,
     Args:
         url (str): URL of the object to download.
         dest_path (str): Path where object will be saved.
+        dest_dir (str): The directory of the destination. Defaults to
+            ``'~/.cache/openmmlab/mmgen/'``.
         hash_prefix (string, optional): If not None, the SHA256 downloaded
             file should start with `hash_prefix`. Default: None.
 
