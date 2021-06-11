@@ -49,8 +49,9 @@ def download_from_url(url,
     if dest_path is None:
         filename = url.split('/')[-1]
         dest_path = os.path.join(dest_dir, filename)
-        if dest_path.startswith('~'):
-            dest_path = os.path.expanduser('~') + dest_path[1:]
+
+    if dest_path.startswith('~'):
+        dest_path = os.path.expanduser('~') + dest_path[1:]
 
     # mkdir
     _dir = os.path.dirname(dest_path)
