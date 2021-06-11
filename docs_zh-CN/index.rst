@@ -1,4 +1,4 @@
-Welcome to MMGeneration's documentation!
+欢迎来到 MMGeneration 的用户手册！
 =======================================
 
 .. toctree::
