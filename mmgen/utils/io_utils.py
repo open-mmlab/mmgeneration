@@ -53,6 +53,10 @@ def download_from_url(url,
     if dest_path.startswith('~'):
         dest_path = os.path.expanduser('~') + dest_path[1:]
 
+    # advoid downloading existed file
+    if os.path.exists(dest_path):
+        return dest_path
+
     # mkdir
     _dir = os.path.dirname(dest_path)
     mmcv.mkdir_or_exist(_dir)
