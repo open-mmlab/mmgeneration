@@ -28,10 +28,21 @@ INCEPTION_URL = 'https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrain
 
 
 def load_inception(inception_args, metric):
-    """Load Inception Model from given ``inception_args`` and ``metric``
+    """Load Inception Model from given ``inception_args`` and ``metric``. This
+    function would try to load Inception under the guidance of 'type' given in
+    `inception_args`, if not given, we would try best to load Tero's ones. In
+    detailly, we would first try to load model from disk with given
+    'inception_path', and then try to download the checkpoints from
+    'inception_url'. If both method are failed, pytorch version of Inception
+    would be loaded.
 
     Args:
-        inception_args (any):
+        inception_args (dict): Keyword args for inception net.
+        metric (string): Metric to use the Inception. This argument would
+            influence the pytorch's Inception loading.
+    Returns:
+        model (torch.nn.Module): Loaded Inception model.
+        style (string): The version of the loaded Inception.
     """
 
     # load pytorch version if inception_args is invalid
@@ -468,10 +479,11 @@ class FID(Metric):
         #     self.inception_style = 'PyTorch'
         #     # define inception net with default PyTorch style
         #     self.inception_net = InceptionV3([3], **inception_args)
-        # if torch.cuda.is_available():
-        #     self.inception_net = self.inception_net.cuda()
-        #     self.device = 'cuda'
-        # self.inception_net.eval()
+
+        if torch.cuda.is_available():
+            self.inception_net = self.inception_net.cuda()
+            self.device = 'cuda'
+        self.inception_net.eval()
 
         mmcv.print_log(f'FID: Adopt Inception in {self.inception_style} style',
                        'mmgen')
@@ -1005,7 +1017,10 @@ class IS(Metric):
         super().__init__(num_images, image_shape)
         mmcv.print_log('Loading Inception V3 for IS...', 'mmgen')
 
-        self.inception_model = load_inception(inception_args, 'IS')
+        model, style = load_inception(inception_args, 'IS')
+
+        self.inception_model = model
+        self.use_tero_script = style == 'StyleGAN'
 
         self.num_real_feeded = self.num_images
         self.resize = resize
