@@ -18,36 +18,36 @@ class BigGANGenerator(nn.Module):
     # TODO:
     """[summary]
 
-        Args:
-            output_scale ([type]): [description]
-            noise_size (int, optional): [description]. Defaults to 120.
-            num_classes (int, optional): [description]. Defaults to 0.
-            out_channels (int, optional): [description]. Defaults to 3.
-            base_channels (int, optional): [description]. Defaults to 96.
-            input_scale (int, optional): [description]. Defaults to 4.
-            with_shared_embedding (bool, optional): [description]. Defaults to 
-                True.
-            shared_dim (int, optional): [description]. Defaults to 128.
-            sn_eps ([type], optional): [description]. Defaults to 1e-6.
-            init_type (str, optional): [description]. Defaults to 'ortho'.
-            split_noise (bool, optional): [description]. Defaults to True.
-            act_cfg ([type], optional): [description]. Defaults to 
-                dict(type='ReLU').
-            conv_cfg ([type], optional): [description]. Defaults to 
-                dict(type='Conv2d').
-            upsample_cfg ([type], optional): [description]. Defaults to 
-                dict(type='nearest', scale_factor=2).
-            with_spectral_norm (bool, optional): [description]. Defaults to 
-                True.
-            auto_sync_bn (bool, optional): [description]. Defaults to True.
-            blocks_cfg ([type], optional): [description]. Defaults to 
-                dict(type='BigGANGenResBlock').
-            norm_cfg ([type], optional): [description]. Defaults to None.
-            arch_cfg ([type], optional): [description]. Defaults to None.
-            out_norm_cfg ([type], optional): [description]. Defaults to 
-                dict(type='BN').
-            pretrained ([type], optional): [description]. Defaults to None.
-        """
+    Args:
+        output_scale ([type]): [description]
+        noise_size (int, optional): [description]. Defaults to 120.
+        num_classes (int, optional): [description]. Defaults to 0.
+        out_channels (int, optional): [description]. Defaults to 3.
+        base_channels (int, optional): [description]. Defaults to 96.
+        input_scale (int, optional): [description]. Defaults to 4.
+        with_shared_embedding (bool, optional): [description]. Defaults to
+            True.
+        shared_dim (int, optional): [description]. Defaults to 128.
+        sn_eps ([type], optional): [description]. Defaults to 1e-6.
+        init_type (str, optional): [description]. Defaults to 'ortho'.
+        split_noise (bool, optional): [description]. Defaults to True.
+        act_cfg ([type], optional): [description]. Defaults to
+            dict(type='ReLU').
+        conv_cfg ([type], optional): [description]. Defaults to
+            dict(type='Conv2d').
+        upsample_cfg ([type], optional): [description]. Defaults to
+            dict(type='nearest', scale_factor=2).
+        with_spectral_norm (bool, optional): [description]. Defaults to
+            True.
+        auto_sync_bn (bool, optional): [description]. Defaults to True.
+        blocks_cfg ([type], optional): [description]. Defaults to
+            dict(type='BigGANGenResBlock').
+        norm_cfg ([type], optional): [description]. Defaults to None.
+        arch_cfg ([type], optional): [description]. Defaults to None.
+        out_norm_cfg ([type], optional): [description]. Defaults to
+            dict(type='BN').
+        pretrained ([type], optional): [description]. Defaults to None.
+    """
 
     def __init__(self,
                  output_scale,
@@ -345,25 +345,25 @@ class BigGANDiscriminator(nn.Module):
     # TODO:
     """[summary]
 
-        Args:
-            input_scale ([type]): [description]
-            num_classes (int, optional): [description]. Defaults to 0.
-            in_channels (int, optional): [description]. Defaults to 3.
-            out_channels (int, optional): [description]. Defaults to 1.
-            base_channels (int, optional): [description]. Defaults to 96.
-            sn_eps ([type], optional): [description]. Defaults to 1e-6.
-            init_type (str, optional): [description]. Defaults to 'ortho'.
-            act_cfg ([type], optional): [description]. Defaults to dict(type=
-                'ReLU').
-            conv_cfg ([type], optional): [description]. Defaults to dict(type=
-                'Conv2d').
-            with_spectral_norm (bool, optional): [description]. Defaults to 
-                True.
-            blocks_cfg ([type], optional): [description]. Defaults to dict(
-                    type='BigGANDiscResBlock').
-            arch_cfg ([type], optional): [description]. Defaults to None.
-            pretrained ([type], optional): [description]. Defaults to None.
-        """
+    Args:
+        input_scale ([type]): [description]
+        num_classes (int, optional): [description]. Defaults to 0.
+        in_channels (int, optional): [description]. Defaults to 3.
+        out_channels (int, optional): [description]. Defaults to 1.
+        base_channels (int, optional): [description]. Defaults to 96.
+        sn_eps ([type], optional): [description]. Defaults to 1e-6.
+        init_type (str, optional): [description]. Defaults to 'ortho'.
+        act_cfg ([type], optional): [description]. Defaults to dict(type=
+            'ReLU').
+        conv_cfg ([type], optional): [description]. Defaults to dict(type=
+            'Conv2d').
+        with_spectral_norm (bool, optional): [description]. Defaults to
+            True.
+        blocks_cfg ([type], optional): [description]. Defaults to dict(
+                type='BigGANDiscResBlock').
+        arch_cfg ([type], optional): [description]. Defaults to None.
+        pretrained ([type], optional): [description]. Defaults to None.
+    """
 
     def __init__(self,
                  input_scale,

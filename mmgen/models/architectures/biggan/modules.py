@@ -17,11 +17,11 @@ class SNConvModule(ConvModule):
     # TODO:
     """[summary]
 
-        Args:
-            with_spectral_norm (bool, optional): [description]. Defaults to 
-                False.
-            spectral_norm_cfg ([type], optional): [description]. Defaults to 
-                None.
+    Args:
+        with_spectral_norm (bool, optional): [description]. Defaults to
+            False.
+        spectral_norm_cfg ([type], optional): [description]. Defaults to
+            None.
     """
 
     def __init__(self,
@@ -43,24 +43,24 @@ class BigGANGenResBlock(nn.Module):
     # TODO:
     """[summary]
 
-        Args:
-            in_channels ([type]): [description]
-            out_channels ([type]): [description]
-            dim_after_concat ([type]): [description]
-            conv_cfg ([type], optional): [description]. Defaults to dict(type=
-                'Conv2d').
-            shortcut_cfg ([type], optional): [description]. Defaults to dict(
-                    type='Conv2d').
-            act_cfg ([type], optional): [description]. Defaults to dict(type=
-                'ReLU').
-            upsample_cfg ([type], optional): [description]. Defaults to dict(
-                    type='nearest', scale_factor=2).
-            sn_eps ([type], optional): [description]. Defaults to 1e-6.
-            with_spectral_norm (bool, optional): [description]. Defaults to 
-                True.
-            label_input (bool, optional): [description]. Defaults to False.
-            auto_sync_bn (bool, optional): [description]. Defaults to True.
-        """
+    Args:
+        in_channels ([type]): [description]
+        out_channels ([type]): [description]
+        dim_after_concat ([type]): [description]
+        conv_cfg ([type], optional): [description]. Defaults to dict(type=
+            'Conv2d').
+        shortcut_cfg ([type], optional): [description]. Defaults to dict(
+                type='Conv2d').
+        act_cfg ([type], optional): [description]. Defaults to dict(type=
+            'ReLU').
+        upsample_cfg ([type], optional): [description]. Defaults to dict(
+                type='nearest', scale_factor=2).
+        sn_eps ([type], optional): [description]. Defaults to 1e-6.
+        with_spectral_norm (bool, optional): [description]. Defaults to
+            True.
+        label_input (bool, optional): [description]. Defaults to False.
+        auto_sync_bn (bool, optional): [description]. Defaults to True.
+    """
 
     def __init__(self,
                  in_channels,
@@ -159,17 +159,17 @@ class BigGANGenResBlock(nn.Module):
 class BigGANConditionBN(nn.Module):
     """[summary]
 
-        Args:
-            num_features ([type]): [description]
-            input_dim ([type]): [description]
-            bn_eps ([type], optional): [description]. Defaults to 1e-5.
-            sn_eps ([type], optional): [description]. Defaults to 1e-6.
-            momentum (float, optional): [description]. Defaults to 0.1.
-            label_input (bool, optional): [description]. Defaults to False.
-            with_spectral_norm (bool, optional): [description]. Defaults to 
-                True.
-            auto_sync_bn (bool, optional): [description]. Defaults to True.
-        """
+    Args:
+        num_features ([type]): [description]
+        input_dim ([type]): [description]
+        bn_eps ([type], optional): [description]. Defaults to 1e-5.
+        sn_eps ([type], optional): [description]. Defaults to 1e-6.
+        momentum (float, optional): [description]. Defaults to 0.1.
+        label_input (bool, optional): [description]. Defaults to False.
+        with_spectral_norm (bool, optional): [description]. Defaults to
+            True.
+        auto_sync_bn (bool, optional): [description]. Defaults to True.
+    """
 
     def __init__(self,
                  num_features,
@@ -222,12 +222,12 @@ class BigGANConditionBN(nn.Module):
 class SelfAttentionBlock(nn.Module):
     """[summary]
 
-        Args:
-            in_channels ([type]): [description]
-            with_spectral_norm (bool, optional): [description]. Defaults to 
-                True.
-            sn_eps ([type], optional): [description]. Defaults to 1e-6.
-        """
+    Args:
+        in_channels ([type]): [description]
+        with_spectral_norm (bool, optional): [description]. Defaults to
+            True.
+        sn_eps ([type], optional): [description]. Defaults to 1e-6.
+    """
 
     def __init__(self, in_channels, with_spectral_norm=True, sn_eps=1e-6):
         super(SelfAttentionBlock, self).__init__()
@@ -304,20 +304,20 @@ class BigGANDiscResBlock(nn.Module):
     # TODO:
     """[summary]
 
-        Args:
-            in_channels ([type]): [description]
-            out_channels ([type]): [description]
-            conv_cfg ([type], optional): [description]. Defaults to dict(type=
-                'Conv2d').
-            shortcut_cfg ([type], optional): [description]. Defaults to dict(
-                    type='Conv2d').
-            act_cfg ([type], optional): [description]. Defaults to dict(type=
-                'ReLU', inplace=False).
-            sn_eps ([type], optional): [description]. Defaults to 1e-6.
-            with_downsample (bool, optional): [description]. Defaults to True.
-            with_spectral_norm (bool, optional): [description]. Defaults to 
-                True.
-            head_block (bool, optional): [description]. Defaults to False.
+    Args:
+        in_channels ([type]): [description]
+        out_channels ([type]): [description]
+        conv_cfg ([type], optional): [description]. Defaults to dict(type=
+            'Conv2d').
+        shortcut_cfg ([type], optional): [description]. Defaults to dict(
+                type='Conv2d').
+        act_cfg ([type], optional): [description]. Defaults to dict(type=
+            'ReLU', inplace=False).
+        sn_eps ([type], optional): [description]. Defaults to 1e-6.
+        with_downsample (bool, optional): [description]. Defaults to True.
+        with_spectral_norm (bool, optional): [description]. Defaults to
+            True.
+        head_block (bool, optional): [description]. Defaults to False.
     """
 
     def __init__(
