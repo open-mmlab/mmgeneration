@@ -1,4 +1,7 @@
-from .generator_discriminator import BigGANGenerator
-from .modules import BigGANConditionBatchNorm, BigGANGenResBlock
+from .generator_discriminator import BigGANDiscriminator, BigGANGenerator
+from .modules import BigGANConditionBN, BigGANGenResBlock
 
-__all__ = ['BigGANGenerator', 'BigGANGenResBlock', 'BigGANConditionBatchNorm']
+__all__ = [
+    'BigGANGenerator', 'BigGANGenResBlock', 'BigGANConditionBN',
+    'BigGANDiscriminator'
+]
