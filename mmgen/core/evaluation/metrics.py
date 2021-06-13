@@ -24,15 +24,15 @@ from .metric_utils import (_f_special_gauss, _hox_downsample,
                            get_descriptors_for_minibatch, get_gaussian_kernel,
                            laplacian_pyramid, slerp)
 
-INCEPTION_URL = 'https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt'  # noqa
+TERO_INCEPTION_URL = 'https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt'  # noqa
 
 
 def load_inception(inception_args, metric):
     """Load Inception Model from given ``inception_args`` and ``metric``. This
     function would try to load Inception under the guidance of 'type' given in
     `inception_args`, if not given, we would try best to load Tero's ones. In
-    detailly, we would first try to load model from disk with given
-    'inception_path', and then try to download the checkpoints from
+    detailly, we would first try to load the model from disk with the given
+    'inception_path', and then try to download the checkpoint from
     'inception_url'. If both method are failed, pytorch version of Inception
     would be loaded.
 
@@ -45,26 +45,20 @@ def load_inception(inception_args, metric):
         style (string): The version of the loaded Inception.
     """
 
-    # load pytorch version if inception_args is invalid
     if not isinstance(inception_args, dict):
-        mmcv.print_log(
-            'Receive invalid \'inception_args\': '
-            f'{inception_args}, load pytorch version.', 'mmgen')
-        return _load_inception_torch(inception_args, metric), 'pytorch'
+        raise TypeError('eceive invalid \'inception_args\': '
+                        f'\'{inception_args}\'')
 
     _inception_args = deepcopy(inception_args)
-    if 'type' in inception_args:
-        inceptoin_type = _inception_args.pop('type')
-    else:
-        inceptoin_type = ''
+    inceptoin_type = _inception_args.pop('type', None)
 
     # load pytorch version
-    if inceptoin_type == 'pytorch':
+    if inceptoin_type != 'StyleGAN':
         return _load_inception_torch(_inception_args, metric), 'pytorch'
 
     # try to load Tero's version
-    path = _inception_args.get('inception_path', '')
-    url = _inception_args.get('inception_url', INCEPTION_URL)
+    path = _inception_args.get('inception_path', None)
+    url = _inception_args.get('inception_url', TERO_INCEPTION_URL)
 
     model = _load_inception_from_path(path)
     if isinstance(model, torch.nn.Module):
@@ -75,7 +69,7 @@ def load_inception(inception_args, metric):
         return model, 'StyleGAN'
 
     # load pytorch version if can not load Tero's version
-    mmcv.print_log('Cannot Tero\'s Inception Model, load pytorch version',
+    mmcv.print_log('Cannot load Tero\'s Inception Model, load pytorch version',
                    'mmgen')
     return _load_inception_torch(_inception_args, metric), 'torch'
 
@@ -96,7 +90,7 @@ def _load_inception_from_path(inception_path):
 
 
 def _load_inception_from_url(inception_url):
-    inception_url = inception_url if inception_url else INCEPTION_URL
+    inception_url = inception_url if inception_url else TERO_INCEPTION_URL
     mmcv.print_log(f'Download Inception Model from {inception_url}...',
                    'mmgen')
     try:
@@ -993,13 +987,6 @@ class IS(Metric):
         inception_args (dict, optional): Keyword args for inception net.
             Defaults to
             `dict(type='StyleGAN', inception_path='', inception_url=INCEPTION_URL)`.
-        inception_path (str, optional): Disk path for the Tero's Inception V3
-            module.  Defaults to
-            '~/.cache/openmmlab/mmgen/pretrained/inception-2015-12-05.pt'.
-        inception_url (str, optional): Download url for the Tero's
-            Inception V3. If passed, code would download the Inception V3
-            automaticlly when ``inception_path`` is invalid. Defaults to
-            `INCEPTION_URL`.
     """
     name = 'IS'
 
@@ -1012,8 +999,8 @@ class IS(Metric):
                  use_pil_resize=True,
                  inception_args=dict(
                      type='StyleGAN',
-                     inception_path='',
-                     inception_url=INCEPTION_URL)):
+                     inception_path=None,
+                     inception_url=TERO_INCEPTION_URL)):
         super().__init__(num_images, image_shape)
         mmcv.print_log('Loading Inception V3 for IS...', 'mmgen')
 
