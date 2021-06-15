@@ -27,7 +27,7 @@ checkpoint_config = dict(by_epoch=False, interval=2000, max_keep_ckpts=3)
 
 custom_hooks = [
     dict(
-        type='VisualizationHook',
+        type='MMGenVisualizationHook',
         output_dir='visual',
         interval=500,
         bgr2rgb=True,

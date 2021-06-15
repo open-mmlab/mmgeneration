@@ -21,7 +21,7 @@ from mmgen.apis import init_model, sample_uncoditional_model
 # Specify the path to model config and checkpoint file
 config_file = 'configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py'
 # you can download this checkpoint in advance and use a local file path.
-checkpoint_file = 'http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth'
+checkpoint_file = 'https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth'
 
 device = 'cuda:0'
 # init a generatvie
@@ -313,7 +313,7 @@ You can run the command below to calculate PPL.
 
 ```shell
 python tools/evaluation.py ./configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py \
-    http://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_ffhq_1024_b4x8_20210407_150045-618c9024.pth \
+    https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_ffhq_1024_b4x8_20210407_150045-618c9024.pth \
     --batch-size 2 --online --eval ppl_wend
 ```
 
@@ -329,7 +329,7 @@ You can run the command below to calculate SWD.
 
 ```shell
 python tools/evaluation.py ./configs/pggan/pggan_celeba-cropped_128_g8_12Mimgs.py \
-    http://download.openmmlab.com/mmgen/pggan/pggan_celeba-cropped_128_g8_20210408_181931-85a2e72c.pth \
+    https://download.openmmlab.com/mmgen/pggan/pggan_celeba-cropped_128_g8_20210408_181931-85a2e72c.pth \
     --batch-size 64 --online --eval swd16k
 ```
 
@@ -344,7 +344,7 @@ You can run the command below to calculate MS-SSIM.
 
 ```shell
 python tools/evaluation.py ./configs/pggan/pggan_celeba-cropped_128_g8_12Mimgs.py \
-    http://download.openmmlab.com/mmgen/pggan/pggan_celeba-cropped_128_g8_20210408_181931-85a2e72c.pth \
+    https://download.openmmlab.com/mmgen/pggan/pggan_celeba-cropped_128_g8_20210408_181931-85a2e72c.pth \
     --batch-size 64 --online --eval ms_ssim10k
 ```
 
