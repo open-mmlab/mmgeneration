@@ -1,10 +1,12 @@
 from copy import deepcopy
 
+import mmcv
 import torch
 import torch.nn as nn
 from mmcv.cnn import normal_init, xavier_init
 from mmcv.cnn.bricks import build_activation_layer
 from mmcv.runner import load_checkpoint
+from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
 from torch.nn.utils import spectral_norm
 
 from mmgen.models.builder import MODULES, build_module
@@ -15,38 +17,58 @@ from .modules import SelfAttentionBlock, SNConvModule
 
 @MODULES.register_module()
 class BigGANGenerator(nn.Module):
-    # TODO:
-    """[summary]
+    """BigGAN Generator.
+
+    In BigGAN, we use a SAGAN-based architecture composing of an self-attention
+    block and number of convolutional residual blocks with spectral
+    normalization.
+
+    More details can be found in: Large Scale GAN Training for High Fidelity
+    Natural Image Synthesis (ICLR2019).
 
     Args:
-        output_scale ([type]): [description]
-        noise_size (int, optional): [description]. Defaults to 120.
-        num_classes (int, optional): [description]. Defaults to 0.
-        out_channels (int, optional): [description]. Defaults to 3.
-        base_channels (int, optional): [description]. Defaults to 96.
-        input_scale (int, optional): [description]. Defaults to 4.
-        with_shared_embedding (bool, optional): [description]. Defaults to
-            True.
-        shared_dim (int, optional): [description]. Defaults to 128.
-        sn_eps ([type], optional): [description]. Defaults to 1e-6.
-        init_type (str, optional): [description]. Defaults to 'ortho'.
-        split_noise (bool, optional): [description]. Defaults to True.
-        act_cfg ([type], optional): [description]. Defaults to
+        output_scale (int): Output scale for the generated image.
+        noise_size (int, optional): Size of the input noise vector. Defaults
+            to 120.
+        num_classes (int, optional): The number of conditional classes. If set
+            to 0, this init function will return an unconditional model.
+            Defaults to 0.
+        out_channels (int, optional): Number of channels in output images.
+            Defaults to 3.
+        base_channels (int, optional): The basic channel number of the
+            generator. The other layers contains channels based on this number.
+            Defaults to 96.
+        input_scale (int, optional): The scale of the input 2D feature map.
+            Defaults to 4.
+        with_shared_embedding (bool, optional): Whether to use shared
+            embedding. Defaults to True.
+        shared_dim (int, optional): The output channels of shared embedding.
+            Defaults to 128.
+        sn_eps (float, optional): Epsilon value for spectral normalization.
+            Defaults to 1e-6.
+        init_type (str, optional): The name of an initialization method:
+            ortho | N02 | xavier. Defaults to 'ortho'.
+        split_noise (bool, optional): Whether to split input noise vector.
+            Defaults to True.
+        act_cfg (dict, optional): Config for the activation layer. Defaults to
             dict(type='ReLU').
-        conv_cfg ([type], optional): [description]. Defaults to
-            dict(type='Conv2d').
-        upsample_cfg ([type], optional): [description]. Defaults to
-            dict(type='nearest', scale_factor=2).
-        with_spectral_norm (bool, optional): [description]. Defaults to
-            True.
+        conv_cfg (dict, optional): Config for the convolution module used in
+            this generator. Defaults to dict(type='Conv2d').
+        upsample_cfg (dict, optional): Config for the upsampling operation.
+            Defaults to dict(type='nearest', scale_factor=2).
+        with_spectral_norm (bool, optional): Whether to use spectral
+            normalization. Defaults to True.
         auto_sync_bn (bool, optional): [description]. Defaults to True.
-        blocks_cfg ([type], optional): [description]. Defaults to
-            dict(type='BigGANGenResBlock').
-        norm_cfg ([type], optional): [description]. Defaults to None.
-        arch_cfg ([type], optional): [description]. Defaults to None.
-        out_norm_cfg ([type], optional): [description]. Defaults to
-            dict(type='BN').
-        pretrained ([type], optional): [description]. Defaults to None.
+        blocks_cfg (dict, optional): Config for the convolution block. Defaults
+            to dict(type='BigGANGenResBlock').
+        arch_cfg (dict, optional): Config for the architecture of this
+            generator. Defaults to None.
+        out_norm_cfg (dict, optional): Config for the norm of output layer.
+            Defaults to dict(type='BN').
+        pretrained (str | dict, optional): Path for the pretrained model or
+            dict containing information for pretained models whose necessary
+            key is 'ckpt_path'. Besides, you can also provide 'prefix' to load
+            the generator part from the whole state dict. Defaults to None.
     """
 
     def __init__(self,
@@ -67,7 +89,6 @@ class BigGANGenerator(nn.Module):
                  with_spectral_norm=True,
                  auto_sync_bn=True,
                  blocks_cfg=dict(type='BigGANGenResBlock'),
-                 norm_cfg=None,
                  arch_cfg=None,
                  out_norm_cfg=dict(type='BN'),
                  pretrained=None,
@@ -87,7 +108,7 @@ class BigGANGenerator(nn.Module):
 
         # Validity Check
         # If 'num_classes' equals to zero, we shall set 'with_shared_embedding'
-        # to False and
+        # to False.
         if num_classes == 0:
             assert not self.with_shared_embedding
         else:
@@ -116,7 +137,7 @@ class BigGANGenerator(nn.Module):
             self.noise2feat = spectral_norm(self.noise2feat, eps=sn_eps)
 
         # If using 'shared_embedding', we will get an unified embedding of
-        # label for all blocks. If not, we just pass on the label to each
+        # label for all blocks. If not, we just pass the label to each
         # block.
         if with_shared_embedding:
             self.shared_embedding = nn.Embedding(num_classes, shared_dim)
@@ -136,24 +157,25 @@ class BigGANGenerator(nn.Module):
                 act_cfg=act_cfg,
                 conv_cfg=conv_cfg,
                 sn_eps=sn_eps,
-                label_input=(num_classes > 0) and (not with_shared_embedding),
+                input_is_label=(num_classes > 0)
+                and (not with_shared_embedding),
                 with_spectral_norm=with_spectral_norm,
                 auto_sync_bn=auto_sync_bn))
 
         self.conv_blocks = nn.ModuleList()
-        for index in range(len(self.arch['out_channels'])):
+        for index, out_ch in enumerate(self.arch['out_channels']):
             # change args to adapt to current block
             self.blocks_cfg.update(
                 dict(
                     in_channels=self.arch['in_channels'][index],
-                    out_channels=self.arch['out_channels'][index],
+                    out_channels=out_ch,
                     upsample_cfg=self.upsample_cfg
                     if self.arch['upsample'][index] else None))
             self.conv_blocks.append(build_module(self.blocks_cfg))
             if self.arch['attention'][index]:
                 self.conv_blocks.append(
                     SelfAttentionBlock(
-                        self.arch['out_channels'][index],
+                        out_ch,
                         with_spectral_norm=with_spectral_norm,
                         sn_eps=sn_eps))
 
@@ -222,20 +244,30 @@ class BigGANGenerator(nn.Module):
 
         return _default_arch_cfgs[str(output_scale)]
 
-    def forward(self, noise, label, num_batches=0, return_noise=False):
-        # TODO:
-        """[summary]
+    def forward(self, noise, label=None, num_batches=0, return_noise=False):
+        """Forward function.
 
         Args:
-            noise ([type]): [description]
-            label ([type]): [description]
-            num_batches (int, optional): [description]. Defaults to 0.
-            return_noise (bool, optional): [description]. Defaults to False.
+            noise (torch.Tensor | callable | None): You can directly give a
+                batch of noise through a ``torch.Tensor`` or offer a callable
+                function to sample a batch of noise data. Otherwise, the
+                ``None`` indicates to use the default noise sampler.
+            label (torch.Tensor | callable | None): You can directly give a
+                batch of label through a ``torch.Tensor`` or offer a callable
+                function to sample a batch of label data. Otherwise, the
+                ``None`` indicates to use the default label sampler.
+                Defaults to None.
+            num_batches (int, optional): The number of batch size.
+                Defaults to 0.
+            return_noise (bool, optional): If True, ``noise_batch`` and
+                ``label`` will be returned in a dict with ``fake_img``.
+                Defaults to False.
 
         Returns:
-            [type]: [description]
+            torch.Tensor | dict: If not ``return_noise``, only the output image
+                will be returned. Otherwise, a dict contains ``fake_img``,
+                ``noise_batch`` and ``label`` will be returned.
         """
-
         if isinstance(noise, torch.Tensor):
             assert noise.shape[1] == self.noise_size
             assert noise.ndim == 2, ('The noise should be in shape of (n, c), '
@@ -261,7 +293,7 @@ class BigGANGenerator(nn.Module):
         elif callable(label):
             label_generator = label
             assert num_batches > 0
-            label_batch = label_generator((num_batches))
+            label_batch = label_generator((num_batches, ))
         else:
             assert num_batches > 0
             label_batch = torch.randint(0, self.num_classes, (num_batches, ))
@@ -275,7 +307,7 @@ class BigGANGenerator(nn.Module):
             class_vector = None
         # If 'split noise', concat class vector and noise chunk
         if self.split_noise:
-            zs = torch.split(noise_batch, self.noise_chunk_size, 1)
+            zs = torch.split(noise_batch, self.noise_chunk_size, dim=1)
             z = zs[0]
             if class_vector is not None:
                 ys = [torch.cat([class_vector, item], 1) for item in zs[1:]]
@@ -292,7 +324,7 @@ class BigGANGenerator(nn.Module):
 
         # Loop over blocks
         counter = 0
-        for index, conv_block in enumerate(self.conv_blocks):
+        for conv_block in self.conv_blocks:
             # Second inner loop in case block has multiple layers
             if isinstance(conv_block, SelfAttentionBlock):
                 x = conv_block(x)
@@ -313,15 +345,28 @@ class BigGANGenerator(nn.Module):
     def init_weights(self, pretrained=None, init_type='ortho'):
         """Init weights for models.
 
-        We just use the initialization method proposed in the original paper.
-
         Args:
-            pretrained (str, optional): Path for pretrained weights. If given
-                None, pretrained weights will not be loaded. Defaults to None.
+            pretrained (str | dict, optional): Path for the pretrained model or
+                dict containing information for pretained models whose
+                necessary key is 'ckpt_path'. Besides, you can also provide
+                'prefix' to load the generator part from the whole state dict.
+                Defaults to None.
+            init_type (str, optional): The name of an initialization method:
+                ortho | N02 | xavier. Defaults to 'ortho'.
         """
         if isinstance(pretrained, str):
             logger = get_root_logger()
             load_checkpoint(self, pretrained, strict=False, logger=logger)
+        elif isinstance(pretrained, dict):
+            ckpt_path = pretrained.get('ckpt_path', None)
+            assert ckpt_path is not None
+            prefix = pretrained.get('prefix', '')
+            map_location = pretrained.get('map_location', 'cpu')
+            strict = pretrained.get('strict', True)
+            state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
+                                                      map_location)
+            self.load_state_dict(state_dict, strict=strict)
+            mmcv.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
         elif pretrained is None:
             for m in self.modules():
                 if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
@@ -342,27 +387,37 @@ class BigGANGenerator(nn.Module):
 
 @MODULES.register_module()
 class BigGANDiscriminator(nn.Module):
-    # TODO:
-    """[summary]
+    """BigGAN Discriminator.
 
     Args:
-        input_scale ([type]): [description]
-        num_classes (int, optional): [description]. Defaults to 0.
-        in_channels (int, optional): [description]. Defaults to 3.
-        out_channels (int, optional): [description]. Defaults to 1.
-        base_channels (int, optional): [description]. Defaults to 96.
-        sn_eps ([type], optional): [description]. Defaults to 1e-6.
-        init_type (str, optional): [description]. Defaults to 'ortho'.
-        act_cfg ([type], optional): [description]. Defaults to dict(type=
-            'ReLU').
-        conv_cfg ([type], optional): [description]. Defaults to dict(type=
-            'Conv2d').
-        with_spectral_norm (bool, optional): [description]. Defaults to
-            True.
-        blocks_cfg ([type], optional): [description]. Defaults to dict(
-                type='BigGANDiscResBlock').
-        arch_cfg ([type], optional): [description]. Defaults to None.
-        pretrained ([type], optional): [description]. Defaults to None.
+        input_scale (int): The scale of the input image.
+        num_classes (int, optional): The number of conditional classes.
+            Defaults to 0.
+        in_channels (int, optional): The channel number of the input image.
+            Defaults to 3.
+        out_channels (int, optional): The channel number of the final output.
+            Defaults to 1.
+        base_channels (int, optional): The basic channel number of the
+            discriminator. The other layers contains channels based on this
+            number. Defaults to 96.
+        sn_eps (float, optional): Epsilon value for spectral normalization.
+            Defaults to 1e-6.
+        init_type (str, optional): The name of an initialization method:
+            ortho | N02 | xavier. Defaults to 'ortho'.
+        act_cfg (dict, optional): Config for the activation layer.
+            Defaults to dict(type='ReLU').
+        conv_cfg (dict, optional): Config for the convolution module used in
+            this discriminator. Defaults to dict(type='Conv2d').
+        with_spectral_norm (bool, optional): Whether to use spectral
+            normalization. Defaults to True.
+        blocks_cfg (dict, optional): Config for the convolution block.
+            Defaults to dict(type='BigGANDiscResBlock').
+        arch_cfg (dict, optional): Config for the architecture of this
+            discriminator. Defaults to None.
+        pretrained (str | dict, optional): Path for the pretrained model or
+            dict containing information for pretained models whose necessary
+            key is 'ckpt_path'. Besides, you can also provide 'prefix' to load
+            the generator part from the whole state dict. Defaults to None.
     """
 
     def __init__(self,
@@ -397,27 +452,27 @@ class BigGANDiscriminator(nn.Module):
                 with_spectral_norm=with_spectral_norm))
 
         self.conv_blocks = nn.ModuleList()
-        for index in range(len(self.arch['out_channels'])):
+        for index, out_ch in enumerate(self.arch['out_channels']):
             # change args to adapt to current block
             self.blocks_cfg.update(
                 dict(
                     in_channels=self.arch['in_channels'][index],
-                    out_channels=self.arch['out_channels'][index],
+                    out_channels=out_ch,
                     with_downsample=self.arch['downsample'][index],
-                    head_block=(index == 0)))
+                    is_head_block=(index == 0)))
             self.conv_blocks.append(build_module(self.blocks_cfg))
             if self.arch['attention'][index]:
                 self.conv_blocks.append(
                     SelfAttentionBlock(
-                        self.arch['out_channels'][index],
+                        out_ch,
                         with_spectral_norm=with_spectral_norm,
                         sn_eps=sn_eps))
 
-        self.activation = build_activation_layer(act_cfg)
+        self.activate = build_activation_layer(act_cfg)
 
-        self.linear = nn.Linear(self.arch['out_channels'][-1], out_channels)
+        self.decision = nn.Linear(self.arch['out_channels'][-1], out_channels)
         if with_spectral_norm:
-            self.linear = spectral_norm(self.linear, eps=sn_eps)
+            self.decision = spectral_norm(self.decision, eps=sn_eps)
 
         self.proj_y = nn.Embedding(self.num_classes,
                                    self.arch['out_channels'][-1])
@@ -492,9 +547,9 @@ class BigGANDiscriminator(nn.Module):
         x0 = x
         for conv_block in self.conv_blocks:
             x0 = conv_block(x0)
-        x0 = self.activation(x0)
+        x0 = self.activate(x0)
         x0 = torch.sum(x0, dim=[2, 3])
-        out = self.linear(x0)
+        out = self.decision(x0)
 
         if self.num_classes > 0:
             w_y = self.proj_y(label)
@@ -514,6 +569,16 @@ class BigGANDiscriminator(nn.Module):
         if isinstance(pretrained, str):
             logger = get_root_logger()
             load_checkpoint(self, pretrained, strict=False, logger=logger)
+        elif isinstance(pretrained, dict):
+            ckpt_path = pretrained.get('ckpt_path', None)
+            assert ckpt_path is not None
+            prefix = pretrained.get('prefix', '')
+            map_location = pretrained.get('map_location', 'cpu')
+            strict = pretrained.get('strict', True)
+            state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
+                                                      map_location)
+            self.load_state_dict(state_dict, strict=strict)
+            mmcv.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
         elif pretrained is None:
             for m in self.modules():
                 if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):

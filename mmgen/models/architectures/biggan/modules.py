@@ -58,7 +58,7 @@ class BigGANGenResBlock(nn.Module):
         sn_eps ([type], optional): [description]. Defaults to 1e-6.
         with_spectral_norm (bool, optional): [description]. Defaults to
             True.
-        label_input (bool, optional): [description]. Defaults to False.
+        input_is_label (bool, optional): [description]. Defaults to False.
         auto_sync_bn (bool, optional): [description]. Defaults to True.
     """
 
@@ -72,7 +72,7 @@ class BigGANGenResBlock(nn.Module):
                  upsample_cfg=dict(type='nearest', scale_factor=2),
                  sn_eps=1e-6,
                  with_spectral_norm=True,
-                 label_input=False,
+                 input_is_label=False,
                  auto_sync_bn=True):
         super().__init__()
         self.activation = build_activation_layer(act_cfg)
@@ -92,19 +92,22 @@ class BigGANGenResBlock(nn.Module):
                 act_cfg=None,
                 with_spectral_norm=with_spectral_norm,
                 spectral_norm_cfg=dict(eps=sn_eps))
-        # Here in_channels of BigGANGenResBlock equal to output_dim of ccbn
+        # Here in_channels of BigGANGenResBlock equal to num_features of
+        # BigGANConditionBN
         self.bn1 = BigGANConditionBN(
             in_channels,
             dim_after_concat,
             sn_eps=sn_eps,
-            label_input=label_input,
+            input_is_label=input_is_label,
             with_spectral_norm=with_spectral_norm,
             auto_sync_bn=auto_sync_bn)
+        # Here out_channels of BigGANGenResBlock equal to num_features of
+        # BigGANConditionBN
         self.bn2 = BigGANConditionBN(
             out_channels,
             dim_after_concat,
             sn_eps=sn_eps,
-            label_input=label_input,
+            input_is_label=input_is_label,
             with_spectral_norm=with_spectral_norm,
             auto_sync_bn=auto_sync_bn)
 
@@ -161,11 +164,11 @@ class BigGANConditionBN(nn.Module):
 
     Args:
         num_features ([type]): [description]
-        input_dim ([type]): [description]
+        linear_input_channels ([type]): [description]
         bn_eps ([type], optional): [description]. Defaults to 1e-5.
         sn_eps ([type], optional): [description]. Defaults to 1e-6.
         momentum (float, optional): [description]. Defaults to 0.1.
-        label_input (bool, optional): [description]. Defaults to False.
+        input_is_label (bool, optional): [description]. Defaults to False.
         with_spectral_norm (bool, optional): [description]. Defaults to
             True.
         auto_sync_bn (bool, optional): [description]. Defaults to True.
@@ -173,22 +176,24 @@ class BigGANConditionBN(nn.Module):
 
     def __init__(self,
                  num_features,
-                 input_dim,
+                 linear_input_channels,
                  bn_eps=1e-5,
                  sn_eps=1e-6,
                  momentum=0.1,
-                 label_input=False,
+                 input_is_label=False,
                  with_spectral_norm=True,
                  auto_sync_bn=True):
         super().__init__()
-        assert num_features > 0 and input_dim > 0
+        assert num_features > 0 and linear_input_channels > 0
         # Prepare gain and bias layers
-        if not label_input:
-            self.gain = nn.Linear(input_dim, num_features, bias=False)
-            self.bias = nn.Linear(input_dim, num_features, bias=False)
+        if not input_is_label:
+            self.gain = nn.Linear(
+                linear_input_channels, num_features, bias=False)
+            self.bias = nn.Linear(
+                linear_input_channels, num_features, bias=False)
         else:
-            self.gain = nn.Embedding(input_dim, num_features)
-            self.bias = nn.Embedding(input_dim, num_features)
+            self.gain = nn.Embedding(linear_input_channels, num_features)
+            self.bias = nn.Embedding(linear_input_channels, num_features)
 
         # please pay attention if shared_embedding is False
         if with_spectral_norm:
@@ -317,25 +322,23 @@ class BigGANDiscResBlock(nn.Module):
         with_downsample (bool, optional): [description]. Defaults to True.
         with_spectral_norm (bool, optional): [description]. Defaults to
             True.
-        head_block (bool, optional): [description]. Defaults to False.
+        is_head_block (bool, optional): [description]. Defaults to False.
     """
 
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        conv_cfg=dict(type='Conv2d'),
-        shortcut_cfg=dict(type='Conv2d'),
-        act_cfg=dict(type='ReLU', inplace=False),
-        sn_eps=1e-6,
-        with_downsample=True,
-        with_spectral_norm=True,
-        head_block=False,
-    ):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 conv_cfg=dict(type='Conv2d'),
+                 shortcut_cfg=dict(type='Conv2d'),
+                 act_cfg=dict(type='ReLU', inplace=False),
+                 sn_eps=1e-6,
+                 with_downsample=True,
+                 with_spectral_norm=True,
+                 is_head_block=False):
         super().__init__()
         self.activation = build_activation_layer(act_cfg)
         self.with_downsample = with_downsample
-        self.head_block = head_block
+        self.is_head_block = is_head_block
         if self.with_downsample:
             self.downsample = nn.AvgPool2d(kernel_size=2, stride=2)
         self.learnable_sc = in_channels != out_channels or self.with_downsample
@@ -382,7 +385,7 @@ class BigGANDiscResBlock(nn.Module):
         Returns:
             [type]: [description]
         """
-        if self.head_block:
+        if self.is_head_block:
             if self.with_downsample:
                 x = self.downsample(x)
             if self.learnable_sc:
@@ -403,7 +406,7 @@ class BigGANDiscResBlock(nn.Module):
         Returns:
             [type]: [description]
         """
-        if self.head_block:
+        if self.is_head_block:
             x0 = x
         else:
             x0 = self.activation(x)
