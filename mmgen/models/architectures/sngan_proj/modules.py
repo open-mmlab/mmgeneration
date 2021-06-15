@@ -284,7 +284,7 @@ class SNGANDiscHeadResBlock(nn.Module):
                  out_channels,
                  conv_cfg=None,
                  with_spectral_norm=True,
-                 act_cfg=dict(type='ReLU', inplace=True),
+                 act_cfg=dict(type='ReLU'),
                  style='BigGAN'):
 
         super().__init__()

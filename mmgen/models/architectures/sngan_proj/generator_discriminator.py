@@ -63,7 +63,7 @@ class SNGANGenerator(nn.Module):
         blocks_cfg (dict, optional): Config for the intermedia blocks.
             Defaults to ``dict(type='SNGANGenResBlock')``
         act_cfg (dict, optional): Activation config for the final output
-            layer. Defaults to ``dict(type='ReLU', inplace=True)``.
+            layer. Defaults to ``dict(type='ReLU')``.
         auto_sync_bn (bool, optional): Whether convert Batch Norm to
             Synchronized ones when Distributed training is on. Defualt to True.
         with_spectral_norm (bool, optional): Whether use spectral norm for
@@ -90,7 +90,7 @@ class SNGANGenerator(nn.Module):
                  noise_size=128,
                  channels_cfg=None,
                  blocks_cfg=dict(type='SNGANGenResBlock'),
-                 act_cfg=dict(type='ReLU', inplace=True),
+                 act_cfg=dict(type='ReLU'),
                  auto_sync_bn=True,
                  with_spectral_norm=False,
                  norm_eps=1e-4,
@@ -339,7 +339,7 @@ class ProjDiscriminator(nn.Module):
                  downsample_cfg=None,
                  from_rgb_cfg=dict(type='SNGANDiscHeadResBlock'),
                  blocks_cfg=dict(type='SNGANDiscResBlock'),
-                 act_cfg=dict(type='ReLU', inplace=True),
+                 act_cfg=dict(type='ReLU'),
                  with_spectral_norm=True,
                  style='BigGAN'):
         """"""
