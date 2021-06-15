@@ -116,3 +116,6 @@ work_dirs/
 *.DS_Store
 # PyTorch
 *.pth
+mmgen/configs/
+mmgen/tools/
+runs/
