@@ -156,7 +156,7 @@ class SNGANGenerator(nn.Module):
             padding=1,
             bias=True,
             norm_cfg=to_rgb_norm_cfg,
-            act_cfg=dict(type='ReLU', inplace=True),
+            act_cfg=act_cfg,
             order=('norm', 'act', 'conv'),
             with_spectral_norm=with_spectral_norm)
         self.final_act = build_activation_layer(dict(type='Tanh'))
@@ -478,14 +478,11 @@ class ProjDiscriminator(nn.Module):
                         xavier_init(m, gain=1, distribution='uniform')
                     elif isinstance(m, nn.Embedding):
                         if 'proj' in n:
-                            xavier_init(m, gaim=1, distribution='uniform')
+                            xavier_init(m, gain=1, distribution='uniform')
                         elif 'weight' in n:
                             constant_init(m, 1)
                         elif 'bias' in n:
                             constant_init(m, 0)
-                # xavier_init(self.decision, gain=1, distribution='uniform')
-                # if self.num_classes > 0:
-                #     xavier_init(self.proj_y, gain=1, distribution='uniform')
         else:
             raise TypeError("'pretrained' must by a str or None. "
                             f'But receive {type(pretrained)}.')
