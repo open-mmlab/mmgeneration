@@ -1,8 +1,10 @@
 from copy import deepcopy
 
+import numpy as np
 import torch
 import torch.nn as nn
-from mmcv.cnn import ConvModule, build_activation_layer
+from mmcv.cnn import (ConvModule, build_activation_layer, constant_init,
+                      xavier_init)
 from mmcv.runner import load_checkpoint
 from torch.nn.utils import spectral_norm
 
@@ -10,9 +12,6 @@ from mmgen.models.builder import MODULES, build_module
 from mmgen.utils import check_dist_init
 from mmgen.utils.logger import get_root_logger
 from ..common import get_module_device
-
-# TODO: Now, some arguments for conditional norm is unaccessable.
-# Maybe we should use config_dict for argument passing.
 
 
 @MODULES.register_module()
@@ -23,54 +22,59 @@ class SNGANGenerator(nn.Module):
     In our implementation, we have two notable design. Namely,
     `channels_cfg` and `blocks_cfg`.
 
-    ``channels_cfg``: In default config of SNGAN / Proj-GAN, the number of
+    `channels_cfg`: In default config of SNGAN / Proj-GAN, the number of
         ResBlocks and the channels of those blocks are corresponding to the
-        resolution of the output image. Therefore, we provide user to define
+        resolution of the output image. Therefore, we allow user to define
         `channels_cfg` for try their own models. We also provide a default
         config to allow users to build the model only from the output
         resolution.
 
-    ``block_cfg``: In reference code, the generator is consist with a group
-        of ResBlock, and in our implementation, to make this model more
-        generalize, we support users to define `blocks_cfg` by themself and
-        load the blocks by calling `build_module` method.
+    `block_cfg`: In reference code, the generator consists of a group of
+        ResBlock. However, in our implementation, to make this model more
+        generalize, we support defining blocks_cfg by users and loading
+        the blocks by calling the build_module method.
 
     Args:
         output_scale (int): Output scale for the generated image.
-        noise_size (int, optional): Size of the input noise vector.
-            Default to 128.
         num_classes (int, optional): The number classes you would like to
             generate. This arguments would influence the structure of the
-            intermedia blocks and label sampling operation in `forward`
+            intermedia blocks and label sampling operation in ``forward``
             (e.g. If num_classes=0, ConditionalNormalization layers would
             degrade to unconditional ones.). This arguments would be passed
             to intermedia blocks by overwrite their config. Defaults to 0.
-        out_channels (int, optional): Channels of the output images.
-            Default to 3.
         base_channels (int, optional): The basic channel number of the
             generator. The other layers contains channels based on this number.
             Default to 64.
+        out_channels (int, optional): Channels of the output images.
+            Default to 3.
         input_scale (int, optional): Input scale for the features.
             Defaults to 4.
-        blocks_cfg (dict, optional): Config for the intermedia blocks.
-            Defaults to ``dict(type='SNGANGenResBlock')``
+        noise_size (int, optional): Size of the input noise vector.
+            Default to 128.
         channels_cfg (list | dict[list], optional): Config for input channels
             of the intermedia blocks. If list is passed, each element of the
             list means the input channels of current block is how many times
-            compared to the `base_channels`. For block ``i``, the input and
+            compared to the ``base_channels``. For block ``i``, the input and
             output channels should be ``channels_cfg[i]`` and
             ``channels_cfg[i+1]`` If dict is provided, the key of the dict
             should be the output scale and corresponding value should be a list
             to define channels.  Default: Please refer to
-            ``_defualt_channels_cfg``
+            ``_defualt_channels_cfg``.
+        blocks_cfg (dict, optional): Config for the intermedia blocks.
+            Defaults to ``dict(type='SNGANGenResBlock')``
         act_cfg (dict, optional): Activation config for the final output
-            layer. Defaults to ``dict(type='ReLU')``.
+            layer. Defaults to ``dict(type='ReLU', inplace=True)``.
+        auto_sync_bn (bool, optional): Whether convert Batch Norm to
+            Synchronized ones when Distributed training is on. Defualt to True.
         with_spectral_norm (bool, optional): Whether use spectral norm for
             conv blocks or not. Default to False.
-        eps (float, optional): eps for Normalization layers (both conditional
-            and non-conditional ones). Default to 1e-4.
+        norm_eps (float, optional): eps for Normalization layers (both
+            conditional and non-conditional ones). Default to 1e-4.
+        style (str, optional): Behavior and initialize style for the generator.
+            Default to 'BigGAN'.
     """
 
+    # default channel factors
     _defualt_channels_cfg = {
         32: [1, 1, 1],
         64: [16, 8, 4, 2],
@@ -79,17 +83,18 @@ class SNGANGenerator(nn.Module):
 
     def __init__(self,
                  output_scale,
-                 noise_size=128,
                  num_classes=0,
-                 out_channels=3,
                  base_channels=64,
+                 out_channels=3,
                  input_scale=4,
+                 noise_size=128,
                  channels_cfg=None,
-                 auto_sync_bn=True,
                  blocks_cfg=dict(type='SNGANGenResBlock'),
-                 act_cfg=dict(type='ReLU'),
+                 act_cfg=dict(type='ReLU', inplace=True),
+                 auto_sync_bn=True,
                  with_spectral_norm=False,
-                 eps=1e-4):
+                 norm_eps=1e-4,
+                 style='BigGAN'):
 
         super().__init__()
 
@@ -97,6 +102,7 @@ class SNGANGenerator(nn.Module):
         self.output_scale = output_scale
         self.noise_size = noise_size
         self.num_classes = num_classes
+        self.style = style
 
         self.blocks_cfg = deepcopy(blocks_cfg)
 
@@ -104,7 +110,7 @@ class SNGANGenerator(nn.Module):
         self.blocks_cfg.setdefault('act_cfg', act_cfg)
         self.blocks_cfg.setdefault('auto_sync_bn', auto_sync_bn)
         self.blocks_cfg.setdefault('with_spectral_norm', with_spectral_norm)
-        self.blocks_cfg.setdefault('eps', eps)
+        self.blocks_cfg.setdefault('norm_eps', norm_eps)
 
         channels_cfg = deepcopy(self._defualt_channels_cfg) \
             if channels_cfg is None else deepcopy(channels_cfg)
@@ -123,6 +129,8 @@ class SNGANGenerator(nn.Module):
         self.noise2feat = nn.Linear(
             noise_size,
             input_scale**2 * base_channels * self.channel_factor_list[0])
+        if with_spectral_norm:
+            self.noise2feat = spectral_norm(self.noise2feat)
 
         self.conv_blocks = nn.ModuleList()
         for idx in range(len(self.channel_factor_list)):
@@ -136,7 +144,7 @@ class SNGANGenerator(nn.Module):
             block_cfg_['out_channels'] = factor_output * base_channels
             self.conv_blocks.append(build_module(block_cfg_))
 
-        to_rgb_norm_cfg = dict(type='BN', eps=eps)
+        to_rgb_norm_cfg = dict(type='BN', eps=norm_eps)
         if check_dist_init() and auto_sync_bn:
             to_rgb_norm_cfg['type'] = 'SyncBN'
 
@@ -148,8 +156,9 @@ class SNGANGenerator(nn.Module):
             padding=1,
             bias=True,
             norm_cfg=to_rgb_norm_cfg,
-            act_cfg=dict(type='ReLU'),
-            order=('norm', 'act', 'conv'))
+            act_cfg=dict(type='ReLU', inplace=True),
+            order=('norm', 'act', 'conv'),
+            with_spectral_norm=with_spectral_norm)
         self.final_act = build_activation_layer(dict(type='Tanh'))
 
         self.init_weights()
@@ -164,6 +173,10 @@ class SNGANGenerator(nn.Module):
                 ``None`` indicates to use the default noise sampler.
             num_batches (int, optional): The number of batch size.
                 Defaults to 0.
+            label (torch.Tensor | callable | None): You can directly give a
+                batch of label through a ``torch.Tensor`` or offer a callable
+                function to sample a batch of label data. Otherwise, the
+                ``None`` indicates to use the default label sampler.
             return_noise (bool, optional): If True, ``noise_batch`` will be
                 returned in a dict with ``fake_img``. Defaults to False.
 
@@ -225,11 +238,12 @@ class SNGANGenerator(nn.Module):
             logger = get_root_logger()
             load_checkpoint(self, pretrained, strict=strict, logger=logger)
         elif pretrained is None:
-            nn.init.orthogonal_(self.to_rgb.conv.weight)
-            nn.init.orthogonal_(self.noise2feat.weight)
-            # TODO: support user to define init method
-            # xavier_init(self.noise2feat, gain=1, distribution='uniform')
-            # xavier_init(self.to_rgb.conv, gain=1, distribution='uniform')
+            if self.style == 'BigGAN':
+                nn.init.orthogonal_(self.to_rgb.conv.weight)
+                nn.init.orthogonal_(self.noise2feat.weight)
+            else:
+                xavier_init(self.noise2feat, gain=1, distribution='uniform')
+                xavier_init(self.to_rgb.conv, gain=1, distribution='uniform')
         else:
             raise TypeError("'pretrined' must be a str or None. "
                             f'But receive {type(pretrained)}.')
@@ -240,16 +254,14 @@ class ProjDiscriminator(nn.Module):
     r"""Discriminator for SNGAN / Proj-GAN. The inplementation is refer to
     https://github.com/pfnet-research/sngan_projection/tree/master/dis_models
 
-    The overall structure of the projection discriminator can be splited
-    to a `from_rgb` layer, a group of ResBlocks, a linear decision layer and
-    a projection layer. To support users to define what kind of layers they
-    To make the discriminator more flexible, we introduce ``from_rgb_cfg``
-    and ``blocks_cfg``, and support users to use their own layers to build the
-    discriminator.
+    The overall structure of the projection discriminator can be split into a
+    ``from_rgb`` layer, a group of ResBlocks, a linear decision layer, and a
+    projection layer. To support defining custom layers, we introduce
+    ``from_rgb_cfg`` and ``blocks_cfg``.
 
-    The design of model structure is high corresponding to the output
-    resolution. Therefore, we provide ``channels_cfg`` and ``downsample_cfg``
-    to control the input channels and downsample performance of the intermedia
+    The design of the model structure is highly corresponding to the output
+    resolution. Therefore, we provide `channels_cfg` and `downsample_cfg` to
+    control the input channels and the downsample behavior of the intermedia
     blocks.
 
     ``downsample_cfg``: In default config of SNGAN / Proj-GAN, whether to apply
@@ -258,23 +270,32 @@ class ProjDiscriminator(nn.Module):
         support user to define the ``downsample_cfg`` by themselves, and to
         control the structure of the discriminator.
 
-    `channels_cfg`: In default config of SNGAN / Proj-GAN, the number of
+    ``channels_cfg``: In default config of SNGAN / Proj-GAN, the number of
         ResBlocks and the channels of those blocks are corresponding to the
-        resolution of the output image. Therefore, we provide user to define
-        `channels_cfg` for try their own models.
-        We also provide a default config to allow users to build the model
-        only from the output resolution.
+        resolution of the output image. Therefore, we allow user to define
+        `channels_cfg` for try their own models.  We also provide a default
+        config to allow users to build the model only from the output
+        resolution.
 
     Args:
         input_scale (int): The scale of the input image.
-        base_channels (int, optional): The basic channel number of the
-            discriminator. The other layers contains channels based on this
-            number.  Defaults to 128.
         num_classes (int, optional): The number classes you would like to
             generate. If num_classes=0, no label projection would be used.
             Default to 0.
+        base_channels (int, optional): The basic channel number of the
+            discriminator. The other layers contains channels based on this
+            number.  Defaults to 128.
         input_channels (int, optional): Channels of the input image.
             Defaults to 3.
+        channels_cfg (list | dict[list], optional): Config for input channels
+            of the intermedia blocks. If list is passed, each element of the
+            list means the input channels of current block is how many times
+            compared to the ``base_channels``. For block ``i``, the input and
+            output channels should be ``channels_cfg[i]`` and
+            ``channels_cfg[i+1]`` If dict is provided, the key of the dict
+            should be the output scale and corresponding value should be a list
+            to define channels.  Default: Please refer to
+            ``_defualt_channels_cfg``.
         downsample_cfg (list[bool] | dict[list], optional): Config for
             downsample behavior of the intermedia layers. If a list is passed,
             ``downsample_cfg[idx] == True`` means apply downsample in idx-th
@@ -291,14 +312,18 @@ class ProjDiscriminator(nn.Module):
             layer. Defaults to ``dict(type='ReLU')``.
         with_spectral_norm (bool, optional): Whether use spectral norm for
             all conv blocks or not. Default to True.
+        style (string, optional): Behavior and initialization style of the
+            module.  Default to 'BigGAN'.
     """
 
+    # default channel factors
     _defualt_channels_cfg = {
         32: [1, 1, 1],
         64: [2, 4, 8, 16],
         256: [2, 4, 8, 8, 16, 16]
     }
 
+    # default downsample behavior
     _defualt_downsample_cfg = {
         32: [True, False, False],
         64: [True, True, True, True],
@@ -307,17 +332,20 @@ class ProjDiscriminator(nn.Module):
 
     def __init__(self,
                  input_scale,
-                 base_channels,
                  num_classes=0,
+                 base_channels=64,
                  input_channels=3,
-                 channel_cfg=None,
+                 channels_cfg=None,
                  downsample_cfg=None,
                  from_rgb_cfg=dict(type='SNGANDiscHeadResBlock'),
                  blocks_cfg=dict(type='SNGANDiscResBlock'),
-                 act_cfg=dict(type='ReLU'),
-                 with_spectral_norm=True):
+                 act_cfg=dict(type='ReLU', inplace=True),
+                 with_spectral_norm=True,
+                 style='BigGAN'):
         """"""
         super().__init__()
+
+        self.style = style
 
         # add SN options and activation function options to cfg
         self.from_rgb_cfg = deepcopy(from_rgb_cfg)
@@ -329,14 +357,19 @@ class ProjDiscriminator(nn.Module):
         self.blocks_cfg.setdefault('act_cfg', act_cfg)
         self.blocks_cfg.setdefault('with_spectral_norm', with_spectral_norm)
 
-        channel_cfg = deepcopy(self._defualt_channels_cfg) \
-            if channel_cfg is None else deepcopy(channel_cfg)
-        if isinstance(channel_cfg, dict):
-            if input_scale not in channel_cfg:
+        channels_cfg = deepcopy(self._defualt_channels_cfg) \
+            if channels_cfg is None else deepcopy(channels_cfg)
+        if isinstance(channels_cfg, dict):
+            if input_scale not in channels_cfg:
                 raise KeyError(f'`input_scale={input_scale} is not found in '
                                '`channel_cfg`, only support configs for '
-                               f'{[chn for chn in channel_cfg.keys()]}')
-            self.channel_factor_list = channel_cfg[input_scale]
+                               f'{[chn for chn in channels_cfg.keys()]}')
+            self.channel_factor_list = channels_cfg[input_scale]
+        elif isinstance(channels_cfg, list):
+            self.channel_factor_list = channels_cfg
+        else:
+            raise ValueError('Only support list or dict for `channel_cfg`, '
+                             f'receive {type(channels_cfg)}')
 
         downsample_cfg = deepcopy(self._defualt_downsample_cfg) \
             if downsample_cfg is None else deepcopy(downsample_cfg)
@@ -346,11 +379,16 @@ class ProjDiscriminator(nn.Module):
                                '`downsample_cfg`, only support configs for '
                                f'{[chn for chn in downsample_cfg.keys()]}')
             self.downsample_list = downsample_cfg[input_scale]
+        elif isinstance(downsample_cfg, list):
+            self.downsample_list = downsample_cfg
+        else:
+            raise ValueError('Only support list or dict for `channel_cfg`, '
+                             f'receive {type(downsample_cfg)}')
 
-        if len(downsample_cfg) != len(channel_cfg):
+        if len(downsample_cfg) != len(channels_cfg):
             raise ValueError(
                 '`downsample_cfg` should have same length with `channel_cfg`, '
-                f'but receive {len(downsample_cfg)} and {len(channel_cfg)}.')
+                f'but receive {len(downsample_cfg)} and {len(channels_cfg)}.')
 
         self.from_rgb = build_module(
             self.from_rgb_cfg,
@@ -368,10 +406,9 @@ class ProjDiscriminator(nn.Module):
             block_cfg_['out_channels'] = factor_output * base_channels
             self.conv_blocks.append(build_module(block_cfg_))
 
-        # TODO: add an argument to select bias
-        # self.decision = nn.Linear(
-        #     factor_output * base_channels, 1, bias=False)
-        self.decision = nn.Linear(factor_output * base_channels, 1, bias=True)
+        decision_bias = self.style == 'BigGAN'
+        self.decision = nn.Linear(
+            factor_output * base_channels, 1, bias=decision_bias)
         if with_spectral_norm:
             self.decision = spectral_norm(self.decision)
 
@@ -388,14 +425,14 @@ class ProjDiscriminator(nn.Module):
         self.init_weights()
 
     def forward(self, x, label=None):
-        """Forward function. If ``self.num_classes`` is larger than 0, label
+        """Forward function. If `self.num_classes` is larger than 0, label
         projection would be used.
 
         Args:
             x (torch.Tensor): Fake or real image tensor.
             label (torch.Tensor, options): Label correspond to the input image.
-                Noted that, if ``self.num_classed`` is larger than 0,
-                ``label`` should not be None.  Default to None.
+                Noted that, if `self.num_classed` is larger than 0,
+                `label` should not be None.  Default to None.
 
         Returns:
             torch.Tensor: Prediction for the reality of the input image.
@@ -425,12 +462,30 @@ class ProjDiscriminator(nn.Module):
             logger = get_root_logger()
             load_checkpoint(self, pretrained, strict=strict, logger=logger)
         elif pretrained is None:
-            # TODO: support multi init method
-            nn.init.orthogonal_(self.decision.weight)
-            # xavier_init(self.decision, gain=1, distribution='uniform')
-            if self.num_classes > 0:
-                # xavier_init(self.proj_y, gain=1, distribution='uniform')
-                nn.init.orthogonal_(self.proj_y.weight)
+            if self.style == 'BigGAN':
+                for m in self.modules():
+                    if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
+                        nn.init.orthogonal_(m.weight)
+            else:
+                for n, m in self.named_modules():
+                    if isinstance(m, nn.Conv2d):
+                        if 'shortcut' in n:
+                            xavier_init(m, gain=1, distribution='uniform')
+                        else:
+                            xavier_init(
+                                m, gain=np.sqrt(2), distribution='uniform')
+                    elif isinstance(m, nn.Linear):
+                        xavier_init(m, gain=1, distribution='uniform')
+                    elif isinstance(m, nn.Embedding):
+                        if 'proj' in n:
+                            xavier_init(m, gaim=1, distribution='uniform')
+                        elif 'weight' in n:
+                            constant_init(m, 1)
+                        elif 'bias' in n:
+                            constant_init(m, 0)
+                # xavier_init(self.decision, gain=1, distribution='uniform')
+                # if self.num_classes > 0:
+                #     xavier_init(self.proj_y, gain=1, distribution='uniform')
         else:
             raise TypeError("'pretrained' must by a str or None. "
                             f'But receive {type(pretrained)}.')

@@ -1,8 +1,9 @@
 from copy import deepcopy
 
+import numpy as np
 import torch.nn as nn
 from mmcv.cnn import (ConvModule, build_activation_layer, build_norm_layer,
-                      build_upsample_layer, constant_init)
+                      build_upsample_layer, constant_init, xavier_init)
 
 from mmgen.models.builder import MODULES
 from mmgen.utils import check_dist_init
@@ -37,7 +38,10 @@ class SNGANGenResBlock(nn.Module):
             ``None``, would use ``_default_conv_cfg``. Default to ``None``.
         with_spectral_norm (bool, optional): Whether use spectral norm for
             conv blocks and norm layers. Default to True.
-        eps (float, optional): `eps` used in norm layers. Default to 1e-4.
+        norm_eps (float, optional): ``eps`` used in norm layers.
+            Default to 1e-4.
+        style (string, optional): Behavior and initialization style of the
+            module.  Default to 'BigGAN'
     """
 
     _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
@@ -56,13 +60,15 @@ class SNGANGenResBlock(nn.Module):
                  auto_sync_bn=True,
                  conv_cfg=None,
                  with_spectral_norm=False,
-                 eps=1e-4):
+                 norm_eps=1e-4,
+                 style='BigGAN'):
 
         super().__init__()
         self.learnable_sc = in_channels != out_channels or upsample
         self.with_upsample = upsample
+        self.style = style
 
-        self.activateion = build_activation_layer(act_cfg)
+        self.activate = build_activation_layer(act_cfg)
         hidden_channels = out_channels if hidden_channels is None \
             else hidden_channels
 
@@ -80,10 +86,10 @@ class SNGANGenResBlock(nn.Module):
 
         self.norm_1 = SNConditionNorm(in_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      eps)
+                                      norm_eps, style)
         self.norm_2 = SNConditionNorm(hidden_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      eps)
+                                      norm_eps, style)
 
         if self.learnable_sc:
             # use hyperparameters-fixed shortcut here
@@ -110,13 +116,13 @@ class SNGANGenResBlock(nn.Module):
         """
 
         out = self.norm_1(x, y)
-        out = self.activateion(out)
+        out = self.activate(out)
         if self.with_upsample:
             out = self.upsample(out)
         out = self.conv_1(out)
 
         out = self.norm_2(out, y)
-        out = self.activateion(out)
+        out = self.activate(out)
         out = self.conv_2(out)
 
         shortcut = self.forward_shortcut(x)
@@ -132,13 +138,16 @@ class SNGANGenResBlock(nn.Module):
 
     def init_weights(self):
         """Initialize weights for the model."""
-        # xavier_init(self.conv_1, gain=np.sqrt(2), distribution='uniform')
-        # xavier_init(self.conv_2, gain=np.sqrt(2), distribution='uniform')
-        nn.init.orthogonal_(self.conv_1.conv.weight)
-        nn.init.orthogonal_(self.conv_2.conv.weight)
-        if self.learnable_sc:
-            # xavier_init(self.shortcut, gain=1, distribution='uniform')
-            nn.init.orthogonal_(self.shortcut.conv.weight)
+        if self.style == 'BigGAN':
+            nn.init.orthogonal_(self.conv_1.conv.weight)
+            nn.init.orthogonal_(self.conv_2.conv.weight)
+            if self.learnable_sc:
+                nn.init.orthogonal_(self.shortcut.conv.weight)
+        else:
+            xavier_init(self.conv_1, gain=np.sqrt(2), distribution='uniform')
+            xavier_init(self.conv_2, gain=np.sqrt(2), distribution='uniform')
+            if self.learnable_sc:
+                xavier_init(self.shortcut, gain=1, distribution='uniform')
 
 
 @MODULES.register_module()
@@ -159,6 +168,8 @@ class SNGANDiscResBlock(nn.Module):
             to ``dict(type='relu')``.
         conv_cfg (dict | none): config for conv blocks of this module. if pass
             ``none``, would use ``_default_conv_cfg``. default to ``none``.
+        style (string, optional): Behavior and initialization style of the
+            module.  Default to 'BigGAN'
     """
 
     _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
@@ -170,12 +181,14 @@ class SNGANDiscResBlock(nn.Module):
                  downsample=False,
                  with_spectral_norm=True,
                  act_cfg=dict(type='ReLU'),
-                 conv_cfg=None):
+                 conv_cfg=None,
+                 style='BigGAN'):
 
         super().__init__()
         hidden_channels = in_channels if hidden_channels is None \
             else hidden_channels
         self.with_downsample = downsample
+        self.style = style
 
         self.conv_cfg = deepcopy(self._default_conv_cfg)
         if conv_cfg is not None:
@@ -232,13 +245,16 @@ class SNGANDiscResBlock(nn.Module):
         return out
 
     def init_weights(self):
-        # xavier_init(self.conv_1, gain=np.sqrt(2), distribution='uniform')
-        # xavier_init(self.conv_2, gain=np.sqrt(2), distribution='uniform')
-        nn.init.orthogonal_(self.conv_1.conv.weight)
-        nn.init.orthogonal_(self.conv_2.conv.weight)
-        if self.learnable_sc:
-            # xavier_init(self.shortcut, gain=1, distribution='uniform')
-            nn.init.orthogonal_(self.shortcut.conv.weight)
+        if self.style == 'BigGAN':
+            nn.init.orthogonal_(self.conv_1.conv.weight)
+            nn.init.orthogonal_(self.conv_2.conv.weight)
+            if self.learnable_sc:
+                nn.init.orthogonal_(self.shortcut.conv.weight)
+        else:
+            xavier_init(self.conv_1, gain=np.sqrt(2), distribution='uniform')
+            xavier_init(self.conv_2, gain=np.sqrt(2), distribution='uniform')
+            if self.learnable_sc:
+                xavier_init(self.shortcut, gain=1, distribution='uniform')
 
 
 @MODULES.register_module()
@@ -247,8 +263,8 @@ class SNGANDiscHeadResBlock(nn.Module):
     to ``SNGANDisResBlock``, this module has a different forward order.
 
     args:
-        in_channels (int): input channels.
-        out_channels (int): output channels.
+        in_channels (int): Input channels.
+        out_channels (int): Output channels.
         downsample (bool, optional): whether apply downsample operation in this
             module.  default to false.
         conv_cfg (dict | none): config for conv blocks of this module. if pass
@@ -257,6 +273,8 @@ class SNGANDiscHeadResBlock(nn.Module):
             conv blocks and norm layers. default to true.
         act_cfg (dict, optional): config for activate function. default
             to ``dict(type='relu')``.
+        style (string, optional): Behavior and initialization style of the
+            module.  Default to 'BigGAN'
     """
 
     _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
@@ -266,10 +284,12 @@ class SNGANDiscHeadResBlock(nn.Module):
                  out_channels,
                  conv_cfg=None,
                  with_spectral_norm=True,
-                 act_cfg=dict(type='ReLU')):
+                 act_cfg=dict(type='ReLU', inplace=True),
+                 style='BigGAN'):
 
         super().__init__()
 
+        self.style = style
         self.conv_cfg = deepcopy(self._default_conv_cfg)
         if conv_cfg is not None:
             self.conv_cfg.update(conv_cfg)
@@ -317,12 +337,14 @@ class SNGANDiscHeadResBlock(nn.Module):
         return out
 
     def init_weights(self):
-        # xavier_init(self.conv_1, gain=np.sqrt(2), distribution='uniform')
-        # xavier_init(self.conv_2, gain=np.sqrt(2), distribution='uniform')
-        # xavier_init(self.shortcut, gain=1, distribution='uniform')
-        nn.init.orthogonal_(self.conv_1.conv.weight)
-        nn.init.orthogonal_(self.conv_2.conv.weight)
-        nn.init.orthogonal_(self.shortcut.conv.weight)
+        if self.style == 'BigGAN':
+            nn.init.orthogonal_(self.conv_1.conv.weight)
+            nn.init.orthogonal_(self.conv_2.conv.weight)
+            nn.init.orthogonal_(self.shortcut.conv.weight)
+        else:
+            xavier_init(self.conv_1, gain=np.sqrt(2), distribution='uniform')
+            xavier_init(self.conv_2, gain=np.sqrt(2), distribution='uniform')
+            xavier_init(self.shortcut, gain=1, distribution='uniform')
 
 
 @MODULES.register_module()
@@ -347,14 +369,10 @@ class SNConditionNorm(nn.Module):
             to ``dict(type='BN')``.
         auto_sync_bn (bool, optional): Whether convert Batch Norm to
             Synchronized ones when Distributed training is on. Defualt to True.
-        eps (float, optional): eps for Normalization layers (both conditional
+        norm_eps (float, optional): eps for Normalization layers (both conditional
             and non-conditional ones). Default to 1e-4.
-        init_method (str, optional): Initialization method for embedding
-            layers, 'ortho' | 'constant'. If sets as 'constant', embedding
-            layer for weight and bias are initialized as 1 and 0, respectively.
-            Default to 'ortho'.
-        reweight_embedding (bool, optional): (TODO: change name?) Whether add
-            ``1.`` to weight embedding result.  Default to True.
+        style (string, optional): Behavior and initialization style of the
+            module.  Default to 'BigGAN'
     """
 
     def __init__(self,
@@ -364,12 +382,11 @@ class SNConditionNorm(nn.Module):
                  norm_cfg=dict(type='BN'),
                  cbn_norm_affine=False,
                  auto_sync_bn=True,
-                 eps=1e-4,
-                 init_method='ortho',
-                 reweight_embedding=True):
+                 norm_eps=1e-4,
+                 style='BigGAN'):
         super().__init__()
         self.use_cbn = use_cbn
-        self.reweight_embedding = reweight_embedding
+        self.style = style
 
         norm_cfg = deepcopy(norm_cfg)
         norm_type = norm_cfg['type']
@@ -382,7 +399,7 @@ class SNConditionNorm(nn.Module):
 
         if self.use_cbn:
             norm_cfg.setdefault('affine', cbn_norm_affine)
-        norm_cfg.setdefault('eps', eps)
+        norm_cfg.setdefault('eps', norm_eps)
         if check_dist_init() and auto_sync_bn and norm_type == 'BN':
             norm_cfg['type'] = 'SyncBN'
 
@@ -395,7 +412,7 @@ class SNConditionNorm(nn.Module):
             self.weight_embedding = nn.Embedding(num_classes, in_channels)
             self.bias_embedding = nn.Embedding(num_classes, in_channels)
 
-        self.init_weights(init_method)
+        self.init_weights()
 
     def forward(self, x, y=None):
         """Forward function.
@@ -413,20 +430,16 @@ class SNConditionNorm(nn.Module):
         if self.use_cbn:
             weight = self.weight_embedding(y)[:, :, None, None]
             bias = self.bias_embedding(y)[:, :, None, None]
-            if self.reweight_embedding:
+            if self.style == 'BigGAN':
                 weight = weight + 1.
             out = out * weight + bias
         return out
 
-    def init_weights(self, init_method):
+    def init_weights(self):
         if self.use_cbn:
-            if init_method == 'ortho':
+            if self.style == 'BigGAN':
                 nn.init.orthogonal_(self.weight_embedding.weight)
                 nn.init.orthogonal_(self.bias_embedding.weight)
-            elif init_method == 'constant':
+            else:
                 constant_init(self.weight_embedding, 1)
                 constant_init(self.bias_embedding, 0)
-            else:
-                raise ValueError('Conditional Norm only support `ortho` and '
-                                 '`constant` for embedding layer '
-                                 f'initialization. Receive {init_method}')
