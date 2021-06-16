@@ -63,7 +63,6 @@ def test_ms_ssim():
     metric.feed(img_nhwc_2, 'fakes')
     ssim_result = metric.summary()
     assert ssim_result < 1
-    # np.testing.assert_almost_equal(ssim_result, 0.1, 1)
 
 
 class TestExtractInceptionFeat:

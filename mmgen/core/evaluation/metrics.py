@@ -53,7 +53,16 @@ def load_inception(inception_args, metric):
     _inception_args = deepcopy(inception_args)
     inceptoin_type = _inception_args.pop('type', None)
 
-    # load pytorch version
+    major, minor, *rest = [int(idx) for idx in torch.__version__.split('.')]
+    if major < 1 or minor < 6:
+        mmcv.print_log(
+            'Current Pytorch Version not support script module, load '
+            'Inception Model from torch model zoo. If you want to use '
+            'Tero\' script model, please update your Pytorch higher '
+            f'than \'1.6\' (now is {torch.__version__})', 'mmgen')
+        return _load_inception_torch(_inception_args, metric), 'pytorch'
+
+    # load pytorch version is specific
     if inceptoin_type != 'StyleGAN':
         return _load_inception_torch(_inception_args, metric), 'pytorch'
 
@@ -984,8 +993,7 @@ class IS(Metric):
             little bit slow, but achieve a more accurate IS result. Defaults
             to False.
         inception_args (dict, optional): Keyword args for inception net.
-            Defaults to
-            `dict(type='StyleGAN', inception_path=INCEPTION_URL)`.
+            Defaults to ``dict(type='StyleGAN', inception_path=INCEPTION_URL)``.
     """
     name = 'IS'
 
