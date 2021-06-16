@@ -70,7 +70,7 @@ def load_inception(inception_args, metric):
     path = _inception_args.get('inception_path', TERO_INCEPTION_URL)
 
     # try to parse `path` as web url and download
-    if 'http' in path:
+    if 'http' not in path:
         model = _load_inception_from_path(path)
         if isinstance(model, torch.nn.Module):
             return model, 'StyleGAN'
@@ -468,19 +468,8 @@ class FID(Metric):
         self.bgr2rgb = bgr2rgb
         self.device = 'cpu'
 
-        model, style = load_inception(inception_args, 'FID')
-        self.inception_net = model
-        self.inception_style = style
-
-        # # define inception network as official StyleGAN
-        # if inception_args.get('type', None) == 'StyleGAN':
-        #     self.inception_net = torch.jit.load(
-        #         inception_args['inception_path'])
-        #     self.inception_style = 'StyleGAN'
-        # else:
-        #     self.inception_style = 'PyTorch'
-        #     # define inception net with default PyTorch style
-        #     self.inception_net = InceptionV3([3], **inception_args)
+        self.inception_net, self.inception_style = load_inception(
+            inception_args, 'FID')
 
         if torch.cuda.is_available():
             self.inception_net = self.inception_net.cuda()
