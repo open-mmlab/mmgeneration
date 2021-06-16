@@ -12,19 +12,21 @@ class TestSNGAN_PROJ:
             type='SNGANGenerator',
             output_scale=32,
             base_channels=256,
-            num_classes=10)
+            num_classes=10,
+            style='chainer')
 
         cls.discriminator_cfg = dict(
             type='ProjDiscriminator',
             input_scale=32,
             base_channels=128,
-            num_classes=10)
+            num_classes=10,
+            style='chainer')
 
         cls.disc_auxiliary_loss = None
         cls.gan_loss = dict(type='GANLoss', gan_type='hinge')
         cls.train_cfg = None
 
-    def test_wgangp_cpu(self):
+    def test_sngan_proj_cpu(self):
         # test default config
         snganproj = BasicConditionalGAN(
             self.generator_cfg,
@@ -57,7 +59,7 @@ class TestSNGAN_PROJ:
         assert model_outputs['num_samples'] == 2
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
-    def test_wgangp_cuda(self):
+    def test_sngan_proj_cuda(self):
         # test default config
         snganproj = BasicConditionalGAN(
             self.generator_cfg,

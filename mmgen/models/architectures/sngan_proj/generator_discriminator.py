@@ -16,7 +16,7 @@ from ..common import get_module_device
 
 @MODULES.register_module()
 class SNGANGenerator(nn.Module):
-    r"""Generator for SNGAN / Proj-GAN. The implementation is refer to
+    r"""Generator for SNGAN / Proj-GAN. The implementation refers to
     https://github.com/pfnet-research/sngan_projection/tree/master/gen_models
 
     In our implementation, we have two notable design. Namely,
@@ -25,13 +25,13 @@ class SNGANGenerator(nn.Module):
     ``channels_cfg``: In default config of SNGAN / Proj-GAN, the number of
         ResBlocks and the channels of those blocks are corresponding to the
         resolution of the output image. Therefore, we allow user to define
-        `channels_cfg` for try their own models. We also provide a default
+        ``channels_cfg`` to try their own models. We also provide a default
         config to allow users to build the model only from the output
         resolution.
 
     ``block_cfg``: In reference code, the generator consists of a group of
         ResBlock. However, in our implementation, to make this model more
-        generalize, we support defining blocks_cfg by users and loading
+        generalize, we support defining ``blocks_cfg`` by users and loading
         the blocks by calling the build_module method.
 
     Args:
@@ -70,8 +70,8 @@ class SNGANGenerator(nn.Module):
             conv blocks or not. Default to False.
         norm_eps (float, optional): eps for Normalization layers (both
             conditional and non-conditional ones). Default to 1e-4.
-        style (str, optional): Behavior and initialize style for the generator.
-            Default to 'BigGAN'.
+        init_cfg (string, optional): Config for weight initialization.
+            Default to ``dict(type='BigGAN')``.
     """
 
     # default channel factors
@@ -94,7 +94,7 @@ class SNGANGenerator(nn.Module):
                  auto_sync_bn=True,
                  with_spectral_norm=False,
                  norm_eps=1e-4,
-                 style='BigGAN'):
+                 init_cfg=dict(type='BigGAN')):
 
         super().__init__()
 
@@ -102,7 +102,7 @@ class SNGANGenerator(nn.Module):
         self.output_scale = output_scale
         self.noise_size = noise_size
         self.num_classes = num_classes
-        self.style = style
+        self.init_type = init_cfg.get('type', None)
 
         self.blocks_cfg = deepcopy(blocks_cfg)
 
@@ -110,6 +110,7 @@ class SNGANGenerator(nn.Module):
         self.blocks_cfg.setdefault('act_cfg', act_cfg)
         self.blocks_cfg.setdefault('auto_sync_bn', auto_sync_bn)
         self.blocks_cfg.setdefault('with_spectral_norm', with_spectral_norm)
+        self.blocks_cfg.setdefault('init_cfg', init_cfg)
         self.blocks_cfg.setdefault('norm_eps', norm_eps)
 
         channels_cfg = deepcopy(self._defualt_channels_cfg) \
@@ -238,9 +239,10 @@ class SNGANGenerator(nn.Module):
             logger = get_root_logger()
             load_checkpoint(self, pretrained, strict=strict, logger=logger)
         elif pretrained is None:
-            if self.style == 'BigGAN':
-                nn.init.orthogonal_(self.to_rgb.conv.weight)
-                nn.init.orthogonal_(self.noise2feat.weight)
+            if self.init_type == 'BigGAN':
+                for m in self.modules():
+                    if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
+                        nn.init.orthogonal_(m.weight)
             else:
                 for n, m in self.named_modules():
                     if isinstance(m, nn.Conv2d):
@@ -325,8 +327,8 @@ class ProjDiscriminator(nn.Module):
             layer. Defaults to ``dict(type='ReLU')``.
         with_spectral_norm (bool, optional): Whether use spectral norm for
             all conv blocks or not. Default to True.
-        style (string, optional): Behavior and initialization style of the
-            module.  Default to 'BigGAN'.
+        init_cfg (dict, optional): Config for weight initialization.
+            Default to ``dict(type='BigGAN')``.
     """
 
     # default channel factors
@@ -346,7 +348,7 @@ class ProjDiscriminator(nn.Module):
     def __init__(self,
                  input_scale,
                  num_classes=0,
-                 base_channels=64,
+                 base_channels=128,
                  input_channels=3,
                  channels_cfg=None,
                  downsample_cfg=None,
@@ -354,11 +356,11 @@ class ProjDiscriminator(nn.Module):
                  blocks_cfg=dict(type='SNGANDiscResBlock'),
                  act_cfg=dict(type='ReLU'),
                  with_spectral_norm=True,
-                 style='BigGAN'):
+                 init_cfg=dict(type='BigGAN')):
 
         super().__init__()
 
-        self.style = style
+        self.init_type = init_cfg.get('type', None)
 
         # add SN options and activation function options to cfg
         self.from_rgb_cfg = deepcopy(from_rgb_cfg)
@@ -369,6 +371,7 @@ class ProjDiscriminator(nn.Module):
         self.blocks_cfg = deepcopy(blocks_cfg)
         self.blocks_cfg.setdefault('act_cfg', act_cfg)
         self.blocks_cfg.setdefault('with_spectral_norm', with_spectral_norm)
+        self.blocks_cfg.setdefault('init_cfg', init_cfg)
 
         channels_cfg = deepcopy(self._defualt_channels_cfg) \
             if channels_cfg is None else deepcopy(channels_cfg)
@@ -398,10 +401,10 @@ class ProjDiscriminator(nn.Module):
             raise ValueError('Only support list or dict for `channel_cfg`, '
                              f'receive {type(downsample_cfg)}')
 
-        if len(downsample_cfg) != len(channels_cfg):
-            raise ValueError(
-                '`downsample_cfg` should have same length with `channel_cfg`, '
-                f'but receive {len(downsample_cfg)} and {len(channels_cfg)}.')
+        if len(self.downsample_list) != len(self.channel_factor_list):
+            raise ValueError('`downsample_cfg` should have same length with '
+                             '`channels_cfg`, but receive '
+                             f'{len(downsample_cfg)} and {len(channels_cfg)}.')
 
         self.from_rgb = build_module(
             self.from_rgb_cfg,
@@ -419,7 +422,7 @@ class ProjDiscriminator(nn.Module):
             block_cfg_['out_channels'] = factor_output * base_channels
             self.conv_blocks.append(build_module(block_cfg_))
 
-        decision_bias = self.style == 'BigGAN'
+        decision_bias = self.init_type == 'BigGAN'
         self.decision = nn.Linear(
             factor_output * base_channels, 1, bias=decision_bias)
         if with_spectral_norm:
@@ -475,7 +478,7 @@ class ProjDiscriminator(nn.Module):
             logger = get_root_logger()
             load_checkpoint(self, pretrained, strict=strict, logger=logger)
         elif pretrained is None:
-            if self.style == 'BigGAN':
+            if self.init_type == 'BigGAN':
                 for m in self.modules():
                     if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
                         nn.init.orthogonal_(m.weight)

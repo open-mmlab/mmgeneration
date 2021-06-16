@@ -40,8 +40,8 @@ class SNGANGenResBlock(nn.Module):
             conv blocks and norm layers. Default to True.
         norm_eps (float, optional): ``eps`` used in norm layers.
             Default to 1e-4.
-        style (string, optional): Behavior and initialization style of the
-            module.  Default to 'BigGAN'
+        init_cfg (dict, optional): Config for weight initialization.
+            Default to ``dict(type='BigGAN')``.
     """
 
     _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
@@ -61,12 +61,12 @@ class SNGANGenResBlock(nn.Module):
                  conv_cfg=None,
                  with_spectral_norm=False,
                  norm_eps=1e-4,
-                 style='BigGAN'):
+                 init_cfg=dict(type='BigGAN')):
 
         super().__init__()
         self.learnable_sc = in_channels != out_channels or upsample
         self.with_upsample = upsample
-        self.style = style
+        self.init_type = init_cfg.get('type', None)
 
         self.activate = build_activation_layer(act_cfg)
         hidden_channels = out_channels if hidden_channels is None \
@@ -86,10 +86,10 @@ class SNGANGenResBlock(nn.Module):
 
         self.norm_1 = SNConditionNorm(in_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      norm_eps, style)
+                                      norm_eps, init_cfg)
         self.norm_2 = SNConditionNorm(hidden_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      norm_eps, style)
+                                      norm_eps, init_cfg)
 
         if self.learnable_sc:
             # use hyperparameters-fixed shortcut here
@@ -138,7 +138,7 @@ class SNGANGenResBlock(nn.Module):
 
     def init_weights(self):
         """Initialize weights for the model."""
-        if self.style == 'BigGAN':
+        if self.init_type == 'BigGAN':
             nn.init.orthogonal_(self.conv_1.conv.weight)
             nn.init.orthogonal_(self.conv_2.conv.weight)
             if self.learnable_sc:
@@ -168,8 +168,8 @@ class SNGANDiscResBlock(nn.Module):
             to ``dict(type='relu')``.
         conv_cfg (dict | none): config for conv blocks of this module. if pass
             ``none``, would use ``_default_conv_cfg``. default to ``none``.
-        style (string, optional): Behavior and initialization style of the
-            module.  Default to 'BigGAN'
+        init_cfg (dict, optional): Config for weight initialization.
+            Default to ``dict(type='BigGAN')``.
     """
 
     _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
@@ -182,13 +182,13 @@ class SNGANDiscResBlock(nn.Module):
                  with_spectral_norm=True,
                  act_cfg=dict(type='ReLU'),
                  conv_cfg=None,
-                 style='BigGAN'):
+                 init_cfg=dict(type='BigGAN')):
 
         super().__init__()
         hidden_channels = in_channels if hidden_channels is None \
             else hidden_channels
         self.with_downsample = downsample
-        self.style = style
+        self.init_type = init_cfg.get('type', None)
 
         self.conv_cfg = deepcopy(self._default_conv_cfg)
         if conv_cfg is not None:
@@ -245,7 +245,7 @@ class SNGANDiscResBlock(nn.Module):
         return out
 
     def init_weights(self):
-        if self.style == 'BigGAN':
+        if self.init_type == 'BigGAN':
             nn.init.orthogonal_(self.conv_1.conv.weight)
             nn.init.orthogonal_(self.conv_2.conv.weight)
             if self.learnable_sc:
@@ -273,8 +273,8 @@ class SNGANDiscHeadResBlock(nn.Module):
             conv blocks and norm layers. default to true.
         act_cfg (dict, optional): config for activate function. default
             to ``dict(type='relu')``.
-        style (string, optional): Behavior and initialization style of the
-            module.  Default to 'BigGAN'
+        init_cfg (dict, optional): Config for weight initialization.
+            Default to ``dict(type='BigGAN')``.
     """
 
     _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
@@ -285,11 +285,11 @@ class SNGANDiscHeadResBlock(nn.Module):
                  conv_cfg=None,
                  with_spectral_norm=True,
                  act_cfg=dict(type='ReLU'),
-                 style='BigGAN'):
+                 init_cfg=dict(type='BigGAN')):
 
         super().__init__()
 
-        self.style = style
+        self.init_type = init_cfg.get('type', None)
         self.conv_cfg = deepcopy(self._default_conv_cfg)
         if conv_cfg is not None:
             self.conv_cfg.update(conv_cfg)
@@ -337,7 +337,7 @@ class SNGANDiscHeadResBlock(nn.Module):
         return out
 
     def init_weights(self):
-        if self.style == 'BigGAN':
+        if self.init_type == 'BigGAN':
             nn.init.orthogonal_(self.conv_1.conv.weight)
             nn.init.orthogonal_(self.conv_2.conv.weight)
             nn.init.orthogonal_(self.shortcut.conv.weight)
@@ -349,8 +349,8 @@ class SNGANDiscHeadResBlock(nn.Module):
 
 @MODULES.register_module()
 class SNConditionNorm(nn.Module):
-    """Conditional Normalization for SNGAN / Proj-GAN. The implementation is
-    refer to.
+    """Conditional Normalization for SNGAN / Proj-GAN. The implementation
+    refers to.
 
     https://github.com/pfnet-research/sngan_projection/blob/master/source/links/conditional_batch_normalization.py  # noda
 
@@ -370,9 +370,9 @@ class SNConditionNorm(nn.Module):
         auto_sync_bn (bool, optional): Whether convert Batch Norm to
             Synchronized ones when Distributed training is on. Defualt to True.
         norm_eps (float, optional): eps for Normalization layers (both conditional
-            and non-conditional ones). Default to 1e-4.
-        style (string, optional): Behavior and initialization style of the
-            module.  Default to 'BigGAN'
+            and non-conditional ones). Default to `1e-4`.
+        init_cfg (dict, optional): Config for weight initialization.
+            Default to ``dict(type='BigGAN')``.
     """
 
     def __init__(self,
@@ -383,10 +383,10 @@ class SNConditionNorm(nn.Module):
                  cbn_norm_affine=False,
                  auto_sync_bn=True,
                  norm_eps=1e-4,
-                 style='BigGAN'):
+                 init_cfg=dict(type='BigGAN')):
         super().__init__()
         self.use_cbn = use_cbn
-        self.style = style
+        self.init_type = init_cfg.get('type', None)
 
         norm_cfg = deepcopy(norm_cfg)
         norm_type = norm_cfg['type']
@@ -411,6 +411,7 @@ class SNConditionNorm(nn.Module):
                                  'than 0 with `use_cbn=True`')
             self.weight_embedding = nn.Embedding(num_classes, in_channels)
             self.bias_embedding = nn.Embedding(num_classes, in_channels)
+            self.reweight_embedding = self.init_type == 'BigGAN'
 
         self.init_weights()
 
@@ -430,14 +431,14 @@ class SNConditionNorm(nn.Module):
         if self.use_cbn:
             weight = self.weight_embedding(y)[:, :, None, None]
             bias = self.bias_embedding(y)[:, :, None, None]
-            if self.style == 'BigGAN':
+            if self.reweight_embedding:
                 weight = weight + 1.
             out = out * weight + bias
         return out
 
     def init_weights(self):
         if self.use_cbn:
-            if self.style == 'BigGAN':
+            if self.init_type == 'BigGAN':
                 nn.init.orthogonal_(self.weight_embedding.weight)
                 nn.init.orthogonal_(self.bias_embedding.weight)
             else:
