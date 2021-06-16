@@ -12,15 +12,13 @@ class TestSNGAN_PROJ:
             type='SNGANGenerator',
             output_scale=32,
             base_channels=256,
-            num_classes=10,
-            style='chainer')
+            num_classes=10)
 
         cls.discriminator_cfg = dict(
             type='ProjDiscriminator',
             input_scale=32,
             base_channels=128,
-            num_classes=10,
-            style='chainer')
+            num_classes=10)
 
         cls.disc_auxiliary_loss = None
         cls.gan_loss = dict(type='GANLoss', gan_type='hinge')
