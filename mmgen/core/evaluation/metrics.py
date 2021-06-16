@@ -1,6 +1,7 @@
 import os
 import pickle
 from abc import ABC, abstractmethod
+from copy import deepcopy
 
 import mmcv
 import numpy as np
@@ -16,11 +17,117 @@ from torchvision.models.inception import inception_v3
 from mmgen.models.architectures import InceptionV3
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.architectures.lpips import PerceptualLoss
+from mmgen.utils import MMGEN_CACHE_DIR
+from mmgen.utils.io_utils import download_from_url
 from ..registry import METRICS
 from .metric_utils import (_f_special_gauss, _hox_downsample,
                            compute_pr_distances, finalize_descriptors,
                            get_descriptors_for_minibatch, get_gaussian_kernel,
                            laplacian_pyramid, slerp)
+
+TERO_INCEPTION_URL = 'https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt'  # noqa
+
+
+def load_inception(inception_args, metric):
+    """Load Inception Model from given ``inception_args`` and ``metric``. This
+    function would try to load Inception under the guidance of 'type' given in
+    `inception_args`, if not given, we would try best to load Tero's ones. In
+    detailly, we would first try to load the model from disk with the given
+    'inception_path', and then try to download the checkpoint from
+    'inception_url'. If both method are failed, pytorch version of Inception
+    would be loaded.
+
+    Args:
+        inception_args (dict): Keyword args for inception net.
+        metric (string): Metric to use the Inception. This argument would
+            influence the pytorch's Inception loading.
+    Returns:
+        model (torch.nn.Module): Loaded Inception model.
+        style (string): The version of the loaded Inception.
+    """
+
+    if not isinstance(inception_args, dict):
+        raise TypeError('Receive invalid \'inception_args\': '
+                        f'\'{inception_args}\'')
+
+    _inception_args = deepcopy(inception_args)
+    inceptoin_type = _inception_args.pop('type', None)
+
+    major, minor, *rest = torch.__version__.split('.')
+    if int(major) < 1 or int(minor) < 6:
+        mmcv.print_log(
+            'Current Pytorch Version not support script module, load '
+            'Inception Model from torch model zoo. If you want to use '
+            'Tero\' script model, please update your Pytorch higher '
+            f'than \'1.6\' (now is {torch.__version__})', 'mmgen')
+        return _load_inception_torch(_inception_args, metric), 'pytorch'
+
+    # load pytorch version is specific
+    if inceptoin_type != 'StyleGAN':
+        return _load_inception_torch(_inception_args, metric), 'pytorch'
+
+    # try to load Tero's version
+    path = _inception_args.get('inception_path', TERO_INCEPTION_URL)
+
+    # try to parse `path` as web url and download
+    if 'http' not in path:
+        model = _load_inception_from_path(path)
+        if isinstance(model, torch.nn.Module):
+            return model, 'StyleGAN'
+
+    # try to parse `path` as path on disk
+    model = _load_inception_from_url(path)
+    if isinstance(model, torch.nn.Module):
+        return model, 'StyleGAN'
+
+    raise RuntimeError('Cannot Load Inception Model, please check the input '
+                       f'`inception_args`: {inception_args}')
+
+
+def _load_inception_from_path(inception_path):
+    mmcv.print_log(
+        'Try to load Tero\'s Inception Model from '
+        f'\'{inception_path}\'.', 'mmgen')
+    try:
+        model = torch.jit.load(inception_path)
+        mmcv.print_log('Load Tero\'s Inception Model successfully.', 'mmgen')
+    except Exception as e:
+        model = None
+        mmcv.print_log(
+            'Load Tero\'s Inception Model failed. '
+            f'\'{e}\' occurs.', 'mmgen')
+    return model
+
+
+def _load_inception_from_url(inception_url):
+    inception_url = inception_url if inception_url else TERO_INCEPTION_URL
+    mmcv.print_log(f'Try to download Inception Model from {inception_url}...',
+                   'mmgen')
+    try:
+        path = download_from_url(inception_url, dest_dir=MMGEN_CACHE_DIR)
+        mmcv.print_log('Download Finished.')
+        return _load_inception_from_path(path)
+    except Exception as e:
+        mmcv.print_log(f'Download Failed. {e} occurs.')
+        return None
+
+
+def _load_inception_torch(inception_args, metric):
+    assert metric in ['FID', 'IS']
+    if metric == 'FID':
+        inception_model = InceptionV3([3], **inception_args)
+    elif metric == 'IS':
+        inception_model = inception_v3(pretrained=True, transform_input=False)
+        mmcv.print_log(
+            'Load Inception V3 Network from Pytorch Model Zoo '
+            'for IS calculation. The results can only used '
+            'for monitoring purposes. To get more accuracy IS, '
+            'please use Tero\'s Inception V3 checkpoints '
+            'and use Bicubic Interpolation with Pillow backend '
+            'for image resizing. More details may refer to '
+            'https://github.com/open-mmlab/mmgeneration/blob/master/docs/quick_run.md#is.',  # noqa
+            'mmgen')
+    return inception_model
 
 
 def _ssim_for_multi_scale(img1,
@@ -361,15 +468,9 @@ class FID(Metric):
         self.bgr2rgb = bgr2rgb
         self.device = 'cpu'
 
-        # define inception network as official StyleGAN
-        if inception_args.get('type', None) == 'StyleGAN':
-            self.inception_net = torch.jit.load(
-                inception_args['inception_path'])
-            self.inception_style = 'StyleGAN'
-        else:
-            self.inception_style = 'PyTorch'
-            # define inception net with default PyTorch style
-            self.inception_net = InceptionV3([3], **inception_args)
+        self.inception_net, self.inception_style = load_inception(
+            inception_args, 'FID')
+
         if torch.cuda.is_available():
             self.inception_net = self.inception_net.cuda()
             self.device = 'cuda'
@@ -855,15 +956,15 @@ class IS(Metric):
     then summed over all images and averaged over all classes and the exponent
     of the result is calculated to give the final score.
 
-    Ref: https://github.com/sbarratt/inception-score-pytorch/blob/master/inception_score.py # noqa
+    Ref: https://github.com/sbarratt/inception-score-pytorch/blob/master/inception_score.py  # noqa
 
     Note that we highly recommend that users should download the Inception V3
     script module from the following address. Then, the `inception_pkl` can
-    be set with user's local path. If not given, we will use the Inception V3 from
-    pytorch model zoo. However, this may bring significant different in the
-    final results.
+    be set with user's local path. If not given, we will use the Inception V3
+    from pytorch model zoo. However, this may bring significant different in
+    the final results.
 
-    Tero's Inception V3: https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt # noqa
+    Tero's Inception V3: https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt  # noqa
 
     Args:
         num_images (int): The number of evaluated generated samples.
@@ -878,9 +979,10 @@ class IS(Metric):
         splits (int, optional): The number of groups. Defaults to 10.
         use_pil_resize (bool, optional): Whether use Bicubic interpolation with
             Pillow's backend. If set as True, the evaluation process may be a
-            little bit slow, but achieve a more accurate IS result. Defaults to False.
-        inception_pkl (str, optional): Path for the Tero's Inception V3 module.
-            Defaults to 'work_dirs/cache/inception-2015-12-05.pt'.
+            little bit slow, but achieve a more accurate IS result. Defaults
+            to False.
+        inception_args (dict, optional): Keyword args for inception net.
+            Defaults to ``dict(type='StyleGAN', inception_path=INCEPTION_URL)``.
     """
     name = 'IS'
 
@@ -891,26 +993,15 @@ class IS(Metric):
                  resize=True,
                  splits=10,
                  use_pil_resize=True,
-                 inception_pkl='work_dirs/cache/inception-2015-12-05.pt'):
+                 inception_args=dict(
+                     type='StyleGAN', inception_path=TERO_INCEPTION_URL)):
         super().__init__(num_images, image_shape)
         mmcv.print_log('Loading Inception V3 for IS...', 'mmgen')
 
-        if os.path.isfile(inception_pkl):
-            self.inception_model = torch.jit.load(inception_pkl)
-            self.use_tero_script = True
-        else:
-            self.inception_model = inception_v3(
-                pretrained=True, transform_input=False)
-            self.use_tero_script = False
-            mmcv.print_log(
-                'Load Inception V3 Network from Pytorch Model Zoo '
-                'for IS calculation. The results can only used '
-                'for monitoring purposes. To get more accuracy IS, '
-                'please use Tero\'s Inception V3 checkpoints '
-                'and use Bicubic Interpolation with Pillow backend '
-                'for image resizing. More details may refer to '
-                'https://github.com/open-mmlab/mmgeneration/blob/master/docs/quick_run.md#is.',  # noqa
-                'mmgen')
+        model, style = load_inception(inception_args, 'IS')
+
+        self.inception_model = model
+        self.use_tero_script = style == 'StyleGAN'
 
         self.num_real_feeded = self.num_images
         self.resize = resize

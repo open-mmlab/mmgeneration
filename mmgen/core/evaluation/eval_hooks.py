@@ -160,7 +160,17 @@ class GenerativeEvalHook(Hook):
             mmcv.print_log(f'Feed reals to {metric.name} metric.', 'mmgen')
             # feed in real images
             for data in self.dataloader:
-                reals = data['real_img']
+                # key for unconditional GAN
+                if 'real_img' in data:
+                    reals = data['real_img']
+                # key for conditional GAN
+                elif 'img' in data:
+                    reals = data['img']
+                else:
+                    raise KeyError('Cannot found key for images in data_dict. '
+                                   'Only support `real_img` for unconditional '
+                                   'datasets and `img` for conditional '
+                                   'datasets.')
                 num_feed = metric.feed(reals, 'reals')
                 if num_feed <= 0:
                     break
