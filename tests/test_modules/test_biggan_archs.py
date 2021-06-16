@@ -14,7 +14,10 @@ class TestBigGANGenerator(object):
         num_classes = 1000
         cls.label = torch.randint(0, num_classes, (3, ))
         cls.default_config = dict(
-            type='BigGANGenerator', output_scale=128, num_classes=num_classes)
+            type='BigGANGenerator',
+            output_scale=128,
+            num_classes=num_classes,
+            base_channels=4)
 
     def test_biggan_generator(self):
 
@@ -88,11 +91,13 @@ class TestBigGANDiscriminator(object):
         cls.default_config = dict(
             type='BigGANDiscriminator',
             input_scale=128,
-            num_classes=num_classes)
+            num_classes=num_classes,
+            base_channels=8)
         cls.x = torch.randn((2, 3, 128, 128))
         cls.label = torch.randint(0, num_classes, (2, ))
 
     def test_biggan_discriminator(self):
+        # test default settings
         d = build_module(self.default_config)
         y = d(self.x, self.label)
         assert y.shape == (2, 1)

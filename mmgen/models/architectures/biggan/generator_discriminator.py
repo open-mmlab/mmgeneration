@@ -91,8 +91,7 @@ class BigGANGenerator(nn.Module):
                  blocks_cfg=dict(type='BigGANGenResBlock'),
                  arch_cfg=None,
                  out_norm_cfg=dict(type='BN'),
-                 pretrained=None,
-                 **kwargs):
+                 pretrained=None):
         super().__init__()
         self.noise_size = noise_size
         self.num_classes = num_classes
@@ -433,8 +432,7 @@ class BigGANDiscriminator(nn.Module):
                  with_spectral_norm=True,
                  blocks_cfg=dict(type='BigGANDiscResBlock'),
                  arch_cfg=None,
-                 pretrained=None,
-                 **kwargs):
+                 pretrained=None):
         super().__init__()
         self.num_classes = num_classes
         self.out_channels = out_channels
