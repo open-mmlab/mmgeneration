@@ -12,25 +12,30 @@ from mmgen.models.architectures import InceptionV3
 
 # def test_inception_download():
 #     from mmgen.core.evaluation.metrics import load_inception
+#     from mmgen.utils import MMGEN_CACHE_DIR
 
-#     MMGEN_CACHE_PATH = '~/.cache/openmmlab/mmgen'
-#     args_empty = ''
 #     args_FID_pytorch = dict(type='pytorch', normalize_input=False)
 #     args_FID_tero = dict(type='StyleGAN', inception_path='')
 #     args_IS_pytorch = dict(type='pytorch')
 #     args_IS_tero = dict(
 #         type='StyleGAN',
-#         inception_path=osp.join(MMGEN_CACHE_PATH, 'inception-2015-12-05.pt'))
+#         inception_path=osp.join(MMGEN_CACHE_DIR, 'inception-2015-12-05.pt'))
 
-#     tar_style_list = ['pytorch', 'StyleGAN', 'pytorch',
-#                       'StyleGAN', 'pytorch']
+#     tar_style_list = ['pytorch', 'StyleGAN', 'pytorch', 'StyleGAN']
 
-#     for inception_args, metric, tar_style in zip([
-#             args_FID_pytorch, args_FID_tero, args_IS_pytorch, args_IS_tero,
-#             args_empty
-#     ], ['FID', 'FID', 'IS', 'IS', 'IS'], tar_style_list):
+#     for inception_args, metric, tar_style in zip(
+#         [args_FID_pytorch, args_FID_tero, args_IS_pytorch, args_IS_tero],
+#         ['FID', 'FID', 'IS', 'IS'], tar_style_list):
 #         model, style = load_inception(inception_args, metric)
 #         assert style == tar_style
+
+#     args_empty = ''
+#     with pytest.raises(TypeError) as exc_info:
+#         load_inception(args_empty, 'FID')
+
+#     args_error_path = dict(type='StyleGAN', inception_path='error-path')
+#     with pytest.raises(RuntimeError) as exc_info:
+#         load_inception(args_error_path, 'FID')
 
 
 def test_swd_metric():
