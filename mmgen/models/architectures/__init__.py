@@ -1,3 +1,4 @@
+from .biggan import BigGANGenerator
 from .cyclegan import ResnetGenerator
 from .dcgan import DCGANDiscriminator, DCGANGenerator
 from .fid_inception import InceptionV3
@@ -30,5 +31,5 @@ __all__ = [
     'generation_init_weights', 'PatchDiscriminator', 'ResnetGenerator',
     'PerceptualLoss', 'WGANGPDiscriminator', 'WGANGPGenerator',
     'LSGANDiscriminator', 'LSGANGenerator', 'ProjDiscriminator',
-    'SNGANGenerator'
+    'SNGANGenerator', 'BigGANGenerator'
 ]

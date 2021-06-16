@@ -1,0 +1,23 @@
+Collections:
+  - Name: dcgan
+    Metadata:
+      Training Data: CelebA-64x64
+      Training Techniques:
+        - Adam
+      Training Resources: 1x TITAN X
+      Architecture:
+        - DCGAN
+    Paper: https://arxiv.org/abs/1511.06434
+    README: configs/dcgan/README.md
+
+Models:
+  - Name: dcgan_celeba_64x64
+    In Collection: dcgan
+    Config: configs/dcgan/dcgan_celeba-cropped_64_b128x1_300k.py
+    Results:
+      - Task: Unconditional Image Generation
+        Dataset: CelebA-64x64
+        Metrics:
+          SWD: 8.93,10.53,50.32/23.26
+          MS-SSIM: 0.2899
+    Weights: https://download.openmmlab.com/mmgen/dcgan/dcgan_mnist-64_b128x1_Glr4e-4_Dlr1e-4_5k_20210512_163926-207a1eaf.pth?versionId=CAEQKxiBgMDTnYH_yhciIGY2MjAwMzBjZjZiZjQzODJhZWRhOTFiNjU4MzdhMWY2
