@@ -53,8 +53,8 @@ def load_inception(inception_args, metric):
     _inception_args = deepcopy(inception_args)
     inceptoin_type = _inception_args.pop('type', None)
 
-    major, minor, *rest = [int(idx) for idx in torch.__version__.split('.')]
-    if major < 1 or minor < 6:
+    major, minor, *rest = torch.__version__.split('.')
+    if int(major) < 1 or int(minor) < 6:
         mmcv.print_log(
             'Current Pytorch Version not support script module, load '
             'Inception Model from torch model zoo. If you want to use '
