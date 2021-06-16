@@ -14,14 +14,17 @@ from mmgen.models.builder import MODULES
 
 
 class SNConvModule(ConvModule):
-    # TODO:
-    """[summary]
+    """Spectral Normalization ConvModule.
+
+    In this module, we inherit default ``mmcv.cnn.ConvModule`` and adopt
+    spectral normalization. The spectral normalization is proposed in:
+    Spectral Normalization for Generative Adversarial Networks.
 
     Args:
-        with_spectral_norm (bool, optional): [description]. Defaults to
-            False.
-        spectral_norm_cfg ([type], optional): [description]. Defaults to
-            None.
+        with_spectral_norm (bool, optional): Whether to use Spectral
+            Normalization. Defaults to False.
+        spectral_norm_cfg (dict, optional): Config for Spectral Normalization.
+            Defaults to None.
     """
 
     def __init__(self,
@@ -40,26 +43,29 @@ class SNConvModule(ConvModule):
 
 @MODULES.register_module()
 class BigGANGenResBlock(nn.Module):
-    # TODO:
-    """[summary]
+    """Residual block used in BigGAN's generator.
 
     Args:
-        in_channels ([type]): [description]
-        out_channels ([type]): [description]
-        dim_after_concat ([type]): [description]
-        conv_cfg ([type], optional): [description]. Defaults to dict(type=
-            'Conv2d').
-        shortcut_cfg ([type], optional): [description]. Defaults to dict(
-                type='Conv2d').
-        act_cfg ([type], optional): [description]. Defaults to dict(type=
-            'ReLU').
-        upsample_cfg ([type], optional): [description]. Defaults to dict(
-                type='nearest', scale_factor=2).
-        sn_eps ([type], optional): [description]. Defaults to 1e-6.
-        with_spectral_norm (bool, optional): [description]. Defaults to
-            True.
-        input_is_label (bool, optional): [description]. Defaults to False.
-        auto_sync_bn (bool, optional): [description]. Defaults to True.
+        in_channels (int): The channel number of the input feature map.
+        out_channels (int): The channel number of the output feature map.
+        dim_after_concat (int): The channel number of the noise concatenated
+            with the class vector.
+        conv_cfg (dict, optional): Config for the convolution module used in
+            this residual block. Defaults to dict(type='Conv2d').
+        shortcut_cfg (dict, optional): Config for the convolution module used
+            in shortcut. Defaults to dict(type='Conv2d').
+        act_cfg (dict, optional): Config for the activation layer. Defaults to
+            dict(type='ReLU').
+        upsample_cfg (dict, optional): Config for the upsampling operation.
+            Defaults to dict(type='nearest', scale_factor=2).
+        sn_eps (float, optional): Epsilon value for spectral normalization.
+            Defaults to 1e-6.
+        with_spectral_norm (bool, optional): Whether to use spectral
+            normalization in this block. Defaults to True.
+        input_is_label (bool, optional): Whether the input of BNs' linear layer
+            is raw label. Defaults to False.
+        auto_sync_bn (bool, optional): Whether to use synchronized batch
+            normalization. Defaults to True.
     """
 
     def __init__(self,
@@ -134,15 +140,15 @@ class BigGANGenResBlock(nn.Module):
             spectral_norm_cfg=dict(eps=sn_eps))
 
     def forward(self, x, y):
-        # TODO:
-        """[summary]
+        """Forward function.
 
         Args:
-            x ([type]): [description]
-            y ([type]): [description]
+            x (torch.Tensor): Input feature map tensor.
+            y (torch.Tensor): Label tensor or class embedding concatenated with
+                noise tensor.
 
         Returns:
-            [type]: [description]
+            torch.Tensor: Output feature map tensor.
         """
         x0 = self.bn1(x, y)
         x0 = self.activation(x0)
@@ -160,18 +166,24 @@ class BigGANGenResBlock(nn.Module):
 
 @MODULES.register_module()
 class BigGANConditionBN(nn.Module):
-    """[summary]
+    """Conditional Batch Normalization used in BigGAN.
 
     Args:
-        num_features ([type]): [description]
-        linear_input_channels ([type]): [description]
-        bn_eps ([type], optional): [description]. Defaults to 1e-5.
-        sn_eps ([type], optional): [description]. Defaults to 1e-6.
-        momentum (float, optional): [description]. Defaults to 0.1.
-        input_is_label (bool, optional): [description]. Defaults to False.
-        with_spectral_norm (bool, optional): [description]. Defaults to
-            True.
-        auto_sync_bn (bool, optional): [description]. Defaults to True.
+        num_features (int): The channel number of the input feature map tensor.
+        linear_input_channels (int): The channel number of the linear layers'
+            input tensor.
+        bn_eps (float, optional): Epsilon value for batch normalization.
+            Defaults to 1e-5.
+        sn_eps (float, optional): Epsilon value for spectral normalization.
+            Defaults to 1e-6.
+        momentum (float, optional): The value used for the running_mean and
+            running_var computation. Defaults to 0.1.
+        input_is_label (bool, optional): Whether the input of BNs' linear layer
+            is raw label. Defaults to False.
+        with_spectral_norm (bool, optional): Whether to use spectral
+            normalization. Defaults to True.
+        auto_sync_bn (bool, optional): Whether to use synchronized batch
+            normalization. Defaults to True.
     """
 
     def __init__(self,
@@ -207,14 +219,15 @@ class BigGANConditionBN(nn.Module):
             self.bn = SyncBatchNorm.convert_sync_batchnorm(self.bn)
 
     def forward(self, x, y):
-        """[summary]
+        """Forward function.
 
         Args:
-            x ([type]): [description]
-            y ([type]): [description]
+            x (torch.Tensor): Input feature map tensor.
+            y (torch.Tensor): Label tensor or class embedding concatenated with
+                noise tensor.
 
         Returns:
-            [type]: [description]
+            torch.Tensor: Output feature map tensor.
         """
         # Calculate class-conditional gains and biases
         gain = (1. + self.gain(y)).view(y.size(0), -1, 1, 1)
@@ -225,13 +238,14 @@ class BigGANConditionBN(nn.Module):
 
 @MODULES.register_module()
 class SelfAttentionBlock(nn.Module):
-    """[summary]
+    """Self-Attention block used in BigGAN.
 
     Args:
-        in_channels ([type]): [description]
-        with_spectral_norm (bool, optional): [description]. Defaults to
-            True.
-        sn_eps ([type], optional): [description]. Defaults to 1e-6.
+        in_channels (int): The channel number of the input feature map.
+        with_spectral_norm (bool, optional): Whether to use spectral
+            normalization. Defaults to True.
+        sn_eps (float, optional): Epsilon value for spectral normalization.
+            Defaults to 1e-6.
     """
 
     def __init__(self, in_channels, with_spectral_norm=True, sn_eps=1e-6):
@@ -278,14 +292,13 @@ class SelfAttentionBlock(nn.Module):
         self.gamma = Parameter(torch.tensor(0.), requires_grad=True)
 
     def forward(self, x):
-        # TODO:
-        """[summary]
+        """Forward function.
 
         Args:
-            x ([type]): [description]
+            x (torch.Tensor): Input feature map tensor.
 
         Returns:
-            [type]: [description]
+            torch.Tensor: Output feature map tensor.
         """
         # Apply convs
         theta = self.theta(x)
@@ -306,23 +319,25 @@ class SelfAttentionBlock(nn.Module):
 
 @MODULES.register_module()
 class BigGANDiscResBlock(nn.Module):
-    # TODO:
-    """[summary]
+    """Residual block used in BigGAN's discriminator.
 
     Args:
-        in_channels ([type]): [description]
-        out_channels ([type]): [description]
-        conv_cfg ([type], optional): [description]. Defaults to dict(type=
-            'Conv2d').
-        shortcut_cfg ([type], optional): [description]. Defaults to dict(
-                type='Conv2d').
-        act_cfg ([type], optional): [description]. Defaults to dict(type=
-            'ReLU', inplace=False).
-        sn_eps ([type], optional): [description]. Defaults to 1e-6.
-        with_downsample (bool, optional): [description]. Defaults to True.
-        with_spectral_norm (bool, optional): [description]. Defaults to
-            True.
-        is_head_block (bool, optional): [description]. Defaults to False.
+        in_channels (int): The channel number of the input tensor.
+        out_channels (int): The channel number of the output tensor.
+        conv_cfg (dict, optional): Config for the convolution module used in
+            this block. Defaults to dict(type='Conv2d').
+        shortcut_cfg (dict, optional): Config for the convolution module used
+            in shortcut. Defaults to dict(type='Conv2d').
+        act_cfg (dict, optional): Config for the activation layer. Defaults to
+            dict(type='ReLU', inplace=False).
+        sn_eps (float, optional): Epsilon value for spectral normalization.
+            Defaults to 1e-6.
+        with_downsample (bool, optional): Whether to use downsampling in this
+            block. Defaults to True.
+        with_spectral_norm (bool, optional): Whether to use spectral
+            normalization. Defaults to True.
+        is_head_block (bool, optional): Whether this block is the first block
+            of BigGAN. Defaults to False.
     """
 
     def __init__(self,
@@ -377,13 +392,13 @@ class BigGANDiscResBlock(nn.Module):
             spectral_norm_cfg=dict(eps=sn_eps))
 
     def forward_sc(self, x):
-        """[summary]
+        """Forward function of shortcut.
 
         Args:
-            x ([type]): [description]
+            x (torch.Tensor): Input feature map tensor.
 
         Returns:
-            [type]: [description]
+            torch.Tensor: Output tensor of shortcut.
         """
         if self.is_head_block:
             if self.with_downsample:
@@ -398,13 +413,13 @@ class BigGANDiscResBlock(nn.Module):
         return x
 
     def forward(self, x):
-        """[summary]
+        """Forward function.
 
         Args:
-            x ([type]): [description]
+            x (torch.Tensor): Input feature map tensor.
 
         Returns:
-            [type]: [description]
+            torch.Tensor: Output feature map tensor.
         """
         if self.is_head_block:
             x0 = x

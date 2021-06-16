@@ -58,7 +58,8 @@ class BigGANGenerator(nn.Module):
             Defaults to dict(type='nearest', scale_factor=2).
         with_spectral_norm (bool, optional): Whether to use spectral
             normalization. Defaults to True.
-        auto_sync_bn (bool, optional): [description]. Defaults to True.
+        auto_sync_bn (bool, optional): Whether to use synchronized batch
+            normalization. Defaults to True.
         blocks_cfg (dict, optional): Config for the convolution block. Defaults
             to dict(type='BigGANGenResBlock').
         arch_cfg (dict, optional): Config for the architecture of this
@@ -472,10 +473,11 @@ class BigGANDiscriminator(nn.Module):
         if with_spectral_norm:
             self.decision = spectral_norm(self.decision, eps=sn_eps)
 
-        self.proj_y = nn.Embedding(self.num_classes,
-                                   self.arch['out_channels'][-1])
-        if with_spectral_norm:
-            self.proj_y = spectral_norm(self.proj_y, eps=sn_eps)
+        if self.num_classes > 0:
+            self.proj_y = nn.Embedding(self.num_classes,
+                                       self.arch['out_channels'][-1])
+            if with_spectral_norm:
+                self.proj_y = spectral_norm(self.proj_y, eps=sn_eps)
 
         self.init_weights(pretrained=pretrained, init_type=init_type)
 
@@ -532,15 +534,15 @@ class BigGANDiscriminator(nn.Module):
         return _default_arch_cfgs[str(input_scale)]
 
     def forward(self, x, label=None):
-        # TODO:
-        """[summary]
+        """Forward function.
 
         Args:
-            x ([type]): [description]
-            label ([type], optional): [description]. Defaults to None.
+            x (torch.Tensor): Fake or real image tensor.
+            label (torch.Tensor | None): Label Tensor. Defaults to None.
 
         Returns:
-            [type]: [description]
+            torch.Tensor: Prediction for the reality of the input image with
+                given label.
         """
         x0 = x
         for conv_block in self.conv_blocks:
@@ -557,11 +559,14 @@ class BigGANDiscriminator(nn.Module):
     def init_weights(self, pretrained=None, init_type='ortho'):
         """Init weights for models.
 
-        We just use the initialization method proposed in the original paper.
-
         Args:
-            pretrained (str, optional): Path for pretrained weights. If given
-                None, pretrained weights will not be loaded. Defaults to None.
+            pretrained (str | dict, optional): Path for the pretrained model or
+                dict containing information for pretained models whose
+                necessary key is 'ckpt_path'. Besides, you can also provide
+                'prefix' to load the generator part from the whole state dict.
+                Defaults to None.
+            init_type (str, optional): The name of an initialization method:
+                ortho | N02 | xavier. Defaults to 'ortho'.
         """
 
         if isinstance(pretrained, str):
