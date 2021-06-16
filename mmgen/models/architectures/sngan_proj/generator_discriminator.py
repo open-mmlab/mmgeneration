@@ -20,16 +20,16 @@ class SNGANGenerator(nn.Module):
     https://github.com/pfnet-research/sngan_projection/tree/master/gen_models
 
     In our implementation, we have two notable design. Namely,
-    `channels_cfg` and `blocks_cfg`.
+    ``channels_cfg`` and ``blocks_cfg``.
 
-    `channels_cfg`: In default config of SNGAN / Proj-GAN, the number of
+    ``channels_cfg``: In default config of SNGAN / Proj-GAN, the number of
         ResBlocks and the channels of those blocks are corresponding to the
         resolution of the output image. Therefore, we allow user to define
         `channels_cfg` for try their own models. We also provide a default
         config to allow users to build the model only from the output
         resolution.
 
-    `block_cfg`: In reference code, the generator consists of a group of
+    ``block_cfg``: In reference code, the generator consists of a group of
         ResBlock. However, in our implementation, to make this model more
         generalize, we support defining blocks_cfg by users and loading
         the blocks by calling the build_module method.
@@ -242,8 +242,21 @@ class SNGANGenerator(nn.Module):
                 nn.init.orthogonal_(self.to_rgb.conv.weight)
                 nn.init.orthogonal_(self.noise2feat.weight)
             else:
-                xavier_init(self.noise2feat, gain=1, distribution='uniform')
-                xavier_init(self.to_rgb.conv, gain=1, distribution='uniform')
+                for n, m in self.named_modules():
+                    if isinstance(m, nn.Conv2d):
+                        if 'shortcut' in n or 'to_rgb' in n:
+                            xavier_init(m, gain=1, distribution='uniform')
+                        else:
+                            xavier_init(
+                                m, gain=np.sqrt(2), distribution='uniform')
+                    elif isinstance(m, nn.Linear):
+                        xavier_init(m, gain=1, distribution='uniform')
+                    elif isinstance(m, nn.Embedding):
+                        if 'weight' in n:
+                            constant_init(m, 1)
+                        elif 'bias' in n:
+                            constant_init(m, 0)
+
         else:
             raise TypeError("'pretrined' must be a str or None. "
                             f'But receive {type(pretrained)}.')
@@ -342,7 +355,7 @@ class ProjDiscriminator(nn.Module):
                  act_cfg=dict(type='ReLU'),
                  with_spectral_norm=True,
                  style='BigGAN'):
-        """"""
+
         super().__init__()
 
         self.style = style
@@ -477,12 +490,7 @@ class ProjDiscriminator(nn.Module):
                     elif isinstance(m, nn.Linear):
                         xavier_init(m, gain=1, distribution='uniform')
                     elif isinstance(m, nn.Embedding):
-                        if 'proj' in n:
-                            xavier_init(m, gain=1, distribution='uniform')
-                        elif 'weight' in n:
-                            constant_init(m, 1)
-                        elif 'bias' in n:
-                            constant_init(m, 0)
+                        xavier_init(m, gain=1, distribution='uniform')
         else:
             raise TypeError("'pretrained' must by a str or None. "
                             f'But receive {type(pretrained)}.')
