@@ -72,6 +72,10 @@ class SNGANGenerator(nn.Module):
             conditional and non-conditional ones). Default to 1e-4.
         init_cfg (string, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
+        pretrained (str | None, optional): Path for the pretrained model or
+            dict containing information for pretained models whose necessary
+            key is 'ckpt_path'. Besides, you can also provide 'prefix' to load
+            the generator part from the whole state dict.  Defaults to None.
     """
 
     # default channel factors
@@ -94,7 +98,8 @@ class SNGANGenerator(nn.Module):
                  auto_sync_bn=True,
                  with_spectral_norm=False,
                  norm_eps=1e-4,
-                 init_cfg=dict(type='BigGAN')):
+                 init_cfg=dict(type='BigGAN'),
+                 pretrained=None):
 
         super().__init__()
 
@@ -162,7 +167,7 @@ class SNGANGenerator(nn.Module):
             with_spectral_norm=with_spectral_norm)
         self.final_act = build_activation_layer(dict(type='Tanh'))
 
-        self.init_weights()
+        self.init_weights(pretrained)
 
     def forward(self, noise, num_batches=0, label=None, return_noise=False):
         """Forward function.
@@ -329,6 +334,10 @@ class ProjDiscriminator(nn.Module):
             all conv blocks or not. Default to True.
         init_cfg (dict, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
+        pretrained (str | None, optional): Path for the pretrained model or
+            dict containing information for pretained models whose necessary
+            key is 'ckpt_path'. Besides, you can also provide 'prefix' to load
+            the generator part from the whole state dict.  Defaults to None.
     """
 
     # default channel factors
@@ -356,7 +365,8 @@ class ProjDiscriminator(nn.Module):
                  blocks_cfg=dict(type='SNGANDiscResBlock'),
                  act_cfg=dict(type='ReLU'),
                  with_spectral_norm=True,
-                 init_cfg=dict(type='BigGAN')):
+                 init_cfg=dict(type='BigGAN'),
+                 pretrained=None):
 
         super().__init__()
 
@@ -366,6 +376,7 @@ class ProjDiscriminator(nn.Module):
         self.from_rgb_cfg = deepcopy(from_rgb_cfg)
         self.from_rgb_cfg.setdefault('act_cfg', act_cfg)
         self.from_rgb_cfg.setdefault('with_spectral_norm', with_spectral_norm)
+        self.from_rgb_cfg.setdefault('init_cfg', init_cfg)
 
         # add SN options and activation function options to cfg
         self.blocks_cfg = deepcopy(blocks_cfg)
@@ -438,7 +449,7 @@ class ProjDiscriminator(nn.Module):
                 self.proj_y = spectral_norm(self.proj_y)
 
         self.activate = build_activation_layer(act_cfg)
-        self.init_weights()
+        self.init_weights(pretrained)
 
     def forward(self, x, label=None):
         """Forward function. If `self.num_classes` is larger than 0, label

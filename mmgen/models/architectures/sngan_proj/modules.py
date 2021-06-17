@@ -131,7 +131,7 @@ class SNGANGenResBlock(nn.Module):
     def forward_shortcut(self, x):
         out = x
         if self.learnable_sc:
-            if self.upsample:
+            if self.with_upsample:
                 out = self.upsample(out)
             out = self.shortcut(out)
         return out
@@ -215,6 +215,7 @@ class SNGANDiscResBlock(nn.Module):
                 padding=0,
                 act_cfg=None,
                 with_spectral_norm=with_spectral_norm)
+        self.init_weights()
 
     def forward(self, x):
         """Forward function.
@@ -240,7 +241,7 @@ class SNGANDiscResBlock(nn.Module):
         out = x
         if self.learnable_sc:
             out = self.shortcut(out)
-            if self.downsample:
+            if self.with_downsample:
                 out = self.downsample(out)
         return out
 
