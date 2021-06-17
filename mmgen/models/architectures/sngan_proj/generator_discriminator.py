@@ -6,6 +6,7 @@ import torch.nn as nn
 from mmcv.cnn import (ConvModule, build_activation_layer, constant_init,
                       xavier_init)
 from mmcv.runner import load_checkpoint
+from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
 from torch.nn.utils import spectral_norm
 
 from mmgen.models.builder import MODULES, build_module
@@ -72,6 +73,10 @@ class SNGANGenerator(nn.Module):
             conditional and non-conditional ones). Default to 1e-4.
         init_cfg (string, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
+        pretrained (str | dict, optional): Path for the pretrained model or
+            dict containing information for pretained models whose necessary
+            key is 'ckpt_path'. Besides, you can also provide 'prefix' to load
+            the generator part from the whole state dict.  Defaults to None.
     """
 
     # default channel factors
@@ -94,7 +99,8 @@ class SNGANGenerator(nn.Module):
                  auto_sync_bn=True,
                  with_spectral_norm=False,
                  norm_eps=1e-4,
-                 init_cfg=dict(type='BigGAN')):
+                 init_cfg=dict(type='BigGAN'),
+                 pretrained=None):
 
         super().__init__()
 
@@ -162,7 +168,7 @@ class SNGANGenerator(nn.Module):
             with_spectral_norm=with_spectral_norm)
         self.final_act = build_activation_layer(dict(type='Tanh'))
 
-        self.init_weights()
+        self.init_weights(pretrained)
 
     def forward(self, noise, num_batches=0, label=None, return_noise=False):
         """Forward function.
@@ -235,9 +241,29 @@ class SNGANGenerator(nn.Module):
         return out_img
 
     def init_weights(self, pretrained=None, strict=True):
+        """Init weights for models.
+
+        We just use the initialization method proposed in the original paper.
+
+        Args:
+            pretrained (str | dict, optional): Path for the pretrained model or
+                dict containing information for pretained models whose
+                necessary key is 'ckpt_path'. Besides, you can also provide
+                'prefix' to load the generator part from the whole state dict.
+                Defaults to None.
+        """
         if isinstance(pretrained, str):
             logger = get_root_logger()
             load_checkpoint(self, pretrained, strict=strict, logger=logger)
+        elif isinstance(pretrained, dict):
+            ckpt_path = pretrained.get('ckpt_path', None)
+            assert ckpt_path is not None
+            prefix = pretrained.get('prefix', '')
+            map_location = pretrained.get('map_location', 'cpu')
+            strict = pretrained.get('strict', True)
+            state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
+                                                      map_location)
+            self.load_state_dict(state_dict, strict=strict)
         elif pretrained is None:
             if self.init_type == 'BigGAN':
                 for m in self.modules():
@@ -329,6 +355,10 @@ class ProjDiscriminator(nn.Module):
             all conv blocks or not. Default to True.
         init_cfg (dict, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
+        pretrained (str | dict , optional): Path for the pretrained model or
+            dict containing information for pretained models whose necessary
+            key is 'ckpt_path'. Besides, you can also provide 'prefix' to load
+            the generator part from the whole state dict.  Defaults to None.
     """
 
     # default channel factors
@@ -356,7 +386,8 @@ class ProjDiscriminator(nn.Module):
                  blocks_cfg=dict(type='SNGANDiscResBlock'),
                  act_cfg=dict(type='ReLU'),
                  with_spectral_norm=True,
-                 init_cfg=dict(type='BigGAN')):
+                 init_cfg=dict(type='BigGAN'),
+                 pretrained=None):
 
         super().__init__()
 
@@ -366,6 +397,7 @@ class ProjDiscriminator(nn.Module):
         self.from_rgb_cfg = deepcopy(from_rgb_cfg)
         self.from_rgb_cfg.setdefault('act_cfg', act_cfg)
         self.from_rgb_cfg.setdefault('with_spectral_norm', with_spectral_norm)
+        self.from_rgb_cfg.setdefault('init_cfg', init_cfg)
 
         # add SN options and activation function options to cfg
         self.blocks_cfg = deepcopy(blocks_cfg)
@@ -438,7 +470,7 @@ class ProjDiscriminator(nn.Module):
                 self.proj_y = spectral_norm(self.proj_y)
 
         self.activate = build_activation_layer(act_cfg)
-        self.init_weights()
+        self.init_weights(pretrained)
 
     def forward(self, x, label=None):
         """Forward function. If `self.num_classes` is larger than 0, label
@@ -471,12 +503,24 @@ class ProjDiscriminator(nn.Module):
         We just use the initialization method proposed in the original paper.
 
         Args:
-            pretrained (str, optional): Path for pretrained weights. If given
-                None, pretrained weights will not be loaded. Defaults to None.
+            pretrained (str | dict, optional): Path for the pretrained model or
+                dict containing information for pretained models whose
+                necessary key is 'ckpt_path'. Besides, you can also provide
+                'prefix' to load the generator part from the whole state dict.
+                Defaults to None.
         """
         if isinstance(pretrained, str):
             logger = get_root_logger()
             load_checkpoint(self, pretrained, strict=strict, logger=logger)
+        elif isinstance(pretrained, dict):
+            ckpt_path = pretrained.get('ckpt_path', None)
+            assert ckpt_path is not None
+            prefix = pretrained.get('prefix', '')
+            map_location = pretrained.get('map_location', 'cpu')
+            strict = pretrained.get('strict', True)
+            state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
+                                                      map_location)
+            self.load_state_dict(state_dict, strict=strict)
         elif pretrained is None:
             if self.init_type == 'BigGAN':
                 for m in self.modules():
