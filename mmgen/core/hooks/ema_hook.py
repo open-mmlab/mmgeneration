@@ -27,7 +27,7 @@ class ExponentialMovingAverageHook(Hook):
             Defaults to 'lerp'.
         interp_cfg (dict | None, optional): Set arguments of the interpolation
             function. Defaults to None.
-        interval (int, optional): Evaluation interval (by iterations). 
+        interval (int, optional): Evaluation interval (by iterations).
             Default: -1.
         start_iter (int, optional): Start iteration for ema. Default: 1.
     """
