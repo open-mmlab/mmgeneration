@@ -128,6 +128,31 @@ class TestEMA:
         assert torch.equal(ema_states['b'], torch.tensor([1., 1.5]))
         assert 'c' not in ema_states
 
+        # test ema with simple warm up
+        runner = SimpleRunner()
+        cfg_ = deepcopy(self.default_config)
+        cfg_.update(dict(start_iter=3, interval=1))
+        ema = ExponentialMovingAverageHook(**cfg_)
+        ema.before_run(runner)
+
+        module_a = runner.model.module_a
+        module_a_ema = runner.model.module_a_ema
+
+        module_a.a.data /= 2.
+
+        runner.iter += 1
+        ema.after_train_iter(runner)
+        ema_states = module_a_ema.state_dict()
+        assert torch.equal(runner.model.module_a.a, torch.tensor([0.5, 1.]))
+        assert torch.equal(ema_states['a'], torch.tensor([0.5, 1.]))
+
+        module_a.a.data /= 2
+        runner.iter += 2
+        ema.after_train_iter(runner)
+        ema_states = module_a_ema.state_dict()
+        assert torch.equal(runner.model.module_a.a, torch.tensor([0.25, 0.5]))
+        assert torch.equal(ema_states['a'], torch.tensor([0.375, 0.75]))
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_ema_hook_cuda(self):
         ema = ExponentialMovingAverageHook(**self.default_config)
@@ -181,3 +206,31 @@ class TestEMA:
         assert torch.equal(ema_states['a'], torch.tensor([0.75, 1.5]).cuda())
         assert torch.equal(ema_states['b'], torch.tensor([1., 1.5]).cuda())
         assert 'c' not in ema_states
+
+        # test ema with simple warm up
+        runner = SimpleRunner()
+        runner.model = runner.model.cuda()
+        cfg_ = deepcopy(self.default_config)
+        cfg_.update(dict(start_iter=3, interval=1))
+        ema = ExponentialMovingAverageHook(**cfg_)
+        ema.before_run(runner)
+
+        module_a = runner.model.module_a
+        module_a_ema = runner.model.module_a_ema
+
+        module_a.a.data /= 2.
+
+        runner.iter += 1
+        ema.after_train_iter(runner)
+        ema_states = module_a_ema.state_dict()
+        assert torch.equal(runner.model.module_a.a,
+                           torch.tensor([0.5, 1.]).cuda())
+        assert torch.equal(ema_states['a'], torch.tensor([0.5, 1.]).cuda())
+
+        module_a.a.data /= 2
+        runner.iter += 2
+        ema.after_train_iter(runner)
+        ema_states = module_a_ema.state_dict()
+        assert torch.equal(runner.model.module_a.a,
+                           torch.tensor([0.25, 0.5]).cuda())
+        assert torch.equal(ema_states['a'], torch.tensor([0.375, 0.75]).cuda())

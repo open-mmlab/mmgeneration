@@ -27,14 +27,17 @@ class ExponentialMovingAverageHook(Hook):
             Defaults to 'lerp'.
         interp_cfg (dict | None, optional): Set arguments of the interpolation
             function. Defaults to None.
-        interval (int, optional): Evaluation interval (by epochs). Default: -1.
+        interval (int, optional): Evaluation interval (by iterations). 
+            Default: -1.
+        start_iter (int, optional): Start iteration for ema. Default: 1.
     """
 
     def __init__(self,
                  module_keys,
                  interp_mode='lerp',
                  interp_cfg=None,
-                 interval=-1):
+                 interval=-1,
+                 start_iter=1):
         super().__init__()
         assert isinstance(module_keys, str) or mmcv.is_tuple_of(
             module_keys, str)
@@ -48,6 +51,7 @@ class ExponentialMovingAverageHook(Hook):
         self.interp_cfg = dict() if interp_cfg is None else deepcopy(
             interp_cfg)
         self.interval = interval
+        self.start_iter = start_iter
 
         assert hasattr(
             self, interp_mode
@@ -77,8 +81,11 @@ class ExponentialMovingAverageHook(Hook):
             states_orig = net.state_dict(keep_vars=True)
 
             for k, v in states_orig.items():
-                states_ema[k] = self.interp_func(
-                    v, states_ema[k], trainable=v.requires_grad).detach()
+                if runner.iter + 1 < self.start_iter:
+                    states_ema[k] = v.data
+                else:
+                    states_ema[k] = self.interp_func(
+                        v, states_ema[k], trainable=v.requires_grad).detach()
             ema_net.load_state_dict(states_ema, strict=True)
 
     def before_run(self, runner):
