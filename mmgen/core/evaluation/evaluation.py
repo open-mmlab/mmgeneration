@@ -168,7 +168,18 @@ def single_gpu_evaluation(model,
         pbar = mmcv.ProgressBar(total_need)
         # feed in real images
         for data in data_loader:
-            reals = data['real_img']
+            # key for unconditional GAN
+            if 'real_img' in data:
+                reals = data['real_img']
+            # key for conditional GAN
+            elif 'img' in data:
+                reals = data['img']
+            else:
+                raise KeyError('Cannot found key for images in data_dict. '
+                               'Only support `real_img` for unconditional '
+                               'datasets and `img` for conditional '
+                               'datasets.')
+
             if reals.shape[1] == 1:
                 reals = torch.cat([reals] * 3, dim=1)
             num_left = metric.feed(reals, 'reals')
@@ -234,12 +245,25 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
     max_num_images = 0 if len(vanilla_metrics) == 0 else max(
         metric.num_images for metric in vanilla_metrics)
     for metric in vanilla_metrics:
-        mmcv.print_log(f'Feed reals to {metric.name} metric.', 'mmgen')
         metric.prepare()
+        # avoid print empty pbar for metrics do not need reals
+        if metric.num_real_feeded == metric.num_images:
+            continue
+        mmcv.print_log(f'Feed reals to {metric.name} metric.', 'mmgen')
         pbar = mmcv.ProgressBar(metric.num_real_need)
         # feed in real images
         for data in data_loader:
-            reals = data['real_img']
+            # key for unconditional GAN
+            if 'real_img' in data:
+                reals = data['real_img']
+            # key for conditional GAN
+            elif 'img' in data:
+                reals = data['img']
+            else:
+                raise KeyError('Cannot found key for images in data_dict. '
+                               'Only support `real_img` for unconditional '
+                               'datasets and `img` for conditional '
+                               'datasets.')
 
             if reals.shape[1] not in [1, 3]:
                 raise RuntimeError('real images should have one or three '

@@ -53,8 +53,7 @@ def load_inception(inception_args, metric):
     _inception_args = deepcopy(inception_args)
     inceptoin_type = _inception_args.pop('type', None)
 
-    major, minor, *rest = torch.__version__.split('.')
-    if int(major) < 1 or int(minor) < 6:
+    if torch.__version__ <= '1.6.0':
         mmcv.print_log(
             'Current Pytorch Version not support script module, load '
             'Inception Model from torch model zoo. If you want to use '
@@ -1030,6 +1029,8 @@ class IS(Metric):
             torch.FloatTensor: Resized tensor.
         """
         if not self._pil_resize_warned:
+            import sys
+            sys.stdout.write('\n')
             mmcv.print_log(
                 '`use_pil_resize` is set as True, apply Bicubic '
                 'interpolation with Pillow backend. We perform '
