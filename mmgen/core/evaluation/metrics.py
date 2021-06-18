@@ -1029,8 +1029,6 @@ class IS(Metric):
             torch.FloatTensor: Resized tensor.
         """
         if not self._pil_resize_warned:
-            import sys
-            sys.stdout.write('\n')
             mmcv.print_log(
                 '`use_pil_resize` is set as True, apply Bicubic '
                 'interpolation with Pillow backend. We perform '
