@@ -27,14 +27,21 @@ class ExponentialMovingAverageHook(Hook):
             Defaults to 'lerp'.
         interp_cfg (dict | None, optional): Set arguments of the interpolation
             function. Defaults to None.
-        interval (int, optional): Evaluation interval (by epochs). Default: -1.
+        interval (int, optional): Evaluation interval (by iterations).
+            Default: -1.
+        start_iter (int, optional): Start iteration for ema. If the start
+            iteration is not reached, the weights of ema model will maintain
+            the same as the original one. Otherwise, its parameters are updated
+            as a moving average of the trained weights in the original model.
+            Default: 0.
     """
 
     def __init__(self,
                  module_keys,
                  interp_mode='lerp',
                  interp_cfg=None,
-                 interval=-1):
+                 interval=-1,
+                 start_iter=0):
         super().__init__()
         assert isinstance(module_keys, str) or mmcv.is_tuple_of(
             module_keys, str)
@@ -48,6 +55,7 @@ class ExponentialMovingAverageHook(Hook):
         self.interp_cfg = dict() if interp_cfg is None else deepcopy(
             interp_cfg)
         self.interval = interval
+        self.start_iter = start_iter
 
         assert hasattr(
             self, interp_mode
@@ -59,6 +67,11 @@ class ExponentialMovingAverageHook(Hook):
     def lerp(a, b, momentum=0.999, momentum_nontrainable=0., trainable=True):
         m = momentum if trainable else momentum_nontrainable
         return a + (b - a) * m
+
+    def every_n_iters(self, runner, n):
+        if runner.iter < self.start_iter:
+            return True
+        return (runner.iter + 1 - self.start_iter) % n == 0 if n > 0 else False
 
     @torch.no_grad()
     def after_train_iter(self, runner):
@@ -77,8 +90,11 @@ class ExponentialMovingAverageHook(Hook):
             states_orig = net.state_dict(keep_vars=True)
 
             for k, v in states_orig.items():
-                states_ema[k] = self.interp_func(
-                    v, states_ema[k], trainable=v.requires_grad).detach()
+                if runner.iter < self.start_iter:
+                    states_ema[k] = v.data
+                else:
+                    states_ema[k] = self.interp_func(
+                        v, states_ema[k], trainable=v.requires_grad).detach()
             ema_net.load_state_dict(states_ema, strict=True)
 
     def before_run(self, runner):
