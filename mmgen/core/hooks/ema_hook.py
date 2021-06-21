@@ -69,6 +69,8 @@ class ExponentialMovingAverageHook(Hook):
         return a + (b - a) * m
 
     def every_n_iters(self, runner, n):
+        if runner.iter < self.start_iter:
+            return True
         return (runner.iter + 1 - self.start_iter) % n == 0 if n > 0 else False
 
     @torch.no_grad()
