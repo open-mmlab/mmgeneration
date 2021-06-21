@@ -29,7 +29,11 @@ class ExponentialMovingAverageHook(Hook):
             function. Defaults to None.
         interval (int, optional): Evaluation interval (by iterations).
             Default: -1.
-        start_iter (int, optional): Start iteration for ema. Default: 1.
+        start_iter (int, optional): Start iteration for ema. If the start
+            iteration is not reached, the weights of ema model will maintain
+            the same as the original one. Otherwise, its parameters are updated
+            as a moving average of the trained weights in the original model.
+            Default: 0.
     """
 
     def __init__(self,
@@ -37,7 +41,7 @@ class ExponentialMovingAverageHook(Hook):
                  interp_mode='lerp',
                  interp_cfg=None,
                  interval=-1,
-                 start_iter=1):
+                 start_iter=0):
         super().__init__()
         assert isinstance(module_keys, str) or mmcv.is_tuple_of(
             module_keys, str)
@@ -64,6 +68,9 @@ class ExponentialMovingAverageHook(Hook):
         m = momentum if trainable else momentum_nontrainable
         return a + (b - a) * m
 
+    def every_n_iters(self, runner, n):
+        return (runner.iter + 1 - self.start_iter) % n == 0 if n > 0 else False
+
     @torch.no_grad()
     def after_train_iter(self, runner):
         if not self.every_n_iters(runner, self.interval):
@@ -81,7 +88,7 @@ class ExponentialMovingAverageHook(Hook):
             states_orig = net.state_dict(keep_vars=True)
 
             for k, v in states_orig.items():
-                if runner.iter + 1 < self.start_iter:
+                if runner.iter < self.start_iter:
                     states_ema[k] = v.data
                 else:
                     states_ema[k] = self.interp_func(
