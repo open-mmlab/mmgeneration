@@ -337,7 +337,7 @@ class BigGANGenerator(nn.Module):
 
         if return_noise:
             output = dict(
-                fake_img=out_img, noise_batch=noise_batch, label=label)
+                fake_img=out_img, noise_batch=noise_batch, label=label_batch)
             return output
 
         return out_img
