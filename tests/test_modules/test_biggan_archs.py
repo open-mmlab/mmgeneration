@@ -5,9 +5,15 @@ import pytest
 import torch
 
 from mmgen.models import build_module
-from mmgen.models.architectures.biggan import (
-    BigGANConditionBN, BigGANDiscResBlock, BigGANDiscriminator,
-    BigGANGenerator, BigGANGenResBlock, SelfAttentionBlock)
+# yapf:disable
+from mmgen.models.architectures.biggan import (BigGANConditionBN,
+                                               BigGANDiscResBlock,
+                                               BigGANDiscriminator,
+                                               BigGANGenerator,
+                                               BigGANGenResBlock,
+                                               SelfAttentionBlock)
+
+# yapf:enable
 
 
 class TestBigGANConditionBN:
