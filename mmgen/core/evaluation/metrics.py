@@ -510,12 +510,12 @@ class FID(Metric):
         else:
             feat = self.inception_net(batch)[0].view(batch.shape[0], -1)
 
-            # gather all of images if using distributed training
-            if dist.is_initialized():
-                ws = dist.get_world_size()
-                placeholder = [torch.zeros_like(feat) for _ in range(ws)]
-                dist.all_gather(placeholder, feat)
-                feat = torch.cat(placeholder, dim=0)
+        # gather all of images if using distributed training
+        if dist.is_initialized():
+            ws = dist.get_world_size()
+            placeholder = [torch.zeros_like(feat) for _ in range(ws)]
+            dist.all_gather(placeholder, feat)
+            feat = torch.cat(placeholder, dim=0)
 
         # in distributed training, we only collect features at rank-0.
         if (dist.is_initialized()

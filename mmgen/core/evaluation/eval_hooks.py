@@ -198,9 +198,7 @@ class GenerativeEvalHook(Hook):
 
                 for metric in self.metrics:
                     # feed in fake images
-                    num_left = metric.feed(fakes, 'fakes')
-                    if num_left <= 0:
-                        break
+                    metric.feed(fakes, 'fakes')
 
             if rank == 0:
                 pbar.update(total_batch_size)
