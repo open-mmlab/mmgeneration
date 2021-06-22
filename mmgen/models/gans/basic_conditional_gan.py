@@ -294,13 +294,13 @@ class BasicConditionalGAN(BaseGAN):
                 else:
                     loss_gen.backward()
 
-                if loss_scaler:
-                    loss_scaler.unscale_(optimizer['generator'])
-                    # note that we do not contain clip_grad procedure
-                    loss_scaler.step(optimizer['generator'])
-                    # loss_scaler.update will be called in runner.train()
-                else:
-                    optimizer['generator'].step()
+            if loss_scaler:
+                loss_scaler.unscale_(optimizer['generator'])
+                # note that we do not contain clip_grad procedure
+                loss_scaler.step(optimizer['generator'])
+                # loss_scaler.update will be called in runner.train()
+            else:
+                optimizer['generator'].step()
 
         log_vars = {}
         log_vars.update(log_vars_g)

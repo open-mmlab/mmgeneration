@@ -91,7 +91,7 @@ class ExponentialMovingAverageHook(Hook):
 
             for k, v in states_orig.items():
                 if runner.iter < self.start_iter:
-                    states_ema[k] = v.data
+                    states_ema[k].data.copy_(v.data)
                 else:
                     states_ema[k] = self.interp_func(
                         v, states_ema[k], trainable=v.requires_grad).detach()
