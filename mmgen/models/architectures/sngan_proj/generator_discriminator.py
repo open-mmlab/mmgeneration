@@ -15,6 +15,7 @@ from mmgen.utils.logger import get_root_logger
 from ..common import get_module_device
 
 
+@MODULES.register_module('SAGANGenerator')
 @MODULES.register_module()
 class SNGANGenerator(nn.Module):
     r"""Generator for SNGAN / Proj-GAN. The implementation refers to
@@ -52,6 +53,15 @@ class SNGANGenerator(nn.Module):
             Defaults to 4.
         noise_size (int, optional): Size of the input noise vector.
             Default to 128.
+        attention_cfg (dict, optional): Config for the self-attention block.
+            Default to ``dict(type='SelfAttentionBlock')``.
+        attention_after_nth_block (int | list[int], optional): Self attention
+            block would be added after which *ConvBlock*. If ``int`` is passed,
+            only one attention block would be added. If ``list`` is passed,
+            self-attention blocks would be added after multiple ConvBlocks.
+            To be noted that if the input is smaller than ``1``,
+            self-attention corresponding to this index would be ignored.
+            Default to 0.
         channels_cfg (list | dict[list], optional): Config for input channels
             of the intermedia blocks. If list is passed, each element of the
             list means the input channels of current block is how many times
@@ -83,7 +93,7 @@ class SNGANGenerator(nn.Module):
     _defualt_channels_cfg = {
         32: [1, 1, 1],
         64: [16, 8, 4, 2],
-        128: [16, 16, 8, 8, 4, 2]
+        128: [16, 16, 8, 4, 2]
     }
 
     def __init__(self,
@@ -93,6 +103,8 @@ class SNGANGenerator(nn.Module):
                  out_channels=3,
                  input_scale=4,
                  noise_size=128,
+                 attention_cfg=dict(type='SelfAttentionBlock'),
+                 attention_after_nth_block=0,
                  channels_cfg=None,
                  blocks_cfg=dict(type='SNGANGenResBlock'),
                  act_cfg=dict(type='ReLU'),
@@ -139,6 +151,14 @@ class SNGANGenerator(nn.Module):
         if with_spectral_norm:
             self.noise2feat = spectral_norm(self.noise2feat)
 
+        # check `attention_after_nth_block`
+        if not isinstance(attention_after_nth_block, list):
+            attention_after_nth_block = [attention_after_nth_block]
+        if not all([isinstance(idx, int)
+                    for idx in attention_after_nth_block]):
+            raise ValueError('`attention_after_nth_block` only support int or '
+                             'a list of int. Please check your input type.')
+
         self.conv_blocks = nn.ModuleList()
         for idx in range(len(self.channel_factor_list)):
             factor_input = self.channel_factor_list[idx]
@@ -150,6 +170,14 @@ class SNGANGenerator(nn.Module):
             block_cfg_['in_channels'] = factor_input * base_channels
             block_cfg_['out_channels'] = factor_output * base_channels
             self.conv_blocks.append(build_module(block_cfg_))
+
+            # build self-attention block
+            if idx + 1 in attention_after_nth_block:
+                self.attention_block_idx = idx + 1
+                attn_cfg_ = deepcopy(attention_cfg)
+                attn_cfg_['in_channels'] = factor_output * base_channels
+                # attn_cfg_['out_channels'] = factor_output * base_channels
+                self.conv_blocks.append(build_module(attn_cfg_))
 
         to_rgb_norm_cfg = dict(type='BN', eps=norm_eps)
         if check_dist_init() and auto_sync_bn:
@@ -229,8 +257,11 @@ class SNGANGenerator(nn.Module):
         x = self.noise2feat(noise_batch)
         x = x.reshape(x.size(0), -1, self.input_scale, self.input_scale)
 
-        for conv_block in self.conv_blocks:
-            x = conv_block(x, label_batch)
+        for idx, conv_block in enumerate(self.conv_blocks):
+            if idx == self.attention_block_idx:
+                x = conv_block(x)
+            else:
+                x = conv_block(x, label_batch)
 
         out_feat = self.to_rgb(x)
         out_img = self.final_act(out_feat)
@@ -290,6 +321,7 @@ class SNGANGenerator(nn.Module):
                             f'But receive {type(pretrained)}.')
 
 
+@MODULES.register_module('SAGANDiscriminator')
 @MODULES.register_module()
 class ProjDiscriminator(nn.Module):
     r"""Discriminator for SNGAN / Proj-GAN. The inplementation is refer to
@@ -328,6 +360,15 @@ class ProjDiscriminator(nn.Module):
             number.  Defaults to 128.
         input_channels (int, optional): Channels of the input image.
             Defaults to 3.
+        attention_cfg (dict, optional): Config for the self-attention block.
+            Default to ``dict(type='SelfAttentionBlock')``.
+        attention_after_nth_block (int | list[int], optional): Self attention
+            block would be added after which *ConvBlock* (including the head
+            block). If ``int`` is passed, only one attention block would be
+            added. If ``list`` is passed, self-attention blocks would be added
+            after multiple ConvBlocks. To be noted that if the input is
+            smaller than ``1``, self-attention corresponding to this index
+            would be ignored. Default to 0.
         channels_cfg (list | dict[list], optional): Config for input channels
             of the intermedia blocks. If list is passed, each element of the
             list means the input channels of current block is how many times
@@ -365,14 +406,14 @@ class ProjDiscriminator(nn.Module):
     _defualt_channels_cfg = {
         32: [1, 1, 1],
         64: [2, 4, 8, 16],
-        256: [2, 4, 8, 8, 16, 16]
+        128: [2, 4, 8, 16, 16],
     }
 
     # default downsample behavior
     _defualt_downsample_cfg = {
         32: [True, False, False],
         64: [True, True, True, True],
-        256: [True, True, True, True, True, False]
+        128: [True, True, True, True, False]
     }
 
     def __init__(self,
@@ -380,6 +421,8 @@ class ProjDiscriminator(nn.Module):
                  num_classes=0,
                  base_channels=128,
                  input_channels=3,
+                 attention_cfg=dict(type='SelfAttentionBlock'),
+                 attention_after_nth_block=-1,
                  channels_cfg=None,
                  downsample_cfg=None,
                  from_rgb_cfg=dict(type='SNGANDiscHeadResBlock'),
@@ -436,14 +479,30 @@ class ProjDiscriminator(nn.Module):
         if len(self.downsample_list) != len(self.channel_factor_list):
             raise ValueError('`downsample_cfg` should have same length with '
                              '`channels_cfg`, but receive '
-                             f'{len(downsample_cfg)} and {len(channels_cfg)}.')
+                             f'{len(self.downsample_list)} and '
+                             f'{len(self.channel_factor_list)}.')
+
+        # check `attention_after_nth_block`
+        if not isinstance(attention_after_nth_block, list):
+            attention_after_nth_block = [attention_after_nth_block]
+        if not all([isinstance(idx, int)
+                    for idx in attention_after_nth_block]):
+            raise ValueError('`attention_after_nth_block` only support int or '
+                             'a list of int. Please check your input type.')
 
         self.from_rgb = build_module(
             self.from_rgb_cfg,
             dict(in_channels=input_channels, out_channels=base_channels))
 
         self.conv_blocks = nn.ModuleList()
-        for idx in range(len(downsample_cfg)):
+        # add self-attention block after the first block
+        if 1 in attention_after_nth_block:
+            attn_cfg_ = deepcopy(attention_cfg)
+            attn_cfg_['in_channels'] = base_channels
+            # attn_cfg_['out_channels'] = base_channels
+            self.conv_blocks.append(build_module(attn_cfg_))
+
+        for idx in range(len(self.downsample_list)):
             factor_input = 1 if idx == 0 else self.channel_factor_list[idx - 1]
             factor_output = self.channel_factor_list[idx]
 
@@ -453,6 +512,13 @@ class ProjDiscriminator(nn.Module):
             block_cfg_['in_channels'] = factor_input * base_channels
             block_cfg_['out_channels'] = factor_output * base_channels
             self.conv_blocks.append(build_module(block_cfg_))
+
+            # build self-attention block
+            if idx + 2 in attention_after_nth_block:
+                attn_cfg_ = deepcopy(attention_cfg)
+                attn_cfg_['in_channels'] = factor_output * base_channels
+                # attn_cfg_['out_channels'] = factor_output * base_channels
+                self.conv_blocks.append(build_module(attn_cfg_))
 
         decision_bias = self.init_type == 'BigGAN'
         self.decision = nn.Linear(

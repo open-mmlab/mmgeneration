@@ -1,9 +1,11 @@
 from copy import deepcopy
 
 import numpy as np
+import torch
 import torch.nn as nn
 from mmcv.cnn import (ConvModule, build_activation_layer, build_norm_layer,
                       build_upsample_layer, constant_init, xavier_init)
+from torch.nn.utils import spectral_norm
 
 from mmgen.models.builder import MODULES
 from mmgen.utils import check_dist_init
@@ -86,10 +88,10 @@ class SNGANGenResBlock(nn.Module):
 
         self.norm_1 = SNConditionNorm(in_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      norm_eps, init_cfg)
+                                      with_spectral_norm, norm_eps, init_cfg)
         self.norm_2 = SNConditionNorm(hidden_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      norm_eps, init_cfg)
+                                      with_spectral_norm, norm_eps, init_cfg)
 
         if self.learnable_sc:
             # use hyperparameters-fixed shortcut here
@@ -185,7 +187,7 @@ class SNGANDiscResBlock(nn.Module):
                  init_cfg=dict(type='BigGAN')):
 
         super().__init__()
-        hidden_channels = in_channels if hidden_channels is None \
+        hidden_channels = out_channels if hidden_channels is None \
             else hidden_channels
         self.with_downsample = downsample
         self.init_type = init_cfg.get('type', None)
@@ -383,6 +385,7 @@ class SNConditionNorm(nn.Module):
                  norm_cfg=dict(type='BN'),
                  cbn_norm_affine=False,
                  auto_sync_bn=True,
+                 with_spectral_norm=False,
                  norm_eps=1e-4,
                  init_cfg=dict(type='BigGAN')):
         super().__init__()
@@ -413,6 +416,9 @@ class SNConditionNorm(nn.Module):
             self.weight_embedding = nn.Embedding(num_classes, in_channels)
             self.bias_embedding = nn.Embedding(num_classes, in_channels)
             self.reweight_embedding = self.init_type == 'BigGAN'
+            if with_spectral_norm:
+                self.weight_embedding = spectral_norm(self.weight_embedding)
+                self.bias_embedding = spectral_norm(self.bias_embedding)
 
         self.init_weights()
 
@@ -445,3 +451,97 @@ class SNConditionNorm(nn.Module):
             else:
                 constant_init(self.weight_embedding, 1)
                 constant_init(self.bias_embedding, 0)
+
+
+# TODO: retain or discard? rename or modify?
+@MODULES.register_module()
+class SelfAttentionBlock_SA(nn.Module):
+    """Self-Attention block used in Self-attention GAN. In this block, we allow
+    users to change out_channels and descide whether apply downsample in
+    attention operation.
+
+    Args:
+        in_channels (int): The channel number of the input feature map.
+        out_channels (int): The channel number of the output feature map.
+        downsample (bool, optional): Whether to do downsample in attention
+            operation. Defaults to True.
+        with_spectral_norm (bool, optional): Whether to use spectral
+            normalization. Defaults to True.
+        sn_eps (float, optional): Epsilon value for spectral normalization.
+            Defaults to 1e-6.
+    """
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 downsample=True,
+                 with_spectral_norm=True):
+
+        super().__init__()
+
+        self.conv_f = ConvModule(
+            in_channels,
+            in_channels // 8,
+            kernel_size=1,
+            act_cfg=None,
+            bias=False,
+            with_spectral_norm=with_spectral_norm)
+        self.conv_g = ConvModule(
+            in_channels,
+            in_channels // 8,
+            kernel_size=1,
+            act_cfg=None,
+            bias=False,
+            with_spectral_norm=with_spectral_norm)
+        self.conv_h = ConvModule(
+            in_channels,
+            in_channels // 2,
+            kernel_size=1,
+            act_cfg=None,
+            bias=False,
+            with_spectral_norm=with_spectral_norm)
+        self.conv_v = ConvModule(
+            in_channels // 2,
+            out_channels,
+            kernel_size=1,
+            act_cfg=None,
+            bias=False,
+            with_spectral_norm=with_spectral_norm)
+
+        self.downsample = downsample
+        self.downsample_fn = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.gamma = nn.Parameter(torch.zeros(1), requires_grad=True)
+
+        self.weights_init()
+
+    def forward(self, x):
+        bz, C, H, W = x.shape
+        # [bz, H*W, C // 8]
+        f = self.conv_f(x).view(bz, C // 8, -1).permute(0, 2, 1)
+        # [bz, C // 8, H, W]
+        g = self.conv_g(x)
+        # [bz, C // 2, H, W]
+        h = self.conv_h(x)
+
+        if self.downsample:
+            # [bz, C // 8, H*W // 4]
+            g = self.downsample_fn(g).view(bz, C // 8, -1)
+            # [bz, C // 2, H*W // 4]
+            h = self.downsample_fn(h).view(bz, C // 2, -1)
+
+        # [bz, H*W, H*W // 4]
+        attention_map = torch.bmm(f, g)
+        attention_map = torch.softmax(attention_map, dim=-1)
+        # [bz, H*W // 4, H*W]
+        attention_map = attention_map.permute(0, 2, 1)
+
+        # [bz, C // 2, H*W // 4] * [bz, H*W // 4, H*W] = [bz, C // 2, H*W]
+        o = torch.bmm(h, attention_map).view(bz, C // 2, H, W)
+        output = self.conv_v(o)
+        return x + self.gamma * output
+
+    def weights_init(self):
+        nn.init.orthogonal_(self.conv_g.conv.weight)
+        nn.init.orthogonal_(self.conv_f.conv.weight)
+        nn.init.orthogonal_(self.conv_h.conv.weight)
+        nn.init.orthogonal_(self.conv_v.conv.weight)
