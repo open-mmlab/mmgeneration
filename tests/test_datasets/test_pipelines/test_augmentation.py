@@ -4,7 +4,9 @@ import numpy as np
 import pytest
 import torch
 
-from mmgen.datasets.pipelines import Flip, NumpyPad, Resize
+from mmgen.datasets.pipelines import (CenterCropLongEdge, Flip, NumpyPad,
+                                      RandomCropLongEdge, RandomImgNoise,
+                                      Resize)
 
 
 class TestAugmentations(object):
@@ -198,6 +200,65 @@ class TestAugmentations(object):
             f"(keys={['gt_img']}, scale=(128, 128), "
             f'keep_ratio={False}, size_factor=None, '
             'max_size=None,interpolation=bilinear)')
+
+
+def test_random_img_noise():
+    img = np.random.randn(256, 128, 3).astype(np.float32)
+    results = dict(img=copy.deepcopy(img))
+    noise_uniform = RandomImgNoise(['img'], 1, 2, distribution='uniform')
+    results = noise_uniform(results)
+    assert (results['img'] - img <= 2).all()
+    assert (results['img'] - img >= 1).all()
+
+    repr_str = noise_uniform.__class__.__name__
+    repr_str += (f'(keys={noise_uniform.keys}, '
+                 f'lower_bound={noise_uniform.lower_bound}, '
+                 f'upper_bound={noise_uniform.upper_bound})')
+
+    assert str(noise_uniform) == repr_str
+
+    img = np.random.randn(256, 128, 3).astype(np.float32)
+    results = dict(img=copy.deepcopy(img))
+    noise_normal = RandomImgNoise(['img'], distribution='normal')
+    results = noise_normal(results)
+    assert (results['img'] - img <= 1 / 128.).all()
+    assert (results['img'] - img >= 0).all()
+
+    repr_str = noise_normal.__class__.__name__
+    repr_str += (f'(keys={noise_normal.keys}, '
+                 f'lower_bound={noise_normal.lower_bound}, '
+                 f'upper_bound={noise_normal.upper_bound})')
+
+    assert str(noise_normal) == repr_str
+
+    with pytest.raises(AssertionError):
+        RandomImgNoise([])
+    with pytest.raises(KeyError):
+        RandomImgNoise(['img'], distribution='test')
+
+
+def test_random_long_edge_crop():
+    results = dict(img=np.random.rand(256, 128, 3).astype(np.float32))
+    crop = RandomCropLongEdge(['img'])
+    results = crop(results)
+    assert results['img'].shape == (128, 128, 3)
+
+    repr_str = crop.__class__.__name__
+    repr_str += (f'(keys={crop.keys})')
+
+    assert str(crop) == repr_str
+
+
+def test_center_long_edge_crop():
+    results = dict(img=np.random.rand(256, 128, 3).astype(np.float32))
+    crop = CenterCropLongEdge(['img'])
+    results = crop(results)
+    assert results['img'].shape == (128, 128, 3)
+
+    repr_str = crop.__class__.__name__
+    repr_str += (f'(keys={crop.keys})')
+
+    assert str(crop) == repr_str
 
 
 def test_numpy_pad():
