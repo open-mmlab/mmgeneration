@@ -22,7 +22,7 @@ train_pipeline = [
 
 test_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='CenterCropLongEdge'),
+    dict(type='CenterCropLongEdge', keys=['img']),
     dict(
         type='Resize',
         size=(256, 256),
