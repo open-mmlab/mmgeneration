@@ -60,6 +60,10 @@ if __name__ == '__main__':
         default=50000,
         help='the number of total samples')
     parser.add_argument(
+        '--no-shuffle',
+        action='store_true',
+        help='not use shuffle in data loader')
+    parser.add_argument(
         '--inception-style',
         choices=['stylegan', 'pytorch'],
         default='pytorch',
@@ -113,7 +117,9 @@ if __name__ == '__main__':
         dataset = build_dataset(data_config.data.test)
     else:
         raise RuntimeError('Please provide imgsdir or data_cfg')
-    data_loader = build_dataloader(dataset, args.batch_size, 4, dist=False)
+
+    data_loader = build_dataloader(
+        dataset, args.batch_size, 4, dist=False, shuffle=(not args.no_shuffle))
 
     mmcv.mkdir_or_exist(args.pkl_dir)
 
