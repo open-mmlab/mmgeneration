@@ -113,7 +113,7 @@ class TestSAGANGenerator(object):
         assert x.shape == (2, 3, 32, 32)
 
 
-class TestLSGANDiscriminator(object):
+class TestSAGANDiscriminator(object):
 
     @classmethod
     def setup_class(cls):
@@ -163,7 +163,7 @@ class TestLSGANDiscriminator(object):
         config['attention_after_nth_block'] = [1, 2]
         d = build_module(config).cuda()
         assert isinstance(d, SAGANDiscriminator)
-        score = d(self.x.cuda(), self.label.cuda())
+        score = d(self.x, self.label)
         assert score.shape == (2, 1)
 
         # wrong type of attention_after_nth_block --> wrong type

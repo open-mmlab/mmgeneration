@@ -226,7 +226,7 @@ class TestSNGANPROJGenerator(object):
         assert x.shape == (2, 3, 32, 32)
 
 
-class TestLSGANDiscriminator(object):
+class TestSNGANPROJDiscriminator(object):
 
     @classmethod
     def setup_class(cls):

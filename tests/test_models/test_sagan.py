@@ -4,7 +4,7 @@ import torch
 from mmgen.models.gans import BasicConditionalGAN
 
 
-class TestSNGAN_PROJ:
+class TestSAGAN:
 
     @classmethod
     def setup_class(cls):
@@ -60,7 +60,7 @@ class TestSNGAN_PROJ:
         assert model_outputs['num_samples'] == 2
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
-    def test_sngan_proj_cuda(self):
+    def test_sagan_cuda(self):
         # test default config
         sagan = BasicConditionalGAN(
             self.generator_cfg,
