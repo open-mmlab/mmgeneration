@@ -7,6 +7,7 @@ from mmcv.cnn import (ConvModule, build_activation_layer, constant_init,
                       xavier_init)
 from mmcv.runner import load_checkpoint
 from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
+from mmcv.utils import is_list_of
 from torch.nn.utils import spectral_norm
 
 from mmgen.models.builder import MODULES, build_module
@@ -108,6 +109,7 @@ class SNGANGenerator(nn.Module):
                  channels_cfg=None,
                  blocks_cfg=dict(type='SNGANGenResBlock'),
                  act_cfg=dict(type='ReLU'),
+                 use_cbn=True,
                  auto_sync_bn=True,
                  with_spectral_norm=False,
                  norm_eps=1e-4,
@@ -126,6 +128,7 @@ class SNGANGenerator(nn.Module):
 
         self.blocks_cfg.setdefault('num_classes', num_classes)
         self.blocks_cfg.setdefault('act_cfg', act_cfg)
+        self.blocks_cfg.setdefault('use_cbn', use_cbn)
         self.blocks_cfg.setdefault('auto_sync_bn', auto_sync_bn)
         self.blocks_cfg.setdefault('with_spectral_norm', with_spectral_norm)
         self.blocks_cfg.setdefault('init_cfg', init_cfg)
@@ -154,12 +157,12 @@ class SNGANGenerator(nn.Module):
         # check `attention_after_nth_block`
         if not isinstance(attention_after_nth_block, list):
             attention_after_nth_block = [attention_after_nth_block]
-        if not all([isinstance(idx, int)
-                    for idx in attention_after_nth_block]):
+        if not is_list_of(attention_after_nth_block, int):
             raise ValueError('`attention_after_nth_block` only support int or '
                              'a list of int. Please check your input type.')
 
         self.conv_blocks = nn.ModuleList()
+        self.attention_block_idx = []
         for idx in range(len(self.channel_factor_list)):
             factor_input = self.channel_factor_list[idx]
             factor_output = self.channel_factor_list[idx+1] \
@@ -172,11 +175,11 @@ class SNGANGenerator(nn.Module):
             self.conv_blocks.append(build_module(block_cfg_))
 
             # build self-attention block
+            # `idx` is start from 0, add 1 to get the index
             if idx + 1 in attention_after_nth_block:
-                self.attention_block_idx = idx + 1
+                self.attention_block_idx.append(len(self.conv_blocks))
                 attn_cfg_ = deepcopy(attention_cfg)
                 attn_cfg_['in_channels'] = factor_output * base_channels
-                # attn_cfg_['out_channels'] = factor_output * base_channels
                 self.conv_blocks.append(build_module(attn_cfg_))
 
         to_rgb_norm_cfg = dict(type='BN', eps=norm_eps)
@@ -252,13 +255,14 @@ class SNGANGenerator(nn.Module):
 
         # dirty code for putting data on the right device
         noise_batch = noise_batch.to(get_module_device(self))
-        label_batch = label_batch.to(get_module_device(self))
+        if label_batch is not None:
+            label_batch = label_batch.to(get_module_device(self))
 
         x = self.noise2feat(noise_batch)
         x = x.reshape(x.size(0), -1, self.input_scale, self.input_scale)
 
         for idx, conv_block in enumerate(self.conv_blocks):
-            if idx == self.attention_block_idx:
+            if idx in self.attention_block_idx:
                 x = conv_block(x)
             else:
                 x = conv_block(x, label_batch)
@@ -308,12 +312,12 @@ class SNGANGenerator(nn.Module):
                         else:
                             xavier_init(
                                 m, gain=np.sqrt(2), distribution='uniform')
-                    elif isinstance(m, nn.Linear):
+                    if isinstance(m, nn.Linear):
                         xavier_init(m, gain=1, distribution='uniform')
-                    elif isinstance(m, nn.Embedding):
+                    if isinstance(m, nn.Embedding):
                         if 'weight' in n:
                             constant_init(m, 1)
-                        elif 'bias' in n:
+                        if 'bias' in n:
                             constant_init(m, 0)
 
         else:
@@ -362,7 +366,7 @@ class ProjDiscriminator(nn.Module):
             Defaults to 3.
         attention_cfg (dict, optional): Config for the self-attention block.
             Default to ``dict(type='SelfAttentionBlock')``.
-        attention_after_nth_block (int | list[int], optional): Self attention
+        attention_after_nth_block (int | list[int], optional): Self-attention
             block would be added after which *ConvBlock* (including the head
             block). If ``int`` is passed, only one attention block would be
             added. If ``list`` is passed, self-attention blocks would be added
@@ -514,10 +518,11 @@ class ProjDiscriminator(nn.Module):
             self.conv_blocks.append(build_module(block_cfg_))
 
             # build self-attention block
+            # the first ConvBlock is `from_rgb` block,
+            # add 2 to get the index of the ConvBlocks
             if idx + 2 in attention_after_nth_block:
                 attn_cfg_ = deepcopy(attention_cfg)
                 attn_cfg_['in_channels'] = factor_output * base_channels
-                # attn_cfg_['out_channels'] = factor_output * base_channels
                 self.conv_blocks.append(build_module(attn_cfg_))
 
         decision_bias = self.init_type == 'BigGAN'
@@ -600,9 +605,9 @@ class ProjDiscriminator(nn.Module):
                         else:
                             xavier_init(
                                 m, gain=np.sqrt(2), distribution='uniform')
-                    elif isinstance(m, nn.Linear):
+                    if isinstance(m, nn.Linear):
                         xavier_init(m, gain=1, distribution='uniform')
-                    elif isinstance(m, nn.Embedding):
+                    if isinstance(m, nn.Embedding):
                         xavier_init(m, gain=1, distribution='uniform')
         else:
             raise TypeError("'pretrained' must by a str or None. "

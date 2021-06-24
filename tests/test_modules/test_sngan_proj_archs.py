@@ -49,6 +49,21 @@ class TestSNGANPROJGenerator(object):
         x = g(None, num_batches=2)
         assert x.shape == (2, 3, 64, 64)
 
+        # test num_classes == 0 and `use_cbn = True`
+        config = deepcopy(self.default_config)
+        config['num_classes'] = 0
+        with pytest.raises(ValueError):
+            g = build_module(config)
+
+        # test num_classes == 0 and `use_cbn = False`
+        config = deepcopy(self.default_config)
+        config['num_classes'] = 0
+        config['use_cbn'] = False
+        g = build_module(config)
+        assert isinstance(g, SNGANGenerator)
+        x = g(None, num_batches=2)
+        assert x.shape == (2, 3, 32, 32)
+
         # test different base_channels
         config = deepcopy(self.default_config)
         config['base_channels'] = 64
