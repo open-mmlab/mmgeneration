@@ -5,6 +5,10 @@ dataset_type = 'mmcls.CIFAR10'
 # Note that the pipelines below are from MMClassification. Importantly, the
 # `to_rgb` is set to `True` to convert image to BGR orders. The default order
 # in Cifar10 is RGB. Thus, we have to convert it to BGR.
+
+# Follow the pipeline in
+# https://github.com/pfnet-research/sngan_projection/blob/master/datasets/cifar10.py
+# Only `RandomImageNoise` augmentation is adopted.
 img_norm_cfg = dict(
     mean=[127.5, 127.5, 127.5], std=[127.5, 127.5, 127.5], to_rgb=True)
 train_pipeline = [

@@ -1,7 +1,8 @@
 # dataset settings
 dataset_type = 'mmcls.ImageNet'
 
-# different from mmcls, we adopt the setting used in BigGAN
+# different from mmcls, we adopt the setting used in BigGAN.
+# We use `RandomCropLongEdge` in training and `CenterCropLongEdge` in testing.
 # Importantly, the `to_rgb` is set to `False` to remain image orders as BGR.
 img_norm_cfg = dict(
     mean=[127.5, 127.5, 127.5], std=[127.5, 127.5, 127.5], to_rgb=False)
