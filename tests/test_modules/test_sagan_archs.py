@@ -161,7 +161,7 @@ class TestSAGANDiscriminator(object):
         # test different attention_after_nth_block
         config = deepcopy(self.default_config)
         config['attention_after_nth_block'] = [1, 2]
-        d = build_module(config).cuda()
+        d = build_module(config)
         assert isinstance(d, SAGANDiscriminator)
         score = d(self.x, self.label)
         assert score.shape == (2, 1)
