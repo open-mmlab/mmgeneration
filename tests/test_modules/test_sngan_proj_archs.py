@@ -124,13 +124,27 @@ class TestSNGANPROJGenerator(object):
         x = g(None, num_batches=2)
         assert x.shape == (2, 3, 32, 32)
 
-        # test different init_cfg
+        # test different init_cfg --> BigGAN
         config = deepcopy(self.default_config)
-        config['init_cfg'] = dict(type='chainer')
+        config['init_cfg'] = dict(type='biggan')
         g = build_module(config)
         assert isinstance(g, SNGANGenerator)
         x = g(None, num_batches=2)
         assert x.shape == (2, 3, 32, 32)
+
+        # test different init_cfg --> SNGAN
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='sngan')
+        g = build_module(config)
+        assert isinstance(g, SNGANGenerator)
+        x = g(None, num_batches=2)
+        assert x.shape == (2, 3, 32, 32)
+
+        # test different init_cfg --> raise error
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='wgan-gp')
+        with pytest.raises(NotImplementedError):
+            g = build_module(config)
 
         # test pretrained --> raise error
         config = deepcopy(self.default_config)
@@ -217,9 +231,17 @@ class TestSNGANPROJGenerator(object):
         x = g(None, num_batches=2)
         assert x.shape == (2, 3, 32, 32)
 
-        # test different init_cfg
+        # test different init_cfg --> BigGAN
         config = deepcopy(self.default_config)
-        config['init_cfg'] = dict(type='chainer')
+        config['init_cfg'] = dict(type='biggan')
+        g = build_module(config).cuda()
+        assert isinstance(g, SNGANGenerator)
+        x = g(None, num_batches=2)
+        assert x.shape == (2, 3, 32, 32)
+
+        # test different init_cfg --> SNGAN
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='sngan')
         g = build_module(config).cuda()
         assert isinstance(g, SNGANGenerator)
         x = g(None, num_batches=2)
@@ -353,13 +375,27 @@ class TestSNGANPROJDiscriminator(object):
         score = d(self.x, self.label)
         assert score.shape == (2, 1)
 
-        # test different init_cfg
+        # test different init_cfg --> BigGAN
         config = deepcopy(self.default_config)
-        config['init_cfg'] = dict(type='chainer')
+        config['init_cfg'] = dict(type='biggan')
         d = build_module(config)
         assert isinstance(d, ProjDiscriminator)
         score = d(self.x, self.label)
         assert score.shape == (2, 1)
+
+        # test different init_cfg --> sngan
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='sngan-proj')
+        d = build_module(config)
+        assert isinstance(d, ProjDiscriminator)
+        score = d(self.x, self.label)
+        assert score.shape == (2, 1)
+
+        # test different init_cfg --> raise error
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='wgan-gp')
+        with pytest.raises(NotImplementedError):
+            d = build_module(config)
 
         # test pretrained --> raise error
         config = deepcopy(self.default_config)
@@ -452,12 +488,20 @@ class TestSNGANPROJDiscriminator(object):
         score = d(self.x.cuda(), self.label.cuda())
         assert score.shape == (2, 1)
 
-        # test different init_cfg
+        # test different init_cfg --> BigGAN
         config = deepcopy(self.default_config)
-        config['init_cfg'] = dict(type='chainer')
+        config['init_cfg'] = dict(type='biggan')
         d = build_module(config).cuda()
         assert isinstance(d, ProjDiscriminator)
-        score = d(self.x.cuda(), self.label.cuda())
+        score = d(self.x, self.label)
+        assert score.shape == (2, 1)
+
+        # test different init_cfg --> sngan
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='sngan-proj')
+        d = build_module(config).cuda()
+        assert isinstance(d, ProjDiscriminator)
+        score = d(self.x, self.label)
         assert score.shape == (2, 1)
 
 
@@ -503,11 +547,17 @@ class TestSNGANGenResBlock(object):
 
         # test init_cfg + w/o learnable shortcut
         config = deepcopy(self.default_config)
-        config['init_cfg'] = dict(type='chainer')
+        config['init_cfg'] = dict(type='sngan')
         config['upsample'] = False
         block = build_module(config)
         out = block(self.input, self.label)
         assert out.shape == (2, 16, 5, 5)
+
+        # test init_cft --> raise error
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='wgan-gp')
+        with pytest.raises(NotImplementedError):
+            block = build_module(config)
 
         # test conv_cfg
         config = deepcopy(self.default_config)
@@ -542,7 +592,7 @@ class TestSNGANGenResBlock(object):
 
         # test init_cfg + w/o learnable shortcut
         config = deepcopy(self.default_config)
-        config['init_cfg'] = dict(type='chainer')
+        config['init_cfg'] = dict(type='sngan')
         config['upsample'] = False
         block = build_module(config).cuda()
         out = block(self.input.cuda(), self.label.cuda())
@@ -590,6 +640,12 @@ class TestSNDiscResBlock(object):
         block = build_module(config)
         out = block(self.input)
         assert out.shape == (2, 8, 10, 10)
+
+        # test init_cft --> raise error
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='wgan-gp')
+        with pytest.raises(NotImplementedError):
+            block = build_module(config)
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_snganDiscResBlock_cuda(self):
@@ -639,6 +695,12 @@ class TestSNDiscHeadResBlock(object):
         block = build_module(config)
         out = block(self.input)
         assert out.shape == (2, 16, 5, 5)
+
+        # test init_cft --> raise error
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='wgan-gp')
+        with pytest.raises(NotImplementedError):
+            block = build_module(config)
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_snganDiscHeadResBlock_cuda(self):
@@ -719,10 +781,16 @@ class TestSNConditionalNorm(object):
 
         # test init_cfg
         config = deepcopy(self.default_config)
-        config['init_cfg'] = dict(type='chainer')
+        config['init_cfg'] = dict(type='sngan')
         norm = build_module(config)
         out = norm(self.input, self.label)
         assert out.shape == (2, 4, 4, 4)
+
+        # test init_cft --> raise error
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='wgan-gp')
+        with pytest.raises(NotImplementedError):
+            norm = build_module(config)
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_conditionalNorm_cuda(self):
@@ -774,7 +842,7 @@ class TestSNConditionalNorm(object):
 
         # test init_cfg
         config = deepcopy(self.default_config)
-        config['init_cfg'] = dict(type='chainer')
+        config['init_cfg'] = dict(type='sngan')
         norm = build_module(config).cuda()
         out = norm(self.input.cuda(), self.label.cuda())
         assert out.shape == (2, 4, 4, 4)

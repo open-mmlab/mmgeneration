@@ -76,6 +76,8 @@ class SNGANGenerator(nn.Module):
             Defaults to ``dict(type='SNGANGenResBlock')``
         act_cfg (dict, optional): Activation config for the final output
             layer. Defaults to ``dict(type='ReLU')``.
+        use_cbn (bool, optional): Whether use conditional normalization. This
+            argument would pass to norm layers. Default to True.
         auto_sync_bn (bool, optional): Whether convert Batch Norm to
             Synchronized ones when Distributed training is on. Defualt to True.
         with_spectral_norm (bool, optional): Whether use spectral norm for
@@ -276,9 +278,24 @@ class SNGANGenerator(nn.Module):
         return out_img
 
     def init_weights(self, pretrained=None, strict=True):
-        """Init weights for models.
+        """Init weights for SNGAN-Proj and SAGAN. If ``pretrained=None`` and
+        weight initialization would follow the ``INIT_TYPE`` in
+        ``init_cfg=dict(type=INIT_TYPE)``.
 
-        We just use the initialization method proposed in the original paper.
+        For SNGAN-Proj,
+        (``INIT_TYPE.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']``),
+        we follow the initialization method in the official Chainer's
+        implementation (https://github.com/pfnet-research/sngan_projection).
+
+        For SAGAN (``INIT_TYPE.upper() == 'SAGAN'``), we follow the
+        initialization method in official tensorflow's implementation
+        (https://github.com/brain-research/self-attention-gan).
+
+        Besides the reimplementation of the official code, we provide BigGAN's
+        and Pytorch GAN Studio's style initialization
+        (``INIT_TYPE.upper() == BIGGAN``), refers to
+        https://github.com/ajbrock/BigGAN-PyTorch and
+        https://github.com/POSTECH-CVLab/PyTorch-StudioGAN.
 
         Args:
             pretrained (str | dict, optional): Path for the pretrained model or
@@ -300,11 +317,18 @@ class SNGANGenerator(nn.Module):
                                                       map_location)
             self.load_state_dict(state_dict, strict=strict)
         elif pretrained is None:
-            if self.init_type == 'BigGAN':
+            if self.init_type.upper() in 'BIGGAN':
+                # BigGAN and Pytorch-GAN Studio's initialization style
                 for m in self.modules():
                     if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
                         nn.init.orthogonal_(m.weight)
-            else:
+            elif self.init_type.upper() == 'SAGAN':
+                # initialization method from official tensorflow code
+                for n, m in self.named_modules():
+                    if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
+                        xavier_init(m, gain=1, distribution='uniform')
+            elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
+                # initialization method from the official chainer code
                 for n, m in self.named_modules():
                     if isinstance(m, nn.Conv2d):
                         if 'shortcut' in n or 'to_rgb' in n:
@@ -315,10 +339,18 @@ class SNGANGenerator(nn.Module):
                     if isinstance(m, nn.Linear):
                         xavier_init(m, gain=1, distribution='uniform')
                     if isinstance(m, nn.Embedding):
+                        # To be noted that here we initialize the embedding
+                        # layer in cBN with specific prefix. If you implement
+                        # your own cBN and want to use this initialization
+                        # method, please make sure the embedding layers in
+                        # your implementation have the same prefix as ours.
                         if 'weight' in n:
                             constant_init(m, 1)
                         if 'bias' in n:
                             constant_init(m, 0)
+            else:
+                raise NotImplementedError('Unknown initialization method: '
+                                          f'\'{self.init_type}\'')
 
         else:
             raise TypeError("'pretrined' must be a str or None. "
@@ -569,9 +601,24 @@ class ProjDiscriminator(nn.Module):
         return out.view(out.size(0), -1)
 
     def init_weights(self, pretrained=None, strict=True):
-        """Init weights for models.
+        """Init weights for SNGAN-Proj and SAGAN. If ``pretrained=None`` and
+        weight initialization would follow the ``INIT_TYPE`` in
+        ``init_cfg=dict(type=INIT_TYPE)``.
 
-        We just use the initialization method proposed in the original paper.
+        For SNGAN-Proj
+        (``INIT_TYPE.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']``),
+        we follow the initialization method in the official Chainer's
+        implementation (https://github.com/pfnet-research/sngan_projection).
+
+        For SAGAN (``INIT_TYPE.upper() == 'SAGAN'``), we follow the
+        initialization method in official tensorflow's implementation
+        (https://github.com/brain-research/self-attention-gan).
+
+        Besides the reimplementation of the official code's initialization, we
+        provide BigGAN's and Pytorch GAN Studio's style initialization
+        (``INIT_TYPE.upper() == BIGGAN``).
+        (https://github.com/ajbrock/BigGAN-PyTorch and
+        https://github.com/POSTECH-CVLab/PyTorch-StudioGAN)
 
         Args:
             pretrained (str | dict, optional): Path for the pretrained model or
@@ -593,11 +640,17 @@ class ProjDiscriminator(nn.Module):
                                                       map_location)
             self.load_state_dict(state_dict, strict=strict)
         elif pretrained is None:
-            if self.init_type == 'BigGAN':
+            if self.init_type.upper() == 'BIGGAN':
                 for m in self.modules():
                     if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
                         nn.init.orthogonal_(m.weight)
-            else:
+            elif self.init_type.upper() == 'SAGAN':
+                # initialization method from official tensorflow code
+                for m in self.modules():
+                    if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
+                        xavier_init(m, gain=1, distribution='uniform')
+            elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
+                # initialization method from the official chainer code
                 for n, m in self.named_modules():
                     if isinstance(m, nn.Conv2d):
                         if 'shortcut' in n:
@@ -605,10 +658,11 @@ class ProjDiscriminator(nn.Module):
                         else:
                             xavier_init(
                                 m, gain=np.sqrt(2), distribution='uniform')
-                    if isinstance(m, nn.Linear):
+                    if isinstance(m, (nn.Linear, nn.Embedding)):
                         xavier_init(m, gain=1, distribution='uniform')
-                    if isinstance(m, nn.Embedding):
-                        xavier_init(m, gain=1, distribution='uniform')
+            else:
+                raise NotImplementedError('Unknown initialization method: '
+                                          f'\'{self.init_type}\'')
         else:
             raise TypeError("'pretrained' must by a str or None. "
                             f'But receive {type(pretrained)}.')

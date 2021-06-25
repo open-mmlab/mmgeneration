@@ -73,6 +73,14 @@ class TestSAGANGenerator(object):
         with pytest.raises(ValueError):
             g = build_module(config)
 
+        # test init_cfg --> SAGAN
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='sagan')
+        g = build_module(config)
+        assert isinstance(g, SAGANGenerator)
+        x = g(None, num_batches=2)
+        assert x.shape == (2, 3, 32, 32)
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_sagan_generator_cuda(self):
 
@@ -107,7 +115,15 @@ class TestSAGANGenerator(object):
         # test different attention_after_nth_block
         config = deepcopy(self.default_config)
         config['attention_after_nth_block'] = [1, 2]
-        g = build_module(config)
+        g = build_module(config).cuda()
+        assert isinstance(g, SAGANGenerator)
+        x = g(None, num_batches=2)
+        assert x.shape == (2, 3, 32, 32)
+
+        # test init_cfg --> SAGAN
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='sagan')
+        g = build_module(config).cuda()
         assert isinstance(g, SAGANGenerator)
         x = g(None, num_batches=2)
         assert x.shape == (2, 3, 32, 32)
@@ -120,7 +136,7 @@ class TestSAGANDiscriminator(object):
         cls.x = torch.randn((2, 3, 32, 32))
         cls.label = torch.randint(0, 10, (2, ))
         cls.default_config = dict(
-            type='ProjDiscriminator',
+            type='SAGANDiscriminator',
             input_scale=32,
             num_classes=10,
             input_channels=3)
@@ -178,6 +194,14 @@ class TestSAGANDiscriminator(object):
         with pytest.raises(ValueError):
             d = build_module(config)
 
+        # test init_cfg --> SAGAN
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='sagan')
+        d = build_module(config)
+        assert isinstance(d, SAGANDiscriminator)
+        score = d(self.x, self.label)
+        assert score.shape == (2, 1)
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_lsgan_discriminator_cuda(self):
 
@@ -215,6 +239,14 @@ class TestSAGANDiscriminator(object):
         # test different attention_after_nth_block
         config = deepcopy(self.default_config)
         config['attention_after_nth_block'] = [1, 2]
+        d = build_module(config).cuda()
+        assert isinstance(d, SAGANDiscriminator)
+        score = d(self.x.cuda(), self.label.cuda())
+        assert score.shape == (2, 1)
+
+        # test init_cfg --> SAGAN
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='sagan')
         d = build_module(config).cuda()
         assert isinstance(d, SAGANDiscriminator)
         score = d(self.x.cuda(), self.label.cuda())

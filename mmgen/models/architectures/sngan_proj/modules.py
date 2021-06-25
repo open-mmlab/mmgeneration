@@ -139,16 +139,24 @@ class SNGANGenResBlock(nn.Module):
 
     def init_weights(self):
         """Initialize weights for the model."""
-        if self.init_type == 'BigGAN':
+        if self.init_type.upper() == 'BIGGAN':
             nn.init.orthogonal_(self.conv_1.conv.weight)
             nn.init.orthogonal_(self.conv_2.conv.weight)
             if self.learnable_sc:
                 nn.init.orthogonal_(self.shortcut.conv.weight)
-        else:
+        elif self.init_type.upper() == 'SAGAN':
+            xavier_init(self.conv_1, gain=1, distribution='uniform')
+            xavier_init(self.conv_2, gain=1, distribution='uniform')
+            if self.learnable_sc:
+                xavier_init(self.shortcut, gain=1, distribution='uniform')
+        elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
             xavier_init(self.conv_1, gain=np.sqrt(2), distribution='uniform')
             xavier_init(self.conv_2, gain=np.sqrt(2), distribution='uniform')
             if self.learnable_sc:
                 xavier_init(self.shortcut, gain=1, distribution='uniform')
+        else:
+            raise NotImplementedError('Unknown initialization method: '
+                                      f'\'{self.init_type}\'')
 
 
 @MODULES.register_module()
@@ -247,16 +255,24 @@ class SNGANDiscResBlock(nn.Module):
         return out
 
     def init_weights(self):
-        if self.init_type == 'BigGAN':
+        if self.init_type.upper() == 'BIGGAN':
             nn.init.orthogonal_(self.conv_1.conv.weight)
             nn.init.orthogonal_(self.conv_2.conv.weight)
             if self.learnable_sc:
                 nn.init.orthogonal_(self.shortcut.conv.weight)
-        else:
+        elif self.init_type.upper() == 'SAGAN':
+            xavier_init(self.conv_1, gain=1, distribution='uniform')
+            xavier_init(self.conv_2, gain=1, distribution='uniform')
+            if self.learnable_sc:
+                xavier_init(self.shortcut, gain=1, distribution='uniform')
+        elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
             xavier_init(self.conv_1, gain=np.sqrt(2), distribution='uniform')
             xavier_init(self.conv_2, gain=np.sqrt(2), distribution='uniform')
             if self.learnable_sc:
                 xavier_init(self.shortcut, gain=1, distribution='uniform')
+        else:
+            raise NotImplementedError('Unknown initialization method: '
+                                      f'\'{self.init_type}\'')
 
 
 @MODULES.register_module()
@@ -339,14 +355,21 @@ class SNGANDiscHeadResBlock(nn.Module):
         return out
 
     def init_weights(self):
-        if self.init_type == 'BigGAN':
+        if self.init_type.upper() == 'BIGGAN':
             nn.init.orthogonal_(self.conv_1.conv.weight)
             nn.init.orthogonal_(self.conv_2.conv.weight)
             nn.init.orthogonal_(self.shortcut.conv.weight)
-        else:
+        elif self.init_type.upper() == 'SAGAN':
+            xavier_init(self.conv_1, gain=1, distribution='uniform')
+            xavier_init(self.conv_2, gain=1, distribution='uniform')
+            xavier_init(self.shortcut, gain=1, distribution='uniform')
+        elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
             xavier_init(self.conv_1, gain=np.sqrt(2), distribution='uniform')
             xavier_init(self.conv_2, gain=np.sqrt(2), distribution='uniform')
             xavier_init(self.shortcut, gain=1, distribution='uniform')
+        else:
+            raise NotImplementedError('Unknown initialization method: '
+                                      f'\'{self.init_type}\'')
 
 
 @MODULES.register_module()
@@ -444,9 +467,17 @@ class SNConditionNorm(nn.Module):
 
     def init_weights(self):
         if self.use_cbn:
-            if self.init_type == 'BigGAN':
+            if self.init_type.upper() == 'BIGGAN':
                 nn.init.orthogonal_(self.weight_embedding.weight)
                 nn.init.orthogonal_(self.bias_embedding.weight)
-            else:
+            elif self.init_type.upper() == 'SAGAN':
+                xavier_init(
+                    self.weight_embedding, gain=1, distribution='uniform')
+                xavier_init(
+                    self.bias_embedding, gain=1, distribution='uniform')
+            elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
                 constant_init(self.weight_embedding, 1)
                 constant_init(self.bias_embedding, 0)
+            else:
+                raise NotImplementedError('Unknown initialization method: '
+                                          f'\'{self.init_type}\'')
