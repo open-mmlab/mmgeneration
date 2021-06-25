@@ -535,7 +535,6 @@ class ProjDiscriminator(nn.Module):
         if 1 in attention_after_nth_block:
             attn_cfg_ = deepcopy(attention_cfg)
             attn_cfg_['in_channels'] = base_channels
-            # attn_cfg_['out_channels'] = base_channels
             self.conv_blocks.append(build_module(attn_cfg_))
 
         for idx in range(len(self.downsample_list)):
