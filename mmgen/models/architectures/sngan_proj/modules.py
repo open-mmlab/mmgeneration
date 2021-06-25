@@ -4,6 +4,7 @@ import numpy as np
 import torch.nn as nn
 from mmcv.cnn import (ConvModule, build_activation_layer, build_norm_layer,
                       build_upsample_layer, constant_init, xavier_init)
+from torch.nn.utils import spectral_norm
 
 from mmgen.models.builder import MODULES
 from mmgen.utils import check_dist_init
@@ -86,10 +87,10 @@ class SNGANGenResBlock(nn.Module):
 
         self.norm_1 = SNConditionNorm(in_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      norm_eps, init_cfg)
+                                      with_spectral_norm, norm_eps, init_cfg)
         self.norm_2 = SNConditionNorm(hidden_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      norm_eps, init_cfg)
+                                      with_spectral_norm, norm_eps, init_cfg)
 
         if self.learnable_sc:
             # use hyperparameters-fixed shortcut here
@@ -138,16 +139,24 @@ class SNGANGenResBlock(nn.Module):
 
     def init_weights(self):
         """Initialize weights for the model."""
-        if self.init_type == 'BigGAN':
+        if self.init_type.upper() == 'BIGGAN':
             nn.init.orthogonal_(self.conv_1.conv.weight)
             nn.init.orthogonal_(self.conv_2.conv.weight)
             if self.learnable_sc:
                 nn.init.orthogonal_(self.shortcut.conv.weight)
-        else:
+        elif self.init_type.upper() == 'SAGAN':
+            xavier_init(self.conv_1, gain=1, distribution='uniform')
+            xavier_init(self.conv_2, gain=1, distribution='uniform')
+            if self.learnable_sc:
+                xavier_init(self.shortcut, gain=1, distribution='uniform')
+        elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
             xavier_init(self.conv_1, gain=np.sqrt(2), distribution='uniform')
             xavier_init(self.conv_2, gain=np.sqrt(2), distribution='uniform')
             if self.learnable_sc:
                 xavier_init(self.shortcut, gain=1, distribution='uniform')
+        else:
+            raise NotImplementedError('Unknown initialization method: '
+                                      f'\'{self.init_type}\'')
 
 
 @MODULES.register_module()
@@ -185,7 +194,7 @@ class SNGANDiscResBlock(nn.Module):
                  init_cfg=dict(type='BigGAN')):
 
         super().__init__()
-        hidden_channels = in_channels if hidden_channels is None \
+        hidden_channels = out_channels if hidden_channels is None \
             else hidden_channels
         self.with_downsample = downsample
         self.init_type = init_cfg.get('type', None)
@@ -246,16 +255,24 @@ class SNGANDiscResBlock(nn.Module):
         return out
 
     def init_weights(self):
-        if self.init_type == 'BigGAN':
+        if self.init_type.upper() == 'BIGGAN':
             nn.init.orthogonal_(self.conv_1.conv.weight)
             nn.init.orthogonal_(self.conv_2.conv.weight)
             if self.learnable_sc:
                 nn.init.orthogonal_(self.shortcut.conv.weight)
-        else:
+        elif self.init_type.upper() == 'SAGAN':
+            xavier_init(self.conv_1, gain=1, distribution='uniform')
+            xavier_init(self.conv_2, gain=1, distribution='uniform')
+            if self.learnable_sc:
+                xavier_init(self.shortcut, gain=1, distribution='uniform')
+        elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
             xavier_init(self.conv_1, gain=np.sqrt(2), distribution='uniform')
             xavier_init(self.conv_2, gain=np.sqrt(2), distribution='uniform')
             if self.learnable_sc:
                 xavier_init(self.shortcut, gain=1, distribution='uniform')
+        else:
+            raise NotImplementedError('Unknown initialization method: '
+                                      f'\'{self.init_type}\'')
 
 
 @MODULES.register_module()
@@ -338,14 +355,21 @@ class SNGANDiscHeadResBlock(nn.Module):
         return out
 
     def init_weights(self):
-        if self.init_type == 'BigGAN':
+        if self.init_type.upper() == 'BIGGAN':
             nn.init.orthogonal_(self.conv_1.conv.weight)
             nn.init.orthogonal_(self.conv_2.conv.weight)
             nn.init.orthogonal_(self.shortcut.conv.weight)
-        else:
+        elif self.init_type.upper() == 'SAGAN':
+            xavier_init(self.conv_1, gain=1, distribution='uniform')
+            xavier_init(self.conv_2, gain=1, distribution='uniform')
+            xavier_init(self.shortcut, gain=1, distribution='uniform')
+        elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
             xavier_init(self.conv_1, gain=np.sqrt(2), distribution='uniform')
             xavier_init(self.conv_2, gain=np.sqrt(2), distribution='uniform')
             xavier_init(self.shortcut, gain=1, distribution='uniform')
+        else:
+            raise NotImplementedError('Unknown initialization method: '
+                                      f'\'{self.init_type}\'')
 
 
 @MODULES.register_module()
@@ -370,6 +394,8 @@ class SNConditionNorm(nn.Module):
             to ``dict(type='BN')``.
         auto_sync_bn (bool, optional): Whether convert Batch Norm to
             Synchronized ones when Distributed training is on. Defualt to True.
+        with_spectral_norm (bool, optional): whether use spectral norm for
+            conv blocks and norm layers. default to true.
         norm_eps (float, optional): eps for Normalization layers (both conditional
             and non-conditional ones). Default to `1e-4`.
         init_cfg (dict, optional): Config for weight initialization.
@@ -383,6 +409,7 @@ class SNConditionNorm(nn.Module):
                  norm_cfg=dict(type='BN'),
                  cbn_norm_affine=False,
                  auto_sync_bn=True,
+                 with_spectral_norm=False,
                  norm_eps=1e-4,
                  init_cfg=dict(type='BigGAN')):
         super().__init__()
@@ -413,6 +440,9 @@ class SNConditionNorm(nn.Module):
             self.weight_embedding = nn.Embedding(num_classes, in_channels)
             self.bias_embedding = nn.Embedding(num_classes, in_channels)
             self.reweight_embedding = self.init_type == 'BigGAN'
+            if with_spectral_norm:
+                self.weight_embedding = spectral_norm(self.weight_embedding)
+                self.bias_embedding = spectral_norm(self.bias_embedding)
 
         self.init_weights()
 
@@ -439,9 +469,17 @@ class SNConditionNorm(nn.Module):
 
     def init_weights(self):
         if self.use_cbn:
-            if self.init_type == 'BigGAN':
+            if self.init_type.upper() == 'BIGGAN':
                 nn.init.orthogonal_(self.weight_embedding.weight)
                 nn.init.orthogonal_(self.bias_embedding.weight)
-            else:
+            elif self.init_type.upper() == 'SAGAN':
+                xavier_init(
+                    self.weight_embedding, gain=1, distribution='uniform')
+                xavier_init(
+                    self.bias_embedding, gain=1, distribution='uniform')
+            elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
                 constant_init(self.weight_embedding, 1)
                 constant_init(self.bias_embedding, 0)
+            else:
+                raise NotImplementedError('Unknown initialization method: '
+                                          f'\'{self.init_type}\'')

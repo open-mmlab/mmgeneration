@@ -7,6 +7,7 @@ from mmcv.cnn import (ConvModule, build_activation_layer, constant_init,
                       xavier_init)
 from mmcv.runner import load_checkpoint
 from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
+from mmcv.utils import is_list_of
 from torch.nn.utils import spectral_norm
 
 from mmgen.models.builder import MODULES, build_module
@@ -15,6 +16,7 @@ from mmgen.utils.logger import get_root_logger
 from ..common import get_module_device
 
 
+@MODULES.register_module('SAGANGenerator')
 @MODULES.register_module()
 class SNGANGenerator(nn.Module):
     r"""Generator for SNGAN / Proj-GAN. The implementation refers to
@@ -52,6 +54,15 @@ class SNGANGenerator(nn.Module):
             Defaults to 4.
         noise_size (int, optional): Size of the input noise vector.
             Default to 128.
+        attention_cfg (dict, optional): Config for the self-attention block.
+            Default to ``dict(type='SelfAttentionBlock')``.
+        attention_after_nth_block (int | list[int], optional): Self attention
+            block would be added after which *ConvBlock*. If ``int`` is passed,
+            only one attention block would be added. If ``list`` is passed,
+            self-attention blocks would be added after multiple ConvBlocks.
+            To be noted that if the input is smaller than ``1``,
+            self-attention corresponding to this index would be ignored.
+            Default to 0.
         channels_cfg (list | dict[list], optional): Config for input channels
             of the intermedia blocks. If list is passed, each element of the
             list means the input channels of current block is how many times
@@ -65,6 +76,8 @@ class SNGANGenerator(nn.Module):
             Defaults to ``dict(type='SNGANGenResBlock')``
         act_cfg (dict, optional): Activation config for the final output
             layer. Defaults to ``dict(type='ReLU')``.
+        use_cbn (bool, optional): Whether use conditional normalization. This
+            argument would pass to norm layers. Default to True.
         auto_sync_bn (bool, optional): Whether convert Batch Norm to
             Synchronized ones when Distributed training is on. Defualt to True.
         with_spectral_norm (bool, optional): Whether use spectral norm for
@@ -83,7 +96,7 @@ class SNGANGenerator(nn.Module):
     _defualt_channels_cfg = {
         32: [1, 1, 1],
         64: [16, 8, 4, 2],
-        128: [16, 16, 8, 8, 4, 2]
+        128: [16, 16, 8, 4, 2]
     }
 
     def __init__(self,
@@ -93,9 +106,12 @@ class SNGANGenerator(nn.Module):
                  out_channels=3,
                  input_scale=4,
                  noise_size=128,
+                 attention_cfg=dict(type='SelfAttentionBlock'),
+                 attention_after_nth_block=0,
                  channels_cfg=None,
                  blocks_cfg=dict(type='SNGANGenResBlock'),
                  act_cfg=dict(type='ReLU'),
+                 use_cbn=True,
                  auto_sync_bn=True,
                  with_spectral_norm=False,
                  norm_eps=1e-4,
@@ -114,6 +130,7 @@ class SNGANGenerator(nn.Module):
 
         self.blocks_cfg.setdefault('num_classes', num_classes)
         self.blocks_cfg.setdefault('act_cfg', act_cfg)
+        self.blocks_cfg.setdefault('use_cbn', use_cbn)
         self.blocks_cfg.setdefault('auto_sync_bn', auto_sync_bn)
         self.blocks_cfg.setdefault('with_spectral_norm', with_spectral_norm)
         self.blocks_cfg.setdefault('init_cfg', init_cfg)
@@ -139,7 +156,15 @@ class SNGANGenerator(nn.Module):
         if with_spectral_norm:
             self.noise2feat = spectral_norm(self.noise2feat)
 
+        # check `attention_after_nth_block`
+        if not isinstance(attention_after_nth_block, list):
+            attention_after_nth_block = [attention_after_nth_block]
+        if not is_list_of(attention_after_nth_block, int):
+            raise ValueError('`attention_after_nth_block` only support int or '
+                             'a list of int. Please check your input type.')
+
         self.conv_blocks = nn.ModuleList()
+        self.attention_block_idx = []
         for idx in range(len(self.channel_factor_list)):
             factor_input = self.channel_factor_list[idx]
             factor_output = self.channel_factor_list[idx+1] \
@@ -150,6 +175,14 @@ class SNGANGenerator(nn.Module):
             block_cfg_['in_channels'] = factor_input * base_channels
             block_cfg_['out_channels'] = factor_output * base_channels
             self.conv_blocks.append(build_module(block_cfg_))
+
+            # build self-attention block
+            # `idx` is start from 0, add 1 to get the index
+            if idx + 1 in attention_after_nth_block:
+                self.attention_block_idx.append(len(self.conv_blocks))
+                attn_cfg_ = deepcopy(attention_cfg)
+                attn_cfg_['in_channels'] = factor_output * base_channels
+                self.conv_blocks.append(build_module(attn_cfg_))
 
         to_rgb_norm_cfg = dict(type='BN', eps=norm_eps)
         if check_dist_init() and auto_sync_bn:
@@ -224,13 +257,17 @@ class SNGANGenerator(nn.Module):
 
         # dirty code for putting data on the right device
         noise_batch = noise_batch.to(get_module_device(self))
-        label_batch = label_batch.to(get_module_device(self))
+        if label_batch is not None:
+            label_batch = label_batch.to(get_module_device(self))
 
         x = self.noise2feat(noise_batch)
         x = x.reshape(x.size(0), -1, self.input_scale, self.input_scale)
 
-        for conv_block in self.conv_blocks:
-            x = conv_block(x, label_batch)
+        for idx, conv_block in enumerate(self.conv_blocks):
+            if idx in self.attention_block_idx:
+                x = conv_block(x)
+            else:
+                x = conv_block(x, label_batch)
 
         out_feat = self.to_rgb(x)
         out_img = self.final_act(out_feat)
@@ -241,9 +278,24 @@ class SNGANGenerator(nn.Module):
         return out_img
 
     def init_weights(self, pretrained=None, strict=True):
-        """Init weights for models.
+        """Init weights for SNGAN-Proj and SAGAN. If ``pretrained=None`` and
+        weight initialization would follow the ``INIT_TYPE`` in
+        ``init_cfg=dict(type=INIT_TYPE)``.
 
-        We just use the initialization method proposed in the original paper.
+        For SNGAN-Proj,
+        (``INIT_TYPE.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']``),
+        we follow the initialization method in the official Chainer's
+        implementation (https://github.com/pfnet-research/sngan_projection).
+
+        For SAGAN (``INIT_TYPE.upper() == 'SAGAN'``), we follow the
+        initialization method in official tensorflow's implementation
+        (https://github.com/brain-research/self-attention-gan).
+
+        Besides the reimplementation of the official code, we provide BigGAN's
+        and Pytorch GAN Studio's style initialization
+        (``INIT_TYPE.upper() == BIGGAN``), refers to
+        https://github.com/ajbrock/BigGAN-PyTorch and
+        https://github.com/POSTECH-CVLab/PyTorch-StudioGAN.
 
         Args:
             pretrained (str | dict, optional): Path for the pretrained model or
@@ -265,11 +317,18 @@ class SNGANGenerator(nn.Module):
                                                       map_location)
             self.load_state_dict(state_dict, strict=strict)
         elif pretrained is None:
-            if self.init_type == 'BigGAN':
+            if self.init_type.upper() in 'BIGGAN':
+                # BigGAN and Pytorch-GAN Studio's initialization style
                 for m in self.modules():
                     if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
                         nn.init.orthogonal_(m.weight)
-            else:
+            elif self.init_type.upper() == 'SAGAN':
+                # initialization method from official tensorflow code
+                for n, m in self.named_modules():
+                    if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
+                        xavier_init(m, gain=1, distribution='uniform')
+            elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
+                # initialization method from the official chainer code
                 for n, m in self.named_modules():
                     if isinstance(m, nn.Conv2d):
                         if 'shortcut' in n or 'to_rgb' in n:
@@ -277,19 +336,28 @@ class SNGANGenerator(nn.Module):
                         else:
                             xavier_init(
                                 m, gain=np.sqrt(2), distribution='uniform')
-                    elif isinstance(m, nn.Linear):
+                    if isinstance(m, nn.Linear):
                         xavier_init(m, gain=1, distribution='uniform')
-                    elif isinstance(m, nn.Embedding):
+                    if isinstance(m, nn.Embedding):
+                        # To be noted that here we initialize the embedding
+                        # layer in cBN with specific prefix. If you implement
+                        # your own cBN and want to use this initialization
+                        # method, please make sure the embedding layers in
+                        # your implementation have the same prefix as ours.
                         if 'weight' in n:
                             constant_init(m, 1)
-                        elif 'bias' in n:
+                        if 'bias' in n:
                             constant_init(m, 0)
+            else:
+                raise NotImplementedError('Unknown initialization method: '
+                                          f'\'{self.init_type}\'')
 
         else:
             raise TypeError("'pretrined' must be a str or None. "
                             f'But receive {type(pretrained)}.')
 
 
+@MODULES.register_module('SAGANDiscriminator')
 @MODULES.register_module()
 class ProjDiscriminator(nn.Module):
     r"""Discriminator for SNGAN / Proj-GAN. The inplementation is refer to
@@ -328,6 +396,15 @@ class ProjDiscriminator(nn.Module):
             number.  Defaults to 128.
         input_channels (int, optional): Channels of the input image.
             Defaults to 3.
+        attention_cfg (dict, optional): Config for the self-attention block.
+            Default to ``dict(type='SelfAttentionBlock')``.
+        attention_after_nth_block (int | list[int], optional): Self-attention
+            block would be added after which *ConvBlock* (including the head
+            block). If ``int`` is passed, only one attention block would be
+            added. If ``list`` is passed, self-attention blocks would be added
+            after multiple ConvBlocks. To be noted that if the input is
+            smaller than ``1``, self-attention corresponding to this index
+            would be ignored. Default to 0.
         channels_cfg (list | dict[list], optional): Config for input channels
             of the intermedia blocks. If list is passed, each element of the
             list means the input channels of current block is how many times
@@ -365,14 +442,14 @@ class ProjDiscriminator(nn.Module):
     _defualt_channels_cfg = {
         32: [1, 1, 1],
         64: [2, 4, 8, 16],
-        256: [2, 4, 8, 8, 16, 16]
+        128: [2, 4, 8, 16, 16],
     }
 
     # default downsample behavior
     _defualt_downsample_cfg = {
         32: [True, False, False],
         64: [True, True, True, True],
-        256: [True, True, True, True, True, False]
+        128: [True, True, True, True, False]
     }
 
     def __init__(self,
@@ -380,6 +457,8 @@ class ProjDiscriminator(nn.Module):
                  num_classes=0,
                  base_channels=128,
                  input_channels=3,
+                 attention_cfg=dict(type='SelfAttentionBlock'),
+                 attention_after_nth_block=-1,
                  channels_cfg=None,
                  downsample_cfg=None,
                  from_rgb_cfg=dict(type='SNGANDiscHeadResBlock'),
@@ -436,14 +515,29 @@ class ProjDiscriminator(nn.Module):
         if len(self.downsample_list) != len(self.channel_factor_list):
             raise ValueError('`downsample_cfg` should have same length with '
                              '`channels_cfg`, but receive '
-                             f'{len(downsample_cfg)} and {len(channels_cfg)}.')
+                             f'{len(self.downsample_list)} and '
+                             f'{len(self.channel_factor_list)}.')
+
+        # check `attention_after_nth_block`
+        if not isinstance(attention_after_nth_block, list):
+            attention_after_nth_block = [attention_after_nth_block]
+        if not all([isinstance(idx, int)
+                    for idx in attention_after_nth_block]):
+            raise ValueError('`attention_after_nth_block` only support int or '
+                             'a list of int. Please check your input type.')
 
         self.from_rgb = build_module(
             self.from_rgb_cfg,
             dict(in_channels=input_channels, out_channels=base_channels))
 
         self.conv_blocks = nn.ModuleList()
-        for idx in range(len(downsample_cfg)):
+        # add self-attention block after the first block
+        if 1 in attention_after_nth_block:
+            attn_cfg_ = deepcopy(attention_cfg)
+            attn_cfg_['in_channels'] = base_channels
+            self.conv_blocks.append(build_module(attn_cfg_))
+
+        for idx in range(len(self.downsample_list)):
             factor_input = 1 if idx == 0 else self.channel_factor_list[idx - 1]
             factor_output = self.channel_factor_list[idx]
 
@@ -453,6 +547,14 @@ class ProjDiscriminator(nn.Module):
             block_cfg_['in_channels'] = factor_input * base_channels
             block_cfg_['out_channels'] = factor_output * base_channels
             self.conv_blocks.append(build_module(block_cfg_))
+
+            # build self-attention block
+            # the first ConvBlock is `from_rgb` block,
+            # add 2 to get the index of the ConvBlocks
+            if idx + 2 in attention_after_nth_block:
+                attn_cfg_ = deepcopy(attention_cfg)
+                attn_cfg_['in_channels'] = factor_output * base_channels
+                self.conv_blocks.append(build_module(attn_cfg_))
 
         decision_bias = self.init_type == 'BigGAN'
         self.decision = nn.Linear(
@@ -498,9 +600,24 @@ class ProjDiscriminator(nn.Module):
         return out.view(out.size(0), -1)
 
     def init_weights(self, pretrained=None, strict=True):
-        """Init weights for models.
+        """Init weights for SNGAN-Proj and SAGAN. If ``pretrained=None`` and
+        weight initialization would follow the ``INIT_TYPE`` in
+        ``init_cfg=dict(type=INIT_TYPE)``.
 
-        We just use the initialization method proposed in the original paper.
+        For SNGAN-Proj
+        (``INIT_TYPE.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']``),
+        we follow the initialization method in the official Chainer's
+        implementation (https://github.com/pfnet-research/sngan_projection).
+
+        For SAGAN (``INIT_TYPE.upper() == 'SAGAN'``), we follow the
+        initialization method in official tensorflow's implementation
+        (https://github.com/brain-research/self-attention-gan).
+
+        Besides the reimplementation of the official code's initialization, we
+        provide BigGAN's and Pytorch GAN Studio's style initialization
+        (``INIT_TYPE.upper() == BIGGAN``).
+        (https://github.com/ajbrock/BigGAN-PyTorch and
+        https://github.com/POSTECH-CVLab/PyTorch-StudioGAN)
 
         Args:
             pretrained (str | dict, optional): Path for the pretrained model or
@@ -522,11 +639,17 @@ class ProjDiscriminator(nn.Module):
                                                       map_location)
             self.load_state_dict(state_dict, strict=strict)
         elif pretrained is None:
-            if self.init_type == 'BigGAN':
+            if self.init_type.upper() == 'BIGGAN':
                 for m in self.modules():
                     if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
                         nn.init.orthogonal_(m.weight)
-            else:
+            elif self.init_type.upper() == 'SAGAN':
+                # initialization method from official tensorflow code
+                for m in self.modules():
+                    if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
+                        xavier_init(m, gain=1, distribution='uniform')
+            elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
+                # initialization method from the official chainer code
                 for n, m in self.named_modules():
                     if isinstance(m, nn.Conv2d):
                         if 'shortcut' in n:
@@ -534,10 +657,11 @@ class ProjDiscriminator(nn.Module):
                         else:
                             xavier_init(
                                 m, gain=np.sqrt(2), distribution='uniform')
-                    elif isinstance(m, nn.Linear):
+                    if isinstance(m, (nn.Linear, nn.Embedding)):
                         xavier_init(m, gain=1, distribution='uniform')
-                    elif isinstance(m, nn.Embedding):
-                        xavier_init(m, gain=1, distribution='uniform')
+            else:
+                raise NotImplementedError('Unknown initialization method: '
+                                          f'\'{self.init_type}\'')
         else:
             raise TypeError("'pretrained' must by a str or None. "
                             f'But receive {type(pretrained)}.')
