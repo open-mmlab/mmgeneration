@@ -394,6 +394,8 @@ class SNConditionNorm(nn.Module):
             to ``dict(type='BN')``.
         auto_sync_bn (bool, optional): Whether convert Batch Norm to
             Synchronized ones when Distributed training is on. Defualt to True.
+        with_spectral_norm (bool, optional): whether use spectral norm for
+            conv blocks and norm layers. default to true.
         norm_eps (float, optional): eps for Normalization layers (both conditional
             and non-conditional ones). Default to `1e-4`.
         init_cfg (dict, optional): Config for weight initialization.
