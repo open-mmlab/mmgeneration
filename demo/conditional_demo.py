@@ -80,8 +80,8 @@ def main():
 
     if args.sample_all_classes:
         mmcv.print_log(
-            '`sample_all_classes` is set as True, `num_samples`, `label` '
-            ', and `nrows` would be ignored.', 'mmgen')
+            '`sample_all_classes` is set as True, `num_samples`, `label`, '
+            'and `nrows` would be ignored.', 'mmgen')
 
         # get num_classes
         if model.num_classes is not None:
