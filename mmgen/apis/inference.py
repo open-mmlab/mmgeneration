@@ -121,7 +121,8 @@ def sample_conditional_model(model,
         label = label.type(torch.int64)
         if label.numel() == 1:
             # repeat single tensor
-            label = label.repeat(num_samples)
+            # call view(-1) to avoid nested tensor like [[[1]]]
+            label = label.view(-1).repeat(num_samples)
         else:
             # flatten multi tensors
             label = label.view(-1)
