@@ -29,12 +29,29 @@ def parse_args():
     parser.add_argument(
         '--num-batches', type=int, default=4, help='Batch size in inference')
     parser.add_argument(
+        '--samples-per-classes',
+        type=int,
+        default=5,
+        help=('This argument work together with `label`, '
+              'and decide the number of samples to generate for each '
+              'class in the given `label`.'))
+    parser.add_argument(
+        '--label',
+        type=int,
+        nargs='+',
+        help=('Labels want to sample. If not defined, '
+              'random sample would be applied.'))
+    parser.add_argument(
+        '--sample-all-classes',
+        action='store_true',
+        help='Whether sample all classes of the dataset.')
+
+    parser.add_argument(
         '--num-samples',
         type=int,
         default=12,
-        help='The total number of samples')
-    parser.add_argument(
-        '--label', type=int, nargs='+', help='Labels used for sample.')
+        help=('The total number of samples. '
+              'This argument only works when label is not passed.'))
     parser.add_argument(
         '--sample-model',
         type=str,
@@ -46,17 +63,6 @@ def parse_args():
         action=DictAction,
         help='Other customized kwargs for sampling function')
 
-    # args for classes sampling
-    parser.add_argument(
-        '--sample-all-classes',
-        action='store_true',
-        help='Whether sample all classes of the dataset.')
-    parser.add_argument(
-        '--samples-per_classes',
-        type=int,
-        default=5,
-        help='Number of samples to generate in each classes.')
-
     # args for image grid
     parser.add_argument(
         '--padding', type=int, default=0, help='Padding in the image grid.')
@@ -64,7 +70,8 @@ def parse_args():
         '--nrow',
         type=int,
         default=6,
-        help='Number of images displayed in each row of the grid')
+        help=('Number of images displayed in each row of the grid. '
+              'This argument would only work when label is not given.'))
 
     args = parser.parse_args()
     return args
@@ -78,37 +85,41 @@ def main():
     if args.sample_cfg is None:
         args.sample_cfg = dict()
 
-    if args.sample_all_classes:
-        mmcv.print_log(
-            '`sample_all_classes` is set as True, `num_samples`, `label`, '
-            'and `nrows` would be ignored.', 'mmgen')
+    if args.label is None and not args.sample_all_classes:
+        label = None
+        num_samples, nrow = args.num_samples, args.nrow
+        mmcv.print_log('`label` is not passed, code would random sample '
+                       f'`num-samples` (={num_samples}) images.')
+    else:
+        if args.sample_all_classes:
+            mmcv.print_log(
+                '`sample_all_classes` is set as True, `num-samples`, `label`, '
+                'and `nrows` would be ignored.', 'mmgen')
 
-        # get num_classes
-        if model.num_classes is not None:
-            num_classes = model.num_classes
-        elif model.generator.num_classes is not None:
-            num_classes = model.generator.num_classes
-        elif model.discriminator.num_classes is not None:
-            num_classes = model.discriminator.num_classes
+            # get num_classes
+            if hasattr(model, 'num_classes') and model.num_classes is not None:
+                num_classes = model.num_classes
+            else:
+                raise AttributeError(
+                    'Cannot get attribute `num_classes` from '
+                    f'{type(model)}. Please check your config.', 'mmgen')
+            # build label list
+            meta_labels = [idx for idx in range(num_classes)]
         else:
-            raise AttributeError(
-                'Cannot get attribute `num_classes` from '
-                f'{type(model)}, {type(model.generator)} '
-                f'and {type(model.discriminator)}. Please '
-                'check your config.', 'mmgen')
-        mmcv.print_log(f'Set `nrows` as number of classes (={num_classes}).',
-                       'mmgen')
+            # get unique label
+            meta_labels = list(set(args.label))
+            meta_labels.sort()
 
-        # build label list
+        # generate label to sample
         label = []
-        for idx in range(num_classes):
+        for idx in meta_labels:
             label += [idx] * args.samples_per_classes
         num_samples = len(label)
-        nrow = num_classes
-    else:
-        num_samples = args.num_samples
-        label = args.label
-        nrow = args.nrow
+        nrow = len(meta_labels)
+
+        mmcv.print_log(
+            f'Set `nrows` as number of classes (={len(meta_labels)}).',
+            'mmgen')
 
     results = sample_conditional_model(model, num_samples, args.num_batches,
                                        args.sample_model, label,
