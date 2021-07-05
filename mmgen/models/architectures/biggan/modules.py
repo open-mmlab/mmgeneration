@@ -211,7 +211,6 @@ class BigGANConditionBN(nn.Module):
             self.gain = nn.Embedding(linear_input_channels, num_features)
             self.bias = nn.Embedding(linear_input_channels, num_features)
 
-
         self.bn = nn.BatchNorm2d(
             num_features, eps=bn_eps, momentum=momentum, affine=False)
 

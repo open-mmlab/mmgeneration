@@ -37,17 +37,24 @@ runner = dict(
     pass_training_status=True)
 
 inception_pkl = './work_dirs/inception_pkl/cifar10.pkl'
-    
+
 evaluation = dict(
     type='GenerativeEvalHook',
     interval=10000,
     metrics=[
-        dict(type='FID', num_images=50000, inception_pkl=inception_pkl, bgr2rgb=True),
+        dict(
+            type='FID',
+            num_images=50000,
+            inception_pkl=inception_pkl,
+            bgr2rgb=True),
         dict(type='IS', num_images=50000)
     ],
     sample_kwargs=dict(sample_model='ema'))
 
 metrics = dict(
     fid50k=dict(
-        type='FID', num_images=50000, inception_pkl=None, bgr2rgb=True),
+        type='FID',
+        num_images=50000,
+        inception_pkl=inception_pkl,
+        bgr2rgb=True),
     is50k=dict(type='IS', num_images=50000))
