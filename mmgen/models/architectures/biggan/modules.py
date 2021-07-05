@@ -203,14 +203,14 @@ class BigGANConditionBN(nn.Module):
                 linear_input_channels, num_features, bias=False)
             self.bias = nn.Linear(
                 linear_input_channels, num_features, bias=False)
+            # please pay attention if shared_embedding is False
+            if with_spectral_norm:
+                self.gain = spectral_norm(self.gain, eps=sn_eps)
+                self.bias = spectral_norm(self.bias, eps=sn_eps)
         else:
             self.gain = nn.Embedding(linear_input_channels, num_features)
             self.bias = nn.Embedding(linear_input_channels, num_features)
 
-        # please pay attention if shared_embedding is False
-        if with_spectral_norm:
-            self.gain = spectral_norm(self.gain, eps=sn_eps)
-            self.bias = spectral_norm(self.bias, eps=sn_eps)
 
         self.bn = nn.BatchNorm2d(
             num_features, eps=bn_eps, momentum=momentum, affine=False)
