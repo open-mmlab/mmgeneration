@@ -95,7 +95,7 @@ def sample_conditional_model(model,
     """Sampling from conditional models.
 
     Args:
-        model (nn.Module): Unconditional models in MMGeneration.
+        model (nn.Module): Conditional models in MMGeneration.
         num_samples (int, optional): The total number of samples.
             Defaults to 16.
         num_batches (int, optional): The number of batch size for inference.

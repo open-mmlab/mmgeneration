@@ -32,9 +32,10 @@ def parse_args():
         '--samples-per-classes',
         type=int,
         default=5,
-        help=('This argument work together with `label`, '
-              'and decide the number of samples to generate for each '
-              'class in the given `label`.'))
+        help=('This argument work together with `label`, and decide the '
+              'number of samples to generate for each class in the given '
+              '`label`. If `label` is not given, samples-per-classes would '
+              'equal the total number of the images to sample.'))
     parser.add_argument(
         '--label',
         type=int,
@@ -46,12 +47,6 @@ def parse_args():
         action='store_true',
         help='Whether sample all classes of the dataset.')
 
-    parser.add_argument(
-        '--num-samples',
-        type=int,
-        default=12,
-        help=('The total number of samples. '
-              'This argument only works when label is not passed.'))
     parser.add_argument(
         '--sample-model',
         type=str,
@@ -71,7 +66,7 @@ def parse_args():
         type=int,
         default=6,
         help=('Number of images displayed in each row of the grid. '
-              'This argument would only work when label is not given.'))
+              'This argument would work only when label is not given.'))
 
     args = parser.parse_args()
     return args
@@ -87,9 +82,10 @@ def main():
 
     if args.label is None and not args.sample_all_classes:
         label = None
-        num_samples, nrow = args.num_samples, args.nrow
-        mmcv.print_log('`label` is not passed, code would random sample '
-                       f'`num-samples` (={num_samples}) images.')
+        num_samples, nrow = args.samples_per_classes, args.nrow
+        mmcv.print_log(
+            '`label` is not passed, code would random sample '
+            f'`samples-per-classes` (={num_samples}) images.', 'mmgen')
     else:
         if args.sample_all_classes:
             mmcv.print_log(
@@ -115,11 +111,11 @@ def main():
         for idx in meta_labels:
             label += [idx] * args.samples_per_classes
         num_samples = len(label)
-        nrow = len(meta_labels)
+        nrow = args.samples_per_classes
 
         mmcv.print_log(
-            f'Set `nrows` as number of classes (={len(meta_labels)}).',
-            'mmgen')
+            'Set `nrows` as number of samples for each class '
+            f'(={args.samples_per_classes}).', 'mmgen')
 
     results = sample_conditional_model(model, num_samples, args.num_batches,
                                        args.sample_model, label,
