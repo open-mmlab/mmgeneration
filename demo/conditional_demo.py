@@ -35,13 +35,13 @@ def parse_args():
         help=('This argument work together with `label`, and decide the '
               'number of samples to generate for each class in the given '
               '`label`. If `label` is not given, samples-per-classes would '
-              'equal the total number of the images to sample.'))
+              'be regard as the total number of the images to sample.'))
     parser.add_argument(
         '--label',
         type=int,
         nargs='+',
         help=('Labels want to sample. If not defined, '
-              'random sample would be applied.'))
+              'random sampling would be applied.'))
     parser.add_argument(
         '--sample-all-classes',
         action='store_true',
@@ -84,7 +84,7 @@ def main():
         label = None
         num_samples, nrow = args.samples_per_classes, args.nrow
         mmcv.print_log(
-            '`label` is not passed, code would random sample '
+            '`label` is not passed, code would randomly sample '
             f'`samples-per-classes` (={num_samples}) images.', 'mmgen')
     else:
         if args.sample_all_classes:
