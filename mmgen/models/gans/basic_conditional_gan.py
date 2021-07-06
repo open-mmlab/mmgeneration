@@ -8,8 +8,6 @@ from ..builder import MODELS, build_module
 from ..common import set_requires_grad
 from .base_gan import BaseGAN
 
-# _SUPPORT_METHODS_ = ['DCGAN', 'STYLEGANv2']
-
 
 @MODELS.register_module('BasiccGAN')
 @MODELS.register_module()
@@ -51,11 +49,13 @@ class BasicConditionalGAN(BaseGAN):
         super().__init__()
         self.num_classes = num_classes
         self._gen_cfg = deepcopy(generator)
-        self.generator = build_module(generator)
+        self.generator = build_module(
+            generator, default_args=dict(num_classes=num_classes))
 
         # support no discriminator in testing
         if discriminator is not None:
-            self.discriminator = build_module(discriminator)
+            self.discriminator = build_module(
+                discriminator, default_args=dict(num_classes=num_classes))
         else:
             self.discriminator = None
 
