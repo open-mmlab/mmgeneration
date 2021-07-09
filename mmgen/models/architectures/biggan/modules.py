@@ -94,7 +94,7 @@ class BigGANGenResBlock(nn.Module):
                 kernel_size=1,
                 stride=1,
                 padding=0,
-                conv_cfg=conv_cfg,
+                conv_cfg=shortcut_cfg,
                 act_cfg=None,
                 with_spectral_norm=with_spectral_norm,
                 spectral_norm_cfg=dict(eps=sn_eps))
@@ -363,7 +363,7 @@ class BigGANDiscResBlock(nn.Module):
                 kernel_size=1,
                 stride=1,
                 padding=0,
-                conv_cfg=conv_cfg,
+                conv_cfg=shortcut_cfg,
                 act_cfg=None,
                 with_spectral_norm=with_spectral_norm,
                 spectral_norm_cfg=dict(eps=sn_eps))
