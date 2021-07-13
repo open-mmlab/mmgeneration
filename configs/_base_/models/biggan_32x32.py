@@ -1,5 +1,6 @@
 model = dict(
     type='BasiccGAN',
+    num_classes=10,
     generator=dict(
         type='BigGANGenerator',
         output_scale=32,
