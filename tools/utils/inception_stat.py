@@ -119,7 +119,9 @@ if __name__ == '__main__':
     elif args.data_cfg is not None:
         # Please make sure the dataset will sample images in `RGB` order.
         data_config = Config.fromfile(args.data_cfg)
-        dataset = build_dataset(data_config.data.test)
+        subset_config = data_config.data.get(args.subset, None)
+        print_log(subset_config, 'mmgen')
+        dataset = build_dataset(subset_config)
     else:
         raise RuntimeError('Please provide imgsdir or data_cfg')
 
