@@ -142,24 +142,16 @@ class GenerativeEvalHook(Hook):
             self.interval = interval['interval']
             # check if length of interval match with the milestones
             if len(self.interval) != len(self.milestones) + 1:
-                raise ValueError()
+                raise ValueError(
+                    f'Length of `interval`(={len(self.interval)}) cannot '
+                    f'match length of `milestones`(={len(self.milestones)}).')
 
             # check if milestones is in order
-            ascending_order = None
             for idx in range(len(self.milestones) - 1):
                 former, latter = self.milestones[idx], self.milestones[idx + 1]
-                assert latter != former, \
-                    'Find repeat value in `milestones` of interval dict.'
-                if ascending_order is None:
-                    ascending_order = latter > former
-                if (latter > former) ^ ascending_order:
+                if former >= latter:
                     raise ValueError(
-                        'Elements in `milestones` are out of order.')
-
-            # keep milestones and interval in ascending order
-            if not ascending_order:
-                self.milestones = self.milestones[::-1]
-                self.interval = self.interval[::-1]
+                        'Elements in `milestones` shoule in ascending order.')
         else:
             raise TypeError('`interval` only support `int` or `dict`,'
                             f'recieve {type(self.interval)} instead.')
@@ -229,7 +221,6 @@ class GenerativeEvalHook(Hook):
 
         runner.model.eval()
 
-        print(f'iter: {runner.iter+1}, interval: {interval}')
         # sample fake images
         max_num_images = max(metric.num_images for metric in self.metrics)
         for metric in self.metrics:
