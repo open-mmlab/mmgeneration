@@ -58,11 +58,16 @@ if __name__ == '__main__':
         '--num-samples',
         type=int,
         default=50000,
-        help='the number of total samples')
+        help=('the number of total samples, if input -1, '
+              'automaticly use all samples in the subset'))
     parser.add_argument(
         '--no-shuffle',
         action='store_true',
         help='not use shuffle in data loader')
+    parser.add_argument(
+        '--subset',
+        default='test',
+        help='which subset and corresponding pipeline to use')
     parser.add_argument(
         '--inception-style',
         choices=['stylegan', 'pytorch'],
@@ -127,20 +132,25 @@ if __name__ == '__main__':
     if args.inception_style == 'stylegan':
         inception = torch.jit.load(args.inception_pth).eval().cuda()
         inception = nn.DataParallel(inception)
-        mmcv.print_log('Adopt Inception network in StyleGAN', 'mmgen')
+        print_log('Adopt Inception network in StyleGAN', 'mmgen')
     else:
         inception = nn.DataParallel(
             InceptionV3([3], resize_input=True, normalize_input=False).cuda())
         inception.eval()
 
-    features = extract_inception_features(data_loader, inception,
-                                          args.num_samples,
+    if args.num_samples == -1:
+        print_log('Use all samples in subset', 'mmgen')
+        num_samples = len(dataset)
+    else:
+        num_samples = args.num_samples
+
+    features = extract_inception_features(data_loader, inception, num_samples,
                                           args.inception_style).numpy()
 
     # sanity check for the number of features
     assert features.shape[
-        0] == args.num_samples, 'the number of features != num_samples'
-    print_log(f'Extract {args.num_samples} features', 'mmgen')
+        0] == num_samples, 'the number of features != num_samples'
+    print_log(f'Extract {num_samples} features', 'mmgen')
 
     mean = np.mean(features, 0)
     cov = np.cov(features, rowvar=False)
@@ -150,6 +160,6 @@ if __name__ == '__main__':
             {
                 'mean': mean,
                 'cov': cov,
-                'size': args.num_samples,
+                'size': num_samples,
                 'name': args.pklname
             }, f)
