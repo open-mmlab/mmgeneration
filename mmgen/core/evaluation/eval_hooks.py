@@ -3,7 +3,7 @@ import os
 import os.path as osp
 import sys
 import warnings
-from bisect import bisect_left
+from bisect import bisect_right
 
 import mmcv
 import torch
@@ -202,7 +202,7 @@ class GenerativeEvalHook(Hook):
             return self.interval
         else:
             curr_iter = runner.iter + 1
-            index = bisect_left(self.milestones, curr_iter)
+            index = bisect_right(self.milestones, curr_iter)
             return self.interval[index]
 
     def before_run(self, runner):
@@ -229,6 +229,7 @@ class GenerativeEvalHook(Hook):
 
         runner.model.eval()
 
+        print(f'iter: {runner.iter+1}, interval: {interval}')
         # sample fake images
         max_num_images = max(metric.num_images for metric in self.metrics)
         for metric in self.metrics:
