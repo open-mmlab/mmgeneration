@@ -40,8 +40,10 @@ For IS evaluation,
 2. We use bicubic interpolation with PIL backend to resize image before feed them to Inception.
 
 For FID evaluation, difference between two repositories mainly on the selection of images for ground truth activation (inception state) calculation. In ours, we follow the pipeline of BigGAN for more convincing results. Detailly, we use the entire training set (50k and 1281167 images for CIFAR10 and ImageNet1k) without shuffle for GT inception state extracting. We also use [Tero's Inception](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt) for feature extraction.
-You can use following scripts to reproduce those inception states.
 
+You can download the preprocessed inception state by the following url: [CIFAR10](https://download.openmmlab.com/mmgen/evaluation/fid_inception_pkl/cifar10.pkl) and [ImageNet1k](https://download.openmmlab.com/mmgen/evaluation/fid_inception_pkl/imagenet.pkl).
+
+You can use following scripts to extract those inception states by yourself.
 ```
 # For CIFAR10
 python tools/utils/inception_stat.py --data-cfg configs/_base_/datasets/cifar10_rgb.py --pklname cifar10.pkl --no-shuffle --inception-style stylegan --num-samples -1 --subset train
