@@ -4,6 +4,7 @@ from copy import deepcopy
 from functools import partial
 
 import numpy as np
+import torch
 from mmcv.parallel import collate
 from mmcv.runner import get_dist_info
 from mmcv.utils import Registry, build_from_cfg
@@ -65,6 +66,7 @@ def build_dataloader(dataset,
                      dist=True,
                      shuffle=True,
                      seed=None,
+                     persistent_workers=False,
                      **kwargs):
     """Build PyTorch DataLoader.
 
@@ -81,6 +83,11 @@ def build_dataloader(dataset,
         dist (bool): Distributed training/test or not. Default: True.
         shuffle (bool): Whether to shuffle the data at every epoch.
             Default: True.
+        persistent_workers (bool, optional): If True, the data loader will
+            not shutdown the worker processes after a dataset has been
+            consumed once. This allows to maintain the workers Dataset
+            instances alive. The argument also has effect in PyTorch>=1.7.0.
+            Default: False.
         kwargs: any keyword argument to be used to initialize DataLoader
 
     Returns:
@@ -106,15 +113,27 @@ def build_dataloader(dataset,
         worker_init_fn, num_workers=num_workers, rank=rank,
         seed=seed) if seed is not None else None
 
-    data_loader = DataLoader(
-        dataset,
-        batch_size=batch_size,
-        sampler=sampler,
-        num_workers=num_workers,
-        collate_fn=partial(collate, samples_per_gpu=samples_per_gpu),
-        shuffle=shuffle,
-        worker_init_fn=init_fn,
-        **kwargs)
+    if torch.__version__ >= '1.7.0':
+        data_loader = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            sampler=sampler,
+            num_workers=num_workers,
+            collate_fn=partial(collate, samples_per_gpu=samples_per_gpu),
+            shuffle=shuffle,
+            worker_init_fn=init_fn,
+            persistent_workers=persistent_workers,
+            **kwargs)
+    else:
+        data_loader = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            sampler=sampler,
+            num_workers=num_workers,
+            collate_fn=partial(collate, samples_per_gpu=samples_per_gpu),
+            shuffle=shuffle,
+            worker_init_fn=init_fn,
+            **kwargs)
 
     return data_loader
 
