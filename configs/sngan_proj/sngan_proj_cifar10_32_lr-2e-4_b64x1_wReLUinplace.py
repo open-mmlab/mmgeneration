@@ -21,7 +21,7 @@ custom_hooks = [
     dict(
         type='VisualizeUnconditionalSamples',
         output_dir='training_samples',
-        interval=1000)
+        interval=5000)
 ]
 
 inception_pkl = './work_dirs/inception_pkl/cifar10.pkl'
