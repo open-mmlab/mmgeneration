@@ -1,8 +1,13 @@
 from .generator_discriminator import BigGANDiscriminator, BigGANGenerator
-from .modules import (BigGANConditionBN, BigGANDiscResBlock, BigGANGenResBlock,
-                      SelfAttentionBlock)
+from .generator_discriminator_deep import (BigGANDeepDiscriminator,
+                                           BigGANDeepGenerator)
+from .modules import (BigGANConditionBN, BigGANDeepDiscResBlock,
+                      BigGANDeepGenResBlock, BigGANDiscResBlock,
+                      BigGANGenResBlock, SelfAttentionBlock)
 
 __all__ = [
     'BigGANGenerator', 'BigGANGenResBlock', 'BigGANConditionBN',
-    'BigGANDiscriminator', 'SelfAttentionBlock', 'BigGANDiscResBlock'
+    'BigGANDiscriminator', 'SelfAttentionBlock', 'BigGANDiscResBlock',
+    'BigGANDeepDiscriminator', 'BigGANDeepGenerator', 'BigGANDeepDiscResBlock',
+    'BigGANDeepGenResBlock'
 ]

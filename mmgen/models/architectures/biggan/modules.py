@@ -436,7 +436,7 @@ class BigGANDiscResBlock(nn.Module):
 
 @MODULES.register_module()
 class BigGANDeepGenResBlock(nn.Module):
-    """Residual block used in BigGAN's generator.
+    """Residual block used in BigGAN-Deep's generator.
 
     Args:
         in_channels (int): The channel number of the input feature map.
@@ -451,12 +451,16 @@ class BigGANDeepGenResBlock(nn.Module):
             Defaults to dict(type='nearest', scale_factor=2).
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
+        bn_eps (float, optional): Epsilon value for batch normalization.
+            Defaults to 1e-5.
         with_spectral_norm (bool, optional): Whether to use spectral
             normalization in this block. Defaults to True.
         input_is_label (bool, optional): Whether the input of BNs' linear layer
             is raw label. Defaults to False.
         auto_sync_bn (bool, optional): Whether to use synchronized batch
             normalization. Defaults to True.
+        channel_ratio (int, optional): The ratio of the input channels' number
+            to the hidden channels' number. Defaults to 4.
     """
 
     def __init__(self,
@@ -602,11 +606,13 @@ class BigGANDeepGenResBlock(nn.Module):
 
 @MODULES.register_module()
 class BigGANDeepDiscResBlock(nn.Module):
-    """Residual block used in BigGAN's discriminator.
+    """Residual block used in BigGAN-Deep's discriminator.
 
     Args:
         in_channels (int): The channel number of the input tensor.
         out_channels (int): The channel number of the output tensor.
+        channel_ratio (int, optional): The ratio of the input channels' number
+            to the hidden channels' number. Defaults to 4.
         conv_cfg (dict, optional): Config for the convolution module used in
             this block. Defaults to dict(type='Conv2d').
         shortcut_cfg (dict, optional): Config for the convolution module used

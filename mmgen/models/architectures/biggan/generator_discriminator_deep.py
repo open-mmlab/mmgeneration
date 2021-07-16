@@ -19,9 +19,13 @@ from .modules import SelfAttentionBlock, SNConvModule
 class BigGANDeepGenerator(nn.Module):
     """BigGAN-Deep Generator.
 
-    In BigGAN, we use a SAGAN-based architecture composing of an self-attention
-    block and number of convolutional residual blocks with spectral
-    normalization.
+    In BigGAN-Deep, we use a SAGAN-based architecture composing of an
+    self-attention block and number of convolutional residual blocks
+    with spectral normalization.
+
+    The main difference between BigGAN and BigGAN-deep is that
+    BigGAN-deep use more deeper residual blocks to construct the whole
+    model.
 
     More details can be found in: Large Scale GAN Training for High Fidelity
     Natural Image Synthesis (ICLR2019).
@@ -38,6 +42,8 @@ class BigGANDeepGenerator(nn.Module):
         base_channels (int, optional): The basic channel number of the
             generator. The other layers contains channels based on this number.
             Defaults to 96.
+        block_depth (int, optional): The repeat times of Residual Blocks in
+            each level of architecture. Defaults to 2.
         input_scale (int, optional): The scale of the input 2D feature map.
             Defaults to 4.
         with_shared_embedding (bool, optional): Whether to use shared
@@ -48,8 +54,8 @@ class BigGANDeepGenerator(nn.Module):
             Defaults to 1e-6.
         init_type (str, optional): The name of an initialization method:
             ortho | N02 | xavier. Defaults to 'ortho'.
-        split_noise (bool, optional): Whether to split input noise vector.
-            Defaults to True.
+        concat_noise (bool, optional): Whether to concat input noise vector
+            with class vector. Defaults to True.
         act_cfg (dict, optional): Config for the activation layer. Defaults to
             dict(type='ReLU').
         conv_cfg (dict, optional): Config for the convolution module used in
@@ -70,6 +76,12 @@ class BigGANDeepGenerator(nn.Module):
             dict containing information for pretained models whose necessary
             key is 'ckpt_path'. Besides, you can also provide 'prefix' to load
             the generator part from the whole state dict. Defaults to None.
+        reshape_style (str, optional): The reshape style for first linear
+            layer's output feature. Set to 'torch' or 'tf'. If set to 'torch',
+            we just reshape the tensor with shape (Batch, Channel, Height,
+            Width). Otherwise, we will first reshape the tensor with shape
+            (Batch, Height, Width, Channel), then swap the dimensions to
+            (Batch, Channel, Height, Width). Default to 'torch'.
     """
 
     def __init__(self,
@@ -84,7 +96,7 @@ class BigGANDeepGenerator(nn.Module):
                  shared_dim=128,
                  sn_eps=1e-6,
                  init_type='ortho',
-                 split_noise=True,
+                 concat_noise=True,
                  act_cfg=dict(type='ReLU', inplace=False),
                  conv_cfg=dict(type='Conv2d'),
                  upsample_cfg=dict(type='nearest', scale_factor=2),
@@ -93,7 +105,8 @@ class BigGANDeepGenerator(nn.Module):
                  blocks_cfg=dict(type='BigGANDeepGenResBlock'),
                  arch_cfg=None,
                  out_norm_cfg=dict(type='BN'),
-                 pretrained=None):
+                 pretrained=None,
+                 reshape_style='torch'):
         super().__init__()
         self.noise_size = noise_size
         self.num_classes = num_classes
@@ -103,27 +116,35 @@ class BigGANDeepGenerator(nn.Module):
         self.arch = arch_cfg if arch_cfg else self._get_default_arch_cfg(
             self.output_scale, base_channels)
         self.input_scale = input_scale
-        self.split_noise = split_noise
+        self.concat_noise = concat_noise
         self.blocks_cfg = deepcopy(blocks_cfg)
         self.upsample_cfg = deepcopy(upsample_cfg)
         self.block_depth = block_depth
+        self.reshape_style = reshape_style
 
         # Validity Check
         # If 'num_classes' equals to zero, we shall set 'with_shared_embedding'
         # to False.
         if num_classes == 0:
             assert not self.with_shared_embedding
+            assert not self.concat_noise
         else:
             if not self.with_shared_embedding:
                 # If not `with_shared_embedding`, we will use `nn.Embedding` to
                 # replace the original `Linear` layer in conditional BN.
                 # Meanwhile, we do not adopt split noises.
-                assert not self.split_noise
+                assert not self.concat_noise
 
         # First linear layer
-        self.noise2feat = nn.Linear(
-            self.noise_size + self.shared_dim,
-            self.arch['in_channels'][0] * (self.input_scale**2))
+        if self.concat_noise:
+            self.noise2feat = nn.Linear(
+                self.noise_size + self.shared_dim,
+                self.arch['in_channels'][0] * (self.input_scale**2))
+        else:
+            self.noise2feat = nn.Linear(
+                self.noise_size,
+                self.arch['in_channels'][0] * (self.input_scale**2))
+
         if with_spectral_norm:
             self.noise2feat = spectral_norm(self.noise2feat, eps=sn_eps)
 
@@ -136,12 +157,16 @@ class BigGANDeepGenerator(nn.Module):
             self.shared_embedding = nn.Identity()
 
         if num_classes > 0:
-            self.dim_after_concat = (
-                self.shared_dim + self.noise_size
-                if self.with_shared_embedding else self.num_classes)
+            if self.concat_noise:
+                self.dim_after_concat = (
+                    self.shared_dim + self.noise_size
+                    if self.with_shared_embedding else self.num_classes)
+            else:
+                self.dim_after_concat = (
+                    self.shared_dim
+                    if self.with_shared_embedding else self.num_classes)
         else:
-            self.dim_after_concat = self.noise_chunk_size
-
+            self.dim_after_concat = self.noise_size
         self.blocks_cfg.update(
             dict(
                 dim_after_concat=self.dim_after_concat,
@@ -155,7 +180,6 @@ class BigGANDeepGenerator(nn.Module):
 
         self.conv_blocks = nn.ModuleList()
         for index, out_ch in enumerate(self.arch['out_channels']):
-
             for depth in range(self.block_depth):
                 # change args to adapt to current block
                 self.blocks_cfg.update(
@@ -302,22 +326,26 @@ class BigGANDeepGenerator(nn.Module):
         else:
             class_vector = None
 
-        y = class_vector
-        # If 'split noise', concat class vector and noise chunk
-        if self.split_noise:
+        # If 'concat noise', concat class vector and noise chunk
+        if self.concat_noise:
             if class_vector is not None:
                 z = torch.cat([noise_batch, class_vector], dim=1)
                 y = z
-            else:
-                z = noise_batch
+        elif self.num_classes > 0:
+            z = noise_batch
+            y = class_vector
+        else:
+            z = noise_batch
+            y = noise_batch
 
         # First linear layer
         x = self.noise2feat(z)
         # Reshape
-        # TODO: ADD RESHAPE TYPE
-        # x = x.view(x.size(0), -1, self.input_scale, self.input_scale)
-        x = x.view(-1, 4, 4, 16 * 128)
-        x = x.permute(0, 3, 1, 2).contiguous()
+        if self.reshape_style == 'tf':
+            x = x.view(x.size(0), self.input_scale, self.input_scale, -1)
+            x = x.permute(0, 3, 1, 2).contiguous()
+        else:
+            x = x.view(x.size(0), -1, self.input_scale, self.input_scale)
         # Loop over blocks
         for idx, conv_block in enumerate(self.conv_blocks):
             # Second inner loop in case block has multiple layers
@@ -381,7 +409,7 @@ class BigGANDeepGenerator(nn.Module):
 
 @MODULES.register_module()
 class BigGANDeepDiscriminator(nn.Module):
-    """BigGAN Discriminator.
+    """BigGAN-Deep Discriminator.
 
     Args:
         input_scale (int): The scale of the input image.
@@ -394,6 +422,8 @@ class BigGANDeepDiscriminator(nn.Module):
         base_channels (int, optional): The basic channel number of the
             discriminator. The other layers contains channels based on this
             number. Defaults to 96.
+        block_depth (int, optional): The repeat times of Residual Blocks in
+            each level of architecture. Defaults to 2.
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
         init_type (str, optional): The name of an initialization method:
@@ -550,13 +580,8 @@ class BigGANDeepDiscriminator(nn.Module):
                 given label.
         """
         x0 = self.input_conv(x)
-        iter = 0
-        cord_iter = 0
         for conv_block in self.conv_blocks:
             x0 = conv_block(x0)
-            if iter == cord_iter:
-                f2 = x0.clone()
-            iter += 1
         x0 = self.activate(x0)
         x0 = torch.sum(x0, dim=[2, 3])
         out = self.decision(x0)
@@ -564,7 +589,7 @@ class BigGANDeepDiscriminator(nn.Module):
         if self.num_classes > 0:
             w_y = self.proj_y(label)
             out = out + torch.sum(w_y * x0, dim=1, keepdim=True)
-        return out, f2
+        return out
 
     def init_weights(self, pretrained=None, init_type='ortho'):
         """Init weights for models.
