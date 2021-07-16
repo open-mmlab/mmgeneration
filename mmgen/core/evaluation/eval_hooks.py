@@ -134,9 +134,10 @@ class GenerativeEvalHook(Hook):
         elif isinstance(interval, dict):
             if 'milestones' not in interval or 'interval' not in interval:
                 raise KeyError(
-                    '`` and `` must exist in interval dict if you want to use '
-                    'dynamic interval evaluation strategy. Get '
-                    f'{[k for k in interval.keys()]} in interval dict.')
+                    '`milestones` and `interval` must exist in interval dict '
+                    'if you want to use the dynamic interval evaluation '
+                    f'strategy. But receive [{[k for k in interval.keys()]}] '
+                    'in the interval dict.')
 
             self.milestones = interval['milestones']
             self.interval = interval['interval']
