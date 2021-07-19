@@ -1,6 +1,5 @@
 from copy import deepcopy
 from functools import partial
-from mmcv.utils.misc import concat_list
 
 import pytest
 import torch
@@ -15,27 +14,23 @@ from mmgen.models.architectures.biggan import (BigGANDeepDiscResBlock,
 # yapf:enable
 
 
-
-
-
 class TestBigGANDeepGenResBlock:
 
     @classmethod
     def setup_class(cls):
         cls.default_cfg = dict(
             type='BigGANDeepGenResBlock',
-                in_channels=32,
-                 out_channels=16,
-                 dim_after_concat=100,
-                 conv_cfg=dict(type='Conv2d'),
-                 act_cfg=dict(type='ReLU'),
-                 upsample_cfg=dict(type='nearest', scale_factor=2),
-                 sn_eps=1e-6,
-                 bn_eps=1e-5,
-                 with_spectral_norm=True,
-                 input_is_label=False,
-                 auto_sync_bn=True,
-                 channel_ratio=4)
+            in_channels=32,
+            out_channels=16,
+            dim_after_concat=100,
+            act_cfg=dict(type='ReLU'),
+            upsample_cfg=dict(type='nearest', scale_factor=2),
+            sn_eps=1e-6,
+            bn_eps=1e-5,
+            with_spectral_norm=True,
+            input_is_label=False,
+            auto_sync_bn=True,
+            channel_ratio=4)
         cls.x = torch.randn(2, 32, 8, 8)
         cls.y = torch.randn(2, 100)
         cls.label = torch.randint(0, 100, (2, ))
@@ -93,8 +88,6 @@ class TestBigGANDeepDiscResBlock:
             in_channels=32,
             out_channels=64,
             channel_ratio=4,
-            conv_cfg=dict(type='Conv2d'),
-            shortcut_cfg=dict(type='Conv2d'),
             act_cfg=dict(type='ReLU', inplace=False),
             sn_eps=1e-6,
             with_downsample=True,
@@ -114,7 +107,7 @@ class TestBigGANDeepDiscResBlock:
         module = build_module(cfg)
         out = module(self.x)
         assert out.shape == (2, 64, 16, 16)
-        
+
         # test different channel_ratio
         cfg = deepcopy(self.default_cfg)
         cfg.update(dict(channel_ratio=8))
@@ -136,7 +129,7 @@ class TestBigGANDeepDiscResBlock:
         module = build_module(cfg).cuda()
         out = module(self.x.cuda())
         assert out.shape == (2, 64, 16, 16)
-        
+
         # test different channel_ratio
         cfg = deepcopy(self.default_cfg)
         cfg.update(dict(channel_ratio=8))
@@ -227,7 +220,10 @@ class TestBigGANDeepGenerator(object):
 
         # test different num_classes
         cfg = deepcopy(self.default_config)
-        cfg.update(dict(num_classes=0, with_shared_embedding=False, concat_noise=False))
+        cfg.update(
+            dict(
+                num_classes=0, with_shared_embedding=False,
+                concat_noise=False))
         g = build_module(cfg)
         res = g(None, None, num_batches=3)
         assert res.shape == (3, 3, 128, 128)
@@ -309,7 +305,10 @@ class TestBigGANDeepGenerator(object):
 
         # test different num_classes
         cfg = deepcopy(self.default_config)
-        cfg.update(dict(num_classes=0, with_shared_embedding=False, concat_noise=False))
+        cfg.update(
+            dict(
+                num_classes=0, with_shared_embedding=False,
+                concat_noise=False))
         g = build_module(cfg).cuda()
         res = g(None, None, num_batches=3)
         assert res.shape == (3, 3, 128, 128)

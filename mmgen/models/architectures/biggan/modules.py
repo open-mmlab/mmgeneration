@@ -63,7 +63,7 @@ class BigGANGenResBlock(nn.Module):
         with_spectral_norm (bool, optional): Whether to use spectral
             normalization in this block. Defaults to True.
         input_is_label (bool, optional): Whether the input of BNs' linear layer
-            is raw label. Defaults to False.
+            is raw label instead of class vector. Defaults to False.
         auto_sync_bn (bool, optional): Whether to use synchronized batch
             normalization. Defaults to True.
     """
@@ -179,7 +179,7 @@ class BigGANConditionBN(nn.Module):
         momentum (float, optional): The value used for the running_mean and
             running_var computation. Defaults to 0.1.
         input_is_label (bool, optional): Whether the input of BNs' linear layer
-            is raw label. Defaults to False.
+            is raw label instead of class vector. Defaults to False.
         with_spectral_norm (bool, optional): Whether to use spectral
             normalization. Defaults to True.
         auto_sync_bn (bool, optional): Whether to use synchronized batch
@@ -196,24 +196,32 @@ class BigGANConditionBN(nn.Module):
                  with_spectral_norm=True,
                  auto_sync_bn=True):
         super().__init__()
-        assert num_features > 0 and linear_input_channels > 0
-        # Prepare gain and bias layers
-        if not input_is_label:
-            self.gain = nn.Linear(
-                linear_input_channels, num_features, bias=False)
-            self.bias = nn.Linear(
-                linear_input_channels, num_features, bias=False)
+        assert num_features > 0
+        if linear_input_channels > 0:
+            self.use_cbn = True
         else:
-            self.gain = nn.Embedding(linear_input_channels, num_features)
-            self.bias = nn.Embedding(linear_input_channels, num_features)
+            self.use_cbn = False
+        # Prepare gain and bias layers
+        if self.use_cbn:
+            if not input_is_label:
+                self.gain = nn.Linear(
+                    linear_input_channels, num_features, bias=False)
+                self.bias = nn.Linear(
+                    linear_input_channels, num_features, bias=False)
+            else:
+                self.gain = nn.Embedding(linear_input_channels, num_features)
+                self.bias = nn.Embedding(linear_input_channels, num_features)
 
-        # please pay attention if shared_embedding is False
-        if with_spectral_norm:
-            self.gain = spectral_norm(self.gain, eps=sn_eps)
-            self.bias = spectral_norm(self.bias, eps=sn_eps)
+            # please pay attention if shared_embedding is False
+            if with_spectral_norm:
+                self.gain = spectral_norm(self.gain, eps=sn_eps)
+                self.bias = spectral_norm(self.bias, eps=sn_eps)
 
         self.bn = nn.BatchNorm2d(
-            num_features, eps=bn_eps, momentum=momentum, affine=False)
+            num_features,
+            eps=bn_eps,
+            momentum=momentum,
+            affine=not self.use_cbn)
 
         if auto_sync_bn and dist.is_initialized():
             self.bn = SyncBatchNorm.convert_sync_batchnorm(self.bn)
@@ -229,11 +237,15 @@ class BigGANConditionBN(nn.Module):
         Returns:
             torch.Tensor: Output feature map tensor.
         """
-        # Calculate class-conditional gains and biases
-        gain = (1. + self.gain(y)).view(y.size(0), -1, 1, 1)
-        bias = self.bias(y).view(y.size(0), -1, 1, 1)
-        out = self.bn(x)
-        return out * gain + bias
+        if self.use_cbn:
+            # Calculate class-conditional gains and biases
+            gain = (1. + self.gain(y)).view(y.size(0), -1, 1, 1)
+            bias = self.bias(y).view(y.size(0), -1, 1, 1)
+            out = self.bn(x)
+            out = out * gain + bias
+        else:
+            out = self.bn(x)
+        return out
 
 
 @MODULES.register_module()
@@ -443,8 +455,6 @@ class BigGANDeepGenResBlock(nn.Module):
         out_channels (int): The channel number of the output feature map.
         dim_after_concat (int): The channel number of the noise concatenated
             with the class vector.
-        conv_cfg (dict, optional): Config for the convolution module used in
-            this residual block. Defaults to dict(type='Conv2d').
         act_cfg (dict, optional): Config for the activation layer. Defaults to
             dict(type='ReLU').
         upsample_cfg (dict, optional): Config for the upsampling operation.
@@ -456,7 +466,7 @@ class BigGANDeepGenResBlock(nn.Module):
         with_spectral_norm (bool, optional): Whether to use spectral
             normalization in this block. Defaults to True.
         input_is_label (bool, optional): Whether the input of BNs' linear layer
-            is raw label. Defaults to False.
+            is raw label instead of class vector. Defaults to False.
         auto_sync_bn (bool, optional): Whether to use synchronized batch
             normalization. Defaults to True.
         channel_ratio (int, optional): The ratio of the input channels' number
@@ -467,7 +477,6 @@ class BigGANDeepGenResBlock(nn.Module):
                  in_channels,
                  out_channels,
                  dim_after_concat,
-                 conv_cfg=dict(type='Conv2d'),
                  act_cfg=dict(type='ReLU'),
                  upsample_cfg=dict(type='nearest', scale_factor=2),
                  sn_eps=1e-6,
@@ -530,7 +539,6 @@ class BigGANDeepGenResBlock(nn.Module):
             kernel_size=1,
             stride=1,
             padding=0,
-            conv_cfg=conv_cfg,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps))
@@ -541,7 +549,6 @@ class BigGANDeepGenResBlock(nn.Module):
             kernel_size=3,
             stride=1,
             padding=1,
-            conv_cfg=conv_cfg,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps))
@@ -552,7 +559,6 @@ class BigGANDeepGenResBlock(nn.Module):
             kernel_size=3,
             stride=1,
             padding=1,
-            conv_cfg=conv_cfg,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps))
@@ -563,7 +569,6 @@ class BigGANDeepGenResBlock(nn.Module):
             kernel_size=1,
             stride=1,
             padding=0,
-            conv_cfg=conv_cfg,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps))
@@ -613,10 +618,6 @@ class BigGANDeepDiscResBlock(nn.Module):
         out_channels (int): The channel number of the output tensor.
         channel_ratio (int, optional): The ratio of the input channels' number
             to the hidden channels' number. Defaults to 4.
-        conv_cfg (dict, optional): Config for the convolution module used in
-            this block. Defaults to dict(type='Conv2d').
-        shortcut_cfg (dict, optional): Config for the convolution module used
-            in shortcut. Defaults to dict(type='Conv2d').
         act_cfg (dict, optional): Config for the activation layer. Defaults to
             dict(type='ReLU', inplace=False).
         sn_eps (float, optional): Epsilon value for spectral normalization.
@@ -633,8 +634,6 @@ class BigGANDeepDiscResBlock(nn.Module):
                  in_channels,
                  out_channels,
                  channel_ratio=4,
-                 conv_cfg=dict(type='Conv2d'),
-                 shortcut_cfg=dict(type='Conv2d'),
                  act_cfg=dict(type='ReLU', inplace=False),
                  sn_eps=1e-6,
                  with_downsample=True,
@@ -657,7 +656,6 @@ class BigGANDeepDiscResBlock(nn.Module):
                 kernel_size=1,
                 stride=1,
                 padding=0,
-                conv_cfg=shortcut_cfg,
                 act_cfg=None,
                 with_spectral_norm=with_spectral_norm,
                 spectral_norm_cfg=dict(eps=sn_eps))
@@ -668,7 +666,6 @@ class BigGANDeepDiscResBlock(nn.Module):
             kernel_size=1,
             stride=1,
             padding=0,
-            conv_cfg=conv_cfg,
             act_cfg=act_cfg,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps),
@@ -680,7 +677,6 @@ class BigGANDeepDiscResBlock(nn.Module):
             kernel_size=3,
             stride=1,
             padding=1,
-            conv_cfg=conv_cfg,
             act_cfg=act_cfg,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps),
@@ -692,7 +688,6 @@ class BigGANDeepDiscResBlock(nn.Module):
             kernel_size=3,
             stride=1,
             padding=1,
-            conv_cfg=conv_cfg,
             act_cfg=act_cfg,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps),
@@ -704,7 +699,6 @@ class BigGANDeepDiscResBlock(nn.Module):
             kernel_size=1,
             stride=1,
             padding=0,
-            conv_cfg=conv_cfg,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps))
