@@ -50,10 +50,6 @@ class BigGANGenResBlock(nn.Module):
         out_channels (int): The channel number of the output feature map.
         dim_after_concat (int): The channel number of the noise concatenated
             with the class vector.
-        conv_cfg (dict, optional): Config for the convolution module used in
-            this residual block. Defaults to dict(type='Conv2d').
-        shortcut_cfg (dict, optional): Config for the convolution module used
-            in shortcut. Defaults to dict(type='Conv2d').
         act_cfg (dict, optional): Config for the activation layer. Defaults to
             dict(type='ReLU').
         upsample_cfg (dict, optional): Config for the upsampling operation.
@@ -72,8 +68,6 @@ class BigGANGenResBlock(nn.Module):
                  in_channels,
                  out_channels,
                  dim_after_concat,
-                 conv_cfg=dict(type='Conv2d'),
-                 shortcut_cfg=dict(type='Conv2d'),
                  act_cfg=dict(type='ReLU'),
                  upsample_cfg=dict(type='nearest', scale_factor=2),
                  sn_eps=1e-6,
@@ -94,7 +88,6 @@ class BigGANGenResBlock(nn.Module):
                 kernel_size=1,
                 stride=1,
                 padding=0,
-                conv_cfg=shortcut_cfg,
                 act_cfg=None,
                 with_spectral_norm=with_spectral_norm,
                 spectral_norm_cfg=dict(eps=sn_eps))
@@ -123,7 +116,6 @@ class BigGANGenResBlock(nn.Module):
             kernel_size=3,
             stride=1,
             padding=1,
-            conv_cfg=conv_cfg,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps))
@@ -134,7 +126,6 @@ class BigGANGenResBlock(nn.Module):
             kernel_size=3,
             stride=1,
             padding=1,
-            conv_cfg=conv_cfg,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps))
@@ -336,10 +327,6 @@ class BigGANDiscResBlock(nn.Module):
     Args:
         in_channels (int): The channel number of the input tensor.
         out_channels (int): The channel number of the output tensor.
-        conv_cfg (dict, optional): Config for the convolution module used in
-            this block. Defaults to dict(type='Conv2d').
-        shortcut_cfg (dict, optional): Config for the convolution module used
-            in shortcut. Defaults to dict(type='Conv2d').
         act_cfg (dict, optional): Config for the activation layer. Defaults to
             dict(type='ReLU', inplace=False).
         sn_eps (float, optional): Epsilon value for spectral normalization.
@@ -355,8 +342,6 @@ class BigGANDiscResBlock(nn.Module):
     def __init__(self,
                  in_channels,
                  out_channels,
-                 conv_cfg=dict(type='Conv2d'),
-                 shortcut_cfg=dict(type='Conv2d'),
                  act_cfg=dict(type='ReLU', inplace=False),
                  sn_eps=1e-6,
                  with_downsample=True,
@@ -376,7 +361,6 @@ class BigGANDiscResBlock(nn.Module):
                 kernel_size=1,
                 stride=1,
                 padding=0,
-                conv_cfg=shortcut_cfg,
                 act_cfg=None,
                 with_spectral_norm=with_spectral_norm,
                 spectral_norm_cfg=dict(eps=sn_eps))
@@ -387,7 +371,6 @@ class BigGANDiscResBlock(nn.Module):
             kernel_size=3,
             stride=1,
             padding=1,
-            conv_cfg=conv_cfg,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps))
@@ -398,7 +381,6 @@ class BigGANDiscResBlock(nn.Module):
             kernel_size=3,
             stride=1,
             padding=1,
-            conv_cfg=conv_cfg,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps))

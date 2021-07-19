@@ -52,8 +52,6 @@ class BigGANGenerator(nn.Module):
             Defaults to True.
         act_cfg (dict, optional): Config for the activation layer. Defaults to
             dict(type='ReLU').
-        conv_cfg (dict, optional): Config for the convolution module used in
-            this generator. Defaults to dict(type='Conv2d').
         upsample_cfg (dict, optional): Config for the upsampling operation.
             Defaults to dict(type='nearest', scale_factor=2).
         with_spectral_norm (bool, optional): Whether to use spectral
@@ -85,7 +83,6 @@ class BigGANGenerator(nn.Module):
                  init_type='ortho',
                  split_noise=True,
                  act_cfg=dict(type='ReLU'),
-                 conv_cfg=dict(type='Conv2d'),
                  upsample_cfg=dict(type='nearest', scale_factor=2),
                  with_spectral_norm=True,
                  auto_sync_bn=True,
@@ -155,7 +152,6 @@ class BigGANGenerator(nn.Module):
             dict(
                 dim_after_concat=self.dim_after_concat,
                 act_cfg=act_cfg,
-                conv_cfg=conv_cfg,
                 sn_eps=sn_eps,
                 input_is_label=(num_classes > 0)
                 and (not with_shared_embedding),
@@ -184,7 +180,6 @@ class BigGANGenerator(nn.Module):
             out_channels,
             kernel_size=3,
             padding=1,
-            conv_cfg=conv_cfg,
             with_spectral_norm=with_spectral_norm,
             spectral_norm_cfg=dict(eps=sn_eps),
             act_cfg=act_cfg,
@@ -406,8 +401,6 @@ class BigGANDiscriminator(nn.Module):
             ortho | N02 | xavier. Defaults to 'ortho'.
         act_cfg (dict, optional): Config for the activation layer.
             Defaults to dict(type='ReLU').
-        conv_cfg (dict, optional): Config for the convolution module used in
-            this discriminator. Defaults to dict(type='Conv2d').
         with_spectral_norm (bool, optional): Whether to use spectral
             normalization. Defaults to True.
         blocks_cfg (dict, optional): Config for the convolution block.
@@ -429,7 +422,6 @@ class BigGANDiscriminator(nn.Module):
                  sn_eps=1e-6,
                  init_type='ortho',
                  act_cfg=dict(type='ReLU'),
-                 conv_cfg=dict(type='Conv2d'),
                  with_spectral_norm=True,
                  blocks_cfg=dict(type='BigGANDiscResBlock'),
                  arch_cfg=None,
@@ -445,7 +437,6 @@ class BigGANDiscriminator(nn.Module):
         self.blocks_cfg = deepcopy(blocks_cfg)
         self.blocks_cfg.update(
             dict(
-                conv_cfg=conv_cfg,
                 act_cfg=act_cfg,
                 sn_eps=sn_eps,
                 with_spectral_norm=with_spectral_norm))
