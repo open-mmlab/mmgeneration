@@ -3,6 +3,7 @@ import os
 import os.path as osp
 import sys
 import warnings
+from bisect import bisect_right
 
 import mmcv
 import torch
@@ -15,7 +16,7 @@ from ..registry import build_metric
 class GenerativeEvalHook(Hook):
     """Evaluation Hook for Generative Models.
 
-    Currently, this evaluation hook can be used to evaluate unconditional
+    This evaluation hook can be used to evaluate unconditional and conditional
     models. Note that only ``FID`` and ``IS`` metric is supported for the
     distributed training now. In the future, we will support more metrics for
     the evaluation during the training procedure.
@@ -24,6 +25,12 @@ class GenerativeEvalHook(Hook):
     configureations. Below is serveral usage cases for different situations.
     What you need to do is to add these lines at the end of your config file.
     Then, you can use this evaluation hook in the training procedure.
+
+    To be noted that, this evaluation hook support evaluation with dynamic
+    intervals for FID or other metrics may fluctuate frequently at the end of
+    the training process.
+
+    # TODO: fix the online doc
 
     #. Only use FID for evaluation
 
@@ -58,9 +65,36 @@ class GenerativeEvalHook(Hook):
             best_metric=['fid', 'is'],
             sample_kwargs=dict(sample_model='ema'))
 
+    #. Use dynamic evaluation intervals
+
+    .. code-block:: python
+        :linenos
+
+        # interval = 10000 if iter < 50000,
+        # interval = 4000, if 50000 <= iter < 750000,
+        # interval = 2000, if iter >= 750000
+
+        evaluation = dict(
+            type='GenerativeEvalHook',
+            interval=dict(milestones=[500000, 750000],
+                          interval=[10000, 4000, 2000])
+            metrics=[dict(
+                type='FID',
+                num_images=50000,
+                inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
+                bgr2rgb=True),
+                dict(type='IS',
+                num_images=50000)],
+            best_metric=['fid', 'is'],
+            sample_kwargs=dict(sample_model='ema'))
+
+
     Args:
         dataloader (DataLoader): A PyTorch dataloader.
-        interval (int): Evaluation interval. Default: 1.
+        interval (int | dict): Evaluation interval. If int is passed,
+            ``eval_hook`` would run under given interval. If a dict is passed,
+            The key and value would be interpret as 'milestones' and 'interval'
+            of the evaluation.  Default: 1.
         dist (bool, optional): Whether to use distributed evaluation.
             Defaults to True.
         metrics (dict | list[dict], optional): Configs for metrics that will be
@@ -90,11 +124,38 @@ class GenerativeEvalHook(Hook):
                  best_metric='fid'):
         assert metrics is not None
         self.dataloader = dataloader
-        self.interval = interval
         self.dist = dist
         self.sample_kwargs = sample_kwargs if sample_kwargs else dict()
         self.save_best_ckpt = save_best_ckpt
         self.best_metric = best_metric
+
+        if isinstance(interval, int):
+            self.interval = interval
+        elif isinstance(interval, dict):
+            if 'milestones' not in interval or 'interval' not in interval:
+                raise KeyError(
+                    '`milestones` and `interval` must exist in interval dict '
+                    'if you want to use the dynamic interval evaluation '
+                    f'strategy. But receive [{[k for k in interval.keys()]}] '
+                    'in the interval dict.')
+
+            self.milestones = interval['milestones']
+            self.interval = interval['interval']
+            # check if length of interval match with the milestones
+            if len(self.interval) != len(self.milestones) + 1:
+                raise ValueError(
+                    f'Length of `interval`(={len(self.interval)}) cannot '
+                    f'match length of `milestones`(={len(self.milestones)}).')
+
+            # check if milestones is in order
+            for idx in range(len(self.milestones) - 1):
+                former, latter = self.milestones[idx], self.milestones[idx + 1]
+                if former >= latter:
+                    raise ValueError(
+                        'Elements in `milestones` shoule in ascending order.')
+        else:
+            raise TypeError('`interval` only support `int` or `dict`,'
+                            f'recieve {type(self.interval)} instead.')
 
         if isinstance(best_metric, str):
             self.best_metric = [self.best_metric]
@@ -129,6 +190,14 @@ class GenerativeEvalHook(Hook):
                     self.rule[name]]
                 self._curr_best_ckpt_path[name] = None
 
+    def get_current_interval(self, runner):
+        if isinstance(self.interval, int):
+            return self.interval
+        else:
+            curr_iter = runner.iter + 1
+            index = bisect_right(self.milestones, curr_iter)
+            return self.interval[index]
+
     def before_run(self, runner):
         """The behavior before running.
 
@@ -147,7 +216,8 @@ class GenerativeEvalHook(Hook):
         Args:
             runner (``mmcv.runner.BaseRunner``): The runner.
         """
-        if not self.every_n_iters(runner, self.interval):
+        interval = self.get_current_interval(runner)
+        if not self.every_n_iters(runner, interval):
             return
 
         runner.model.eval()
