@@ -346,7 +346,11 @@ class BigGANDeepGenerator(nn.Module):
         # First linear layer
         x = self.noise2feat(z)
         # Reshape
-        x = x.view(x.size(0), -1, self.input_scale, self.input_scale)
+        # We use this conversion step to be able to use TF weights:
+        # TF convention on shape is [batch, height, width, channels]
+        # PT convention on shape is [batch, channels, height, width]
+        x = x.view(x.size(0), self.input_scale, self.input_scale, -1)
+        x = x.permute(0, 3, 1, 2).contiguous()
         # Loop over blocks
         for idx, conv_block in enumerate(self.conv_blocks):
             # Second inner loop in case block has multiple layers
