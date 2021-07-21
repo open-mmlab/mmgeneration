@@ -39,13 +39,22 @@ class SNGANGenResBlock(nn.Module):
             ``None``, would use ``_default_conv_cfg``. Default to ``None``.
         with_spectral_norm (bool, optional): Whether use spectral norm for
             conv blocks and norm layers. Default to True.
-        norm_eps (float, optional): ``eps`` used in norm layers.
-            Default to 1e-4.
+        norm_spectral_norm (bool, optional): Whether use spectral norm for
+            embedding layers in normalization blocks or not. Default to None.
+        norm_eps (float, optional): eps for Normalization layers (both
+            conditional and non-conditional ones). Default to `1e-4`.
+        sn_eps (float, optional): eps for Spectral Normalization operation.
+            Default to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
     """
 
-    _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
+    _default_conv_cfg = dict(
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        act_cfg=None,
+        with_spectral_norm=False)
 
     def __init__(self,
                  in_channels,
@@ -61,7 +70,9 @@ class SNGANGenResBlock(nn.Module):
                  auto_sync_bn=True,
                  conv_cfg=None,
                  with_spectral_norm=False,
+                 norm_spectral_norm=None,
                  norm_eps=1e-4,
+                 sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN')):
 
         super().__init__()
@@ -79,18 +90,24 @@ class SNGANGenResBlock(nn.Module):
         self.conv_cfg = deepcopy(self._default_conv_cfg)
         if conv_cfg is not None:
             self.conv_cfg.update(conv_cfg)
-        self.conv_cfg.setdefault('with_spectral_norm', with_spectral_norm)
+        with_spectral_norm = with_spectral_norm or \
+            self.conv_cfg.pop('with_spectral_norm', False)
 
         self.conv_1 = ConvModule(in_channels, hidden_channels, **self.conv_cfg)
         self.conv_2 = ConvModule(hidden_channels, out_channels,
                                  **self.conv_cfg)
+        if with_spectral_norm:
+            self.conv_1.conv = spectral_norm(self.conv_1.conv, eps=sn_eps)
+            self.conv_2.conv = spectral_norm(self.conv_2.conv, eps=sn_eps)
 
         self.norm_1 = SNConditionNorm(in_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      with_spectral_norm, norm_eps, init_cfg)
+                                      norm_spectral_norm, norm_eps, sn_eps,
+                                      init_cfg)
         self.norm_2 = SNConditionNorm(hidden_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      with_spectral_norm, norm_eps, init_cfg)
+                                      norm_spectral_norm, norm_eps, sn_eps,
+                                      init_cfg)
 
         if self.learnable_sc:
             # use hyperparameters-fixed shortcut here
@@ -101,7 +118,10 @@ class SNGANGenResBlock(nn.Module):
                 stride=1,
                 padding=0,
                 act_cfg=None,
-                with_spectral_norm=with_spectral_norm)
+                with_spectral_norm=False)
+            if with_spectral_norm:
+                self.shortcut.conv = spectral_norm(
+                    self.shortcut.conv, eps=sn_eps)
         self.init_weights()
 
     def forward(self, x, y=None):
@@ -171,26 +191,34 @@ class SNGANDiscResBlock(nn.Module):
             ``out_channels``. defualt to none.
         downsample (bool, optional): whether apply downsample operation in this
             module.  default to false.
-        with_spectral_norm (bool, optional): whether use spectral norm for
-            conv blocks and norm layers. default to true.
         act_cfg (dict, optional): config for activate function. default
             to ``dict(type='relu')``.
         conv_cfg (dict | none): config for conv blocks of this module. if pass
             ``none``, would use ``_default_conv_cfg``. default to ``none``.
+        with_spectral_norm (bool, optional): whether use spectral norm for
+            conv blocks and norm layers. default to true.
+        sn_eps (float, optional): eps for Spectral Normalization operation.
+            Default to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
     """
 
-    _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
+    _default_conv_cfg = dict(
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        act_cfg=None,
+        with_spectral_norm=False)
 
     def __init__(self,
                  in_channels,
                  out_channels,
                  hidden_channels=None,
                  downsample=False,
-                 with_spectral_norm=True,
                  act_cfg=dict(type='ReLU'),
                  conv_cfg=None,
+                 with_spectral_norm=True,
+                 sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN')):
 
         super().__init__()
@@ -202,13 +230,17 @@ class SNGANDiscResBlock(nn.Module):
         self.conv_cfg = deepcopy(self._default_conv_cfg)
         if conv_cfg is not None:
             self.conv_cfg.update(conv_cfg)
-        self.conv_cfg.setdefault('with_spectral_norm', with_spectral_norm)
+        with_spectral_norm = with_spectral_norm or \
+            self.conv_cfg.pop('with_spectral_norm', False)
 
         self.activate = build_activation_layer(act_cfg)
 
         self.conv_1 = ConvModule(in_channels, hidden_channels, **self.conv_cfg)
         self.conv_2 = ConvModule(hidden_channels, out_channels,
                                  **self.conv_cfg)
+        if with_spectral_norm:
+            self.conv_1.conv = spectral_norm(self.conv_1.conv, eps=sn_eps)
+            self.conv_2.conv = spectral_norm(self.conv_2.conv, eps=sn_eps)
 
         if self.with_downsample:
             self.downsample = nn.AvgPool2d(2, 2)
@@ -223,7 +255,10 @@ class SNGANDiscResBlock(nn.Module):
                 stride=1,
                 padding=0,
                 act_cfg=None,
-                with_spectral_norm=with_spectral_norm)
+                with_spectral_norm=False)
+            if with_spectral_norm:
+                self.shortcut.conv = spectral_norm(
+                    self.shortcut.conv, eps=sn_eps)
         self.init_weights()
 
     def forward(self, x):
@@ -287,22 +322,30 @@ class SNGANDiscHeadResBlock(nn.Module):
             module.  default to false.
         conv_cfg (dict | none): config for conv blocks of this module. if pass
             ``none``, would use ``_default_conv_cfg``. default to ``none``.
-        with_spectral_norm (bool, optional): whether use spectral norm for
-            conv blocks and norm layers. default to true.
         act_cfg (dict, optional): config for activate function. default
             to ``dict(type='relu')``.
+        with_spectral_norm (bool, optional): whether use spectral norm for
+            conv blocks and norm layers. default to true.
+        sn_eps (float, optional): eps for Spectral Normalization operation.
+            Default to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
     """
 
-    _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
+    _default_conv_cfg = dict(
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        act_cfg=None,
+        with_spectral_norm=False)
 
     def __init__(self,
                  in_channels,
                  out_channels,
                  conv_cfg=None,
-                 with_spectral_norm=True,
                  act_cfg=dict(type='ReLU'),
+                 with_spectral_norm=True,
+                 sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN')):
 
         super().__init__()
@@ -311,12 +354,17 @@ class SNGANDiscHeadResBlock(nn.Module):
         self.conv_cfg = deepcopy(self._default_conv_cfg)
         if conv_cfg is not None:
             self.conv_cfg.update(conv_cfg)
-        self.conv_cfg.setdefault('with_spectral_norm', with_spectral_norm)
+        with_spectral_norm = with_spectral_norm or \
+            self.conv_cfg.pop('with_spectral_norm', False)
 
         self.activate = build_activation_layer(act_cfg)
 
         self.conv_1 = ConvModule(in_channels, out_channels, **self.conv_cfg)
         self.conv_2 = ConvModule(out_channels, out_channels, **self.conv_cfg)
+
+        if with_spectral_norm:
+            self.conv_1.conv = spectral_norm(self.conv_1.conv, eps=sn_eps)
+            self.conv_2.conv = spectral_norm(self.conv_2.conv, eps=sn_eps)
 
         self.downsample = nn.AvgPool2d(2, 2)
 
@@ -328,7 +376,9 @@ class SNGANDiscHeadResBlock(nn.Module):
             stride=1,
             padding=0,
             act_cfg=None,
-            with_spectral_norm=with_spectral_norm)
+            with_spectral_norm=False)
+        if with_spectral_norm:
+            self.shortcut.conv = spectral_norm(self.shortcut.conv, eps=sn_eps)
         self.init_weights()
 
     def forward(self, x):
@@ -396,8 +446,10 @@ class SNConditionNorm(nn.Module):
             Synchronized ones when Distributed training is on. Defualt to True.
         with_spectral_norm (bool, optional): whether use spectral norm for
             conv blocks and norm layers. default to true.
-        norm_eps (float, optional): eps for Normalization layers (both conditional
-            and non-conditional ones). Default to `1e-4`.
+        norm_eps (float, optional): eps for Normalization layers (both
+            conditional and non-conditional ones). Default to `1e-4`.
+        sn_eps (float, optional): eps for Spectral Normalization operation.
+            Default to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
     """
@@ -411,6 +463,7 @@ class SNConditionNorm(nn.Module):
                  auto_sync_bn=True,
                  with_spectral_norm=False,
                  norm_eps=1e-4,
+                 sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN')):
         super().__init__()
         self.use_cbn = use_cbn
@@ -441,8 +494,10 @@ class SNConditionNorm(nn.Module):
             self.bias_embedding = nn.Embedding(num_classes, in_channels)
             self.reweight_embedding = self.init_type == 'BigGAN'
             if with_spectral_norm:
-                self.weight_embedding = spectral_norm(self.weight_embedding)
-                self.bias_embedding = spectral_norm(self.bias_embedding)
+                self.weight_embedding = spectral_norm(
+                    self.weight_embedding, eps=sn_eps)
+                self.bias_embedding = spectral_norm(
+                    self.bias_embedding, eps=sn_eps)
 
         self.init_weights()
 

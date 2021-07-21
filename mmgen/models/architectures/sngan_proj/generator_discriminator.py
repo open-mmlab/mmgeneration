@@ -82,8 +82,12 @@ class SNGANGenerator(nn.Module):
             Synchronized ones when Distributed training is on. Defualt to True.
         with_spectral_norm (bool, optional): Whether use spectral norm for
             conv blocks or not. Default to False.
+        norm_spectral_norm (bool, optional): Whether use spectral norm for
+            embedding layers in normalization blocks or not. Default to None.
         norm_eps (float, optional): eps for Normalization layers (both
-            conditional and non-conditional ones). Default to 1e-4.
+            conditional and non-conditional ones). Default to `1e-4`.
+        sn_eps (float, optional): eps for Spectral Normalization operation.
+            Default to `1e-12`.
         init_cfg (string, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
         pretrained (str | dict, optional): Path for the pretrained model or
@@ -114,7 +118,9 @@ class SNGANGenerator(nn.Module):
                  use_cbn=True,
                  auto_sync_bn=True,
                  with_spectral_norm=False,
+                 norm_spectral_norm=None,
                  norm_eps=1e-4,
+                 sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN'),
                  pretrained=None):
 
@@ -133,8 +139,14 @@ class SNGANGenerator(nn.Module):
         self.blocks_cfg.setdefault('use_cbn', use_cbn)
         self.blocks_cfg.setdefault('auto_sync_bn', auto_sync_bn)
         self.blocks_cfg.setdefault('with_spectral_norm', with_spectral_norm)
+
+        # set `norm_spectral_norm` as `with_spectral_norm` if not defined
+        norm_spectral_norm = norm_spectral_norm \
+            if norm_spectral_norm is not None else with_spectral_norm
+        self.blocks_cfg.setdefault('norm_spectral_norm', norm_spectral_norm)
         self.blocks_cfg.setdefault('init_cfg', init_cfg)
         self.blocks_cfg.setdefault('norm_eps', norm_eps)
+        self.blocks_cfg.setdefault('sn_eps', sn_eps)
 
         channels_cfg = deepcopy(self._defualt_channels_cfg) \
             if channels_cfg is None else deepcopy(channels_cfg)
@@ -465,6 +477,7 @@ class ProjDiscriminator(nn.Module):
                  blocks_cfg=dict(type='SNGANDiscResBlock'),
                  act_cfg=dict(type='ReLU'),
                  with_spectral_norm=True,
+                 sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN'),
                  pretrained=None):
 
@@ -482,6 +495,7 @@ class ProjDiscriminator(nn.Module):
         self.blocks_cfg = deepcopy(blocks_cfg)
         self.blocks_cfg.setdefault('act_cfg', act_cfg)
         self.blocks_cfg.setdefault('with_spectral_norm', with_spectral_norm)
+        self.blocks_cfg.setdefault('sn_eps', sn_eps)
         self.blocks_cfg.setdefault('init_cfg', init_cfg)
 
         channels_cfg = deepcopy(self._defualt_channels_cfg) \
