@@ -82,8 +82,11 @@ class SNGANGenerator(nn.Module):
             Synchronized ones when Distributed training is on. Defualt to True.
         with_spectral_norm (bool, optional): Whether use spectral norm for
             conv blocks or not. Default to False.
-        norm_spectral_norm (bool, optional): Whether use spectral norm for
-            embedding layers in normalization blocks or not. Default to None.
+        with_embedding_spectral_norm (bool, optional): Whether use spectral
+            norm for embedding layers in normalization blocks or not. If not
+            specified (set as ``None``), ``with_embedding_spectral_norm`` would
+            be set as the same value as ``with_spectral_norm``.
+            Default to None.
         norm_eps (float, optional): eps for Normalization layers (both
             conditional and non-conditional ones). Default to `1e-4`.
         sn_eps (float, optional): eps for Spectral Normalization operation.
@@ -118,7 +121,7 @@ class SNGANGenerator(nn.Module):
                  use_cbn=True,
                  auto_sync_bn=True,
                  with_spectral_norm=False,
-                 norm_spectral_norm=None,
+                 with_embedding_spectral_norm=None,
                  norm_eps=1e-4,
                  sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN'),
@@ -141,9 +144,10 @@ class SNGANGenerator(nn.Module):
         self.blocks_cfg.setdefault('with_spectral_norm', with_spectral_norm)
 
         # set `norm_spectral_norm` as `with_spectral_norm` if not defined
-        norm_spectral_norm = norm_spectral_norm \
-            if norm_spectral_norm is not None else with_spectral_norm
-        self.blocks_cfg.setdefault('norm_spectral_norm', norm_spectral_norm)
+        with_embedding_spectral_norm = with_embedding_spectral_norm \
+            if with_embedding_spectral_norm is not None else with_spectral_norm
+        self.blocks_cfg.setdefault('with_embedding_spectral_norm',
+                                   with_embedding_spectral_norm)
         self.blocks_cfg.setdefault('init_cfg', init_cfg)
         self.blocks_cfg.setdefault('norm_eps', norm_eps)
         self.blocks_cfg.setdefault('sn_eps', sn_eps)

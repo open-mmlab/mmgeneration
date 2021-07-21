@@ -116,9 +116,9 @@ class TestSNGANPROJGenerator(object):
         x = g(None, num_batches=2)
         assert x.shape == (2, 3, 32, 32)
 
-        # test norm_with_spectral_norm
+        # test with_embedding_spectral_norm
         config = deepcopy(self.default_config)
-        config['norm_spectral_norm'] = True
+        config['with_embedding_spectral_norm'] = True
         g = build_module(config)
         assert isinstance(g, SNGANGenerator)
         x = g(None, num_batches=2)
@@ -239,9 +239,9 @@ class TestSNGANPROJGenerator(object):
         x = g(None, num_batches=2)
         assert x.shape == (2, 3, 32, 32)
 
-        # test norm_with_spectral_norm
+        # test with_embedding_spectral_norm
         config = deepcopy(self.default_config)
-        config['norm_spectral_norm'] = True
+        config['with_embedding_spectral_norm'] = True
         g = build_module(config).cuda()
         assert isinstance(g, SNGANGenerator)
         x = g(None, num_batches=2)

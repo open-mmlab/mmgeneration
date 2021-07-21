@@ -2,10 +2,11 @@ from copy import deepcopy
 
 import numpy as np
 import torch.nn as nn
-from mmcv.cnn import (ConvModule, build_activation_layer, build_norm_layer,
+from mmcv.cnn import (build_activation_layer, build_norm_layer,
                       build_upsample_layer, constant_init, xavier_init)
 from torch.nn.utils import spectral_norm
 
+from mmgen.models.architectures.biggan.modules import SNConvModule
 from mmgen.models.builder import MODULES
 from mmgen.utils import check_dist_init
 
@@ -39,8 +40,11 @@ class SNGANGenResBlock(nn.Module):
             ``None``, would use ``_default_conv_cfg``. Default to ``None``.
         with_spectral_norm (bool, optional): Whether use spectral norm for
             conv blocks and norm layers. Default to True.
-        norm_spectral_norm (bool, optional): Whether use spectral norm for
-            embedding layers in normalization blocks or not. Default to None.
+        with_embedding_spectral_norm (bool, optional): Whether use spectral
+            norm for embedding layers in normalization blocks or not. If not
+            specified (set as ``None``), ``with_embedding_spectral_norm`` would
+            be set as the same value as ``with_spectral_norm``.
+            Default to None.
         norm_eps (float, optional): eps for Normalization layers (both
             conditional and non-conditional ones). Default to `1e-4`.
         sn_eps (float, optional): eps for Spectral Normalization operation.
@@ -49,12 +53,7 @@ class SNGANGenResBlock(nn.Module):
             Default to ``dict(type='BigGAN')``.
     """
 
-    _default_conv_cfg = dict(
-        kernel_size=3,
-        stride=1,
-        padding=1,
-        act_cfg=None,
-        with_spectral_norm=False)
+    _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
 
     def __init__(self,
                  in_channels,
@@ -70,7 +69,7 @@ class SNGANGenResBlock(nn.Module):
                  auto_sync_bn=True,
                  conv_cfg=None,
                  with_spectral_norm=False,
-                 norm_spectral_norm=None,
+                 with_embedding_spectral_norm=None,
                  norm_eps=1e-4,
                  sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN')):
@@ -90,38 +89,45 @@ class SNGANGenResBlock(nn.Module):
         self.conv_cfg = deepcopy(self._default_conv_cfg)
         if conv_cfg is not None:
             self.conv_cfg.update(conv_cfg)
-        with_spectral_norm = with_spectral_norm or \
-            self.conv_cfg.pop('with_spectral_norm', False)
 
-        self.conv_1 = ConvModule(in_channels, hidden_channels, **self.conv_cfg)
-        self.conv_2 = ConvModule(hidden_channels, out_channels,
-                                 **self.conv_cfg)
-        if with_spectral_norm:
-            self.conv_1.conv = spectral_norm(self.conv_1.conv, eps=sn_eps)
-            self.conv_2.conv = spectral_norm(self.conv_2.conv, eps=sn_eps)
+        # set `norm_spectral_norm` as `with_spectral_norm` if not defined
+        with_embedding_spectral_norm = with_embedding_spectral_norm \
+            if with_embedding_spectral_norm is not None else with_spectral_norm
+
+        sn_cfg = dict(eps=sn_eps)
+        self.conv_1 = SNConvModule(
+            in_channels,
+            hidden_channels,
+            with_spectral_norm=with_spectral_norm,
+            spectral_norm_cfg=sn_cfg,
+            **self.conv_cfg)
+        self.conv_2 = SNConvModule(
+            hidden_channels,
+            out_channels,
+            with_spectral_norm=with_spectral_norm,
+            spectral_norm_cfg=sn_cfg,
+            **self.conv_cfg)
 
         self.norm_1 = SNConditionNorm(in_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      norm_spectral_norm, norm_eps, sn_eps,
-                                      init_cfg)
+                                      with_embedding_spectral_norm, norm_eps,
+                                      sn_eps, init_cfg)
         self.norm_2 = SNConditionNorm(hidden_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      norm_spectral_norm, norm_eps, sn_eps,
-                                      init_cfg)
+                                      with_embedding_spectral_norm, norm_eps,
+                                      sn_eps, init_cfg)
 
         if self.learnable_sc:
             # use hyperparameters-fixed shortcut here
-            self.shortcut = ConvModule(
+            self.shortcut = SNConvModule(
                 in_channels,
                 out_channels,
                 kernel_size=1,
                 stride=1,
                 padding=0,
                 act_cfg=None,
-                with_spectral_norm=False)
-            if with_spectral_norm:
-                self.shortcut.conv = spectral_norm(
-                    self.shortcut.conv, eps=sn_eps)
+                with_spectral_norm=with_spectral_norm,
+                spectral_norm_cfg=sn_cfg)
         self.init_weights()
 
     def forward(self, x, y=None):
@@ -203,12 +209,7 @@ class SNGANDiscResBlock(nn.Module):
             Default to ``dict(type='BigGAN')``.
     """
 
-    _default_conv_cfg = dict(
-        kernel_size=3,
-        stride=1,
-        padding=1,
-        act_cfg=None,
-        with_spectral_norm=False)
+    _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
 
     def __init__(self,
                  in_channels,
@@ -230,17 +231,22 @@ class SNGANDiscResBlock(nn.Module):
         self.conv_cfg = deepcopy(self._default_conv_cfg)
         if conv_cfg is not None:
             self.conv_cfg.update(conv_cfg)
-        with_spectral_norm = with_spectral_norm or \
-            self.conv_cfg.pop('with_spectral_norm', False)
 
         self.activate = build_activation_layer(act_cfg)
 
-        self.conv_1 = ConvModule(in_channels, hidden_channels, **self.conv_cfg)
-        self.conv_2 = ConvModule(hidden_channels, out_channels,
-                                 **self.conv_cfg)
-        if with_spectral_norm:
-            self.conv_1.conv = spectral_norm(self.conv_1.conv, eps=sn_eps)
-            self.conv_2.conv = spectral_norm(self.conv_2.conv, eps=sn_eps)
+        sn_cfg = dict(eps=sn_eps)
+        self.conv_1 = SNConvModule(
+            in_channels,
+            hidden_channels,
+            with_spectral_norm=with_spectral_norm,
+            spectral_norm_cfg=sn_cfg,
+            **self.conv_cfg)
+        self.conv_2 = SNConvModule(
+            hidden_channels,
+            out_channels,
+            with_spectral_norm=with_spectral_norm,
+            spectral_norm_cfg=sn_cfg,
+            **self.conv_cfg)
 
         if self.with_downsample:
             self.downsample = nn.AvgPool2d(2, 2)
@@ -248,17 +254,15 @@ class SNGANDiscResBlock(nn.Module):
         self.learnable_sc = in_channels != out_channels or downsample
         if self.learnable_sc:
             # use hyperparameters-fixed shortcut here
-            self.shortcut = ConvModule(
+            self.shortcut = SNConvModule(
                 in_channels,
                 out_channels,
                 kernel_size=1,
                 stride=1,
                 padding=0,
                 act_cfg=None,
-                with_spectral_norm=False)
-            if with_spectral_norm:
-                self.shortcut.conv = spectral_norm(
-                    self.shortcut.conv, eps=sn_eps)
+                with_spectral_norm=with_spectral_norm,
+                spectral_norm_cfg=sn_cfg)
         self.init_weights()
 
     def forward(self, x):
@@ -332,12 +336,7 @@ class SNGANDiscHeadResBlock(nn.Module):
             Default to ``dict(type='BigGAN')``.
     """
 
-    _default_conv_cfg = dict(
-        kernel_size=3,
-        stride=1,
-        padding=1,
-        act_cfg=None,
-        with_spectral_norm=False)
+    _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
 
     def __init__(self,
                  in_channels,
@@ -354,31 +353,35 @@ class SNGANDiscHeadResBlock(nn.Module):
         self.conv_cfg = deepcopy(self._default_conv_cfg)
         if conv_cfg is not None:
             self.conv_cfg.update(conv_cfg)
-        with_spectral_norm = with_spectral_norm or \
-            self.conv_cfg.pop('with_spectral_norm', False)
 
         self.activate = build_activation_layer(act_cfg)
 
-        self.conv_1 = ConvModule(in_channels, out_channels, **self.conv_cfg)
-        self.conv_2 = ConvModule(out_channels, out_channels, **self.conv_cfg)
-
-        if with_spectral_norm:
-            self.conv_1.conv = spectral_norm(self.conv_1.conv, eps=sn_eps)
-            self.conv_2.conv = spectral_norm(self.conv_2.conv, eps=sn_eps)
+        sn_cfg = dict(eps=sn_eps)
+        self.conv_1 = SNConvModule(
+            in_channels,
+            out_channels,
+            with_spectral_norm=with_spectral_norm,
+            spectral_norm_cfg=sn_cfg,
+            **self.conv_cfg)
+        self.conv_2 = SNConvModule(
+            out_channels,
+            out_channels,
+            with_spectral_norm=with_spectral_norm,
+            spectral_norm_cfg=sn_cfg,
+            **self.conv_cfg)
 
         self.downsample = nn.AvgPool2d(2, 2)
 
         # use hyperparameters-fixed shortcut here
-        self.shortcut = ConvModule(
+        self.shortcut = SNConvModule(
             in_channels,
             out_channels,
             kernel_size=1,
             stride=1,
             padding=0,
             act_cfg=None,
-            with_spectral_norm=False)
-        if with_spectral_norm:
-            self.shortcut.conv = spectral_norm(self.shortcut.conv, eps=sn_eps)
+            with_spectral_norm=with_spectral_norm,
+            spectral_norm_cfg=sn_cfg)
         self.init_weights()
 
     def forward(self, x):
