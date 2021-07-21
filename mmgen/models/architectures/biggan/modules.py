@@ -88,6 +88,10 @@ class BigGANGenResBlock(nn.Module):
                 kernel_size=1,
                 stride=1,
                 padding=0,
+<<<<<<< HEAD
+=======
+                conv_cfg=shortcut_cfg,
+>>>>>>> 3281ed376f7a5dbdda9777302d505c14435d4c41
                 act_cfg=None,
                 with_spectral_norm=with_spectral_norm,
                 spectral_norm_cfg=dict(eps=sn_eps))
@@ -187,6 +191,7 @@ class BigGANConditionBN(nn.Module):
                  with_spectral_norm=True,
                  auto_sync_bn=True):
         super().__init__()
+<<<<<<< HEAD
         assert num_features > 0
         if linear_input_channels > 0:
             self.use_cbn = True
@@ -207,6 +212,22 @@ class BigGANConditionBN(nn.Module):
             if with_spectral_norm:
                 self.gain = spectral_norm(self.gain, eps=sn_eps)
                 self.bias = spectral_norm(self.bias, eps=sn_eps)
+=======
+        assert num_features > 0 and linear_input_channels > 0
+        # Prepare gain and bias layers
+        if not input_is_label:
+            self.gain = nn.Linear(
+                linear_input_channels, num_features, bias=False)
+            self.bias = nn.Linear(
+                linear_input_channels, num_features, bias=False)
+            # please pay attention if shared_embedding is False
+            if with_spectral_norm:
+                self.gain = spectral_norm(self.gain, eps=sn_eps)
+                self.bias = spectral_norm(self.bias, eps=sn_eps)
+        else:
+            self.gain = nn.Embedding(linear_input_channels, num_features)
+            self.bias = nn.Embedding(linear_input_channels, num_features)
+>>>>>>> 3281ed376f7a5dbdda9777302d505c14435d4c41
 
         self.bn = nn.BatchNorm2d(
             num_features,
@@ -361,6 +382,10 @@ class BigGANDiscResBlock(nn.Module):
                 kernel_size=1,
                 stride=1,
                 padding=0,
+<<<<<<< HEAD
+=======
+                conv_cfg=shortcut_cfg,
+>>>>>>> 3281ed376f7a5dbdda9777302d505c14435d4c41
                 act_cfg=None,
                 with_spectral_norm=with_spectral_norm,
                 spectral_norm_cfg=dict(eps=sn_eps))
