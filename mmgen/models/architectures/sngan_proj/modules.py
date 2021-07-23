@@ -47,7 +47,7 @@ class SNGANGenResBlock(nn.Module):
             Default to None.
         norm_eps (float, optional): eps for Normalization layers (both
             conditional and non-conditional ones). Default to `1e-4`.
-        sn_eps (float, optional): eps for Spectral Normalization operation.
+        sn_eps (float, optional): eps for spectral normalization operation.
             Default to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
@@ -203,7 +203,7 @@ class SNGANDiscResBlock(nn.Module):
             ``none``, would use ``_default_conv_cfg``. default to ``none``.
         with_spectral_norm (bool, optional): whether use spectral norm for
             conv blocks and norm layers. default to true.
-        sn_eps (float, optional): eps for Spectral Normalization operation.
+        sn_eps (float, optional): eps for spectral normalization operation.
             Default to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
@@ -330,7 +330,7 @@ class SNGANDiscHeadResBlock(nn.Module):
             to ``dict(type='relu')``.
         with_spectral_norm (bool, optional): whether use spectral norm for
             conv blocks and norm layers. default to true.
-        sn_eps (float, optional): eps for Spectral Normalization operation.
+        sn_eps (float, optional): eps for spectral normalization operation.
             Default to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
@@ -451,7 +451,7 @@ class SNConditionNorm(nn.Module):
             conv blocks and norm layers. default to true.
         norm_eps (float, optional): eps for Normalization layers (both
             conditional and non-conditional ones). Default to `1e-4`.
-        sn_eps (float, optional): eps for Spectral Normalization operation.
+        sn_eps (float, optional): eps for spectral normalization operation.
             Default to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.

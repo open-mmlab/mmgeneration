@@ -89,7 +89,7 @@ class SNGANGenerator(nn.Module):
             Default to None.
         norm_eps (float, optional): eps for Normalization layers (both
             conditional and non-conditional ones). Default to `1e-4`.
-        sn_eps (float, optional): eps for Spectral Normalization operation.
+        sn_eps (float, optional): eps for spectral normalization operation.
             Default to `1e-12`.
         init_cfg (string, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
