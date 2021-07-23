@@ -116,9 +116,25 @@ class TestSNGANPROJGenerator(object):
         x = g(None, num_batches=2)
         assert x.shape == (2, 3, 32, 32)
 
+        # test with_embedding_spectral_norm
+        config = deepcopy(self.default_config)
+        config['with_embedding_spectral_norm'] = True
+        g = build_module(config)
+        assert isinstance(g, SNGANGenerator)
+        x = g(None, num_batches=2)
+        assert x.shape == (2, 3, 32, 32)
+
         # test norm_eps
         config = deepcopy(self.default_config)
         config['norm_eps'] = 1e-9
+        g = build_module(config)
+        assert isinstance(g, SNGANGenerator)
+        x = g(None, num_batches=2)
+        assert x.shape == (2, 3, 32, 32)
+
+        # test sn_eps
+        config = deepcopy(self.default_config)
+        config['sn_eps'] = 1e-12
         g = build_module(config)
         assert isinstance(g, SNGANGenerator)
         x = g(None, num_batches=2)
@@ -223,12 +239,28 @@ class TestSNGANPROJGenerator(object):
         x = g(None, num_batches=2)
         assert x.shape == (2, 3, 32, 32)
 
+        # test with_embedding_spectral_norm
+        config = deepcopy(self.default_config)
+        config['with_embedding_spectral_norm'] = True
+        g = build_module(config).cuda()
+        assert isinstance(g, SNGANGenerator)
+        x = g(None, num_batches=2)
+        assert x.shape == (2, 3, 32, 32)
+
         # test norm_eps
         config = deepcopy(self.default_config)
         config['norm_eps'] = 1e-9
         g = build_module(config).cuda()
         assert isinstance(g, SNGANGenerator)
         x = g(None, num_batches=2)
+        assert x.shape == (2, 3, 32, 32)
+
+        # test sn_eps
+        config = deepcopy(self.default_config)
+        config['sn_eps'] = 1e-12
+        g = build_module(config).cuda()
+        assert isinstance(g, SNGANGenerator)
+        x = g(None, num_batches=2).cuda()
         assert x.shape == (2, 3, 32, 32)
 
         # test different init_cfg --> BigGAN
@@ -404,7 +436,7 @@ class TestSNGANPROJDiscriminator(object):
             d = build_module(config)
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
-    def test_lsgan_discriminator_cuda(self):
+    def test_sngan_proj_discriminator_cuda(self):
 
         # test default setting with builder
         d = build_module(self.default_config).cuda()
@@ -493,7 +525,7 @@ class TestSNGANPROJDiscriminator(object):
         config['init_cfg'] = dict(type='biggan')
         d = build_module(config).cuda()
         assert isinstance(d, ProjDiscriminator)
-        score = d(self.x, self.label)
+        score = d(self.x.cuda(), self.label.cuda())
         assert score.shape == (2, 1)
 
         # test different init_cfg --> sngan
@@ -501,7 +533,7 @@ class TestSNGANPROJDiscriminator(object):
         config['init_cfg'] = dict(type='sngan-proj')
         d = build_module(config).cuda()
         assert isinstance(d, ProjDiscriminator)
-        score = d(self.x, self.label)
+        score = d(self.x.cuda(), self.label.cuda())
         assert score.shape == (2, 1)
 
 
