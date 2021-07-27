@@ -34,11 +34,6 @@ scheduler
 .. automodule:: mmgen.core.scheduler
     :members:
 
-utils
-^^^^^^^^^^
-.. automodule:: mmgen.core.utils
-    :members:
-
 mmgen.datasets
 --------------
 
@@ -73,14 +68,4 @@ gans
 losses
 ^^^^^^^^^^^^
 .. automodule:: mmgen.models.losses
-    :members:
-
-ops
-^^^^^^^^^^
-.. automodule:: mmgen.models.ops
-    :members:
-
-utils
-^^^^^^^^^^
-.. automodule:: mmgen.models.utils
     :members:
