@@ -2,7 +2,6 @@ import argparse
 import os
 
 import mmcv
-import numpy as np
 import torch
 from mmcv import Config, DictAction
 from mmcv.runner import load_checkpoint
@@ -11,6 +10,7 @@ from torchvision.utils import save_image
 from mmgen.apis import set_random_seed
 from mmgen.core.evaluation import slerp
 from mmgen.models import build_model
+from mmgen.models.architectures.common import get_module_device
 
 
 def parse_args():
@@ -22,6 +22,18 @@ def parse_args():
         '--use-cpu',
         action='store_true',
         help='whether to use cpu device for sampling')
+    parser.add_argument(
+        '--conditional',
+        action='store_true',
+        help='whether the model is conditional model')
+    parser.add_argument(
+        '--fix_z',
+        action='store_true',
+        help='whether to fix the noise for conditonal model')
+    parser.add_argument(
+        '--fix_y',
+        action='store_true',
+        help='whether to fix the label for conditional model')
     parser.add_argument('--seed', type=int, default=2021, help='random seed')
     parser.add_argument(
         '--deterministic',
@@ -73,6 +85,7 @@ def parse_args():
 @torch.no_grad()
 def batch_inference(generator,
                     noise,
+                    embedding=None,
                     num_batches=-1,
                     max_batch_size=16,
                     dict_key=None,
@@ -90,17 +103,36 @@ def batch_inference(generator,
         noise_group = [None] * (
             num_batches // max_batch_size +
             (1 if num_batches % max_batch_size > 0 else 0))
+
+    # split noise into groups
+    if embedding is not None:
+        assert isinstance(embedding, torch.Tensor)
+        num_batches = embedding.shape[0]
+        embedding_group = torch.split(embedding, max_batch_size, 0)
+    else:
+        embedding_group = [None] * (
+            num_batches // max_batch_size +
+            (1 if num_batches % max_batch_size > 0 else 0))
+
     # split batchsize into groups
     batchsize_group = [max_batch_size] * (num_batches // max_batch_size)
     if num_batches % max_batch_size > 0:
         batchsize_group += [num_batches % max_batch_size]
+
+    device = get_module_device(generator)
     outputs = []
-    for _noise, _num_batches in zip(noise_group, batchsize_group):
+    for _noise, _embedding, _num_batches in zip(noise_group, embedding_group,
+                                                batchsize_group):
         if isinstance(_noise, torch.Tensor):
-            _noise = _noise.cuda()
+            _noise = _noise.to(device)
         if isinstance(_noise, list):
-            _noise = [ele.cuda() for ele in _noise]
-        output = generator(_noise, num_batches=_num_batches, **kwargs)
+            _noise = [ele.to(device) for ele in _noise]
+        if _embedding is not None:
+            _embedding = _embedding.to(device)
+            output = generator(
+                _noise, _embedding, num_batches=_num_batches, **kwargs)
+        else:
+            output = generator(_noise, num_batches=_num_batches, **kwargs)
         output = output[dict_key] if dict_key else output
         if isinstance(output, list):
             output = output[0]
@@ -116,13 +148,21 @@ def sample_from_path(generator,
                      latent_a,
                      latent_b,
                      intervals,
+                     label_a=None,
+                     label_b=None,
                      interp_mode='lerp',
                      space='z',
                      **kwargs):
-    interp_alphas = np.linspace(0, 1, intervals)
+    interp_alphas = torch.linspace(0, 1, intervals)
     interp_samples = []
 
+    if label_a is not None and label_b is not None:
+        device = get_module_device(generator)
+        embedding_a = generator.shared_embedding(label_a.to(device))
+        embedding_b = generator.shared_embedding(label_b.to(device))
+
     for alpha in interp_alphas:
+        # calculate latent interpolation
         if interp_mode == 'lerp':
             latent_interp = torch.lerp(latent_a, latent_b, alpha)
         else:
@@ -130,7 +170,16 @@ def sample_from_path(generator,
             latent_interp = slerp(latent_a, latent_b, alpha)
         if space == 'w':
             latent_interp = [latent_interp]
-        sample = batch_inference(generator, latent_interp, **kwargs)
+
+        # calculate embedding interpolation
+        if label_a is not None and label_b is not None:
+            embedding_interp = embedding_a + (
+                embedding_b - embedding_a) * alpha.to(embedding_a.dtype)
+            kwargs.update(dict(use_embedding=False))
+            sample = batch_inference(generator, latent_interp,
+                                     embedding_interp, **kwargs)
+        else:
+            sample = batch_inference(generator, latent_interp, **kwargs)
         interp_samples.append(sample)
 
     return interp_samples
@@ -186,18 +235,40 @@ def main():
         return_noise=True,
         **kwargs)
 
+    # get labels corresponding to each endpoint
+    label_batch = None
+    if args.conditional:
+        label_batch = batch_inference(
+            generator,
+            None,
+            num_batches=args.endpoint,
+            dict_key='label',
+            return_noise=True,
+            **kwargs)
+        # set label fixed
+        if args.fix_y:
+            label_batch = label_batch[0] * torch.ones_like(label_batch)
+        # set noise fixed
+        if args.fix_z:
+            noise_batch = torch.cat(
+                [noise_batch[0:1, ]] * noise_batch.shape[0], dim=0)
+
     if args.space == 'w':
         kwargs['truncation_latent'] = generator.get_mean_latent()
         kwargs['input_is_latent'] = True
 
     if args.show_mode == 'sequence':
-        results = sample_from_path(generator, noise_batch[:-1, ],
-                                   noise_batch[1:, ], args.interval,
-                                   args.interp_mode, args.space, **kwargs)
+        results = sample_from_path(
+            generator, noise_batch[:-1, ], noise_batch[1:, ], args.interval,
+            label_batch[:-1, ] if label_batch is not None else None,
+            label_batch[1:, ] if label_batch is not None else None,
+            args.interp_mode, args.space, **kwargs)
     else:
-        results = sample_from_path(generator, noise_batch[::2, ],
-                                   noise_batch[1::2, ], args.interval,
-                                   args.interp_mode, args.space, **kwargs)
+        results = sample_from_path(
+            generator, noise_batch[::2, ], noise_batch[1::2, ], args.interval,
+            label_batch[::2, ] if label_batch is not None else None,
+            label_batch[1::2, ] if label_batch is not None else None,
+            args.interp_mode, args.space, **kwargs)
     # reorder results
     results = torch.stack(results).permute(1, 0, 2, 3, 4)
     _, _, ch, h, w = results.shape

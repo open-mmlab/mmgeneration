@@ -269,7 +269,14 @@ class BigGANDeepGenerator(nn.Module):
 
         return _default_arch_cfgs[str(output_scale)]
 
-    def forward(self, noise, label=None, num_batches=0, return_noise=False):
+    def forward(self,
+                noise,
+                label=None,
+                num_batches=0,
+                return_noise=False,
+                truncation=-1.0,
+                use_embedding=True,
+                rgb2bgr=False):
         """Forward function.
 
         Args:
@@ -287,6 +294,18 @@ class BigGANDeepGenerator(nn.Module):
             return_noise (bool, optional): If True, ``noise_batch`` and
                 ``label`` will be returned in a dict with ``fake_img``.
                 Defaults to False.
+            truncation (float, optional): Truncation factor. Give value not
+                less than 0., the truncation trick will be adopted.
+                Otherwise, the truncation trick will not be adopted.
+                Defaults to -1..
+            use_embedding (bool, optional): Whether to use `shared_embedding`
+                inside the forward function. Set to `False` if embedding has
+                already be performed outside this function. Default to True.
+            rgb2bgr (bool, optional): Whether to reformat the output channels
+                with order `bgr`. We provide several pre-trained BigGAN-Deep
+                weights whose output channels order is `rgb`. You can set
+                this argument to True to use the weights.
+
 
         Returns:
             torch.Tensor | dict: If not ``return_noise``, only the output image
@@ -307,13 +326,19 @@ class BigGANDeepGenerator(nn.Module):
         else:
             assert num_batches > 0
             noise_batch = torch.randn((num_batches, self.noise_size))
+        # perform truncation
+        if truncation >= 0.0:
+            noise_batch = torch.clamp(noise_batch, -1. * truncation,
+                                      1. * truncation)
 
         if self.num_classes == 0:
             label_batch = None
 
         elif isinstance(label, torch.Tensor):
-            assert label.ndim == 1, ('The label shoube be in shape of (n, )'
-                                     f'but got {label.shape}.')
+            if use_embedding:
+                assert label.ndim == 1, (
+                    'The label shoube be in shape of (n, )'
+                    f'but got {label.shape}.')
             label_batch = label
         elif callable(label):
             label_generator = label
@@ -327,7 +352,10 @@ class BigGANDeepGenerator(nn.Module):
         noise_batch = noise_batch.to(get_module_device(self))
         if label_batch is not None:
             label_batch = label_batch.to(get_module_device(self))
-            class_vector = self.shared_embedding(label_batch)
+            if use_embedding:
+                class_vector = self.shared_embedding(label_batch)
+            else:
+                class_vector = label_batch
         else:
             class_vector = None
 
@@ -360,6 +388,9 @@ class BigGANDeepGenerator(nn.Module):
         # Apply batchnorm-relu-conv-tanh at output
         x = self.output_layer(x)
         out_img = torch.tanh(x)
+
+        if rgb2bgr:
+            out_img = out_img[:, [2, 1, 0], ...]
 
         if return_noise:
             output = dict(
