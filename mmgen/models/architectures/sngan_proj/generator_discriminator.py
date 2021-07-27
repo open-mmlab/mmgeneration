@@ -278,7 +278,7 @@ class SNGANGenerator(nn.Module):
         return out_img
 
     def init_weights(self, pretrained=None, strict=True):
-        """Init weights for SNGAN-Proj and SAGAN. If ``pretrained=None`` and
+        """Init weights for SNGAN-Proj and SAGAN. If ``pretrained=None``,
         weight initialization would follow the ``INIT_TYPE`` in
         ``init_cfg=dict(type=INIT_TYPE)``.
 
