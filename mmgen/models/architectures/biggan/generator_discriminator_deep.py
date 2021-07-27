@@ -17,7 +17,7 @@ from .modules import SelfAttentionBlock, SNConvModule
 
 @MODULES.register_module()
 class BigGANDeepGenerator(nn.Module):
-    """BigGAN-Deep Generator. The implementation is refer to
+    """BigGAN-Deep Generator. The implementation refers to
     https://github.com/ajbrock/BigGAN-PyTorch/blob/master/BigGANdeep.py # noqa.
 
     In BigGAN, we use a SAGAN-based architecture composing of an
@@ -25,14 +25,14 @@ class BigGANDeepGenerator(nn.Module):
     with spectral normalization. BigGAN-deep follow the same architecture.
 
     The main difference between BigGAN and BigGAN-deep is that
-    BigGAN-deep use more deeper residual blocks to construct the whole
+    BigGAN-deep uses deeper residual blocks to construct the whole
     model.
 
     More details can be found in: Large Scale GAN Training for High Fidelity
     Natural Image Synthesis (ICLR2019).
 
     The design of the model structure is highly corresponding to the output
-    resolution. For origin BigGAN-Deep's generator, you can set ``output_scale``
+    resolution. For the original BigGAN-Deep's generator, you can set ``output_scale``
     as you need and use the default value of ``arch_cfg`` and ``blocks_cfg``.
     If you want to customize the model, you can set the arguments in this way:
 
@@ -40,20 +40,20 @@ class BigGANDeepGenerator(nn.Module):
     the ``_default_arch_cfgs`` in the ``_get_default_arch_cfg`` function to see
     the format of the ``arch_cfg``. Basically, you need to provide information
     of each block such as the numbers of input and output channels, whether to
-    perform upsampling etc.
+    perform upsampling, etc.
 
     ``blocks_cfg``: Config for the convolution block. You can adjust block params
     like ``channel_ratio`` here. You can also replace the block type
     to your registered customized block. However, you should notice that some
-    params are shared between these blocks like ``act_cfg``, ``with_spectral_norm``,
-    ``sn_eps`` etc.
+    params are shared among these blocks like ``act_cfg``, ``with_spectral_norm``,
+    ``sn_eps``, etc.
 
     Args:
         output_scale (int): Output scale for the generated image.
         noise_size (int, optional): Size of the input noise vector. Defaults
             to 120.
         num_classes (int, optional): The number of conditional classes. If set
-            to 0, this init function will return an unconditional model.
+            to 0, this model will be degraded to an unconditional model.
             Defaults to 0.
         out_channels (int, optional): Number of channels in output images.
             Defaults to 3.
@@ -346,14 +346,13 @@ class BigGANDeepGenerator(nn.Module):
         # First linear layer
         x = self.noise2feat(z)
         # Reshape
-        # We use this conversion step to be able to use TF weights:
+        # We use this conversion step to allow for loading TF weights
         # TF convention on shape is [batch, height, width, channels]
         # PT convention on shape is [batch, channels, height, width]
         x = x.view(x.size(0), self.input_scale, self.input_scale, -1)
         x = x.permute(0, 3, 1, 2).contiguous()
         # Loop over blocks
         for idx, conv_block in enumerate(self.conv_blocks):
-            # Second inner loop in case block has multiple layers
             if isinstance(conv_block, SelfAttentionBlock):
                 x = conv_block(x)
             else:
@@ -414,7 +413,7 @@ class BigGANDeepGenerator(nn.Module):
 
 @MODULES.register_module()
 class BigGANDeepDiscriminator(nn.Module):
-    """BigGAN-Deep Discriminator. The implementation is refer to
+    """BigGAN-Deep Discriminator. The implementation refers to
     https://github.com/ajbrock/BigGAN-PyTorch/blob/master/BigGANdeep.py # noqa.
 
     The overall structure of BigGAN's discriminator is the same with

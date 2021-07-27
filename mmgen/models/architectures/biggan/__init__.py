@@ -9,6 +9,5 @@ __all__ = [
     'BigGANGenerator', 'BigGANGenResBlock', 'BigGANConditionBN',
     'BigGANDiscriminator', 'SelfAttentionBlock', 'BigGANDiscResBlock',
     'BigGANDeepDiscriminator', 'BigGANDeepGenerator', 'BigGANDeepDiscResBlock',
-    'BigGANDeepGenResBlock'
-    'SNConvModule'
+    'BigGANDeepGenResBlock', 'SNConvModule'
 ]

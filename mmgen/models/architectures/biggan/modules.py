@@ -607,8 +607,6 @@ class BigGANDeepDiscResBlock(nn.Module):
             block. Defaults to True.
         with_spectral_norm (bool, optional): Whether to use spectral
             normalization. Defaults to True.
-        is_head_block (bool, optional): Whether this block is the first block
-            of BigGAN. Defaults to False.
     """
 
     def __init__(self,

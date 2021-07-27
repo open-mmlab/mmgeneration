@@ -17,7 +17,8 @@ from .modules import SelfAttentionBlock, SNConvModule
 
 @MODULES.register_module()
 class BigGANGenerator(nn.Module):
-    """BigGAN Generator.
+    """BigGAN Generator. The implementation refers to
+    https://github.com/ajbrock/BigGAN-PyTorch/blob/master/BigGAN.py # noqa.
 
     In BigGAN, we use a SAGAN-based architecture composing of an self-attention
     block and number of convolutional residual blocks with spectral
@@ -26,12 +27,28 @@ class BigGANGenerator(nn.Module):
     More details can be found in: Large Scale GAN Training for High Fidelity
     Natural Image Synthesis (ICLR2019).
 
+    The design of the model structure is highly corresponding to the output
+    resolution. For the original BigGAN's generator, you can set ``output_scale``
+    as you need and use the default value of ``arch_cfg`` and ``blocks_cfg``.
+    If you want to customize the model, you can set the arguments in this way:
+
+    ``arch_cfg``: Config for the architecture of this generator. You can refer
+    the ``_default_arch_cfgs`` in the ``_get_default_arch_cfg`` function to see
+    the format of the ``arch_cfg``. Basically, you need to provide information
+    of each block such as the numbers of input and output channels, whether to
+    perform upsampling, etc.
+
+    ``blocks_cfg``: Config for the convolution block. You can replace the block
+    type to your registered customized block and adjust block params here.
+    However, you should notice that some params are shared among these blocks
+    like ``act_cfg``, ``with_spectral_norm``, ``sn_eps``, etc.
+
     Args:
         output_scale (int): Output scale for the generated image.
         noise_size (int, optional): Size of the input noise vector. Defaults
             to 120.
         num_classes (int, optional): The number of conditional classes. If set
-            to 0, this init function will return an unconditional model.
+            to 0, this model will be degraded to an unconditional model.
             Defaults to 0.
         out_channels (int, optional): Number of channels in output images.
             Defaults to 3.
@@ -320,7 +337,6 @@ class BigGANGenerator(nn.Module):
         # Loop over blocks
         counter = 0
         for conv_block in self.conv_blocks:
-            # Second inner loop in case block has multiple layers
             if isinstance(conv_block, SelfAttentionBlock):
                 x = conv_block(x)
             else:
@@ -382,7 +398,31 @@ class BigGANGenerator(nn.Module):
 
 @MODULES.register_module()
 class BigGANDiscriminator(nn.Module):
-    """BigGAN Discriminator.
+    """BigGAN Discriminator. The implementation refers to
+    https://github.com/ajbrock/BigGAN-PyTorch/blob/master/BigGAN.py # noqa.
+
+    In BigGAN, we use a SAGAN-based architecture composing of an self-attention
+    block and number of convolutional residual blocks with spectral
+    normalization.
+
+    More details can be found in: Large Scale GAN Training for High Fidelity
+    Natural Image Synthesis (ICLR2019).
+
+    The design of the model structure is highly corresponding to the output
+    resolution. For the original BigGAN's generator, you can set ``output_scale``
+    as you need and use the default value of ``arch_cfg`` and ``blocks_cfg``.
+    If you want to customize the model, you can set the arguments in this way:
+
+    ``arch_cfg``: Config for the architecture of this generator. You can refer
+    the ``_default_arch_cfgs`` in the ``_get_default_arch_cfg`` function to see
+    the format of the ``arch_cfg``. Basically, you need to provide information
+    of each block such as the numbers of input and output channels, whether to
+    perform upsampling, etc.
+
+    ``blocks_cfg``: Config for the convolution block. You can replace the block
+    type to your registered customized block and adjust block params here.
+    However, you should notice that some params are shared among these blocks
+    like ``act_cfg``, ``with_spectral_norm``, ``sn_eps``, etc.
 
     Args:
         input_scale (int): The scale of the input image.
