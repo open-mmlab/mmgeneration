@@ -262,7 +262,8 @@ class BigGANGenerator(nn.Module):
                 num_batches=0,
                 return_noise=False,
                 truncation=-1.0,
-                use_embedding=True):
+                use_embedding=True,
+                rgb2bgr=False):
         """Forward function.
 
         Args:
@@ -287,6 +288,10 @@ class BigGANGenerator(nn.Module):
             use_embedding (bool, optional): Whether to use `shared_embedding`
                 inside the forward function. Set to `False` if embedding has
                 already be performed outside this function.
+            rgb2bgr (bool, optional): Whether to reformat the output channels
+                with order `bgr`. We provide several pre-trained BigGAN
+                weights whose output channels order is `rgb`. You can set
+                this argument to True to use the weights.
 
         Returns:
             torch.Tensor | dict: If not ``return_noise``, only the output image
@@ -369,6 +374,9 @@ class BigGANGenerator(nn.Module):
         # Apply batchnorm-relu-conv-tanh at output
         out_img = torch.tanh(self.output_layer(x))
 
+        if rgb2bgr:
+            out_img = out_img[:, [2, 1, 0], ...]
+            
         if return_noise:
             output = dict(
                 fake_img=out_img, noise_batch=noise_batch, label=label_batch)
