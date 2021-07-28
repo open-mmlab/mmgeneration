@@ -4,6 +4,7 @@ import numpy as np
 import torch.nn as nn
 from mmcv.cnn import (build_activation_layer, build_norm_layer,
                       build_upsample_layer, constant_init, xavier_init)
+from torch.nn.init import xavier_uniform_
 from torch.nn.utils import spectral_norm
 
 from mmgen.models.architectures.biggan.modules import SNConvModule
@@ -165,11 +166,19 @@ class SNGANGenResBlock(nn.Module):
 
     def init_weights(self):
         """Initialize weights for the model."""
-        if self.init_type.upper() == 'BIGGAN':
+        if self.init_type.upper() == 'STUDIO':
             nn.init.orthogonal_(self.conv_1.conv.weight)
             nn.init.orthogonal_(self.conv_2.conv.weight)
+            self.conv_1.conv.bias.data.fill_(0.)
+            self.conv_2.conv.bias.data.fill_(0.)
             if self.learnable_sc:
                 nn.init.orthogonal_(self.shortcut.conv.weight)
+                self.shortcut.conv.bias.data.fill_(0.)
+        elif self.init_type.upper() == 'BIGGAN':
+            xavier_uniform_(self.conv_1.conv.weight, gain=1)
+            xavier_uniform_(self.conv_2.conv.weight, gain=1)
+            if self.learnable_sc:
+                xavier_uniform_(self.shortcut.conv.weight, gain=1)
         elif self.init_type.upper() == 'SAGAN':
             xavier_init(self.conv_1, gain=1, distribution='uniform')
             xavier_init(self.conv_2, gain=1, distribution='uniform')
@@ -294,11 +303,19 @@ class SNGANDiscResBlock(nn.Module):
         return out
 
     def init_weights(self):
-        if self.init_type.upper() == 'BIGGAN':
+        if self.init_type.upper() == 'STUDIO':
             nn.init.orthogonal_(self.conv_1.conv.weight)
             nn.init.orthogonal_(self.conv_2.conv.weight)
+            self.conv_1.conv.bias.data.fill_(0.)
+            self.conv_2.conv.bias.data.fill_(0.)
             if self.learnable_sc:
                 nn.init.orthogonal_(self.shortcut.conv.weight)
+                self.shortcut.conv.bias.data.fill_(0.)
+        elif self.init_type.upper() == 'BIGGAN':
+            xavier_uniform_(self.conv_1.conv.weight, gain=1)
+            xavier_uniform_(self.conv_2.conv.weight, gain=1)
+            if self.learnable_sc:
+                xavier_uniform_(self.shortcut.conv.weight, gain=1)
         elif self.init_type.upper() == 'SAGAN':
             xavier_init(self.conv_1, gain=1, distribution='uniform')
             xavier_init(self.conv_2, gain=1, distribution='uniform')
@@ -408,10 +425,14 @@ class SNGANDiscHeadResBlock(nn.Module):
         return out
 
     def init_weights(self):
-        if self.init_type.upper() == 'BIGGAN':
-            nn.init.orthogonal_(self.conv_1.conv.weight)
-            nn.init.orthogonal_(self.conv_2.conv.weight)
-            nn.init.orthogonal_(self.shortcut.conv.weight)
+        if self.init_type.upper() == 'STUDIO':
+            for m in [self.conv_1, self.conv_2, self.shortcut]:
+                nn.init.orthogonal_(m.conv.weight)
+                m.conv.bias.data.fill_(0.)
+        elif self.init_type.upper() == 'BIGGAN':
+            xavier_uniform_(self.conv_1.conv.weight, gain=1)
+            xavier_uniform_(self.conv_2.conv.weight, gain=1)
+            xavier_uniform_(self.shortcut.conv.weight, gain=1)
         elif self.init_type.upper() == 'SAGAN':
             xavier_init(self.conv_1, gain=1, distribution='uniform')
             xavier_init(self.conv_2, gain=1, distribution='uniform')
@@ -495,7 +516,9 @@ class SNConditionNorm(nn.Module):
                                  'than 0 with `use_cbn=True`')
             self.weight_embedding = nn.Embedding(num_classes, in_channels)
             self.bias_embedding = nn.Embedding(num_classes, in_channels)
-            self.reweight_embedding = self.init_type == 'BigGAN'
+            self.reweight_embedding = (
+                self.init_type.upper() == 'BIGGAN'
+                or self.init_type.upper() == 'STUDIO')
             if with_spectral_norm:
                 self.weight_embedding = spectral_norm(
                     self.weight_embedding, eps=sn_eps)
@@ -527,15 +550,15 @@ class SNConditionNorm(nn.Module):
 
     def init_weights(self):
         if self.use_cbn:
-            if self.init_type.upper() == 'BIGGAN':
+            if self.init_type.upper() == 'STUDIO':
                 nn.init.orthogonal_(self.weight_embedding.weight)
                 nn.init.orthogonal_(self.bias_embedding.weight)
-            elif self.init_type.upper() == 'SAGAN':
-                xavier_init(
-                    self.weight_embedding, gain=1, distribution='uniform')
-                xavier_init(
-                    self.bias_embedding, gain=1, distribution='uniform')
-            elif self.init_type.upper() in ['SNGAN', 'SNGAN-PROJ', 'GAN-PROJ']:
+            elif self.init_type.upper() == 'BIGGAN':
+                xavier_uniform_(self.weight_embedding.weight, gain=1)
+                xavier_uniform_(self.bias_embedding.weight, gain=1)
+            elif self.init_type.upper() in [
+                    'SNGAN', 'SNGAN-PROJ', 'GAN-PROJ', 'SAGAN'
+            ]:
                 constant_init(self.weight_embedding, 1)
                 constant_init(self.bias_embedding, 0)
             else:
