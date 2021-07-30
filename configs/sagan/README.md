@@ -38,8 +38,8 @@ To be noted that, in Pytorch Studio GAN, **inplace ReLU** is used in generator a
 | sagan_128 | ImageNet |      w       |   1    |      1      |   1000000   | 27.367 | 40.1162 | 29.848 | 34.726  | [Download](https://download.openmmlab.com/mmgen/sagan/sagan_128_imagenet1k_convert-studio-rgb_20210730_153357-eddb0d1d.pth) | [Download](https://drive.google.com/drive/folders/1ZYaqeeumDgxOPDhRR5QLeLFIpgBJ9S6B) |
 
 
-'\*\*' denote results evaluated with our pipeline.
-'\*\*\*' denote results released by Pytorch-StudioGAN.
+* '\*\*' denote results evaluated with our pipeline.
+* '\*\*\*' denote results released by Pytorch-StudioGAN.
 
 For IS evaluation,
 1. We use [Tero's Inception](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt) for feature extraction.
