@@ -13,7 +13,7 @@ model = dict(
         act_cfg=dict(type='ReLU', inplace=True),
         concat_noise=True,
         auto_sync_bn=False,
-	rgb2bgr=True),
+        rgb2bgr=True),
     discriminator=dict(
         type='BigGANDeepDiscriminator',
         input_scale=512,

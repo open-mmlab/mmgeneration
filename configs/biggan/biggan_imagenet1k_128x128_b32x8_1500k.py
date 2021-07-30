@@ -37,7 +37,7 @@ runner = dict(
     pass_training_status=True)
 
 # Note set your inception_pkl's path
-inception_pkl = "work_dirs/inception_pkl/imagenet.pkl"
+inception_pkl = 'work_dirs/inception_pkl/imagenet.pkl'
 evaluation = dict(
     type='GenerativeEvalHook',
     interval=10000,
