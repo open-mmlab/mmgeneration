@@ -12,6 +12,9 @@ from mmgen.core.evaluation import slerp
 from mmgen.models import build_model
 from mmgen.models.architectures.common import get_module_device
 
+_default_embedding_name = dict(
+    BigGANGenerator='shared_embedding', BigGANDeepGenerator='shared_embedding')
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -27,11 +30,16 @@ def parse_args():
         action='store_true',
         help='whether the model is conditional model')
     parser.add_argument(
-        '--fix_z',
+        '--embedding-name',
+        type=str,
+        default=None,
+        help='name of conditional model\'s embedding layer')
+    parser.add_argument(
+        '--fix-z',
         action='store_true',
         help='whether to fix the noise for conditonal model')
     parser.add_argument(
-        '--fix_y',
+        '--fix-y',
         action='store_true',
         help='whether to fix the label for conditional model')
     parser.add_argument('--seed', type=int, default=2021, help='random seed')
@@ -90,6 +98,27 @@ def batch_inference(generator,
                     max_batch_size=16,
                     dict_key=None,
                     **kwargs):
+    """Inference function to get a batch of desired data from output dictionary
+    of generator.
+
+    Args:
+        generator (nn.Module): Generator of an unconditional model
+            or a conditional model.
+        noise (Tensor|list[torch.tensor]|None): A batch of noise
+            Tensor(wrappered into a list for `W` space interpolation).
+        embedding (Tensor, optional): Embedding tensor of label for
+            conditional models. Defaults to None.
+        num_batches (int, optional): The number of batchs for
+            inference. Defaults to -1.
+        max_batch_size (int, optional): The number of batch size for
+            inference. Defaults to 16.
+        dict_key (str, optional): key used to get results from output
+            dictionary of generator. Defaults to None.
+
+    Returns:
+        torch.Tensor: Tensor of output image, noise batch or label
+            batch.
+    """
     # split noise into groups
     if noise is not None:
         if isinstance(noise, torch.Tensor):
@@ -148,6 +177,7 @@ def sample_from_path(generator,
                      latent_a,
                      latent_b,
                      intervals,
+                     embedding_name=None,
                      label_a=None,
                      label_b=None,
                      interp_mode='lerp',
@@ -158,8 +188,13 @@ def sample_from_path(generator,
 
     if label_a is not None and label_b is not None:
         device = get_module_device(generator)
-        embedding_a = generator.shared_embedding(label_a.to(device))
-        embedding_b = generator.shared_embedding(label_b.to(device))
+        if embedding_name is None:
+            generator_name = generator.__class__.__name__
+            assert generator_name in _default_embedding_name
+            embedding_name = _default_embedding_name[generator_name]
+        embedding_fn = getattr(generator, embedding_name)
+        embedding_a = embedding_fn(label_a.to(device))
+        embedding_b = embedding_fn(label_b.to(device))
 
     for alpha in interp_alphas:
         # calculate latent interpolation
@@ -260,12 +295,14 @@ def main():
     if args.show_mode == 'sequence':
         results = sample_from_path(
             generator, noise_batch[:-1, ], noise_batch[1:, ], args.interval,
+            args.embedding_name,
             label_batch[:-1, ] if label_batch is not None else None,
             label_batch[1:, ] if label_batch is not None else None,
             args.interp_mode, args.space, **kwargs)
     else:
         results = sample_from_path(
             generator, noise_batch[::2, ], noise_batch[1::2, ], args.interval,
+            args.embedding_name,
             label_batch[::2, ] if label_batch is not None else None,
             label_batch[1::2, ] if label_batch is not None else None,
             args.interp_mode, args.space, **kwargs)

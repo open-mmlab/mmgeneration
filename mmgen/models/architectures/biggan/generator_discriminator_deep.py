@@ -92,6 +92,10 @@ class BigGANDeepGenerator(nn.Module):
             dict containing information for pretained models whose necessary
             key is 'ckpt_path'. Besides, you can also provide 'prefix' to load
             the generator part from the whole state dict. Defaults to None.
+        rgb2bgr (bool, optional): Whether to reformat the output channels
+                with order `bgr`. We provide several pre-trained BigGAN-Deep
+                weights whose output channels order is `rgb`. You can set
+                this argument to True to use the weights.
     """
 
     def __init__(self,
@@ -114,7 +118,8 @@ class BigGANDeepGenerator(nn.Module):
                  blocks_cfg=dict(type='BigGANDeepGenResBlock'),
                  arch_cfg=None,
                  out_norm_cfg=dict(type='BN'),
-                 pretrained=None):
+                 pretrained=None,
+                 rgb2bgr=False):
         super().__init__()
         self.noise_size = noise_size
         self.num_classes = num_classes
@@ -128,6 +133,7 @@ class BigGANDeepGenerator(nn.Module):
         self.blocks_cfg = deepcopy(blocks_cfg)
         self.upsample_cfg = deepcopy(upsample_cfg)
         self.block_depth = block_depth
+        self.rgb2bgr = rgb2bgr
 
         # Validity Check
         # If 'num_classes' equals to zero, we shall set 'with_shared_embedding'
@@ -275,8 +281,7 @@ class BigGANDeepGenerator(nn.Module):
                 num_batches=0,
                 return_noise=False,
                 truncation=-1.0,
-                use_embedding=True,
-                rgb2bgr=False):
+                use_embedding=True):
         """Forward function.
 
         Args:
@@ -301,11 +306,6 @@ class BigGANDeepGenerator(nn.Module):
             use_embedding (bool, optional): Whether to use `shared_embedding`
                 inside the forward function. Set to `False` if embedding has
                 already be performed outside this function. Default to True.
-            rgb2bgr (bool, optional): Whether to reformat the output channels
-                with order `bgr`. We provide several pre-trained BigGAN-Deep
-                weights whose output channels order is `rgb`. You can set
-                this argument to True to use the weights.
-
 
         Returns:
             torch.Tensor | dict: If not ``return_noise``, only the output image
@@ -389,7 +389,7 @@ class BigGANDeepGenerator(nn.Module):
         x = self.output_layer(x)
         out_img = torch.tanh(x)
 
-        if rgb2bgr:
+        if self.rgb2bgr:
             out_img = out_img[:, [2, 1, 0], ...]
 
         if return_noise:
