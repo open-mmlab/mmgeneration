@@ -1,28 +1,26 @@
-# follow pytorch GAN-Studio, random flip is used in the dataset
-
 _base_ = [
-    '../_base_/models/sngan_proj_32x32.py',
-    '../_base_/datasets/cifar10_nopad.py',
-    '../_base_/default_runtime.py',
+    '../_base_/models/sagan_32x32.py', '../_base_/datasets/cifar10_nopad.py',
+    '../_base_/default_runtime.py'
 ]
 
-num_classes = 10
 model = dict(
-    num_classes=num_classes,
-    generator=dict(num_classes=num_classes),
-    discriminator=dict(num_classes=num_classes))
+    num_classes=10,
+    generator=dict(num_classes=10, act_cfg=dict(type='ReLU', inplace=True)),
+    discriminator=dict(
+        num_classes=10, act_cfg=dict(type='ReLU', inplace=True)),
+)
 
-n_disc = 5
 lr_config = None
 checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=20)
 custom_hooks = [
     dict(
         type='VisualizeUnconditionalSamples',
         output_dir='training_samples',
-        interval=5000)
+        interval=1000)
 ]
 
-inception_pkl = './work_dirs/inception_pkl/cifar10.pkl'
+inception_pkl = \
+    './work_dirs/inception_pkl/cifar10.pkl'
 
 evaluation = dict(
     type='GenerativeEvalHook',
@@ -39,6 +37,7 @@ evaluation = dict(
     best_metric=['fid', 'is'],
     sample_kwargs=dict(sample_model='orig'))
 
+n_disc = 5
 total_iters = 100000 * n_disc
 # use ddp wrapper for faster training
 use_ddp_wrapper = True

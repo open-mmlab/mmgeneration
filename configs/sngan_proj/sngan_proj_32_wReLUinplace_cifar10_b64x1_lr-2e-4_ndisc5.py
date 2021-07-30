@@ -2,8 +2,7 @@
 
 _base_ = [
     '../_base_/models/sngan_proj_32x32.py',
-    '../_base_/datasets/cifar10_nopad.py',
-    '../_base_/default_runtime.py',
+    '../_base_/datasets/cifar10_nopad.py', '../_base_/default_runtime.py'
 ]
 
 num_classes = 10

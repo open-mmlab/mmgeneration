@@ -82,6 +82,14 @@ These methods have been carefully studied and supported in our frameworks:
 </details>
 
 <details open>
+<summary>Conditional GANs (click to collapse)</summary>
+
+- ✅ [SNGAN-Proj](configs/sngan_proj/README.md) (ICLR'2018)
+- ✅ [SAGAN](configs/sagan/README.md) (ICML'2019)
+
+</details>
+
+<details open>
 <summary>Image2Image Translation (click to collapse)</summary>
 
 - ✅ [Pix2Pix](configs/pix2pix/README.md) (CVPR'2017)
