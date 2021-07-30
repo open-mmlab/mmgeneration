@@ -85,7 +85,8 @@ v0.2.0 在 30/05/2021 发布。 关于细节和发布历史，请参考 [changel
 <details open>
 <summary>Conditional GANs (点击折叠)</summary>
 
-- ✅ [SNGAN-Proj](configs/sngan_proj/README.md) (ICLR'2018)
+- ✅ [SNGAN](configs/sngan_proj/README.md) (ICLR'2018)
+- ✅ [Projection GAN](configs/sngan_proj/README.md) (ICLR'2018)
 - ✅ [SAGAN](configs/sagan/README.md) (ICML'2019)
 
 </details>

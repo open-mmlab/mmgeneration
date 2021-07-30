@@ -84,7 +84,8 @@ These methods have been carefully studied and supported in our frameworks:
 <details open>
 <summary>Conditional GANs (click to collapse)</summary>
 
-- ✅ [SNGAN-Proj](configs/sngan_proj/README.md) (ICLR'2018)
+- ✅ [SNGAN](configs/sngan_proj/README.md) (ICLR'2018)
+- ✅ [Projection GAN](configs/sngan_proj/README.md) (ICLR'2018)
 - ✅ [SAGAN](configs/sagan/README.md) (ICML'2019)
 
 </details>

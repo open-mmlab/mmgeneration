@@ -17,8 +17,7 @@ custom_hooks = [
         interval=1000)
 ]
 
-inception_pkl = \
-    './work_dirs/inception_pkl/imagenet.pkl'
+inception_pkl = './work_dirs/inception_pkl/imagenet.pkl'
 
 evaluation = dict(
     type='GenerativeEvalHook',
