@@ -31,7 +31,6 @@
 ```
 TOTAL_ITERS = TOTAL_ITERS_MMGEN / n_disc
 ```
-where `total_iters` and `total_iters` denote total training iterations in our implementation and others.
 
 We also provide converted pre-train models from [Pytorch-StudioGAN](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN).
 To be noted that, in Pytorch Studio GAN, **inplace ReLU** is used in generator and discriminator.
@@ -43,8 +42,7 @@ To be noted that, in Pytorch Studio GAN, **inplace ReLU** is used in generator a
 
 
 * `Our Pipeline` denote results evaluated with our pipeline.
-* `Studio` denote results released by Pytorch-StudioGAN.
-
+* `StudioGAN` denote results released by Pytorch-StudioGAN.
 
 For IS metric, our implementation is different from PyTorch-Studio GAN in the following aspects:
 1. We use [Tero's Inception](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt) for feature extraction.
