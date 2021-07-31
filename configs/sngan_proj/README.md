@@ -29,21 +29,21 @@
 
 '\*' Iteration counting rule in our implementation is different from others. If you want to align with other codebases, you can use the following conversion formula:
 ```
-MMGEN_TOTAL_ITERS = TOTAL_ITERS / n_disc
+TOTAL_ITERS = TOTAL_ITERS_MMGEN / n_disc
 ```
 where `total_iters` and `total_iters` denote total training iterations in our implementation and others.
 
 We also provide converted pre-train models from [Pytorch-StudioGAN](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN).
 To be noted that, in Pytorch Studio GAN, **inplace ReLU** is used in generator and discriminator.
 
-|     Models     | Dataset  | Inplace ReLU | n_disc | Total Iters | IS (Ours Pipeline) | FID (Ours Pipeline) | IS (Release) | FID (Release) |                                                           Download                                                           |                                Original Download link                                |
+|     Models     | Dataset  | Inplace ReLU | n_disc | Total Iters | IS (Ours Pipeline) | FID (Ours Pipeline) | IS (StudioGAN) | FID (StudioGAN) |                                                           Download                                                           |                                Original Download link                                |
 | :------------: | :------: | :----------: | :----: | :---------: | :----------------: | :-----------------: | :----------: | :-----------: | :--------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------: |
 | sngan_proj_32  | CIFAR10  |      w       |   5    |   100000    |       9.372        |        9.205        |    8.677     |    13.248     |  [Download](https://download.openmmlab.com/mmgen/sngan_proj/sngan_cifar10_convert-studio-rgb_20210709_111346-2979202d.pth)   | [Download](https://drive.google.com/drive/folders/16s5Cr-V-NlfLyy_uyXEkoNxLBt-8wYSM) |
 | sngan_proj_128 | ImageNet |      w       |   2    |   1000000   |       30.218       |       29.8199       |    32.247    |    26.792     | [Download](https://download.openmmlab.com/mmgen/sngan_proj/sngan_imagenet1k_convert-studio-rgb_20210709_111406-877b1130.pth) | [Download](https://drive.google.com/drive/folders/1Ek2wAMlxpajL_M8aub4DKQ9B313K8XhS) |
 
 
-* `Ours Pipeline` denote results evaluated with our pipeline.
-* `Release` denote results released by Pytorch-StudioGAN.
+* `Our Pipeline` denote results evaluated with our pipeline.
+* `Studio` denote results released by Pytorch-StudioGAN.
 
 
 For IS metric, our implementation is different from PyTorch-Studio GAN in the following aspects:
