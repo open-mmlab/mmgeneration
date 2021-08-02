@@ -88,6 +88,8 @@ v0.2.0 在 30/05/2021 发布。 关于细节和发布历史，请参考 [changel
 - ✅ [SNGAN](configs/sngan_proj/README.md) (ICLR'2018)
 - ✅ [Projection GAN](configs/sngan_proj/README.md) (ICLR'2018)
 - ✅ [SAGAN](configs/sagan/README.md) (ICML'2019)
+- ✅ [BIGGAN/BIGGAN-DEEP](configs/biggan/README.md) (ICLR'2019)
+
 
 </details>
 
