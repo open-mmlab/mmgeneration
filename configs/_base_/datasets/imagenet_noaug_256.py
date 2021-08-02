@@ -10,11 +10,7 @@ img_norm_cfg = dict(
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='CenterCropLongEdge', keys=['img']),
-    dict(
-        type='Resize',
-        size=(256, 256),
-        interpolation='bicubic',
-        backend='pillow'),
+    dict(type='Resize', size=(256, 256), backend='pillow'),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='ImageToTensor', keys=['img']),
     dict(type='ToTensor', keys=['gt_label']),
@@ -24,11 +20,7 @@ train_pipeline = [
 test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='CenterCropLongEdge', keys=['img']),
-    dict(
-        type='Resize',
-        size=(128, 128),
-        interpolation='bicubic',
-        backend='pillow'),
+    dict(type='Resize', size=(128, 128), backend='pillow'),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='ImageToTensor', keys=['img']),
     dict(type='Collect', keys=['img'])
