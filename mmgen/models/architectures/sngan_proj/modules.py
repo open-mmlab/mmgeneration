@@ -544,6 +544,7 @@ class SNConditionNorm(nn.Module):
             weight = self.weight_embedding(y)[:, :, None, None]
             bias = self.bias_embedding(y)[:, :, None, None]
             if self.reweight_embedding:
+                # print('reweight_called --> correct')
                 weight = weight + 1.
             out = out * weight + bias
         return out

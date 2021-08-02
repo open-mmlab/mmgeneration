@@ -295,7 +295,7 @@ class SNGANGenerator(nn.Module):
         return out_img
 
     def init_weights(self, pretrained=None, strict=True):
-        """Init weights for SNGAN-Proj and SAGAN. If ``pretrained=None`` and
+        """Init weights for SNGAN-Proj and SAGAN. If ``pretrained=None``,
         weight initialization would follow the ``INIT_TYPE`` in
         ``init_cfg=dict(type=INIT_TYPE)``.
 
@@ -341,12 +341,12 @@ class SNGANGenerator(nn.Module):
                 for m in self.modules():
                     if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
                         nn.init.orthogonal_(m.weight)
-                        if not isinstance(m, nn.Embedding):
+                        if hasattr(m, 'bias') and m.bias is not None:
                             m.bias.data.fill_(0.)
             elif self.init_type.upper() == 'BIGGAN':
                 # initialization method from BigGAN-pytorch
                 #   * weight: xavier_init gain=1
-                #   * bias  : 0
+                #   * bias  : default
                 for n, m in self.named_modules():
                     if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
                         xavier_uniform_(m.weight, gain=1)
@@ -694,7 +694,7 @@ class ProjDiscriminator(nn.Module):
                 for m in self.modules():
                     if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
                         nn.init.orthogonal_(m.weight, gain=1)
-                        if not isinstance(m, nn.Embedding):
+                        if hasattr(m, 'bias') and m.bias is not None:
                             m.bias.data.fill_(0.)
             elif self.init_type.upper() == 'BIGGAN':
                 # initialization method from BigGAN-pytorch
