@@ -87,6 +87,7 @@ These methods have been carefully studied and supported in our frameworks:
 - ✅ [SNGAN](configs/sngan_proj/README.md) (ICLR'2018)
 - ✅ [Projection GAN](configs/sngan_proj/README.md) (ICLR'2018)
 - ✅ [SAGAN](configs/sagan/README.md) (ICML'2019)
+- ✅ [BIGGAN/BIGGAN-DEEP](configs/biggan/README.md) (ICLR'2019)
 
 </details>
 
