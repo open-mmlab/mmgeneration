@@ -1,16 +1,20 @@
 # dataset settings
 dataset_type = 'mmcls.ImageNet'
 
-# different from mmcls, we adopt the setting used in BigGAN.
-# We use `RandomCropLongEdge` in training and `CenterCropLongEdge` in testing.
-# Importantly, the `to_rgb` is set to `False` to remain image orders as BGR.
+# This config is set for extract inception state of ImageNet dataset.
+# Following the pipeline of BigGAN, we center crop and resize images to 128x128
+# before feeding them to the Inception Net. Please refer to
+# https://github.com/ajbrock/BigGAN-PyTorch/blob/master/scripts/utils/prepare_data.sh
+# https://github.com/ajbrock/BigGAN-PyTorch/blob/master/make_hdf5.py
+# https://github.com/ajbrock/BigGAN-PyTorch/blob/master/calculate_inception_moments.py  # noqa
+
+# Importantly, the `to_rgb` is set to `True` to convert image orders to RGB.
 img_norm_cfg = dict(
-    mean=[127.5, 127.5, 127.5], std=[127.5, 127.5, 127.5], to_rgb=False)
+    mean=[127.5, 127.5, 127.5], std=[127.5, 127.5, 127.5], to_rgb=True)
 train_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='RandomCropLongEdge', keys=['img']),
+    dict(type='CenterCropLongEdge', keys=['img']),
     dict(type='Resize', size=(128, 128), backend='pillow'),
-    dict(type='RandomFlip', flip_prob=0.5, direction='horizontal'),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='ImageToTensor', keys=['img']),
     dict(type='ToTensor', keys=['gt_label']),
