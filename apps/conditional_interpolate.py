@@ -14,6 +14,10 @@ from mmgen.models import build_model
 from mmgen.models.architectures import BigGANDeepGenerator, BigGANGenerator
 from mmgen.models.architectures.common import get_module_device
 
+# yapf: disable
+sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
+
+
 _default_embedding_name = dict(
     BigGANGenerator='shared_embedding',
     BigGANDeepGenerator='shared_embedding',
@@ -99,7 +103,7 @@ def batch_inference(generator,
 
     Args:
         generator (nn.Module): Generator of a conditional model.
-        noise (Tensor|list[torch.tensor]|None): A batch of noise
+        noise (Tensor | list[torch.tensor] | None): A batch of noise
             Tensor.
         embedding (Tensor, optional): Embedding tensor of label for
             conditional models. Defaults to None.
@@ -128,7 +132,7 @@ def batch_inference(generator,
             num_batches // max_batch_size +
             (1 if num_batches % max_batch_size > 0 else 0))
 
-    # split noise into groups
+    # split embedding into groups
     if embedding is not None:
         assert isinstance(embedding, torch.Tensor)
         num_batches = embedding.shape[0]
@@ -158,8 +162,8 @@ def batch_inference(generator,
         output = output[dict_key] if dict_key else output
         if isinstance(output, list):
             output = output[0]
-        # once we get sampling results, immediately put them into cpu to save
-        # cuda memory
+        # once obtaining sampled results, we immediately put them into cpu
+        # to save cuda memory
         outputs.append(output.to('cpu'))
     outputs = torch.cat(outputs, dim=0)
     return outputs
