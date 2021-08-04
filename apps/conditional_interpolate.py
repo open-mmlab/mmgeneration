@@ -3,6 +3,7 @@ import os
 
 import mmcv
 import torch
+import torch.nn as nn
 from mmcv import Config, DictAction
 from mmcv.runner import load_checkpoint
 from torchvision.utils import save_image
@@ -10,10 +11,14 @@ from torchvision.utils import save_image
 from mmgen.apis import set_random_seed
 from mmgen.core.evaluation import slerp
 from mmgen.models import build_model
+from mmgen.models.architectures import BigGANDeepGenerator, BigGANGenerator
 from mmgen.models.architectures.common import get_module_device
 
 _default_embedding_name = dict(
-    BigGANGenerator='shared_embedding', BigGANDeepGenerator='shared_embedding')
+    BigGANGenerator='shared_embedding',
+    BigGANDeepGenerator='shared_embedding',
+    SNGANGenerator='NULL',
+    SAGANGenerator='NULL')
 
 
 def parse_args():
@@ -148,10 +153,8 @@ def batch_inference(generator,
             _noise = [ele.to(device) for ele in _noise]
         if _embedding is not None:
             _embedding = _embedding.to(device)
-            output = generator(
-                _noise, _embedding, num_batches=_num_batches, **kwargs)
-        else:
-            output = generator(_noise, num_batches=_num_batches, **kwargs)
+        output = generator(
+            _noise, label=_embedding, num_batches=_num_batches, **kwargs)
         output = output[dict_key] if dict_key else output
         if isinstance(output, list):
             output = output[0]
@@ -166,7 +169,7 @@ def batch_inference(generator,
 def sample_from_path(generator,
                      latent_a,
                      latent_b,
-                      label_a,
+                     label_a,
                      label_b,
                      intervals,
                      embedding_name=None,
@@ -175,15 +178,14 @@ def sample_from_path(generator,
     interp_alphas = torch.linspace(0, 1, intervals)
     interp_samples = []
 
-    if label_a is not None and label_b is not None:
-        device = get_module_device(generator)
-        if embedding_name is None:
-            generator_name = generator.__class__.__name__
-            assert generator_name in _default_embedding_name
-            embedding_name = _default_embedding_name[generator_name]
-        embedding_fn = getattr(generator, embedding_name)
-        embedding_a = embedding_fn(label_a.to(device))
-        embedding_b = embedding_fn(label_b.to(device))
+    device = get_module_device(generator)
+    if embedding_name is None:
+        generator_name = generator.__class__.__name__
+        assert generator_name in _default_embedding_name
+        embedding_name = _default_embedding_name[generator_name]
+    embedding_fn = getattr(generator, embedding_name, nn.Identity())
+    embedding_a = embedding_fn(label_a.to(device))
+    embedding_b = embedding_fn(label_b.to(device))
 
     for alpha in interp_alphas:
         # calculate latent interpolation
@@ -194,14 +196,12 @@ def sample_from_path(generator,
             latent_interp = slerp(latent_a, latent_b, alpha)
 
         # calculate embedding interpolation
-        if label_a is not None and label_b is not None:
-            embedding_interp = embedding_a + (
-                embedding_b - embedding_a) * alpha.to(embedding_a.dtype)
+        embedding_interp = embedding_a + (
+            embedding_b - embedding_a) * alpha.to(embedding_a.dtype)
+        if isinstance(generator, (BigGANDeepGenerator, BigGANGenerator)):
             kwargs.update(dict(use_embedding=False))
-            sample = batch_inference(generator, latent_interp,
-                                     embedding_interp, **kwargs)
-        else:
-            sample = batch_inference(generator, latent_interp, **kwargs)
+        sample = batch_inference(generator, latent_interp, embedding_interp,
+                                 **kwargs)
         interp_samples.append(sample)
 
     return interp_samples
@@ -274,21 +274,17 @@ def main():
             [noise_batch[0:1, ]] * noise_batch.shape[0], dim=0)
 
     if args.show_mode == 'sequence':
-        results = sample_from_path(
-            generator, noise_batch[:-1, ], noise_batch[1:, ], 
-            label_batch[:-1, ],
-            label_batch[1:, ],
-            args.interval,
-            args.embedding_name,
-            args.interp_mode, **kwargs)
+        results = sample_from_path(generator, noise_batch[:-1, ],
+                                   noise_batch[1:, ], label_batch[:-1, ],
+                                   label_batch[1:, ], args.interval,
+                                   args.embedding_name, args.interp_mode,
+                                   **kwargs)
     else:
-        results = sample_from_path(
-            generator, noise_batch[::2, ], noise_batch[1::2, ],
-            label_batch[:-1, ],
-            label_batch[1:, ],
-            args.interval,
-            args.embedding_name,
-            args.interp_mode, **kwargs)
+        results = sample_from_path(generator, noise_batch[::2, ],
+                                   noise_batch[1::2, ], label_batch[:-1, ],
+                                   label_batch[1:, ], args.interval,
+                                   args.embedding_name, args.interp_mode,
+                                   **kwargs)
     # reorder results
     results = torch.stack(results).permute(1, 0, 2, 3, 4)
     _, _, ch, h, w = results.shape
