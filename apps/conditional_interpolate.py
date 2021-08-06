@@ -203,7 +203,7 @@ def sample_from_path(generator,
         embedding_interp = embedding_a + (
             embedding_b - embedding_a) * alpha.to(embedding_a.dtype)
         if isinstance(generator, (BigGANDeepGenerator, BigGANGenerator)):
-            kwargs.update(dict(use_embedding=False))
+            kwargs.update(dict(use_outside_embedding=True))
         sample = batch_inference(generator, latent_interp, embedding_interp,
                                  **kwargs)
         interp_samples.append(sample)

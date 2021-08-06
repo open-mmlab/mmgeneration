@@ -268,7 +268,7 @@ class BigGANGenerator(nn.Module):
                 num_batches=0,
                 return_noise=False,
                 truncation=-1.0,
-                use_embedding=True):
+                use_outside_embedding=False):
         """Forward function.
 
         Args:
@@ -290,9 +290,10 @@ class BigGANGenerator(nn.Module):
                 less than 0., the truncation trick will be adopted.
                 Otherwise, the truncation trick will not be adopted.
                 Defaults to -1..
-            use_embedding (bool, optional): Whether to use `shared_embedding`
-                inside the forward function. Set to `False` if embedding has
-                already be performed outside this function.
+            use_outside_embedding (bool, optional): Whether to use outside
+                embedding or use `shared_embedding`. Set to `True` if
+                embedding has already be performed outside this function.
+                Default to False.
 
         Returns:
             torch.Tensor | dict: If not ``return_noise``, only the output image
@@ -323,7 +324,7 @@ class BigGANGenerator(nn.Module):
             label_batch = None
 
         elif isinstance(label, torch.Tensor):
-            if use_embedding:
+            if not use_outside_embedding:
                 assert label.ndim == 1, (
                     'The label shoube be in shape of (n, )'
                     f'but got {label.shape}.')
@@ -340,7 +341,7 @@ class BigGANGenerator(nn.Module):
         noise_batch = noise_batch.to(get_module_device(self))
         if label_batch is not None:
             label_batch = label_batch.to(get_module_device(self))
-            if use_embedding:
+            if not use_outside_embedding:
                 class_vector = self.shared_embedding(label_batch)
             else:
                 class_vector = label_batch
