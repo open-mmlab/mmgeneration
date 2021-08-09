@@ -150,6 +150,10 @@ class BaseGAN(nn.Module, metaclass=ABCMeta):
                 ``None`` indicates to use the default noise sampler.
             num_batches (int, optional):  The number of batch size.
                 Defaults to 0.
+            sample_model (str, optional): The model to sample. If ``ema/orig``
+                is passed, this method would try to sample from ema (if
+                ``self.use_ema == True``) and orig model. Defaults to
+                'ema/orig'.
 
         Returns:
             torch.Tensor | dict: The output may be the direct synthesized

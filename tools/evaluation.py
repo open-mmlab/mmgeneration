@@ -16,7 +16,7 @@ from mmgen.utils import get_root_logger
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Evaluate a GAN model')
+    parser = argparse.ArgumentParser(description='Evaluate a Generation model')
     parser.add_argument('config', help='evaluation config file path')
     parser.add_argument('checkpoint', help='checkpoint file')
     parser.add_argument(

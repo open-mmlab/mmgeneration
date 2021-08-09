@@ -18,7 +18,7 @@ from mmgen.utils import collect_env, get_root_logger
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train a GAN model')
+    parser = argparse.ArgumentParser(description='Train a Generation model')
     parser.add_argument('config', help='train config file path')
     parser.add_argument('--work-dir', help='the dir to save logs and models')
     parser.add_argument(
