@@ -3,7 +3,7 @@
 ## Interpolation
 The generative model in the GAN architecture learns to map points in the latent space to generated images. The latent space has no meaning other than the meaning applied to it via the generative model. Generally, we want to explore the structure of latent space, one thing we can do is to interpolate a sequence of points between two endpoints in the latent space, and see the results these points yield. (Eg. we believe that features that are absent in either endpoint appear in the middle of a linear interpolation path is a sign that the latent space is entangled and the factors of variation are not properly separated.)
 
-Indeed, we have provided a application script to users. You can use [apps/interpolate_sample.py](https://github.com/open-mmlab/mmgeneration/tree/master/apps/interpolate_sample.py) with the following commands:
+Indeed, we have provided a application script to users. You can use [apps/interpolate_sample.py](https://github.com/open-mmlab/mmgeneration/tree/master/apps/interpolate_sample.py) with the following commands for unconditional models' interpolation:
 
 ```bash
 python apps/interpolate_sample.py \
@@ -20,6 +20,23 @@ Here, we provide two kinds of `show-mode`, `sequence`, and `group`. In `sequence
 
 Note that more customized arguments are also offered to customizing your interpolating procedure.
 Please use `python apps/interpolate_sample.py --help` to check more details.
+
+As in the above approach, You can use [apps/conditional_interpolate.py](https://github.com/open-mmlab/mmgeneration/tree/master/apps/conditional_interpolate.py) with the following commands for conditional models' interpolation:
+
+```bash
+python apps/conditional_interpolate.py \
+    ${CONFIG_FILE} \
+    ${CHECKPOINT} \
+    [--show-mode ${SHOW_MODE}] \
+    [--endpoint ${ENDPOINT}] \
+    [--interval ${INTERVAL}] \
+    [--embedding-name ${EMBEDDING_NAME}]
+    [--fix-z] \
+    [--fix-y] \
+    [--samples-path ${SAMPLES_PATH}] \
+    [--batch-size ${BATCH_SIZE}] \
+```
+Here, unlike unconditional models, you need to provide the name of the embedding layer if the label embedding is shared among conv_blocks. Otherwise, you can set the `embedding-name` to 'NULL'. Considering that conditional models have noise and label as inputs, we provide `fix-z` to fix the noise and `fix-y` to fix the label when performing image interpolation.
 
 ## Projection
 Inverting the synthesis network g is an interesting problem that has many applications. For example, manipulating a given image in the latent feature space requires finding a matching latent code for it first. Generally, you can reconstruct a target image by optimizing over the latent vector, using lpips and pixel-wise loss as the objective function.

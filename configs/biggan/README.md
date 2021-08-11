@@ -68,11 +68,11 @@ Sampling results are shown below.
 </div>
 Sampling with truncation trick above can be performed by command below.
 
-```python
+```bash
 python demo/conditional_demo.py CONFIG_PATH CKPT_PATH --sample-cfg truncation=0.4 # set truncation value as you want
 ```
 For converted weights, we provide model configs under `configs/_base_/models` listed as follows:
-```python
+```bash
 # biggan_128x128_cvt_BigGAN-PyTorch_rgb.py
 # biggan-deep_128x128_cvt_hugging-face_rgb.py
 # biggan-deep_256x256_cvt_hugging-face_rgb.py
@@ -80,9 +80,33 @@ For converted weights, we provide model configs under `configs/_base_/models` li
 ```
 ## Interpolation
 
-We will also provide script for image interpolation of conditional models soon.
+To perform image Interpolation on BigGAN(or other conditional models), run
+```bash
+python apps/conditional_interpolate.py CONFIG_PATH  CKPT_PATH  --samples-path SAMPLES_PATH
+```
 <div align="center">
   <b> Image interpolating Results of our BigGAN-Deep</b>
   <br/>
   <img src="https://user-images.githubusercontent.com/22982797/126580403-2baa987b-ff55-4fb5-a53a-b08e8a6a72a2.png" width="800"/>
+</div>
+
+To perform image Interpolation on BigGAN with fixed noise, run
+```bash
+python apps/conditional_interpolate.py CONFIG_PATH  CKPT_PATH  --samples-path SAMPLES_PATH --fix-z
+```
+<div align="center">
+  <b> Image interpolating Results of our BigGAN-Deep with fixed noise</b>
+  <br/>
+  <img src="https://user-images.githubusercontent.com/22982797/128123804-6df1dfca-1057-4b96-8428-787a86f81ef1.png" width="800"/>
+</div>
+To perform image Interpolation on BigGAN with fixed label, run
+
+```bash
+python apps/conditional_interpolate.py CONFIG_PATH  CKPT_PATH  --samples-path SAMPLES_PATH --fix-y
+```
+
+<div align="center">
+  <b> Image interpolating Results of our BigGAN-Deep with fixed label</b>
+  <br/>
+  <img src="https://user-images.githubusercontent.com/22982797/128124596-421396f1-3f23-4098-b629-b00d29d710a9.png" width="800"/>
 </div>
