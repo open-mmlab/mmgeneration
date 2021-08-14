@@ -4,10 +4,11 @@ _base_ = [
 ]
 
 num_classes = 1000
+init_cfg = dict(type='studio')
 model = dict(
     num_classes=num_classes,
-    generator=dict(num_classes=num_classes, init_cfg=dict(type='BigGAN')),
-    discriminator=dict(num_classes=num_classes, init_cfg=dict(type='BigGAN')))
+    generator=dict(num_classes=num_classes, init_cfg=init_cfg),
+    discriminator=dict(num_classes=num_classes, init_cfg=init_cfg))
 
 n_disc = 5
 train_cfg = dict(disc_steps=n_disc)

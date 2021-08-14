@@ -3,10 +3,11 @@ _base_ = [
     '../_base_/default_runtime.py'
 ]
 
+init_cfg = dict(type='studio')
 model = dict(
     num_classes=10,
-    generator=dict(num_classes=10),
-    discriminator=dict(num_classes=10))
+    generator=dict(num_classes=10, init_cfg=init_cfg),
+    discriminator=dict(num_classes=10, init_cfg=init_cfg))
 
 lr_config = None
 checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=20)

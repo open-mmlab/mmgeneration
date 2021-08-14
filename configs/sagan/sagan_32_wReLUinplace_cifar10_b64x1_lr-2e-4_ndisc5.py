@@ -3,11 +3,17 @@ _base_ = [
     '../_base_/default_runtime.py'
 ]
 
+init_cfg = dict(type='studio')
 model = dict(
     num_classes=10,
-    generator=dict(num_classes=10, act_cfg=dict(type='ReLU', inplace=True)),
+    generator=dict(
+        num_classes=10,
+        act_cfg=dict(type='ReLU', inplace=True),
+        init_cfg=init_cfg),
     discriminator=dict(
-        num_classes=10, act_cfg=dict(type='ReLU', inplace=True)),
+        num_classes=10,
+        act_cfg=dict(type='ReLU', inplace=True),
+        init_cfg=init_cfg),
 )
 
 lr_config = None

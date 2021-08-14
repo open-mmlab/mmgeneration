@@ -6,12 +6,17 @@ _base_ = [
 ]
 
 num_classes = 10
+init_cfg = dict(type='studio')
 model = dict(
     num_classes=num_classes,
     generator=dict(
-        act_cfg=dict(type='ReLU', inplace=True), num_classes=num_classes),
+        act_cfg=dict(type='ReLU', inplace=True),
+        num_classes=num_classes,
+        init_cfg=init_cfg),
     discriminator=dict(
-        act_cfg=dict(type='ReLU', inplace=True), num_classes=num_classes))
+        act_cfg=dict(type='ReLU', inplace=True),
+        num_classes=num_classes,
+        init_cfg=init_cfg))
 
 n_disc = 5
 lr_config = None
