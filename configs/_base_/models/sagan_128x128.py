@@ -17,7 +17,6 @@ model = dict(
         with_spectral_norm=True),
     gan_loss=dict(type='GANLoss', gan_type='hinge'))
 
-# hinge loss
 train_cfg = dict(disc_steps=1)
 test_cfg = None
 
