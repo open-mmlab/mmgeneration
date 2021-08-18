@@ -32,3 +32,20 @@
 - Add `pbar` to offline eval and fix bug in grayscale image evaluation/saving (#23)
 - Fix error when data_root option in val_cfg or test_cfg are set as None (#28)
 - Change latex in quick_run.md to svg url and fix number of checkpoints in modelzoo_statistics.md (#34)
+
+
+## v0.3.0 (02/08/2021)
+
+#### Highlights
+- Support conditional GANs: Projection GAN, SNGAN, SAGAN, and BigGAN
+
+#### New Features
+
+- Add support for persistent_workers in PyTorch >= 1.7.0 #71
+- Support warm-up for EMA #55
+
+#### Fix bugs and Improvements
+
+- Fix failing to build docs #64
+- Revise the logic of `num_classes` in basic conditional gan #69
+- Support dynamic eval internal in eval hook #73
