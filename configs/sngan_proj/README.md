@@ -30,7 +30,6 @@
 '\*' Iteration counting rule in our implementation is different from others. If you want to align with other codebases, you can use the following conversion formula:
 ```
 total_iters (biggan/pytorch studio gan) = our_total_iters / n_disc
-
 ```
 
 We also provide converted pre-train models from [Pytorch-StudioGAN](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN).
