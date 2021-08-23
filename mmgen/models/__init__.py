@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from .architectures import *  # noqa: F401, F403
 from .builder import MODELS, MODULES, build_model, build_module
 from .common import *  # noqa: F401, F403

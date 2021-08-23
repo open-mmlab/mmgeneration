@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from .disc_auxiliary_loss import (DiscShiftLoss, GradientPenaltyLoss,
                                   R1GradientPenalty, disc_shift_loss,
                                   gradient_penalty_loss,
