@@ -22,9 +22,7 @@ def collect_env():
     env_info['CUDA available'] = cuda_available
 
     if cuda_available:
-        # from mmcv.utils.parrots_wrapper import CUDA_HOME
-        from mmcv.utils.parrots_wrapper import _get_cuda_home
-        CUDA_HOME = _get_cuda_home()
+        from mmcv.utils.parrots_wrapper import CUDA_HOME
         env_info['CUDA_HOME'] = CUDA_HOME
 
         if CUDA_HOME is not None and osp.isdir(CUDA_HOME):
