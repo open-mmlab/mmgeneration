@@ -102,6 +102,27 @@ class LoadPairedImageFromFile(LoadImageFromFile):
         kwargs (dict): Args for file client.
     """
 
+    def __init__(self,
+                 io_backend='disk',
+                 key='gt',
+                 style_a=None,
+                 style_b=None,
+                 flag='color',
+                 channel_order='bgr',
+                 backend=None,
+                 save_original_img=False,
+                 **kwargs):
+        super().__init__(
+            io_backend,
+            key=key,
+            flag=flag,
+            channel_order=channel_order,
+            backend=backend,
+            save_original_img=save_original_img,
+            **kwargs)
+        self.style_a = style_a
+        self.style_b = style_b
+
     def __call__(self, results):
         """Call function.
 
@@ -135,14 +156,14 @@ class LoadPairedImageFromFile(LoadImageFromFile):
         img_a = img[:, :new_w, :]
         img_b = img[:, new_w:, :]
 
-        results['img_a'] = img_a
-        results['img_b'] = img_b
-        results['img_a_path'] = filepath
-        results['img_b_path'] = filepath
-        results['img_a_ori_shape'] = img_a.shape
-        results['img_b_ori_shape'] = img_b.shape
+        results[f'img_{self.style_a}'] = img_a
+        results[f'img_{self.style_b}'] = img_b
+        results[f'img_{self.style_a}_path'] = filepath
+        results[f'img_{self.style_b}_path'] = filepath
+        results[f'img_{self.style_a}_ori_shape'] = img_a.shape
+        results[f'img_{self.style_b}_ori_shape'] = img_b.shape
         if self.save_original_img:
-            results['ori_img_a'] = img_a.copy()
-            results['ori_img_b'] = img_b.copy()
+            results[f'ori_img_{self.style_a}'] = img_a.copy()
+            results[f'ori_img_{self.style_b}'] = img_b.copy()
 
         return results

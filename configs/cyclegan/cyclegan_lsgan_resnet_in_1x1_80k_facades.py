@@ -3,8 +3,8 @@ _base_ = [
     '../_base_/datasets/unpaired_imgs_256x256.py',
     '../_base_/default_runtime.py'
 ]
-train_cfg = dict(direction='b2a', buffer_size=50)
-test_cfg = dict(test_direction='b2a', show_input=False)
+train_cfg = dict(buffer_size=50)
+test_cfg = None
 dataroot = './data/unpaired_facades'
 data = dict(
     train=dict(dataroot=dataroot),
@@ -20,7 +20,7 @@ custom_hooks = [
     dict(
         type='MMGenVisualizationHook',
         output_dir='training_samples',
-        res_name_list=['fake_b'],
+        res_name_list=['style_photo'],
         interval=5000)
 ]
 

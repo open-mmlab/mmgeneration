@@ -5,7 +5,7 @@ from mmcv.runner import load_checkpoint
 from mmcv.utils import is_list_of
 
 from mmgen.datasets.pipelines import Compose
-from mmgen.models import CycleGAN, Pix2Pix, build_model
+from mmgen.models import BaseTranslationModel, build_model
 
 
 def init_model(config, checkpoint=None, device='cuda:0', cfg_options=None):
@@ -180,10 +180,7 @@ def sample_conditional_model(model,
     return results
 
 
-_supported_img2img_model = (Pix2Pix, CycleGAN)
-
-
-def sample_img2img_model(model, image_path, **kwargs):
+def sample_img2img_model(model, image_path, style, **kwargs):
     """Sampling from translation models.
 
     Args:
@@ -194,30 +191,25 @@ def sample_img2img_model(model, image_path, **kwargs):
     Returns:
         Tensor: Translated image tensor.
     """
-    assert isinstance(model, _supported_img2img_model)
+    assert isinstance(model, BaseTranslationModel)
     cfg = model._cfg
     device = next(model.parameters()).device  # model device
     # build the data pipeline
     test_pipeline = Compose(cfg.test_pipeline)
     # prepare data
-    if isinstance(model, Pix2Pix):
-        data = dict(pair_path=image_path)
-    else:
-        data = dict(img_a_path=image_path, img_b_path=image_path)
+    data = dict(image_path=image_path)
     data = test_pipeline(data)
     if device.type == 'cpu':
         data = collate([data], samples_per_gpu=1)
         data['meta'] = []
     else:
         data = scatter(collate([data], samples_per_gpu=1), [device])[0]
+    # dirty code to deal with paired data
+    if f'img_{style}' in data.keys():
+        src_style = model._get_opposite_style(style)
+        data['image'] = data[f'img_{src_style}']
     # forward the model
     with torch.no_grad():
-        results = model(test_mode=True, **data, **kwargs)
-    if isinstance(model, Pix2Pix):
-        output = results['fake_b']
-    else:
-        if model.test_direction == 'a2b':
-            output = results['fake_b']
-        else:
-            output = results['fake_a']
+        results = model(data['image'], test_mode=True, style=style, **kwargs)
+    output = results['styled_img']
     return output

@@ -19,6 +19,8 @@ def parse_args():
     parser.add_argument('checkpoint', help='checkpoint file')
     parser.add_argument('image_path', help='Image file path')
     parser.add_argument(
+        '--style', type=str, default=None, help='Desired image style')
+    parser.add_argument(
         '--save-path',
         type=str,
         default='./work_dirs/demos/translation_sample.png',
@@ -44,7 +46,8 @@ def main():
     if args.sample_cfg is None:
         args.sample_cfg = dict()
 
-    results = sample_img2img_model(model, args.image_path, **args.sample_cfg)
+    results = sample_img2img_model(model, args.image_path, args.style,
+                                   **args.sample_cfg)
     results = (results[:, [2, 1, 0]] + 1.) / 2.
 
     # save images

@@ -3,8 +3,6 @@ _base_ = [
     '../_base_/datasets/paired_imgs_256x256_crop.py',
     '../_base_/default_runtime.py'
 ]
-train_cfg = dict(direction='b2a')
-test_cfg = dict(direction='b2a')
 dataroot = 'data/paired/facades'
 data = dict(
     train=dict(dataroot=dataroot),
@@ -12,8 +10,8 @@ data = dict(
     test=dict(dataroot=dataroot))
 # optimizer
 optimizer = dict(
-    generator=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)),
-    discriminator=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)))
+    generators=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)),
+    discriminators=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)))
 
 # learning policy
 lr_config = None
