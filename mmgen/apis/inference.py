@@ -186,8 +186,7 @@ def sample_img2img_model(model, image_path, style, **kwargs):
     Args:
         model (nn.Module): The loaded model.
         image_path (str): File path of input image.
-        img_unpaired (str, optional): File path of the unpaired image.
-            If not None, perform unpaired image generation. Default: None.
+        style (str): Target style of output image.
     Returns:
         Tensor: Translated image tensor.
     """

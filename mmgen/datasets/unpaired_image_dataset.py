@@ -28,6 +28,8 @@ class UnpairedImageDataset(Dataset):
         pipeline (List[dict | callable]): A sequence of data transformations.
         test_mode (bool): Store `True` when building test dataset.
             Default: `False`.
+        style_a (str, optional): Style of domain A. Defaults to 'img_a'.
+        style_b (str, optional): Style of domain B. Defaults to 'img_b'.
     """
 
     def __init__(self,
