@@ -8,7 +8,8 @@
   title={Unsupervised representation learning with deep convolutional generative adversarial networks},
   author={Radford, Alec and Metz, Luke and Chintala, Soumith},
   journal={arXiv preprint arXiv:1511.06434},
-  year={2015}
+  year={2015},
+  url={https://arxiv.org/abs/1511.06434},
 }
 ```
 

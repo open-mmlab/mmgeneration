@@ -10,7 +10,8 @@
   author={Zhu, Jun-Yan and Park, Taesung and Isola, Phillip and Efros, Alexei A},
   booktitle={Proceedings of the IEEE international conference on computer vision},
   pages={2223--2232},
-  year={2017}
+  year={2017},
+  url={https://openaccess.thecvf.com/content_iccv_2017/html/Zhu_Unpaired_Image-To-Image_Translation_ICCV_2017_paper.html},
 }
 ```
 

@@ -7,7 +7,8 @@
   title={Spectral Normalization for Generative Adversarial Networks},
   author={Miyato, Takeru and Kataoka, Toshiki and Koyama, Masanori and Yoshida, Yuichi},
   booktitle={International Conference on Learning Representations},
-  year={2018}
+  year={2018},
+  url={https://openreview.net/forum?id=B1QRgziT-},
 }
 ```
 <div align="center">
