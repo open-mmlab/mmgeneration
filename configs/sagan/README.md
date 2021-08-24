@@ -9,7 +9,8 @@
   booktitle={International conference on machine learning},
   pages={7354--7363},
   year={2019},
-  organization={PMLR}
+  organization={PMLR},
+  url={https://proceedings.mlr.press/v97/zhang19d.html},
 }
 ```
 <div align="center">
@@ -33,10 +34,10 @@ total_iters (biggan/pytorch studio gan) = our_total_iters / dist_step
 We also provide converted pre-train models from [Pytorch-StudioGAN](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN).
 To be noted that, in Pytorch Studio GAN, **inplace ReLU** is used in generator and discriminator.
 
-| Models    | Dataset  | Inplace ReLU | dist_step | Total Iters | IS (Our Pipeline) | FID (Our Pipeline) | IS (StudioGAN) | FID (StudioGAN) | Download                                                                                                                    | Original Download link                                                               |
-|-----------|----------|--------------|-----------|-------------|-------------------|--------------------|----------------|-----------------|-----------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| sagan_32  | CIFAR10  | w            | 5         | 100000      | 9.116             | 10.2011            | 8.680          | 14.009          | [Download](https://download.openmmlab.com/mmgen/sagan/sagan_32_cifar10_convert-studio-rgb_20210730_153321-080da7e2.pth)     | [Download](https://drive.google.com/drive/folders/1FA8hcz4MB8-hgTwLuDA0ZUfr8slud5P_) |
-| sagan_128 | ImageNet | w            | 1         | 1000000     | 27.367            | 40.1162            | 29.848         | 34.726          | [Download](https://download.openmmlab.com/mmgen/sagan/sagan_128_imagenet1k_convert-studio-rgb_20210730_153357-eddb0d1d.pth) | [Download](https://drive.google.com/drive/folders/1ZYaqeeumDgxOPDhRR5QLeLFIpgBJ9S6B) |
+|  Models   | Dataset  | Inplace ReLU | n_disc | Total Iters | IS (Our Pipeline) | FID (Our Pipeline) | IS (StudioGAN) | FID (StudioGAN) |                                                          Download                                                           |                                Original Download link                                |
+| :-------: | :------: | :----------: | :----: | :---------: | :---------------: | :----------------: | :------------: | :-------------: | :-------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------: |
+| sagan_32  | CIFAR10  |      w       |   5    |   100000    |       9.116       |      10.2011       |     8.680      |     14.009      |   [Download](https://download.openmmlab.com/mmgen/sagan/sagan_32_cifar10_convert-studio-rgb_20210730_153321-080da7e2.pth)   | [Download](https://drive.google.com/drive/folders/1FA8hcz4MB8-hgTwLuDA0ZUfr8slud5P_) |
+| sagan_128 | ImageNet |      w       |   1    |   1000000   |      27.367       |      40.1162       |     29.848     |     34.726      | [Download](https://download.openmmlab.com/mmgen/sagan/sagan_128_imagenet1k_convert-studio-rgb_20210730_153357-eddb0d1d.pth) | [Download](https://drive.google.com/drive/folders/1ZYaqeeumDgxOPDhRR5QLeLFIpgBJ9S6B) |
 
 
 * `Our Pipeline` denote results evaluated with our pipeline.
