@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 """Inception networks used in calculating FID and Inception metrics.
 
 This code is modified from:

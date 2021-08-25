@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 """Implementation for Positional Encoding as Spatial Inductive Bias in GANs.
 
 In this module, we provide necessary components to conduct experiments

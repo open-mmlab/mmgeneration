@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from .collect_env import collect_env
 from .dist_util import check_dist_init
 from .io_utils import MMGEN_CACHE_DIR, download_from_url
