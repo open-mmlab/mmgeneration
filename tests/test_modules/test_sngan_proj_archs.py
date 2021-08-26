@@ -140,6 +140,14 @@ class TestSNGANPROJGenerator(object):
         x = g(None, num_batches=2)
         assert x.shape == (2, 3, 32, 32)
 
+        # test different init_cfg --> Studio
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='studio')
+        g = build_module(config)
+        assert isinstance(g, SNGANGenerator)
+        x = g(None, num_batches=2)
+        assert x.shape == (2, 3, 32, 32)
+
         # test different init_cfg --> BigGAN
         config = deepcopy(self.default_config)
         config['init_cfg'] = dict(type='biggan')
@@ -402,6 +410,14 @@ class TestSNGANPROJDiscriminator(object):
         # test different with_spectral_norm
         config = deepcopy(self.default_config)
         config['with_spectral_norm'] = False
+        d = build_module(config)
+        assert isinstance(d, ProjDiscriminator)
+        score = d(self.x, self.label)
+        assert score.shape == (2, 1)
+
+        # test different init_cfg --> studio
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='studio')
         d = build_module(config)
         assert isinstance(d, ProjDiscriminator)
         score = d(self.x, self.label)
