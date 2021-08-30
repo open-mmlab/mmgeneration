@@ -21,6 +21,11 @@ custom_hooks = [
 lr_config = None
 total_iters = 160000
 
+runner = dict(
+    type='DynamicIterBasedRunner',
+    is_dynamic_ddp=False,  # Note that this flag should be False.
+    pass_training_status=True)
+
 metrics = dict(
     ms_ssim10k=dict(type='MS_SSIM', num_images=10000),
     swd16k=dict(type='SWD', num_images=16384, image_shape=(3, 128, 128)))
