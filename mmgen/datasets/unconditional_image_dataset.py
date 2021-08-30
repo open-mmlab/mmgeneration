@@ -23,7 +23,7 @@ class UnconditionalImageDataset(Dataset):
             mode. Otherwise, in train mode. Default to False.
     """
 
-    _VALID_IMG_SUFFIX = ('.jpg', '.png', '.jpeg', '.JPEG')
+    _VALID_IMG_SUFFIX = ('.jpg', '.png', '.jpeg', '.JPEG', '.webp')
 
     def __init__(self, imgs_root, pipeline, test_mode=False):
         super().__init__()
