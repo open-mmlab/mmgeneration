@@ -1,6 +1,7 @@
 _base_ = [
     '../_base_/datasets/unconditional_imgs_128x128.py',
-    '../_base_/models/wgangp_base.py'
+    '../_base_/models/wgangp_base.py',
+    '../_base_/default_runtime.py'
 ]
 
 data = dict(
