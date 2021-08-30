@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 try:
     from apex import amp
 except ImportError:

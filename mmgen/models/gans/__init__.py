@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from .base_gan import BaseGAN
 from .basic_conditional_gan import BasicConditionalGAN
 from .cyclegan import CycleGAN
