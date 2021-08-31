@@ -1,9 +1,6 @@
 # model settings
 model = dict(
     type='Pix2Pix',
-    default_style='photo',
-    reachable_styles=['photo'],
-    related_styles=['photo', 'mask'],
     generator=dict(
         type='UnetGenerator',
         in_channels=3,
@@ -26,10 +23,13 @@ model = dict(
         real_label_val=1.0,
         fake_label_val=0.0,
         loss_weight=1.0),
+    default_domain='photo',
+    reachable_domains=['photo'],
+    related_domains=['photo', 'mask'],
     gen_auxiliary_loss=dict(
         type='L1Loss',
         loss_weight=100.0,
-        data_info=dict(pred='style_photo', target='src_photo'),
+        data_info=dict(pred='fake_photo', target='real_photo'),
         reduction='mean'))
 # model training and testing settings
 train_cfg = None

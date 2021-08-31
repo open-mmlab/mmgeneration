@@ -180,7 +180,7 @@ def sample_conditional_model(model,
     return results
 
 
-def sample_img2img_model(model, image_path, style, **kwargs):
+def sample_img2img_model(model, image_path, target_domain, **kwargs):
     """Sampling from translation models.
 
     Args:
@@ -203,12 +203,20 @@ def sample_img2img_model(model, image_path, style, **kwargs):
         data['meta'] = []
     else:
         data = scatter(collate([data], samples_per_gpu=1), [device])[0]
+
+    if target_domain is None:
+        target_domain = model._default_domain
+
     # dirty code to deal with paired data
-    if f'img_{style}' in data.keys():
-        src_style = model._get_opposite_style(style)
-        data['image'] = data[f'img_{src_style}']
+    if f'img_{target_domain}' in data.keys():
+        source_domain = model._get_other_domains(target_domain)[0]
+        data['image'] = data[f'img_{source_domain}']
     # forward the model
     with torch.no_grad():
-        results = model(data['image'], test_mode=True, style=style, **kwargs)
-    output = results['styled_img']
+        results = model(
+            data['image'],
+            test_mode=True,
+            target_domain=target_domain,
+            **kwargs)
+    output = results['target']
     return output

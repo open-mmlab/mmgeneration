@@ -94,8 +94,8 @@ class LoadPairedImageFromFile(LoadImageFromFile):
     Args:
         io_backend (str): io backend where images are store. Default: 'disk'.
         key (str): Keys in results to find corresponding path. Default: 'gt'.
-        style_a (str, optional): Style of domain A. Defaults to 'img_a'.
-        style_b (str, optional): Style of domain B. Defaults to 'img_b'.
+        domain_a (str, optional): Style of domain A. Defaults to 'img_a'.
+        domain_b (str, optional): Style of domain B. Defaults to 'img_b'.
         flag (str): Loading flag for images. Default: 'color'.
         channel_order (str): Order of channel, candidates are 'bgr' and 'rgb'.
             Default: 'bgr'.
@@ -107,8 +107,8 @@ class LoadPairedImageFromFile(LoadImageFromFile):
     def __init__(self,
                  io_backend='disk',
                  key='gt',
-                 style_a=None,
-                 style_b=None,
+                 domain_a='a',
+                 domain_b='b',
                  flag='color',
                  channel_order='bgr',
                  backend=None,
@@ -122,8 +122,8 @@ class LoadPairedImageFromFile(LoadImageFromFile):
             backend=backend,
             save_original_img=save_original_img,
             **kwargs)
-        self.style_a = style_a
-        self.style_b = style_b
+        self.domain_a = domain_a
+        self.domain_b = domain_b
 
     def __call__(self, results):
         """Call function.
@@ -158,14 +158,14 @@ class LoadPairedImageFromFile(LoadImageFromFile):
         img_a = img[:, :new_w, :]
         img_b = img[:, new_w:, :]
 
-        results[f'img_{self.style_a}'] = img_a
-        results[f'img_{self.style_b}'] = img_b
-        results[f'img_{self.style_a}_path'] = filepath
-        results[f'img_{self.style_b}_path'] = filepath
-        results[f'img_{self.style_a}_ori_shape'] = img_a.shape
-        results[f'img_{self.style_b}_ori_shape'] = img_b.shape
+        results[f'img_{self.domain_a}'] = img_a
+        results[f'img_{self.domain_b}'] = img_b
+        results[f'img_{self.domain_a}_path'] = filepath
+        results[f'img_{self.domain_b}_path'] = filepath
+        results[f'img_{self.domain_a}_ori_shape'] = img_a.shape
+        results[f'img_{self.domain_b}_ori_shape'] = img_b.shape
         if self.save_original_img:
-            results[f'ori_img_{self.style_a}'] = img_a.copy()
-            results[f'ori_img_{self.style_b}'] = img_b.copy()
+            results[f'ori_img_{self.domain_a}'] = img_a.copy()
+            results[f'ori_img_{self.domain_b}'] = img_b.copy()
 
         return results

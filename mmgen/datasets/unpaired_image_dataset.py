@@ -28,16 +28,16 @@ class UnpairedImageDataset(Dataset):
         pipeline (List[dict | callable]): A sequence of data transformations.
         test_mode (bool): Store `True` when building test dataset.
             Default: `False`.
-        style_a (str, optional): Style of domain A. Defaults to 'img_a'.
-        style_b (str, optional): Style of domain B. Defaults to 'img_b'.
+        domain_a (str, optional): Name of domain A. Defaults to 'img_a'.
+        domain_b (str, optional): Name of domain B. Defaults to 'img_b'.
     """
 
     def __init__(self,
                  dataroot,
                  pipeline,
                  test_mode=False,
-                 style_a='img_a',
-                 style_b='img_b'):
+                 domain_a='a',
+                 domain_b='b'):
         super().__init__()
         phase = 'test' if test_mode else 'train'
         self.dataroot_a = osp.join(str(dataroot), phase + 'A')
@@ -48,8 +48,8 @@ class UnpairedImageDataset(Dataset):
         self.len_b = len(self.data_infos_b)
         self.test_mode = test_mode
         self.pipeline = Compose(pipeline)
-        self.style_a = style_a
-        self.style_b = style_b
+        self.domain_a = domain_a
+        self.domain_b = domain_b
 
     def load_annotations(self, dataroot):
         """Load unpaired image paths of one domain.
@@ -80,8 +80,8 @@ class UnpairedImageDataset(Dataset):
         idx_b = np.random.randint(0, self.len_b)
         img_b_path = self.data_infos_b[idx_b]['path']
         results = dict()
-        results[f'img_{self.style_a}_path'] = img_a_path
-        results[f'img_{self.style_b}_path'] = img_b_path
+        results[f'img_{self.domain_a}_path'] = img_a_path
+        results[f'img_{self.domain_b}_path'] = img_b_path
         return self.pipeline(results)
 
     def prepare_test_data(self, idx):
@@ -96,8 +96,8 @@ class UnpairedImageDataset(Dataset):
         img_a_path = self.data_infos_a[idx % self.len_a]['path']
         img_b_path = self.data_infos_b[idx % self.len_b]['path']
         results = dict()
-        results[f'img_{self.style_a}_path'] = img_a_path
-        results[f'img_{self.style_b}_path'] = img_b_path
+        results[f'img_{self.domain_a}_path'] = img_a_path
+        results[f'img_{self.domain_b}_path'] = img_b_path
         return self.pipeline(results)
 
     def __len__(self):

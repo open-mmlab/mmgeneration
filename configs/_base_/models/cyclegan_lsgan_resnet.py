@@ -1,8 +1,5 @@
 model = dict(
     type='CycleGAN',
-    default_style='photo',
-    reachable_styles=['photo', 'mask'],
-    related_styles=['photo', 'mask'],
     generator=dict(
         type='ResnetGenerator',
         in_channels=3,
@@ -26,29 +23,32 @@ model = dict(
         real_label_val=1.0,
         fake_label_val=0.0,
         loss_weight=1.0),
+    default_domain='photo',
+    reachable_domains=['photo', 'mask'],
+    related_domains=['photo', 'mask'],
     gen_auxiliary_loss=[
         dict(
             type='L1Loss',
             loss_weight=10.0,
-            data_info=dict(pred='cycle_photo', target='src_photo'),
+            data_info=dict(pred='cycle_photo', target='real_photo'),
             reduction='mean'),
         dict(
             type='L1Loss',
             loss_weight=10.0,
             data_info=dict(
                 pred='cycle_mask',
-                target='src_mask',
+                target='real_mask',
             ),
             reduction='mean'),
         dict(
             type='L1Loss',
             loss_weight=0.5,
-            data_info=dict(pred='identity_photo', target='src_photo'),
+            data_info=dict(pred='identity_photo', target='real_photo'),
             reduction='mean'),
         dict(
             type='L1Loss',
             loss_weight=0.5,
-            data_info=dict(pred='identity_mask', target='src_mask'),
+            data_info=dict(pred='identity_mask', target='real_mask'),
             reduction='mean')
     ])
 train_cfg = dict(buffer_size=50)

@@ -22,7 +22,7 @@ custom_hooks = [
     dict(
         type='MMGenVisualizationHook',
         output_dir='training_samples',
-        res_name_list=['fake_b'],
+        res_name_list=['fake_photo'],
         interval=5000)
 ]
 runner = None
