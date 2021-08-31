@@ -6,6 +6,7 @@ from ..builder import MODELS, build_module
 from .base_gan import BaseGAN
 from .base_translation_model import BaseTranslationModel
 
+
 @MODELS.register_module()
 class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
     """Basic translation model based on static unconditional GAN.
@@ -14,7 +15,7 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
         generator (dict): Config for the generator.
         discriminator (dict): Config for the discriminator.
         gan_loss (dict): Config for the gan loss.
-        pretrained (str | optional): Path for pretrained model. 
+        pretrained (str | optional): Path for pretrained model.
             Defaults to None.
         disc_auxiliary_loss (dict | optional): Config for auxiliary loss to
             discriminator. Defaults to None.
@@ -33,7 +34,7 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
                  **kwargs):
         BaseGAN.__init__(self)
         BaseTranslationModel.__init__(self, *args, **kwargs)
-        # Building generators and discriminators 
+        # Building generators and discriminators
         self._gen_cfg = deepcopy(generator)
         # build domain generators
         self.generators = nn.ModuleDict()
@@ -71,9 +72,9 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
                     [self.gen_auxiliary_losses])
         else:
             self.gen_auxiliary_losses = None
-        
+
         self.init_weights(pretrained)
-    
+
     def init_weights(self, pretrained=None):
         """Initialize weights for the model.
 
@@ -84,7 +85,7 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
         for domain in self._reachable_domains:
             self.generators[domain].init_weights(pretrained=pretrained)
             self.discriminators[domain].init_weights(pretrained=pretrained)
-            
+
     def _parse_train_cfg(self):
         """Parsing train config and set some attributes for training."""
         if self.train_cfg is None:
@@ -107,14 +108,16 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
 
     def _get_domain_generator(self, domain):
         assert self.is_domain_reachable(
-            domain), f'{domain} domain is not reachable, available domain list is\
+            domain
+        ), f'{domain} domain is not reachable, available domain list is\
             {self._reachable_domains}'
 
         return self.generators[domain]
 
     def _get_domain_discriminator(self, domain):
         assert self.is_domain_reachable(
-            domain), f'{domain} domain is not reachable, available domain list is\
+            domain
+        ), f'{domain} domain is not reachable, available domain list is\
             {self._reachable_domains}'
 
         return self.discriminators[domain]

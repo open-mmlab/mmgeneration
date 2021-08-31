@@ -1,9 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import os.path as osp
 
-import mmcv
-import numpy as np
-import torch.nn as nn
 from mmcv.parallel import MMDistributedDataParallel
 from torch.nn.parallel.distributed import _find_tensors
 
