@@ -14,7 +14,6 @@ model = dict(
         base_channels=128,
         resblocks_per_downsample=3,
         attention_res=[16, 8],
-        use_checkpoint=False,
         use_scale_shift_norm=True,
         dropout=0.3,
         num_heads=4,

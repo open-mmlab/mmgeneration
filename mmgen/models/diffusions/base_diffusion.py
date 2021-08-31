@@ -36,8 +36,6 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                  sample_method='DDPM',
                  train_cfg=None,
                  test_cfg=None):
-        """"""
-
         super().__init__()
         self.fp16_enable = False
         # build denoising in this function
@@ -55,7 +53,9 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         # output_channels in denoising may be double, therefore we
         # get number of channels from config
         image_channels = self._denoising_cfg.get('in_channels')
-        image_size = self._denoising_cfg.get('image_size')
+        # image_size should be the attribute of denoising network
+        image_size = self.denoising.image_size
+
         self.image_shape = torch.Size([image_channels, image_size, image_size])
 
         # build diffusion
@@ -212,6 +212,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             timesteps_noise = self._get_noise_batch(
                 timesteps_noise, num_batches, timesteps_noise=True)
 
+        # TODO: remove self for batched_timesteps
         if not hasattr(self, 'batched_timesteps'):
             self.batched_timesteps = torch.arange(self.num_timesteps - 1, -1,
                                                   -1).long()
@@ -316,7 +317,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             max_beta (float, optional): The maximum beta to use; use values
                 lower than 1 to prevent singularities. Defaults to 0.999.
             s (float, optional): Small offset to prevent `\beta` from being too
-                small neat `t = 0` Defaults to 0.008.
+                small near `t = 0` Defaults to 0.008.
 
         Returns:
             np.ndarray: Betas used in diffusion process.
@@ -402,6 +403,11 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
     def var_to_tensor(var, index, tar_shape=None):
         """Function used to extract variables by given index, and convert into
         tensor as given shape.
+        Args:
+            var (np.array): Variables to be extracted.
+            index (torch.Tensor): Target index to extract.
+            tar_shape (torch.Size, optional): If given, the indexed variable
+                would expand to the given shape. Defaults to None.
 
         TODO: here we need to resize all vars to tar_shape, maybe we can resize
             them in the initialization function?
@@ -658,6 +664,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             return dict(
                 fake_image=sample,
                 noise_batch=noise,
+                label=label,
                 **denoising_output,
                 **p_output)
         return sample
@@ -666,8 +673,8 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         r"""Predict x_0 from eps by Equ 15 in DDPM paper:
 
         .. math::
-            x_0 = \frac{(x_t - \sqrt(1-\bar{\alpha}_t) * eps)}
-            {sqrt{\bar{\alpha}_t}}
+            x_0 = \frac{(x_t - \sqrt{(1-\bar{\alpha}_t)} * eps)}
+            {\sqrt{\bar{\alpha}_t}}
 
         Args:
             eps (torch.Tensor)

@@ -31,14 +31,27 @@ class EmbedSequential(nn.Sequential):
 
 @ACTIVATION_LAYERS.register_module()
 class SiLU(nn.Module):
+    r"""Applies the Sigmoid Linear Unit (SiLU) function, element-wise.
+    The SiLU function is also known as the swish function.
+    Args:
+        input (bool, optional): Use inplace operation or not.
+            Defaults to `False`.
+    """
 
     def __init__(self, inplace=False):
         super().__init__()
         self.inplace = inplace
 
     def forward(self, x):
-        # return F.silu(x, inplace=self.inplace)
-        return torch.sigmoid(x) * x
+        """Forward function for SiLU.
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            torch.Tensor: Tensor after activation.
+        """
+
+        return F.silu(x, inplace=self.inplace)
 
 
 @MODULES.register_module()
@@ -104,6 +117,10 @@ class TimeEmbedding(nn.Module):
     Args:
         in_channels (int): The channel number of the input feature map.
         embedding_channels (int): The channel number of the output embedding.
+        embedding_mode (str, optional): Embedding mode for the time embedding.
+            Defaults to 'sin'.
+        embedding_cfg (dict, optional): Config for time embedding.
+            Defaults to None.
         act_cfg (dict, optional): Config for activation layer. Defaults to
             ``dict(type='SiLU', inplace=False)``.
     """
@@ -128,17 +145,22 @@ class TimeEmbedding(nn.Module):
             self.embedding_fn = partial(self.sinusodial_embedding,
                                         **embedding_cfg_)
         else:
-            raise ValueError()
+            raise ValueError('Only support `SIN` for time embedding, '
+                             f'but receive {embedding_mode}.')
 
     @staticmethod
     def sinusodial_embedding(timesteps, dim, max_period=10000):
         """Create sinusoidal timestep embeddings.
 
-        :param timesteps: a 1-D Tensor of N indices, one per batch element.
-                        These may be fractional.
-        :param dim: the dimension of the output.
-        :param max_period: controls the minimum frequency of the embeddings.
-        :return: an [N x dim] Tensor of positional embeddings.
+        Args:
+            timesteps (torch.Tensor): Timestep to embedding. 1-D tensor shape
+                as ``[bz, ]``,  one per batch element.
+            dim (int): The dimension of the embedding.
+            max_period (int, optional): Controls the minimum frequency of the
+                embeddings. Defaults to ``10000``.
+
+        Returns:
+            torch.Tensor: Embedding results shape as `[bz, dim]`.
         """
 
         half = dim // 2
@@ -156,10 +178,10 @@ class TimeEmbedding(nn.Module):
     def forward(self, t):
         """Forward function for time embedding layer.
         Args:
-            t (torch.Tensor): Input timesteps. Shape as [TODO:]
+            t (torch.Tensor): Input timesteps.
 
         Returns:
-            torch.Tensor: Timesteps embedding, shape as [TODO:].
+            torch.Tensor: Timesteps embedding.
 
         """
         return self.blocks(self.embedding_fn(t))
@@ -167,6 +189,25 @@ class TimeEmbedding(nn.Module):
 
 @MODULES.register_module()
 class DenoisingResBlock(nn.Module):
+    """Resblock for the denoising network. If `in_channels` not equals to
+    `out_channels`, a learnable shortcut with conv layers would be added.
+
+    Args:
+        in_channels (int): Number of channels of the input feature map.
+        embedding_channels (int): Number of channels of the input embedding.
+        use_scale_shift_norm (bool): Whether use scale-shift-norm in
+            `NormWithEmbedding` layer.
+        dropout (float): Probability of the dropout layers.
+        out_channels (int, optional): Number of output channels of the
+            ResBlock. If not defined, the output channels would equal to the
+            `in_channels`. Defaults to `None`.
+        norm_cfg (dict, optional): The config for the normalization layers.
+            Defaults too ``dict(type='GN', num_groups=32)``.
+        act_cfg (dict, optional): The config for the activation layers.
+            Defaults to ``dict(type='SiLU', inplace=False)``.
+        shortcut_kernel_size (int, optional): The kernel size for the shortcut
+            conv. Defaults to ``1``.
+    """
 
     def __init__(self,
                  in_channels,
@@ -249,15 +290,18 @@ class DenoisingResBlock(nn.Module):
 
 @MODULES.register_module()
 class NormWithEmbedding(nn.Module):
-    """Nornalization with embedding layer. If use_scale_shift == True,
+    """Nornalization with embedding layer. If `use_scale_shift == True`,
     embedding results would be chunked and used to re-shift and re-scale
     normalization results. Otherwise, embedding results would directly add to
     input of normalization layer.
 
     Args:
-        in_channels (int)
-        embedding_channels (int)
-        norm_cfg ()
+        in_channels (int): Number of channels of the input feature map.
+        embedding_channels (int) Number of channels of the input embedding.
+        norm_cfg (dict, optional): Config for the normalization operation.
+            Defaults to `dict(type='GN', num_groups=32)`.
+        act_cfg (dict, optional): Config for the activation layer. Defaults
+            to `dict(type='SiLU', inplace=False)`.
     """
 
     def __init__(self,
@@ -297,28 +341,62 @@ class NormWithEmbedding(nn.Module):
 
 @MODULES.register_module()
 class DenoisingDownsample(nn.Module):
+    """Downsampling operation used in the denoising network. Support average
+    pooling and convolution for downsample operation.
 
-    def __init__(self, in_channels, use_conv=True):
+    Args:
+        in_channels (int): Number of channels of the input feature map to be
+            downsampled.
+        with_conv (bool, optional): Whether use convolution operation for
+            downsampling.  Defaults to `True`.
+    """
+
+    def __init__(self, in_channels, with_conv=True):
         super().__init__()
-        if use_conv:
+        if with_conv:
             self.downsample = nn.Conv2d(in_channels, in_channels, 3, 2, 1)
         else:
             self.downsample = nn.AvgPool2d(stride=2)
 
     def forward(self, x):
+        """Forward function for downsampling operation.
+        Args:
+            x (torch.Tensor): Feature map to downsample.
+
+        Returns:
+            torch.Tensor: Feature map after downsampling.
+        """
         return self.downsample(x)
 
 
 @MODULES.register_module()
 class DenoisingUpsample(nn.Module):
+    """Upsampling operation used in the denoising network. Allows users to
+    apply an additional convolution layer after the nearest interpolation
+    operation.
 
-    def __init__(self, in_channels, use_conv=True):
+    Args:
+        in_channels (int): Number of channels of the input feature map to be
+            downsampled.
+        with_conv (bool, optional): Whether apply an additional convolution
+            layer after upsampling.  Defaults to `True`.
+    """
+
+    def __init__(self, in_channels, with_conv=True):
         super().__init__()
-        if use_conv:
+        if with_conv:
+            self.with_conv = True
             self.conv = nn.Conv2d(in_channels, in_channels, 3, 1, 1)
 
     def forward(self, x):
+        """Forward function for upsampling operation.
+        Args:
+            x (torch.Tensor): Feature map to upsample.
+
+        Returns:
+            torch.Tensor: Feature map after upsampling.
+        """
         x = F.interpolate(x, scale_factor=2, mode='nearest')
-        if hasattr(self, 'conv'):
+        if self.with_conv:
             x = self.conv(x)
         return x
