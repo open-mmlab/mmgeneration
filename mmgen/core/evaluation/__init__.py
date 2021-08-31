@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from .eval_hooks import GenerativeEvalHook
 from .evaluation import (make_metrics_table, make_vanilla_dataloader,
                          single_gpu_evaluation, single_gpu_online_evaluation)

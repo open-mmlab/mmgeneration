@@ -1,39 +1,28 @@
 _base_ = [
-    '../_base_/models/sngan_proj_128x128.py',
-    '../_base_/datasets/imagenet_128.py', '../_base_/default_runtime.py'
+    '../_base_/models/sagan_32x32.py', '../_base_/datasets/cifar10_nopad.py',
+    '../_base_/default_runtime.py'
 ]
 
-num_classes = 1000
+init_cfg = dict(type='studio')
 model = dict(
-    num_classes=num_classes,
-    generator=dict(
-        num_classes=num_classes,
-        act_cfg=dict(type='ReLU', inplace=True),
-        init_cfg=dict(type='BigGAN')),
-    discriminator=dict(
-        num_classes=num_classes,
-        act_cfg=dict(type='ReLU', inplace=True),
-        init_cfg=dict(type='BigGAN')))
+    num_classes=10,
+    generator=dict(num_classes=10, init_cfg=init_cfg),
+    discriminator=dict(num_classes=10, init_cfg=init_cfg))
 
-n_disc = 5
-train_cfg = dict(disc_steps=n_disc)
 lr_config = None
-
-checkpoint_config = dict(interval=50000, by_epoch=False, max_keep_ckpts=20)
+checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=20)
 custom_hooks = [
     dict(
         type='VisualizeUnconditionalSamples',
         output_dir='training_samples',
-        interval=5000)
+        interval=1000)
 ]
 
-log_config = dict(interval=100, hooks=[dict(type='TextLoggerHook')])
-
-inception_pkl = './work_dirs/inception_pkl/imagenet.pkl'
+inception_pkl = './work_dirs/inception_pkl/cifar10.pkl'
 
 evaluation = dict(
     type='GenerativeEvalHook',
-    interval=dict(milestones=[800000], interval=[10000, 4000]),
+    interval=10000,
     metrics=[
         dict(
             type='FID',
@@ -46,7 +35,8 @@ evaluation = dict(
     best_metric=['fid', 'is'],
     sample_kwargs=dict(sample_model='orig'))
 
-total_iters = 500000 * n_disc
+n_disc = 5
+total_iters = 100000 * n_disc
 # use ddp wrapper for faster training
 use_ddp_wrapper = True
 find_unused_parameters = False
@@ -65,8 +55,7 @@ metrics = dict(
     IS50k=dict(type='IS', num_images=50000))
 
 optimizer = dict(
-    generator=dict(type='Adam', lr=0.0002, betas=(0.0, 0.999)),
-    discriminator=dict(type='Adam', lr=0.00005, betas=(0.0, 0.999)))
+    generator=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)),
+    discriminator=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)))
 
-# train on 2 gpus
-data = dict(samples_per_gpu=128)
+data = dict(samples_per_gpu=64)

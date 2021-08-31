@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from .ceph_hooks import PetrelUploadHook
 from .ema_hook import ExponentialMovingAverageHook
 from .pggan_fetch_data_hook import PGGANFetchDataHook

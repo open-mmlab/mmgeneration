@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from copy import deepcopy
 
 import mmcv
@@ -85,6 +86,10 @@ class BigGANGenerator(nn.Module):
             dict containing information for pretained models whose necessary
             key is 'ckpt_path'. Besides, you can also provide 'prefix' to load
             the generator part from the whole state dict. Defaults to None.
+        rgb2bgr (bool, optional): Whether to reformat the output channels
+                with order `bgr`. We provide several pre-trained BigGAN
+                weights whose output channels order is `rgb`. You can set
+                this argument to True to use the weights.
     """
 
     def __init__(self,
@@ -106,7 +111,8 @@ class BigGANGenerator(nn.Module):
                  blocks_cfg=dict(type='BigGANGenResBlock'),
                  arch_cfg=None,
                  out_norm_cfg=dict(type='BN'),
-                 pretrained=None):
+                 pretrained=None,
+                 rgb2bgr=False):
         super().__init__()
         self.noise_size = noise_size
         self.num_classes = num_classes
@@ -119,6 +125,7 @@ class BigGANGenerator(nn.Module):
         self.split_noise = split_noise
         self.blocks_cfg = deepcopy(blocks_cfg)
         self.upsample_cfg = deepcopy(upsample_cfg)
+        self.rgb2bgr = rgb2bgr
 
         # Validity Check
         # If 'num_classes' equals to zero, we shall set 'with_shared_embedding'
@@ -256,7 +263,13 @@ class BigGANGenerator(nn.Module):
 
         return _default_arch_cfgs[str(output_scale)]
 
-    def forward(self, noise, label=None, num_batches=0, return_noise=False):
+    def forward(self,
+                noise,
+                label=None,
+                num_batches=0,
+                return_noise=False,
+                truncation=-1.0,
+                use_outside_embedding=False):
         """Forward function.
 
         Args:
@@ -274,6 +287,14 @@ class BigGANGenerator(nn.Module):
             return_noise (bool, optional): If True, ``noise_batch`` and
                 ``label`` will be returned in a dict with ``fake_img``.
                 Defaults to False.
+            truncation (float, optional): Truncation factor. Give value not
+                less than 0., the truncation trick will be adopted.
+                Otherwise, the truncation trick will not be adopted.
+                Defaults to -1..
+            use_outside_embedding (bool, optional): Whether to use outside
+                embedding or use `shared_embedding`. Set to `True` if
+                embedding has already be performed outside this function.
+                Default to False.
 
         Returns:
             torch.Tensor | dict: If not ``return_noise``, only the output image
@@ -295,12 +316,19 @@ class BigGANGenerator(nn.Module):
             assert num_batches > 0
             noise_batch = torch.randn((num_batches, self.noise_size))
 
+        # perform truncation
+        if truncation >= 0.0:
+            noise_batch = torch.clamp(noise_batch, -1. * truncation,
+                                      1. * truncation)
+
         if self.num_classes == 0:
             label_batch = None
 
         elif isinstance(label, torch.Tensor):
-            assert label.ndim == 1, ('The label shoube be in shape of (n, )'
-                                     f'but got {label.shape}.')
+            if not use_outside_embedding:
+                assert label.ndim == 1, (
+                    'The label shoube be in shape of (n, )'
+                    f'but got {label.shape}.')
             label_batch = label
         elif callable(label):
             label_generator = label
@@ -314,7 +342,10 @@ class BigGANGenerator(nn.Module):
         noise_batch = noise_batch.to(get_module_device(self))
         if label_batch is not None:
             label_batch = label_batch.to(get_module_device(self))
-            class_vector = self.shared_embedding(label_batch)
+            if not use_outside_embedding:
+                class_vector = self.shared_embedding(label_batch)
+            else:
+                class_vector = label_batch
         else:
             class_vector = None
         # If 'split noise', concat class vector and noise chunk
@@ -345,6 +376,9 @@ class BigGANGenerator(nn.Module):
 
         # Apply batchnorm-relu-conv-tanh at output
         out_img = torch.tanh(self.output_layer(x))
+
+        if self.rgb2bgr:
+            out_img = out_img[:, [2, 1, 0], ...]
 
         if return_noise:
             output = dict(
