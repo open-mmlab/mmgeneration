@@ -21,6 +21,16 @@ class Pix2Pix(StaticTranslationGAN):
         self.use_ema = False
 
     def forward_test(self, img, target_domain, **kwargs):
+        """Forward function for testing.
+
+        Args:
+            img (tensor): Input image tensor.
+            target_domain (str): Target domain of output image.
+            kwargs (dict): Other arguments.
+
+        Returns:
+            Dict: Forward results.
+        """
         # This is a trick for Pix2Pix
         self.train()
         target = self.translation(img, target_domain=target_domain, **kwargs)

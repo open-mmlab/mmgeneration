@@ -107,6 +107,7 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
         self.batch_size = self.test_cfg.get('batch_size', 1)
 
     def _get_domain_generator(self, domain):
+        """get domain generator."""
         assert self.is_domain_reachable(
             domain
         ), f'{domain} domain is not reachable, available domain list is\
@@ -115,6 +116,7 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
         return self.generators[domain]
 
     def _get_domain_discriminator(self, domain):
+        """get domain discriminator."""
         assert self.is_domain_reachable(
             domain
         ), f'{domain} domain is not reachable, available domain list is\
