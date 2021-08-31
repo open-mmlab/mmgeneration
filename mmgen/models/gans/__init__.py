@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from .base_gan import BaseGAN
 from .base_translation_model import BaseTranslationModel
 from .basic_conditional_gan import BasicConditionalGAN

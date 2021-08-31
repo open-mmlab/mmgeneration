@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import numpy as np
 from mmcls.datasets import PIPELINES as CLS_PIPELINE
