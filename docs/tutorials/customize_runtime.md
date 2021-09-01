@@ -2,9 +2,9 @@
 
 ## Customize optimization settings
 
-### Customize optimizer supported by Pytorch
+### Customize optimizer supported by PyTorch
 
-We already support using of all the optimizers implemented by PyTorch, and the only modification is to change the `optimizer` field of config files.
+We already support the use of all the optimizers implemented by PyTorch, and the only modification is to change the `optimizer` field of config files.
 For example, if you want to use `ADAM` (note that the performance could drop a lot), the modification could be as the following.
 
 ```python
@@ -17,9 +17,9 @@ To modify the learning rate of the model, the users only need to modify the `lr`
 
 #### 1. Define a new optimizer
 
-A customized optimizer could be defined as following.
+A customized optimizer could be defined as follows.
 
-Assume you want to add a optimizer named `MyOptimizer`, which has arguments `a`, `b`, and `c`.
+Assume you want to add an optimizer named `MyOptimizer`, which has arguments `a`, `b`, and `c`.
 You need to create a new directory named `mmgen/core/optimizer`.
 And then implement the new optimizer in a file, e.g., in `mmgen/core/optimizer/my_optimizer.py`:
 
@@ -58,7 +58,7 @@ The module `mmgen.core.optimizer.my_optimizer` will be imported at the beginning
 Note that only the package containing the class `MyOptimizer` should be imported.
 `mmgen.core.optimizer.my_optimizer.MyOptimizer` **cannot** be imported directly.
 
-Actually users can use a totally different file directory structure using this importing method, as long as the module root can be located in `PYTHONPATH`.
+Actually, users can use a totally different file directory structure using this importing method, as long as the module root can be located in `PYTHONPATH`.
 
 #### 3. Specify the optimizer in the config file
 
@@ -113,7 +113,7 @@ Tricks not implemented by the optimizer should be implemented through optimizer 
         _delete_=True, grad_clip=dict(max_norm=35, norm_type=2))
     ```
 
-    If your config inherits the base config which already sets the `optimizer_config`, you might need `_delete_=True` to overide the unnecessary settings. See the [config documentation](https://mmgeneration.readthedocs.io/en/latest/config.html) for more details.
+    If your config inherits the base config which already sets the `optimizer_config`, you might need `_delete_=True` to override the unnecessary settings. See the [config documentation](https://mmgeneration.readthedocs.io/en/latest/config.html) for more details.
 
 - __Use momentum schedule to accelerate model convergence__:
     We support momentum scheduler to modify model's momentum according to learning rate, which could make the model converge in a faster way.
@@ -137,8 +137,8 @@ Tricks not implemented by the optimizer should be implemented through optimizer 
 
 ## Customize training schedules
 
-By default we use step learning rate with 1x schedule, this calls [`StepLRHook`](https://github.com/open-mmlab/mmcv/blob/f48241a65aebfe07db122e9db320c31b685dc674/mmcv/runner/hooks/lr_updater.py#L153) in MMCV.
-We support many other learning rate schedule [here](https://github.com/open-mmlab/mmcv/blob/master/mmcv/runner/hooks/lr_updater.py), such as `CosineAnnealing` and `Poly` schedule. Here are some examples
+By default, we use step learning rate with 1x schedule, this calls [`StepLRHook`](https://github.com/open-mmlab/mmcv/blob/f48241a65aebfe07db122e9db320c31b685dc674/mmcv/runner/hooks/lr_updater.py#L153) in MMCV.
+We support many other learning rate schedules [here](https://github.com/open-mmlab/mmcv/blob/master/mmcv/runner/hooks/lr_updater.py), such as `CosineAnnealing` and `Poly` schedule. Here are some examples
 
 - Poly schedule:
 
@@ -160,7 +160,7 @@ We support many other learning rate schedule [here](https://github.com/open-mmla
 ## Customize workflow
 
 Workflow is a list of (phase, epochs) to specify the running order and epochs.
-By default it is set to be
+By default, it is set to be
 
 ```python
 workflow = [('train', 1)]
@@ -258,7 +258,7 @@ custom_hooks = [
 ]
 ```
 
-By default the hook's priority is set as `NORMAL` during registration.
+By default, the hook's priority is set as `NORMAL` during registration.
 
 ### Use hooks implemented in MMCV
 
@@ -267,7 +267,7 @@ If the hook is already implemented in MMCV, you can directly modify the config t
 
 ### Modify default runtime hooks
 
-There are some common hooks that are not registered through `custom_hooks`, they are
+Some common hooks are not registered through `custom_hooks`, they are
 
 - log_config
 - checkpoint_config
@@ -276,9 +276,9 @@ There are some common hooks that are not registered through `custom_hooks`, they
 - optimizer_config
 - momentum_config
 
-In those hooks, only the logger hook has the `VERY_LOW` priority, others' priority are `NORMAL`.
-The above-mentioned tutorials already covers how to modify `optimizer_config`, `momentum_config`, and `lr_config`.
-Here we reveals how what we can do with `log_config`, `checkpoint_config`, and `evaluation`.
+In those hooks, only the logger hook `log_config` has the `VERY_LOW` priority, the others have the `NORMAL` priority.
+The above-mentioned tutorials already cover how to modify `optimizer_config`, `momentum_config`, and `lr_config`.
+Here we reveal how what we can do with `log_config`, `checkpoint_config`, and `evaluation`.
 
 #### Checkpoint config
 
@@ -288,7 +288,7 @@ The MMCV runner will use `checkpoint_config` to initialize [`CheckpointHook`](ht
 checkpoint_config = dict(interval=1)
 ```
 
-The users could set `max_keep_ckpts` to only save only small number of checkpoints or decide whether to store state dict of optimizer by `save_optimizer`. More details of the arguments are [here](https://mmcv.readthedocs.io/en/latest/api.html#mmcv.runner.CheckpointHook)
+The users could set `max_keep_ckpts` to only save a small number of checkpoints or decide whether to store state dict of optimizer by `save_optimizer`. More details of the arguments are [here](https://mmcv.readthedocs.io/en/latest/api.html#mmcv.runner.CheckpointHook)
 
 #### Log config
 

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[ALGORITHM]
+<!-- [ALGORITHM] -->
 
 ```bibtex
 @inproceedings{isola2017image,
@@ -10,7 +10,8 @@
   author={Isola, Phillip and Zhu, Jun-Yan and Zhou, Tinghui and Efros, Alexei A},
   booktitle={Proceedings of the IEEE conference on computer vision and pattern recognition},
   pages={1125--1134},
-  year={2017}
+  year={2017},
+  url={https://openaccess.thecvf.com/content_cvpr_2017/html/Isola_Image-To-Image_Translation_With_CVPR_2017_paper.html},
 }
 ```
 

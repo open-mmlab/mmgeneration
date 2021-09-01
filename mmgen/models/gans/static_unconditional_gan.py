@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from copy import deepcopy
 
 import torch
@@ -97,6 +98,8 @@ class StaticUnconditionalGAN(BaseGAN):
             # use deepcopy to guarantee the consistency
             self.generator_ema = deepcopy(self.generator)
 
+        self.real_img_key = self.train_cfg.get('real_img_key', 'real_img')
+
     def _parse_test_cfg(self):
         """Parsing test config and set some attributes for testing."""
         if self.test_cfg is None:
@@ -113,6 +116,8 @@ class StaticUnconditionalGAN(BaseGAN):
                    data_batch,
                    optimizer,
                    ddp_reducer=None,
+                   loss_scaler=None,
+                   use_apex_amp=False,
                    running_status=None):
         """Train step function.
 
@@ -131,6 +136,11 @@ class StaticUnconditionalGAN(BaseGAN):
             ddp_reducer (:obj:`Reducer` | None, optional): Reducer from ddp.
                 It is used to prepare for ``backward()`` in ddp. Defaults to
                 None.
+            loss_scaler (:obj:`torch.cuda.amp.GradScaler` | None, optional):
+                The loss/gradient scaler used for auto mixed-precision
+                training. Defaults to ``None``.
+            use_apex_amp (bool, optional). Whether to use apex.amp. Defaults to
+                ``False``.
             running_status (dict | None, optional): Contains necessary basic
                 information for training, e.g., iteration number. Defaults to
                 None.
@@ -139,7 +149,7 @@ class StaticUnconditionalGAN(BaseGAN):
             dict: Contains 'log_vars', 'num_samples', and 'results'.
         """
         # get data from data_batch
-        real_imgs = data_batch['real_img']
+        real_imgs = data_batch[self.real_img_key]
         # If you adopt ddp, this batch size is local batch size for each GPU.
         # If you adopt dp, this batch size is the global batch size as usual.
         batch_size = real_imgs.shape[0]
@@ -172,7 +182,8 @@ class StaticUnconditionalGAN(BaseGAN):
             fake_imgs=fake_imgs,
             real_imgs=real_imgs,
             iteration=curr_iter,
-            batch_size=batch_size)
+            batch_size=batch_size,
+            loss_scaler=loss_scaler)
 
         loss_disc, log_vars_disc = self._get_disc_loss(data_dict_)
 
@@ -181,8 +192,26 @@ class StaticUnconditionalGAN(BaseGAN):
         # in current computation.
         if ddp_reducer is not None:
             ddp_reducer.prepare_for_backward(_find_tensors(loss_disc))
-        loss_disc.backward()
-        optimizer['discriminator'].step()
+
+        if loss_scaler:
+            # add support for fp16
+            loss_scaler.scale(loss_disc).backward()
+        elif use_apex_amp:
+            from apex import amp
+            with amp.scale_loss(
+                    loss_disc, optimizer['discriminator'],
+                    loss_id=0) as scaled_loss_disc:
+                scaled_loss_disc.backward()
+        else:
+            loss_disc.backward()
+
+        if loss_scaler:
+            loss_scaler.unscale_(optimizer['discriminator'])
+            # note that we do not contain clip_grad procedure
+            loss_scaler.step(optimizer['discriminator'])
+            # loss_scaler.update will be called in runner.train()
+        else:
+            optimizer['discriminator'].step()
 
         # skip generator training if only train discriminator for current
         # iteration
@@ -211,7 +240,8 @@ class StaticUnconditionalGAN(BaseGAN):
             fake_imgs=fake_imgs,
             disc_pred_fake_g=disc_pred_fake_g,
             iteration=curr_iter,
-            batch_size=batch_size)
+            batch_size=batch_size,
+            loss_scaler=loss_scaler)
 
         loss_gen, log_vars_g = self._get_gen_loss(data_dict_)
 
@@ -221,8 +251,24 @@ class StaticUnconditionalGAN(BaseGAN):
         if ddp_reducer is not None:
             ddp_reducer.prepare_for_backward(_find_tensors(loss_gen))
 
-        loss_gen.backward()
-        optimizer['generator'].step()
+        if loss_scaler:
+            loss_scaler.scale(loss_gen).backward()
+        elif use_apex_amp:
+            from apex import amp
+            with amp.scale_loss(
+                    loss_gen, optimizer['generator'],
+                    loss_id=1) as scaled_loss_disc:
+                scaled_loss_disc.backward()
+        else:
+            loss_gen.backward()
+
+        if loss_scaler:
+            loss_scaler.unscale_(optimizer['generator'])
+            # note that we do not contain clip_grad procedure
+            loss_scaler.step(optimizer['generator'])
+            # loss_scaler.update will be called in runner.train()
+        else:
+            optimizer['generator'].step()
 
         log_vars = {}
         log_vars.update(log_vars_g)

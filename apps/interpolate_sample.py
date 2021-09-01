@@ -12,6 +12,9 @@ from mmgen.apis import set_random_seed
 from mmgen.core.evaluation import slerp
 from mmgen.models import build_model
 
+# yapf: disable
+sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -77,6 +80,24 @@ def batch_inference(generator,
                     max_batch_size=16,
                     dict_key=None,
                     **kwargs):
+    """Inference function to get a batch of desired data from output dictionary
+    of generator.
+
+    Args:
+        generator (nn.Module): Generator of a conditional model.
+        noise (Tensor | list[torch.tensor] | None): A batch of noise
+            Tensor.
+        num_batches (int, optional): The number of batchs for
+            inference. Defaults to -1.
+        max_batch_size (int, optional): The number of batch size for
+            inference. Defaults to 16.
+        dict_key (str, optional): key used to get results from output
+            dictionary of generator. Defaults to None.
+
+    Returns:
+        torch.Tensor: Tensor of output image, noise batch or label
+            batch.
+    """
     # split noise into groups
     if noise is not None:
         if isinstance(noise, torch.Tensor):
@@ -104,8 +125,8 @@ def batch_inference(generator,
         output = output[dict_key] if dict_key else output
         if isinstance(output, list):
             output = output[0]
-        # once we get sampling results, immediately put them into cpu to save
-        # cuda memory
+        # once obtaining sampled results, we immediately put them into cpu
+        # to save cuda memory
         outputs.append(output.to('cpu'))
     outputs = torch.cat(outputs, dim=0)
     return outputs

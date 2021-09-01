@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import numpy as np
 from mmcv.fileio import FileClient
@@ -15,6 +16,10 @@ class LoadImageFromFile:
         flag (str): Loading flag for images. Default: 'color'.
         channel_order (str): Order of channel, candidates are 'bgr' and 'rgb'.
             Default: 'bgr'.
+        backend (str | None): The image decoding backend type. Options are
+            `cv2`, `pillow`, `turbojpeg`, `None`. If backend is None, the
+            global imread_backend specified by ``mmcv.use_backend()`` will be
+            used. Default: None.
         save_original_img (bool): If True, maintain a copy of the image in
             ``results`` dict with name of ``f'ori_{key}'``. Default: False.
         kwargs (dict): Args for file client.
@@ -25,6 +30,7 @@ class LoadImageFromFile:
                  key='gt',
                  flag='color',
                  channel_order='bgr',
+                 backend=None,
                  save_original_img=False,
                  **kwargs):
         self.io_backend = io_backend
@@ -32,6 +38,7 @@ class LoadImageFromFile:
         self.flag = flag
         self.save_original_img = save_original_img
         self.channel_order = channel_order
+        self.backend = backend
         self.kwargs = kwargs
         self.file_client = None
 
@@ -50,7 +57,10 @@ class LoadImageFromFile:
         filepath = str(results[f'{self.key}_path'])
         img_bytes = self.file_client.get(filepath)
         img = mmcv.imfrombytes(
-            img_bytes, flag=self.flag, channel_order=self.channel_order)  # HWC
+            img_bytes,
+            flag=self.flag,
+            channel_order=self.channel_order,
+            backend=self.backend)  # HWC
 
         results[self.key] = img
         results[f'{self.key}_path'] = filepath

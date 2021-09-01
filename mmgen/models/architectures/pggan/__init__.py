@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from .generator_discriminator import PGGANDiscriminator, PGGANGenerator
 from .modules import (EqualizedLR, EqualizedLRConvDownModule,
                       EqualizedLRConvModule, EqualizedLRConvUpModule,

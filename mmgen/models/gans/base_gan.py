@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 
@@ -7,6 +8,7 @@ import torch.nn as nn
 
 
 class BaseGAN(nn.Module, metaclass=ABCMeta):
+    """BaseGAN Module."""
 
     def __init__(self):
         super().__init__()

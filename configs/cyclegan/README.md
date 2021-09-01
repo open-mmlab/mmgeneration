@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[ALGORITHM]
+<!-- [ALGORITHM] -->
 
 ```bibtex
 @inproceedings{zhu2017unpaired,
@@ -10,7 +10,8 @@
   author={Zhu, Jun-Yan and Park, Taesung and Isola, Phillip and Efros, Alexei A},
   booktitle={Proceedings of the IEEE international conference on computer vision},
   pages={2223--2232},
-  year={2017}
+  year={2017},
+  url={https://openaccess.thecvf.com/content_iccv_2017/html/Zhu_Unpaired_Image-To-Image_Translation_ICCV_2017_paper.html},
 }
 ```
 
@@ -41,6 +42,6 @@ Model and log downloads:
 
 | Dataset  |                                                                                                                       facades                                                                                                                        |                                                                 facades-id0                                                                 |                                                                  summer2winter                                                                   |                                                                  summer2winter-id0                                                                   |                                                                  horse2zebra                                                                   |                                                                  horse2zebra-id0                                                                   |
 | :------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------------: |
-| download | [model](http://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_resnet_in_1x1_80k_facades_20210411_181307-ca3f0bcd.pth) \| [log](http://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_resnet_in_1x1_80k_facades_20210317_160938.log.json) | [model](http://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_id0_resnet_in_1x1_80k_facades_convert-bgr_20210411_181546-50fa108a.pth) | [model](http://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_resnet_in_1x1_246200_summer2winter_convert-bgr_20210411_181406-b351815d.pth) | [model](http://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_id0_resnet_in_1x1_246200_summer2winter_convert-bgr_20210411_181614-c32219a7.pth) | [model](http://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_resnet_in_1x1_266800_horse2zebra_convert-bgr_20210411_181443-daca4e99.pth) | [model](http://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_id0_resnet_in_1x1_266800_horse2zebra_convert-bgr_20210411_181642-1d4481e6.pth) |
+| download | [model](https://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_resnet_in_1x1_80k_facades_20210411_181307-ca3f0bcd.pth) \| [log](https://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_resnet_in_1x1_80k_facades_20210317_160938.log.json) | [model](https://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_id0_resnet_in_1x1_80k_facades_convert-bgr_20210411_181546-50fa108a.pth) | [model](https://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_resnet_in_1x1_246200_summer2winter_convert-bgr_20210411_181406-b351815d.pth) | [model](https://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_id0_resnet_in_1x1_246200_summer2winter_convert-bgr_20210411_181614-c32219a7.pth) | [model](https://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_resnet_in_1x1_266800_horse2zebra_convert-bgr_20210411_181443-daca4e99.pth) | [model](https://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_id0_resnet_in_1x1_266800_horse2zebra_convert-bgr_20210411_181642-1d4481e6.pth) |
 
 Note: With a larger identity loss, the image-to-image translation becomes more conservative, which makes less changes. The original authors did not say what is the best weight for identity loss. Thus, in addition to the default setting, we also set the weight of identity loss to 0 (denoting `id0`) to make a more comprehensive comparison.

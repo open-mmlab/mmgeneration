@@ -1,6 +1,7 @@
-import math
+# Copyright (c) OpenMMLab. All rights reserved.
 from functools import partial
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -65,9 +66,10 @@ class SinGANMultiScaleGenerator(nn.Module):
             F.interpolate, mode='bicubic', align_corners=True)
 
         for scale in range(num_scales + 1):
-            base_ch = min(base_channels * pow(2, math.floor(scale / 4)), 128)
+            base_ch = min(base_channels * pow(2, int(np.floor(scale / 4))),
+                          128)
             min_feat_ch = min(
-                min_feat_channels * pow(2, math.floor(scale / 4)), 128)
+                min_feat_channels * pow(2, int(np.floor(scale / 4))), 128)
 
             self.blocks.append(
                 GeneratorBlock(
@@ -218,9 +220,10 @@ class SinGANMultiScaleDiscriminator(nn.Module):
         super().__init__()
         self.blocks = nn.ModuleList()
         for scale in range(num_scales + 1):
-            base_ch = min(base_channels * pow(2, math.floor(scale / 4)), 128)
+            base_ch = min(base_channels * pow(2, int(np.floor(scale / 4))),
+                          128)
             min_feat_ch = min(
-                min_feat_channels * pow(2, math.floor(scale / 4)), 128)
+                min_feat_channels * pow(2, int(np.floor(scale / 4))), 128)
             self.blocks.append(
                 DiscriminatorBlock(
                     in_channels=in_channels,

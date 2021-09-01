@@ -26,14 +26,14 @@ When submitting jobs using "tools/train.py" or "tools/evaluation.py", you may sp
 
 ## Config File Structure
 
-There are 4 basic component types under `config/_base_`, dataset, model, schedule, default_runtime.
-Many methods could be easily constructed with one of each like Faster R-CNN, Mask R-CNN, Cascade R-CNN, RPN, SSD.
-The configs that are composed by components from `_base_` are called _primitive_.
+There are 4 basic component types under `config/_base_`, dataset, model, default_metrics, default_runtime.
+Many methods could be easily constructed with one of each like StyleGAN2, CycleGAN, SinGAN.
+Configs consisting of components from `_base_` are called _primitive_.
 
 For all configs under the same folder, it is recommended to have only **one** _primitive_ config. All other configs should inherit from the _primitive_ config. In this way, the maximum of inheritance level is 3.
 
-For easy understanding, we recommend contributors to inherit from exiting methods.
-For example, if some modification is made base on StyleGAN2, user may first inherit the basic Faster R-CNN structure by specifying `_base_ = ../styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py`, then modify the necessary fields in the config files.
+For easy understanding, we recommend contributors to inherit from existing methods.
+For example, if some modification is made base on StyleGAN2, user may first inherit the basic StyleGAN2 structure by specifying `_base_ = ../styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py`, then modify the necessary fields in the config files.
 
 If you are building an entirely new method that does not share the structure with any of the existing methods, you may create a folder `xxxgan` under `configs`,
 
@@ -115,9 +115,9 @@ total_iters = 800002  # define the total number of iterations
 Sometimes, you may set `_delete_=True` to ignore some of fields in base configs.
 You may refer to [mmcv](https://mmcv.readthedocs.io/en/latest/utils.html#inherit-from-base-config-with-ignored-fields) for simple illustration.
 
-You may have a careful look at [this tutorial](https://github.com/open-mmlab/mmdetection/blob/master/docs/tutorials/config.md) for better understanding this feature.
+You may have a careful look at [this tutorial](https://github.com/open-mmlab/mmdetection/blob/master/docs/tutorials/config.md) for better understanding of this feature.
 
 ### Use intermediate variables in configs
 
-Some intermediate variables are used in the configs files, like `train_pipeline`/`test_pipeline` in datasets.
+Some intermediate variables are used in the config files, like `train_pipeline`/`test_pipeline` in datasets.
 It's worth noting that when modifying intermediate variables in the children configs, users need to pass the intermediate variables into corresponding fields again. An intuitive example can be found in [this tutorial](https://github.com/open-mmlab/mmdetection/blob/master/docs/tutorials/config.md).

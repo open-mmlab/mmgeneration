@@ -1,4 +1,10 @@
+# Copyright (c) OpenMMLab. All rights reserved.
+import math
+import os
+import os.path as osp
 import sys
+import warnings
+from bisect import bisect_right
 
 import mmcv
 import torch
@@ -11,23 +17,103 @@ from ..registry import build_metric
 class GenerativeEvalHook(Hook):
     """Evaluation Hook for Generative Models.
 
-    Currently, this evaluation hook can be used to evaluate unconditional
-    models. Note that only ``FID`` metric is supported for the distributed
-    training now. In the future, we will support more metrics for evaluation
-    during the training procedure.
+    This evaluation hook can be used to evaluate unconditional and conditional
+    models. Note that only ``FID`` and ``IS`` metric is supported for the
+    distributed training now. In the future, we will support more metrics for
+    the evaluation during the training procedure.
 
-    TODO: Support ``save_best_ckpt`` feature.
+    In our config system, you only need to add `evaluation` with the detailed
+    configureations. Below is serveral usage cases for different situations.
+    What you need to do is to add these lines at the end of your config file.
+    Then, you can use this evaluation hook in the training procedure.
+
+    To be noted that, this evaluation hook support evaluation with dynamic
+    intervals for FID or other metrics may fluctuate frequently at the end of
+    the training process.
+
+    # TODO: fix the online doc
+
+    #. Only use FID for evaluation
+
+    .. code-blcok:: python
+        :linenos
+
+        evaluation = dict(
+            type='GenerativeEvalHook',
+            interval=10000,
+            metrics=dict(
+                type='FID',
+                num_images=50000,
+                inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
+                bgr2rgb=True),
+            sample_kwargs=dict(sample_model='ema'))
+
+    #. Use FID and IS simutaneously and save the best checkpoints respectively
+
+    .. code-block:: python
+        :linenos
+
+        evaluation = dict(
+            type='GenerativeEvalHook',
+            interval=10000,
+            metrics=[dict(
+                type='FID',
+                num_images=50000,
+                inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
+                bgr2rgb=True),
+                dict(type='IS',
+                num_images=50000)],
+            best_metric=['fid', 'is'],
+            sample_kwargs=dict(sample_model='ema'))
+
+    #. Use dynamic evaluation intervals
+
+    .. code-block:: python
+        :linenos
+
+        # interval = 10000 if iter < 50000,
+        # interval = 4000, if 50000 <= iter < 750000,
+        # interval = 2000, if iter >= 750000
+
+        evaluation = dict(
+            type='GenerativeEvalHook',
+            interval=dict(milestones=[500000, 750000],
+                          interval=[10000, 4000, 2000])
+            metrics=[dict(
+                type='FID',
+                num_images=50000,
+                inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
+                bgr2rgb=True),
+                dict(type='IS',
+                num_images=50000)],
+            best_metric=['fid', 'is'],
+            sample_kwargs=dict(sample_model='ema'))
+
 
     Args:
         dataloader (DataLoader): A PyTorch dataloader.
-        interval (int): Evaluation interval. Default: 1.
+        interval (int | dict): Evaluation interval. If int is passed,
+            ``eval_hook`` would run under given interval. If a dict is passed,
+            The key and value would be interpret as 'milestones' and 'interval'
+            of the evaluation.  Default: 1.
         dist (bool, optional): Whether to use distributed evaluation.
             Defaults to True.
         metrics (dict | list[dict], optional): Configs for metrics that will be
             used in evaluation hook. Defaults to None.
         sample_kwargs (dict | None, optional): Additional keyword arguments for
             sampling images. Defaults to None.
+        save_best_ckpt (bool, optional): Whether to save the best checkpoint
+            according to ``best_metric``. Defaults to ``True``.
+        best_metric (str | list, optional): Which metric to be used in saving
+            the best checkpoint. Multiple metrics have been supported by
+            inputing a list of metric names, e.g., ``['fid', 'is']``.
+            Defaults to ``'fid'``.
     """
+    rule_map = {'greater': lambda x, y: x > y, 'less': lambda x, y: x < y}
+    init_value_map = {'greater': -math.inf, 'less': math.inf}
+    greater_keys = ['acc', 'top', 'AR@', 'auc', 'precision', 'mAP', 'is']
+    less_keys = ['loss', 'fid']
+    _supported_best_metrics = ['fid', 'is']
 
     def __init__(self,
                  dataloader,
@@ -35,13 +121,51 @@ class GenerativeEvalHook(Hook):
                  dist=True,
                  metrics=None,
                  sample_kwargs=None,
-                 save_best_ckpt=True):
+                 save_best_ckpt=True,
+                 best_metric='fid'):
         assert metrics is not None
         self.dataloader = dataloader
-        self.interval = interval
         self.dist = dist
         self.sample_kwargs = sample_kwargs if sample_kwargs else dict()
-        self.save_best_ckp = save_best_ckpt
+        self.save_best_ckpt = save_best_ckpt
+        self.best_metric = best_metric
+
+        if isinstance(interval, int):
+            self.interval = interval
+        elif isinstance(interval, dict):
+            if 'milestones' not in interval or 'interval' not in interval:
+                raise KeyError(
+                    '`milestones` and `interval` must exist in interval dict '
+                    'if you want to use the dynamic interval evaluation '
+                    f'strategy. But receive [{[k for k in interval.keys()]}] '
+                    'in the interval dict.')
+
+            self.milestones = interval['milestones']
+            self.interval = interval['interval']
+            # check if length of interval match with the milestones
+            if len(self.interval) != len(self.milestones) + 1:
+                raise ValueError(
+                    f'Length of `interval`(={len(self.interval)}) cannot '
+                    f'match length of `milestones`(={len(self.milestones)}).')
+
+            # check if milestones is in order
+            for idx in range(len(self.milestones) - 1):
+                former, latter = self.milestones[idx], self.milestones[idx + 1]
+                if former >= latter:
+                    raise ValueError(
+                        'Elements in `milestones` shoule in ascending order.')
+        else:
+            raise TypeError('`interval` only support `int` or `dict`,'
+                            f'recieve {type(self.interval)} instead.')
+
+        if isinstance(best_metric, str):
+            self.best_metric = [self.best_metric]
+
+        if self.save_best_ckpt:
+            not_supported = set(self.best_metric) - set(
+                self._supported_best_metrics)
+            assert len(not_supported) == 0, (
+                f'{not_supported} is not supported for saving best ckpt')
 
         self.metrics = build_metric(metrics)
 
@@ -51,13 +175,50 @@ class GenerativeEvalHook(Hook):
         for metric in self.metrics:
             metric.prepare()
 
+        # add support for saving best ckpt
+        if self.save_best_ckpt:
+            self.rule = {}
+            self.compare_func = {}
+            self._curr_best_score = {}
+            self._curr_best_ckpt_path = {}
+            for name in self.best_metric:
+                if name in self.greater_keys:
+                    self.rule[name] = 'greater'
+                else:
+                    self.rule[name] = 'less'
+                self.compare_func[name] = self.rule_map[self.rule[name]]
+                self._curr_best_score[name] = self.init_value_map[
+                    self.rule[name]]
+                self._curr_best_ckpt_path[name] = None
+
+    def get_current_interval(self, runner):
+        if isinstance(self.interval, int):
+            return self.interval
+        else:
+            curr_iter = runner.iter + 1
+            index = bisect_right(self.milestones, curr_iter)
+            return self.interval[index]
+
+    def before_run(self, runner):
+        """The behavior before running.
+
+        Args:
+            runner (``mmcv.runner.BaseRunner``): The runner.
+        """
+        if self.save_best_ckpt is not None:
+            if runner.meta is None:
+                warnings.warn('runner.meta is None. Creating an empty one.')
+                runner.meta = dict()
+            runner.meta.setdefault('hook_msgs', dict())
+
     def after_train_iter(self, runner):
         """The behavior after each train iteration.
 
         Args:
             runner (``mmcv.runner.BaseRunner``): The runner.
         """
-        if not self.every_n_iters(runner, self.interval):
+        interval = self.get_current_interval(runner)
+        if not self.every_n_iters(runner, interval):
             return
 
         runner.model.eval()
@@ -70,7 +231,17 @@ class GenerativeEvalHook(Hook):
             mmcv.print_log(f'Feed reals to {metric.name} metric.', 'mmgen')
             # feed in real images
             for data in self.dataloader:
-                reals = data['real_img']
+                # key for unconditional GAN
+                if 'real_img' in data:
+                    reals = data['real_img']
+                # key for conditional GAN
+                elif 'img' in data:
+                    reals = data['img']
+                else:
+                    raise KeyError('Cannot found key for images in data_dict. '
+                                   'Only support `real_img` for unconditional '
+                                   'datasets and `img` for conditional '
+                                   'datasets.')
                 num_feed = metric.feed(reals, 'reals')
                 if num_feed <= 0:
                     break
@@ -98,9 +269,7 @@ class GenerativeEvalHook(Hook):
 
                 for metric in self.metrics:
                     # feed in fake images
-                    num_left = metric.feed(fakes, 'fakes')
-                    if num_left <= 0:
-                        break
+                    metric.feed(fakes, 'fakes')
 
             if rank == 0:
                 pbar.update(total_batch_size)
@@ -115,9 +284,39 @@ class GenerativeEvalHook(Hook):
                 for name, val in metric._result_dict.items():
                     runner.log_buffer.output[name] = val
 
+                    # record best metric and save the best ckpt
+                    if self.save_best_ckpt and name in self.best_metric:
+                        self._save_best_ckpt(runner, val, name)
+
             runner.log_buffer.ready = True
         runner.model.train()
 
         # clear all current states for next evaluation
         for metric in self.metrics:
             metric.clear()
+
+    def _save_best_ckpt(self, runner, new_score, metric_name):
+        curr_iter = f'iter_{runner.iter + 1}'
+
+        if self.compare_func[metric_name](new_score,
+                                          self._curr_best_score[metric_name]):
+            best_ckpt_name = f'best_{metric_name}_{curr_iter}.pth'
+            runner.meta['hook_msgs'][f'best_score_{metric_name}'] = new_score
+
+            if self._curr_best_ckpt_path[metric_name] and osp.isfile(
+                    self._curr_best_ckpt_path[metric_name]):
+                os.remove(self._curr_best_ckpt_path[metric_name])
+
+            self._curr_best_ckpt_path[metric_name] = osp.join(
+                runner.work_dir, best_ckpt_name)
+            runner.save_checkpoint(
+                runner.work_dir, best_ckpt_name, create_symlink=False)
+            runner.meta['hook_msgs'][
+                f'best_ckpt_{metric_name}'] = self._curr_best_ckpt_path[
+                    metric_name]
+
+            self._curr_best_score[metric_name] = new_score
+            runner.logger.info(
+                f'Now best checkpoint is saved as {best_ckpt_name}.')
+            runner.logger.info(f'Best {metric_name} is {new_score:0.4f} '
+                               f'at {curr_iter}.')

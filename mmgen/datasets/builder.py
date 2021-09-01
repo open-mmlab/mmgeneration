@@ -1,8 +1,11 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import platform
 import random
+from copy import deepcopy
 from functools import partial
 
 import numpy as np
+import torch
 from mmcv.parallel import collate
 from mmcv.runner import get_dist_info
 from mmcv.utils import Registry, build_from_cfg
@@ -14,8 +17,9 @@ if platform.system() != 'Windows':
     # https://github.com/pytorch/pytorch/issues/973
     import resource
     rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+    base_soft_limit = rlimit[0]
     hard_limit = rlimit[1]
-    soft_limit = min(4096, hard_limit)
+    soft_limit = min(max(4096, base_soft_limit), hard_limit)
     resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))
 
 DATASETS = Registry('dataset')
@@ -41,6 +45,16 @@ def build_dataset(cfg, default_args=None):
     if cfg['type'] == 'RepeatDataset':
         dataset = RepeatDataset(
             build_dataset(cfg['dataset'], default_args), cfg['times'])
+    # add support for using datasets from `MMClassification`
+    elif cfg['type'].startswith('mmcls.'):
+        try:
+            from mmcls.datasets import build_dataset as build_dataset_mmcls
+        except ImportError:
+            raise ImportError(
+                f'Please install mmcls to use {cfg["type"]} dataset.')
+        _cfg = deepcopy(cfg)
+        _cfg['type'] = _cfg['type'][6:]
+        dataset = build_dataset_mmcls(_cfg, default_args)
     else:
         dataset = build_from_cfg(cfg, DATASETS, default_args)
 
@@ -54,6 +68,7 @@ def build_dataloader(dataset,
                      dist=True,
                      shuffle=True,
                      seed=None,
+                     persistent_workers=False,
                      **kwargs):
     """Build PyTorch DataLoader.
 
@@ -70,6 +85,11 @@ def build_dataloader(dataset,
         dist (bool): Distributed training/test or not. Default: True.
         shuffle (bool): Whether to shuffle the data at every epoch.
             Default: True.
+        persistent_workers (bool, optional): If True, the data loader will
+            not shutdown the worker processes after a dataset has been
+            consumed once. This allows to maintain the workers Dataset
+            instances alive. The argument also has effect in PyTorch>=1.7.0.
+            Default: False.
         kwargs: any keyword argument to be used to initialize DataLoader
 
     Returns:
@@ -95,15 +115,27 @@ def build_dataloader(dataset,
         worker_init_fn, num_workers=num_workers, rank=rank,
         seed=seed) if seed is not None else None
 
-    data_loader = DataLoader(
-        dataset,
-        batch_size=batch_size,
-        sampler=sampler,
-        num_workers=num_workers,
-        collate_fn=partial(collate, samples_per_gpu=samples_per_gpu),
-        shuffle=shuffle,
-        worker_init_fn=init_fn,
-        **kwargs)
+    if torch.__version__ >= '1.7.0':
+        data_loader = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            sampler=sampler,
+            num_workers=num_workers,
+            collate_fn=partial(collate, samples_per_gpu=samples_per_gpu),
+            shuffle=shuffle,
+            worker_init_fn=init_fn,
+            persistent_workers=persistent_workers,
+            **kwargs)
+    else:
+        data_loader = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            sampler=sampler,
+            num_workers=num_workers,
+            collate_fn=partial(collate, samples_per_gpu=samples_per_gpu),
+            shuffle=shuffle,
+            worker_init_fn=init_fn,
+            **kwargs)
 
     return data_loader
 

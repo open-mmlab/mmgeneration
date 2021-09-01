@@ -17,4 +17,5 @@ train_pipeline = [
 data = dict(
     samples_per_gpu=None,
     workers_per_gpu=4,
-    train=dict(type=dataset_type, imgs_root=None, pipeline=train_pipeline))
+    train=dict(type=dataset_type, imgs_root=None, pipeline=train_pipeline),
+    val=dict(type=dataset_type, imgs_root=None, pipeline=train_pipeline))

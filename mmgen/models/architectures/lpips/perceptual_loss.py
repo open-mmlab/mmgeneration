@@ -1,9 +1,10 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 from torch.utils.model_zoo import load_url
 
 from .networks_basic import PNetLin
 
-LPIPS_WEIGHTS_URL = 'http://download.openmmlab.com/mmgen/evaluation/lpips/weights/v0.1/vgg.pth'  # noqa
+LPIPS_WEIGHTS_URL = 'https://download.openmmlab.com/mmgen/evaluation/lpips/weights/v0.1/vgg.pth'  # noqa
 
 
 class PerceptualLoss(torch.nn.Module):

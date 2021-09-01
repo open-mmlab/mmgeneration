@@ -1,4 +1,6 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from collections.abc import Sequence
+from copy import deepcopy
 
 from mmcv.utils import build_from_cfg
 
@@ -19,7 +21,21 @@ class Compose:
         self.transforms = []
         for transform in transforms:
             if isinstance(transform, dict):
-                transform = build_from_cfg(transform, PIPELINES)
+                # add support for using pipelines from `MMClassification`
+                if transform['type'].startswith('mmcls.'):
+                    try:
+                        from mmcls.datasets import PIPELINES as MMCLSPIPELINE
+                    except ImportError:
+                        raise ImportError('Please install mmcls to use '
+                                          f'{transform["type"]} dataset.')
+                    pipeline_source = MMCLSPIPELINE
+                    # remove prefix
+                    transform_cfg = deepcopy(transform)
+                    transform_cfg['type'] = transform_cfg['type'][6:]
+                else:
+                    pipeline_source = PIPELINES
+                    transform_cfg = deepcopy(transform)
+                transform = build_from_cfg(transform_cfg, pipeline_source)
                 self.transforms.append(transform)
             elif callable(transform):
                 self.transforms.append(transform)

@@ -19,30 +19,19 @@ optimizer = dict(
 lr_config = None
 
 # checkpoint saving
-checkpoint_config = dict(interval=4000, save_optimizer=True, by_epoch=False)
+checkpoint_config = dict(interval=10000, save_optimizer=True, by_epoch=False)
 custom_hooks = [
     dict(
-        type='VisualizationHook',
+        type='MMGenVisualizationHook',
         output_dir='training_samples',
         res_name_list=['fake_b'],
-        interval=100)
+        interval=5000)
 ]
-log_config = dict(
-    interval=100,
-    hooks=[
-        dict(type='TextLoggerHook', by_epoch=False),
-        # dict(type='TensorboardLoggerHook')
-        # dict(type='PaviLoggerHook', init_kwargs=dict(project='mmgen'))
-    ])
-visual_config = None
+runner = None
+use_ddp_wrapper = True
 
 # runtime settings
 total_iters = 80000
-cudnn_benchmark = True
-dist_params = dict(backend='nccl')
-log_level = 'INFO'
-load_from = None
-resume_from = None
 workflow = [('train', 1)]
 exp_name = 'pix2pix_facades'
 work_dir = f'./work_dirs/experiments/{exp_name}'

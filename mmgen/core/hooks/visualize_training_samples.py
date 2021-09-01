@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
 
 import mmcv
@@ -95,8 +96,10 @@ class VisualizeUnconditionalSamples(Hook):
         filename = self.filename_tmpl.format(runner.iter + 1)
         if self.rerange:
             imgs = ((imgs + 1) / 2)
-        if self.bgr2rgb:
+        if self.bgr2rgb and imgs.size(1) == 3:
             imgs = imgs[:, [2, 1, 0], ...]
+        if imgs.size(1) == 1:
+            imgs = torch.cat([imgs, imgs, imgs], dim=1)
         imgs = imgs.clamp_(0, 1)
 
         mmcv.mkdir_or_exist(osp.join(runner.work_dir, self.output_dir))

@@ -95,15 +95,12 @@ If mmcv and mmcv-full are both installed, there will be `ModuleNotFoundError`.
 
 Note:
 
-a. Following the above instructions, MMGeneration is installed on `dev` mode
-, any local modifications made to the code will take effect without the need to reinstall it.
+a. Following the above instructions, MMGeneration is installed on `dev` mode,
+any local modifications made to the code will take effect without the need to reinstall it.
 
 b. If you would like to use `opencv-python-headless` instead of `opencv
 -python`,
 you can install it before installing MMCV.
-
-c. Some dependencies are optional. Simply running `pip install -v -e .` will
- only install the minimum runtime requirements. To use optional dependencies like `albumentations` and `imagecorruptions` either install them manually with `pip install -r requirements/optional.txt` or specify desired extras when calling `pip` (e.g. `pip install -v -e .[optional]`). Valid keys for the extras field are: `all`, `tests`, `build`, and `optional`.
 
 ### Install with CPU only
 
@@ -149,7 +146,7 @@ from mmgen.apis import init_model, sample_uncoditional_model
 
 config_file = 'configs/styleganv2/stylegan2_c2_lsun-church_256_b4x8_800k.py'
 # you can download this checkpoint in advance and use a local file path.
-checkpoint_file = 'http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth'
+checkpoint_file = 'https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth'
 device = 'cuda:0'
 # init a generatvie
 model = init_model(config_file, checkpoint_file, device=device)

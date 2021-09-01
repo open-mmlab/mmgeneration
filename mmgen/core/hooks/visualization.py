@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
 
 import mmcv
@@ -7,7 +8,7 @@ from mmcv.runner.dist_utils import master_only
 from torchvision.utils import save_image
 
 
-@HOOKS.register_module()
+@HOOKS.register_module('MMGenVisualizationHook')
 class VisualizationHook(Hook):
     """Visualization hook.
 

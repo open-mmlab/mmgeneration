@@ -28,6 +28,11 @@ Welcome to MMGeneration's documentation!
    faq.md
 
 .. toctree::
+   :caption: Switch Language
+
+   switch_language.md
+
+.. toctree::
    :caption: API Reference
 
    api.rst

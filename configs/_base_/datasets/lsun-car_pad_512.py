@@ -31,4 +31,5 @@ data = dict(
         type='RepeatDataset',
         times=5,
         dataset=dict(
-            type=dataset_type, imgs_root=None, pipeline=train_pipeline)))
+            type=dataset_type, imgs_root=None, pipeline=train_pipeline)),
+    val=dict(type=dataset_type, imgs_root=None, pipeline=train_pipeline))

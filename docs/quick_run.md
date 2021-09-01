@@ -21,7 +21,7 @@ from mmgen.apis import init_model, sample_uncoditional_model
 # Specify the path to model config and checkpoint file
 config_file = 'configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py'
 # you can download this checkpoint in advance and use a local file path.
-checkpoint_file = 'http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth'
+checkpoint_file = 'https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth'
 
 device = 'cuda:0'
 # init a generatvie
@@ -80,7 +80,7 @@ This section details how to prepare the dataset for MMGeneration and provides a 
 
 ### Datasets for unconditional models
 
-It's much easier to prepare dataset for unconditional models. Firstly, please make a directory, named `data`, in the MMGeneration project. After that, all of datasets can be used by adopting the technology of symlink(soft link).
+It's much easier to prepare dataset for unconditional models. Firstly, please make a directory, named `data`, in the MMGeneration project. After that, all of datasets can be used by adopting the technology of symlink (soft link).
 
 ```bash
 mkdir data
@@ -88,7 +88,7 @@ mkdir data
 ln -s absolute_path_to_dataset ./data/dataset_name
 ```
 
-Since, unconditional models only need real images for training and testing. The only way you need to do is link your dataset to the `data` directory. Our dataset will automatically check all of the images in a specified path (recursively).
+Since unconditional models only need real images for training and testing, all you need to do is link your dataset to the `data` directory. Our dataset will automatically check all of the images in a specified path (recursively).
 
 Here, we provide several download links of datasets frequently used in unconditional models: [LSUN](http://dl.yf.io/lsun/), [CelebA](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html), [CelebA-HQ](https://drive.google.com/drive/folders/11Vz0fqHS2rXDb5pprgTjpD7S2BAJhi1P), [FFHQ](https://drive.google.com/drive/folders/1u2xu7bSrWxrbUxk-dT-UvEJq8IjdmNTP).
 
@@ -96,7 +96,7 @@ Here, we provide several download links of datasets frequently used in unconditi
 
 For translation models, now we offer two settings for datasets called paired image dataset and unpaired image dataset.
 
-For paired image dataset, every image is formed by concatenating two corresponding images from two domains along the width dimension. You are supposed to make two folders "train" and "test" filled with images of this format for training and testing. Folder structure are presented below.
+For paired image dataset, every image is formed by concatenating two corresponding images from two domains along the width dimension. You are supposed to make two folders "train" and "test" filled with images of this format for training and testing. Folder structure is presented below.
 ```
 ./data/dataset_name/
 ├── test
@@ -106,7 +106,7 @@ For paired image dataset, every image is formed by concatenating two correspondi
 
 ```
 
-For unpaired image dataset, you are supposed to make two folders "trainA" and "testA" filled with images from domain A and two folders "trainB" and "testB" filled with images from domain B. Folder structure are presented below.
+For unpaired image dataset, you are supposed to make two folders "trainA" and "testA" filled with images from domain A and two folders "trainB" and "testB" filled with images from domain B. Folder structure is presented below.
 
 ```
 ./data/dataset_name/
@@ -121,7 +121,7 @@ For unpaired image dataset, you are supposed to make two folders "trainA" and "t
 
 ```
 
-Please read the section `Datasets for unconditional models` and also use the symlink(soft link) to build up the dataset.
+Please read the section `Datasets for unconditional models` and also use the symlink (soft link) to build up the dataset.
 
 Here, we provide download links of datasets used in [Pix2Pix](http://efrosgans.eecs.berkeley.edu/pix2pix/datasets/) and [CycleGAN](https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/).
 
@@ -264,20 +264,43 @@ python tools/utils/translation_eval.py ./configs/pix2pix/pix2pix_vanilla_unet_bn
     https://download.openmmlab.com/mmgen/pix2pix/pix2pix_vanilla_unet_bn_1x1_80k_facades.py_20210410_174537-36d956f1.pth \
     --eval IS
 ```
+To be noted that, the selection of Inception V3 and image resize method can significantly influence the final IS score. Therefore, we strongly recommend users may download the [Tero's script model of Inception V3](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt) (load this script model need torch >= 1.6) and use `Bicubic` interpolation with `Pillow` backend. We provide a template for the [data process pipline](https://github.com/open-mmlab/mmgeneration/tree/master/configs/_base_/datasets/Inception_Score.py) as well.
+
+We also perform a survey on the influence of data loading pipeline and the version of pretrained Inception V3 on the IS result. All IS are evaluated on the same group of images which are randomly selected from the ImageNet dataset.
+
+<details> <summary> Show the Comparsion Results </summary>
+
+| Code Base | Inception V3 Version | Data Loader Backend | Resize Interpolation Method | IS |
+| -- | -- | -- | -- | -- |
+| [OpenAI (baseline)](https://github.com/openai/improved-gan) | Tensorflow | Pillow | Pillow Bicubic | **312.255 +/- 4.970** |
+| [StyleGAN-Ada](https://github.com/NVlabs/stylegan2-ada-pytorch) | Tero's Script Model | Pillow | Pillow Bicubic | 311.895 +/ 4.844 |
+| mmgen (Ours) | Pytorch Pretrained | cv2 | cv2 Bilinear | 322.932 +/- 2.317 |
+| mmgen (Ours) | Pytorch Pretrained | cv2 | cv2 Bicubic | 324.604 +/- 5.157 |
+| mmgen (Ours) | Pytorch Pretrained | cv2 | Pillow Bicubic | 318.161 +/- 5.330 |
+| mmgen (Ours) | Pytorch Pretrained | Pillow | Pillow Bilinear | 313.126 +/- 5.449 |
+| mmgen (Ours) | Pytorch Pretrained | Pillow | cv2 Bilinear | 318.021+/-3.864 |
+| mmgen (Ours) | Pytorch Pretrained | Pillow | Pillow Bicubic | 317.997 +/- 5.350 |
+| mmgen (Ours) | Tero's Script Model | cv2 | cv2 Bilinear | 318.879 +/- 2.433 |
+| mmgen (Ours) | Tero's Script Model | cv2 | cv2 Bicubic | 316.125 +/- 5.718 |
+| mmgen (Ours) | Tero's Script Model | cv2 | Pillow Bicubic | **312.045 +/- 5.440** |
+| mmgen (Ours) | Tero's Script Model | Pillow | Pillow Bilinear | 308.645 +/- 5.374 |
+| mmgen (Ours) | Tero's Script Model | Pillow | Pillow Bicubic | 311.733 +/- 5.375 |
+
+</details>
 
 ## PPL
 Perceptual path length measures the difference between consecutive images (their VGG16 embeddings) when interpolating between two random inputs. Drastic changes mean that multiple features have changed together and that they might be entangled. Thus, a smaller PPL score appears to indicate higher overall image quality by experiments. \
 As a basis for our metric, we use a perceptually-based pairwise image distance that is calculated as a weighted difference between two VGG16 embeddings, where the weights are fit so that the metric agrees with human perceptual similarity judgments.
-If we subdivide a latent space interpolation path into linear segments, we can define the total perceptual length of this segmented path as the sum of perceptual differences over each segment, and a natural definition for the perceptual path length would be the limit of this sum under infinitely fine subdivision, but in practice we approximate it using a small subdivision $\epsilon = 10^{−4}$.
+If we subdivide a latent space interpolation path into linear segments, we can define the total perceptual length of this segmented path as the sum of perceptual differences over each segment, and a natural definition for the perceptual path length would be the limit of this sum under infinitely fine subdivision, but in practice we approximate it using a small subdivision <img src="https://latex.codecogs.com/svg.image?\epsilon&space;=&space;10^{-4}" title="\epsilon = 10^{-4}" />.
 The average perceptual path length in latent `space` Z, over all possible endpoints, is therefore
-$$
-L_Z = E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))), G(slerp(z_1,z_2;t+\epsilon)))]
-$$
+
+<img src="https://latex.codecogs.com/svg.image?L_Z&space;=&space;E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))),&space;G(slerp(z_1,z_2;t&plus;\epsilon)))]" title="L_Z = E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))), G(slerp(z_1,z_2;t+\epsilon)))]" />
+
 Computing the average perceptual path length in latent `space` W is carried out in a similar fashion:
-$$
-L_W = E[\frac{1}{\epsilon^2}d(g(lerp(f(z_1),f(z_2);t))), g(lerp(f(z_1),f(z_2);t+\epsilon)))]
-$$
-Where $z_1, z_2 \sim P(z)$, and $t \sim U(0,1)$ if we set `sampling` to full, $t \in \{0,1\}$ if we set `sampling` to end. $G$ is the generator(i.e. $g \circ f$ for style-based networks), and $d(.,.)$ evaluates the perceptual distance between the resulting images.We compute the expectation by taking 100,000 samples (set `num_images` to 50,000 in our code).
+
+<img src="https://latex.codecogs.com/svg.image?L_Z&space;=&space;E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))),&space;G(slerp(z_1,z_2;t&plus;\epsilon)))]" title="L_Z = E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))), G(slerp(z_1,z_2;t+\epsilon)))]" />
+
+Where <img src="https://latex.codecogs.com/svg.image?\inline&space;z_1,&space;z_2&space;\sim&space;P(z)" title="\inline z_1, z_2 \sim P(z)" />, and <img src="https://latex.codecogs.com/svg.image?\inline&space;t&space;\sim&space;U(0,1)" title="\inline t \sim U(0,1)" /> if we set `sampling` to full, <img src="https://latex.codecogs.com/svg.image?\inline&space;t&space;\in&space;\{0,1\}" title="\inline t \in \{0,1\}" /> if we set `sampling` to end. <img src="https://latex.codecogs.com/svg.image?\inline&space;G" title="\inline G" /> is the generator(i.e. <img src="https://latex.codecogs.com/svg.image?\inline&space;g&space;\circ&space;f" title="\inline g \circ f" /> for style-based networks), and <img src="https://latex.codecogs.com/svg.image?\inline&space;d(.,.)" title="\inline d(.,.)" /> evaluates the perceptual distance between the resulting images.We compute the expectation by taking 100,000 samples (set `num_images` to 50,000 in our code).
 
 You can find the complete implementation in `metrics.py`, which refers to https://github.com/rosinality/stylegan2-pytorch/blob/master/ppl.py.
 If you want to evaluate models with `PPL` metrics, you can add the `metrics` into your config file like this:
@@ -290,12 +313,12 @@ You can run the command below to calculate PPL.
 
 ```shell
 python tools/evaluation.py ./configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py \
-    http://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_ffhq_1024_b4x8_20210407_150045-618c9024.pth \
+    https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_ffhq_1024_b4x8_20210407_150045-618c9024.pth \
     --batch-size 2 --online --eval ppl_wend
 ```
 
 ## SWD
-Sliced Wasserstein distance is an discrepancy measure for probability distributions, and smaller distance indicates generated images look like the real ones. We obtain the laplacian pyramids of every image and extract patches from the laplacian pyramids as descriptors, then SWD can be calculated by taking the sliced wasserstein distance of the real and fake descriptors.
+Sliced Wasserstein distance is a discrepancy measure for probability distributions, and smaller distance indicates generated images look like the real ones. We obtain the Laplacian pyramids of every image and extract patches from the Laplacian pyramids as descriptors, then SWD can be calculated by taking the sliced Wasserstein distance of the real and fake descriptors.
 You can see the complete implementation in `metrics.py`, which refers to https://github.com/tkarras/progressive_growing_of_gans/blob/master/metrics/sliced_wasserstein.py.
 If you want to evaluate models with `SWD` metrics, you can add the `metrics` into your config file like this:
 ```python
@@ -306,7 +329,7 @@ You can run the command below to calculate SWD.
 
 ```shell
 python tools/evaluation.py ./configs/pggan/pggan_celeba-cropped_128_g8_12Mimgs.py \
-    http://download.openmmlab.com/mmgen/pggan/pggan_celeba-cropped_128_g8_20210408_181931-85a2e72c.pth \
+    https://download.openmmlab.com/mmgen/pggan/pggan_celeba-cropped_128_g8_20210408_181931-85a2e72c.pth \
     --batch-size 64 --online --eval swd16k
 ```
 
@@ -321,14 +344,14 @@ You can run the command below to calculate MS-SSIM.
 
 ```shell
 python tools/evaluation.py ./configs/pggan/pggan_celeba-cropped_128_g8_12Mimgs.py \
-    http://download.openmmlab.com/mmgen/pggan/pggan_celeba-cropped_128_g8_20210408_181931-85a2e72c.pth \
+    https://download.openmmlab.com/mmgen/pggan/pggan_celeba-cropped_128_g8_20210408_181931-85a2e72c.pth \
     --batch-size 64 --online --eval ms_ssim10k
 ```
 
 
 # 5: Evaluation during training
 
-In this section, we will discuss how to evaluate the generative models, especially for GANs, in the training. Note that `MMGeneration` only supports distributed training and the evaluation metric adopted in the training procedure should also be run in a distributed style. Currently, only `FID` has been implemented and tested in an efficient distributed version. Other metric with efficient distributed version will be supported in the recent future. Thus, in the following part, we will specify how to evaluate your models with `FID` metric in training.
+In this section, we will discuss how to evaluate the generative models, especially for GANs, in the training. Note that `MMGeneration` only supports distributed training and the evaluation metric adopted in the training procedure should also be run in a distributed style. Currently, only `FID` has been implemented and tested in an efficient distributed version. Other metrics with efficient distributed version will be supported in the recent future. Thus, in the following part, we will specify how to evaluate your models with `FID` metric in training.
 
 In [eval_hooks.py](https://github.com/open-mmlab/mmgeneration/blob/master/mmgen/core/evaluation/eval_hooks.py), `GenerativeEvalHook` is provided to evaluate generative models duiring training. The most important argument for this hook is `metrics`. In fact, users can directly copy the configs in the last section to define the evaluation metric. To evaluate the model with `FID` metric, please add the following python codes in your config file:
 
