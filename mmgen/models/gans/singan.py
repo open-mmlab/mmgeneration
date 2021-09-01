@@ -383,8 +383,8 @@ class SinGAN(BaseGAN):
 
         # end of each scale
         # calculate noise weight for next scale
-        if (curr_iter % self.train_cfg['iters_per_scale']
-                == 0) and (self.curr_stage < len(self.reals) - 1):
+        if (curr_iter % self.train_cfg['iters_per_scale'] == 0) and (
+                self.curr_stage < len(self.reals) - 1):
 
             with torch.no_grad():
                 g_recon = self.generator(
