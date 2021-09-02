@@ -23,9 +23,9 @@ model = dict(
         real_label_val=1.0,
         fake_label_val=0.0,
         loss_weight=1.0),
-    default_domain='photo',
-    reachable_domains=['photo', 'mask'],
-    related_domains=['photo', 'mask'],
+    default_domain=None,  # set by user
+    reachable_domains=None,  # set by user
+    related_domains=None,  # set by user
     gen_auxiliary_loss=[
         dict(
             type='L1Loss',

@@ -5,6 +5,40 @@ _base_ = [
 ]
 train_cfg = dict(buffer_size=50)
 test_cfg = None
+
+domain_a = 'photo'
+domain_b = 'mask'
+model = dict(
+    default_domain=domain_a,
+    reachable_domains=[domain_a, domain_b],
+    related_domains=[domain_a, domain_b],
+    gen_auxiliary_loss=[
+        dict(
+            type='L1Loss',
+            loss_weight=10.0,
+            data_info=dict(pred='cycle_{domain_a}', target='real_{domain_a}'),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=10.0,
+            data_info=dict(
+                pred='cycle_{domain_b}',
+                target='real_{domain_b}',
+            ),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=0.5,
+            data_info=dict(
+                pred='identity_{domain_a}', target='real_{domain_a}'),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=0.5,
+            data_info=dict(
+                pred='identity_{domain_b}', target='real_{domain_b}'),
+            reduction='mean')
+    ])
 dataroot = './data/unpaired_facades'
 data = dict(
     train=dict(dataroot=dataroot),

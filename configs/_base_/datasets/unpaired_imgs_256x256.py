@@ -1,8 +1,8 @@
 train_dataset_type = 'UnpairedImageDataset'
 val_dataset_type = 'UnpairedImageDataset'
 img_norm_cfg = dict(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-domain_a = 'photo'
-domain_b = 'mask'
+domain_a = None  # set by user
+domain_b = None  # set by user
 train_pipeline = [
     dict(
         type='LoadImageFromFile',
