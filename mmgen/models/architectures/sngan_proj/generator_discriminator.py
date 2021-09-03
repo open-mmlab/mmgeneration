@@ -239,10 +239,10 @@ class SNGANGenerator(nn.Module):
                 returned in a dict with ``fake_img``. Defaults to False.
 
         Returns:
-            torch.Tensor | dict: If not ``return_noise`` and not
-            ``return_label``, only the output image will be returned.
-            Otherwise, the dict would contains ``fake_image``, ``noise_batch``
-            and ``label_batch`` would be returned.
+            torch.Tensor | dict: If not ``return_noise``, only the output
+                image will be returned. Otherwise, a dict contains
+                ``fake_image``, ``noise_batch`` and ``label_batch``
+                would be returned.
         """
         if isinstance(noise, torch.Tensor):
             assert noise.shape[1] == self.noise_size
