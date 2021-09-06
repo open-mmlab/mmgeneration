@@ -8,7 +8,8 @@
   title={Geometric gan},
   author={Lim, Jae Hyun and Ye, Jong Chul},
   journal={arXiv preprint arXiv:1705.02894},
-  year={2017}
+  year={2017},
+  url={https://arxiv.org/abs/1705.02894},
 }
 ```
 

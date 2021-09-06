@@ -9,7 +9,8 @@
   author={Shaham, Tamar Rott and Dekel, Tali and Michaeli, Tomer},
   booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision},
   pages={4570--4580},
-  year={2019}
+  year={2019},
+  url={https://openaccess.thecvf.com/content_ICCV_2019/html/Shaham_SinGAN_Learning_a_Generative_Model_From_a_Single_Natural_Image_ICCV_2019_paper.html},
 }
 ```
 
@@ -22,8 +23,8 @@
 </div>
 
 
-| Model  |                                      Data                                       | Num Scales |                                               Config                                               |                                                                                               Download                                                                                                |
-| :----: | :-----------------------------------------------------------------------------: | :--------: | :------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| Model  |                                       Data                                       | Num Scales |                                               Config                                               |                                                                                                Download                                                                                                 |
+| :----: | :------------------------------------------------------------------------------: | :--------: | :------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | SinGAN | [balloons.png](https://download.openmmlab.com/mmgen/dataset/singan/balloons.png) |     8      | [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/singan/singan_balloons.py) | [ckpt](https://download.openmmlab.com/mmgen/singan/singan_balloons_20210406_191047-8fcd94cf.pth) &#124; [pkl](https://download.openmmlab.com/mmgen/singan/singan_balloons_20210406_191047-8fcd94cf.pkl) |
 | SinGAN |  [fish.jpg](https://download.openmmlab.com/mmgen/dataset/singan/fish-crop.jpg)   |     10     |   [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/singan/singan_fish.py)   |      [ckpt](https://download.openmmlab.com/mmgen/singan/singan_fis_20210406_201006-860d91b6.pth) &#124; [pkl](https://download.openmmlab.com/mmgen/singan/singan_fis_20210406_201006-860d91b6.pkl)      |
 | SinGAN | [bohemian.png](https://download.openmmlab.com/mmgen/dataset/singan/bohemian.png) |     10     | [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/singan/singan_bohemian.py) | [ckpt](https://download.openmmlab.com/mmgen/singan/singan_bohemian_20210406_175439-f964ee38.pth) &#124; [pkl](https://download.openmmlab.com/mmgen/singan/singan_bohemian_20210406_175439-f964ee38.pkl) |
