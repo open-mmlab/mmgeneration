@@ -29,10 +29,10 @@ We have finished training `BigGAN` in `Cifar10` (32x32) and are aligning trainin
 </div>
 
 Evaluation of our trained BIgGAN.
-|    Models    | Dataset |   FID (Iter) | IS (Iter) | Config |  Download  |
+|    Models    | Dataset |   Best FID (Iter) | Best IS (Iter) | Config |  Download  |
 |:------------:|:-------:|:--------------:|:---------------:|:------:|:----------:|
 | BigGAN 32x32 | CIFAR10 |     9.78(390000)           |       8.70(390000)          | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_cifar10_32x32_b25x2_500k.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32x32_b25x2_500k_20210728_110906-08b61a44.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32_b25x2_500k_20210706_171051.log.json) |
-| BigGAN 128x128 | ImageNet1k |       12.32(1150000)         |         72.7(1150000)        | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_imagenet1k_128x128_b32x8_1500k.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1150k_20210730_124753-b14026b7.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1500k_20210726_224316.log.json) |
+| BigGAN 128x128 | ImageNet1k |       10.02(1449000)         |         86.8(1449000)        | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_imagenet1k_128x128_b32x8_1500k.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1449000_20210906_141519-f9128faf.pth?versionId=CAEQMhiBgIDn.ILn3RciIDFiMTZhZjIxYzA2MjQxMTJiMDQzZjQyNWQ5YTVkY2Jl)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1449000_20210906_141519-f9128faf.log.json?versionId=CAEQMhiBgMD5.dfo3RciIDE5OThmOWM0ZDAxYjQxMWJiNTEzMTFlMzAxZWJkOGFm) |
 
 Note: This is an unfinished version (1150k iter) of BigGAN trained on `ImageNet1k`. The model with the best performance is still on the way.
 
