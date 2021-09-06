@@ -48,7 +48,10 @@ class TestUnpairedImageDataset(object):
 
     def test_unpaired_image_dataset(self):
         dataset = UnpairedImageDataset(
-            self.imgs_root, pipeline=self.default_pipeline)
+            self.imgs_root,
+            pipeline=self.default_pipeline,
+            domain_a='a',
+            domain_b='b')
         assert len(dataset) == 2
         img = dataset[0]['img_a']
         assert img.ndim == 3
