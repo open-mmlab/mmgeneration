@@ -210,7 +210,7 @@ def sample_img2img_model(model, image_path, target_domain, **kwargs):
 
     # dirty code to deal with paired data
     if f'img_{target_domain}' in data.keys():
-        source_domain = model._get_other_domains(target_domain)[0]
+        source_domain = model.get_other_domains(target_domain)[0]
         data['image'] = data[f'img_{source_domain}']
     # forward the model
     with torch.no_grad():

@@ -88,15 +88,18 @@ class LoadPairedImageFromFile(LoadImageFromFile):
     it into two images with the same shape in different domains.
 
     Required key is "pair_path". Added or modified keys are "pair",
-    "pair_ori_shape", "ori_pair", "img_a", "img_b", "img_a_path",
-    "img_b_path", "img_a_ori_shape", "img_b_ori_shape", "ori_img_a" and
-    "ori_img_b".
+    "pair_ori_shape", "ori_pair", "img_{domain_a}", "img_{domain_b}",
+    "img_{domain_a}_path", "img_{domain_b}_path", "img_{domain_a}_ori_shape",
+    "img_{domain_b}_ori_shape", "ori_img_{domain_a}" and
+    "ori_img_{domain_b}".
 
     Args:
         io_backend (str): io backend where images are store. Default: 'disk'.
         key (str): Keys in results to find corresponding path. Default: 'gt'.
-        domain_a (str, optional): Style of domain A. Defaults to 'img_a'.
-        domain_b (str, optional): Style of domain B. Defaults to 'img_b'.
+        domain_a (str, optional): Domain of images' left half.
+            Defaults to None.
+        domain_b (str, optional): Domain of images' right half.
+            Defaults to None.
         flag (str): Loading flag for images. Default: 'color'.
         channel_order (str): Order of channel, candidates are 'bgr' and 'rgb'.
             Default: 'bgr'.
@@ -107,9 +110,9 @@ class LoadPairedImageFromFile(LoadImageFromFile):
 
     def __init__(self,
                  io_backend='disk',
-                 key='gt',
-                 domain_a='a',
-                 domain_b='b',
+                 key='pair',
+                 domain_a=None,
+                 domain_b=None,
                  flag='color',
                  channel_order='bgr',
                  backend=None,
@@ -123,6 +126,8 @@ class LoadPairedImageFromFile(LoadImageFromFile):
             backend=backend,
             save_original_img=save_original_img,
             **kwargs)
+        assert isinstance(domain_a, str)
+        assert isinstance(domain_b, str)
         self.domain_a = domain_a
         self.domain_b = domain_b
 

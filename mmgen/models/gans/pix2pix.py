@@ -42,7 +42,7 @@ class Pix2Pix(StaticTranslationGAN):
         losses = dict()
         # conditional GAN
         target_domain = self._default_domain
-        source_domain = self._get_other_domains(target_domain)[0]
+        source_domain = self.get_other_domains(target_domain)[0]
         fake_ab = torch.cat((outputs[f'real_{source_domain}'],
                              outputs[f'fake_{target_domain}']), 1)
         fake_pred = self.discriminators[target_domain](fake_ab.detach())
@@ -61,7 +61,7 @@ class Pix2Pix(StaticTranslationGAN):
 
     def _get_gen_loss(self, outputs):
         target_domain = self._default_domain
-        source_domain = self._get_other_domains(target_domain)[0]
+        source_domain = self.get_other_domains(target_domain)[0]
         losses = dict()
         # GAN loss for the generator
         fake_ab = torch.cat((outputs[f'real_{source_domain}'],
@@ -110,7 +110,7 @@ class Pix2Pix(StaticTranslationGAN):
         """
         # data
         target_domain = self._default_domain
-        source_domain = self._get_other_domains(self._default_domain)[0]
+        source_domain = self.get_other_domains(self._default_domain)[0]
         source_image = data_batch[f'img_{source_domain}']
         target_image = data_batch[f'img_{target_domain}']
 

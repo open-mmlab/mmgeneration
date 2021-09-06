@@ -174,7 +174,7 @@ class CycleGAN(StaticTranslationGAN):
         outputs = dict()
         for target_domain in self._reachable_domains:
             # fetch data by domain
-            source_domain = self._get_other_domains(target_domain)[0]
+            source_domain = self.get_other_domains(target_domain)[0]
             img = data_batch[f'img_{source_domain}']
             # translation process
             results = self.forward(

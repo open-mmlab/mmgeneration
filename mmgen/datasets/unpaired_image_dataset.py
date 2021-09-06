@@ -29,16 +29,18 @@ class UnpairedImageDataset(Dataset):
         pipeline (List[dict | callable]): A sequence of data transformations.
         test_mode (bool): Store `True` when building test dataset.
             Default: `False`.
-        domain_a (str, optional): Name of domain A. Defaults to 'img_a'.
-        domain_b (str, optional): Name of domain B. Defaults to 'img_b'.
+        domain_a (str, optional): Domain of images in trainA / testA.
+            Defaults to None.
+        domain_b (str, optional): Domain of images in trainB / testB.
+            Defaults to None.
     """
 
     def __init__(self,
                  dataroot,
                  pipeline,
                  test_mode=False,
-                 domain_a='a',
-                 domain_b='b'):
+                 domain_a=None,
+                 domain_b=None):
         super().__init__()
         phase = 'test' if test_mode else 'train'
         self.dataroot_a = osp.join(str(dataroot), phase + 'A')
@@ -49,6 +51,8 @@ class UnpairedImageDataset(Dataset):
         self.len_b = len(self.data_infos_b)
         self.test_mode = test_mode
         self.pipeline = Compose(pipeline)
+        assert isinstance(domain_a, str)
+        assert isinstance(domain_b, str)
         self.domain_a = domain_a
         self.domain_b = domain_b
 
