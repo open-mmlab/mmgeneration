@@ -32,7 +32,7 @@ class BaseTranslationModel(nn.Module, metaclass=ABCMeta):
             the model.
         related_domains (list[str]): Domains involved in training and
             testing. `reachable_domains` must be contained in
-            `related_domains`. However, related_domains may contain 
+            `related_domains`. However, related_domains may contain
             source domains that are used to retrieve source images from
             data_batch but not in reachable_domains.
         train_cfg (dict): Config for training. Default: None.

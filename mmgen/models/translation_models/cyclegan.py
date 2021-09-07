@@ -177,8 +177,7 @@ class CycleGAN(StaticTranslationGAN):
             source_domain = self.get_other_domains(target_domain)[0]
             img = data_batch[f'img_{source_domain}']
             # translation process
-            results = self(
-                img, test_mode=False, target_domain=target_domain)
+            results = self(img, test_mode=False, target_domain=target_domain)
             outputs[f'real_{source_domain}'] = results['source']
             outputs[f'fake_{target_domain}'] = results['target']
             # cycle process
