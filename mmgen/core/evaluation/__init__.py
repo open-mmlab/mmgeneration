@@ -3,12 +3,21 @@ from .eval_hooks import GenerativeEvalHook
 from .evaluation import (make_metrics_table, make_vanilla_dataloader,
                          single_gpu_evaluation, single_gpu_online_evaluation)
 from .metric_utils import slerp
-from .metrics import (IS, MS_SSIM, PR, SWD, GaussianKLD, gaussian_kld, ms_ssim,
+from .metrics import (IS, MS_SSIM, PR, SWD, GaussianKLD, ms_ssim,
                       sliced_wasserstein)
 
 __all__ = [
-    'MS_SSIM', 'SWD', 'ms_ssim', 'sliced_wasserstein', 'single_gpu_evaluation',
-    'single_gpu_online_evaluation', 'PR', 'IS', 'slerp', 'GenerativeEvalHook',
-    'make_metrics_table', 'make_vanilla_dataloader', 'GaussianKLD',
-    'gaussian_kld'
+    'MS_SSIM',
+    'SWD',
+    'ms_ssim',
+    'sliced_wasserstein',
+    'single_gpu_evaluation',
+    'single_gpu_online_evaluation',
+    'PR',
+    'IS',
+    'slerp',
+    'GenerativeEvalHook',
+    'make_metrics_table',
+    'make_vanilla_dataloader',
+    'GaussianKLD',
 ]
