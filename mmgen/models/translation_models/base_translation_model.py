@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
@@ -31,9 +32,9 @@ class BaseTranslationModel(nn.Module, metaclass=ABCMeta):
             the model.
         related_domains (list[str]): Domains involved in training and
             testing. `reachable_domains` must be contained in
-            `related_domains`. However, `related_domains` may contain
-            source domains not in `reachable_domains` which are used
-            to retrieve source images from `data_batch`.
+            `related_domains`. However, related_domains may contain 
+            source domains that are used to retrieve source images from
+            data_batch but not in reachable_domains.
         train_cfg (dict): Config for training. Default: None.
         test_cfg (dict): Config for testing. Default: None.
     """
@@ -87,7 +88,7 @@ class BaseTranslationModel(nn.Module, metaclass=ABCMeta):
             kwargs (dict): Other arguments.
 
         Returns:
-            Dict: Forward results.
+            dict: Forward results.
         """
         target = self.translation(img, target_domain=target_domain, **kwargs)
         results = dict(source=img, target=target)
@@ -102,7 +103,7 @@ class BaseTranslationModel(nn.Module, metaclass=ABCMeta):
             kwargs (dict): Other arguments.
 
         Returns:
-            Dict: Forward results.
+            dict: Forward results.
         """
         target = self.translation(img, target_domain=target_domain, **kwargs)
         results = dict(source=img.cpu(), target=target.cpu())
@@ -117,8 +118,8 @@ class BaseTranslationModel(nn.Module, metaclass=ABCMeta):
         return list(set(self._related_domains) - set([domain]))
 
     @abstractmethod
-    def _get_domain_generator(self, domain):
-        """get domain generator."""
+    def _get_target_generator(self, domain):
+        """get target generator."""
 
     def translation(self, image, target_domain=None, **kwargs):
         """Translation Image to target style.
@@ -129,10 +130,10 @@ class BaseTranslationModel(nn.Module, metaclass=ABCMeta):
                 Default to None.
 
         Returns:
-            Dict: Image tensor of target style.
+            dict: Image tensor of target style.
         """
         if target_domain is None:
             target_domain = self._default_domain
-        _model = self._get_domain_generator(target_domain)
+        _model = self._get_target_generator(target_domain)
         outputs = _model(image, **kwargs)
         return outputs

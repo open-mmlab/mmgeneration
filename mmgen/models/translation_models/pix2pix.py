@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-
 import torch
 from torch.nn.parallel.distributed import _find_tensors
 
@@ -29,9 +28,10 @@ class Pix2Pix(StaticTranslationGAN):
             kwargs (dict): Other arguments.
 
         Returns:
-            Dict: Forward results.
+            dict: Forward results.
         """
         # This is a trick for Pix2Pix
+        # ref: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/e1bdf46198662b0f4d0b318e24568205ec4d7aee/test.py#L54  # noqa
         self.train()
         target = self.translation(img, target_domain=target_domain, **kwargs)
         results = dict(source=img.cpu(), target=target.cpu())
@@ -125,7 +125,7 @@ class Pix2Pix(StaticTranslationGAN):
 
         # forward generator
         outputs = dict()
-        results = self.forward(
+        results = self(
             source_image, target_domain=self._default_domain, test_mode=False)
         outputs[f'real_{source_domain}'] = results['source']
         outputs[f'fake_{target_domain}'] = results['target']

@@ -96,9 +96,9 @@ class LoadPairedImageFromFile(LoadImageFromFile):
     Args:
         io_backend (str): io backend where images are store. Default: 'disk'.
         key (str): Keys in results to find corresponding path. Default: 'gt'.
-        domain_a (str, optional): Domain of images' left half.
+        domain_a (str, optional): One of the paired image domain.
             Defaults to None.
-        domain_b (str, optional): Domain of images' right half.
+        domain_b (str, optional): The other image domain.
             Defaults to None.
         flag (str): Loading flag for images. Default: 'color'.
         channel_order (str): Order of channel, candidates are 'bgr' and 'rgb'.

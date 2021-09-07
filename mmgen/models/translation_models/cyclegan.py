@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-
 from mmcv.parallel import MMDistributedDataParallel
 from torch.nn.parallel.distributed import _find_tensors
 
@@ -37,9 +36,10 @@ class CycleGAN(StaticTranslationGAN):
             kwargs (dict): Other arguments.
 
         Returns:
-            Dict: Forward results.
+            dict: Forward results.
         """
         # This is a trick for CycleGAN
+        # ref: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/e1bdf46198662b0f4d0b318e24568205ec4d7aee/test.py#L54 # noqa
         self.train()
         target = self.translation(img, target_domain=target_domain, **kwargs)
         results = dict(source=img.cpu(), target=target.cpu())
@@ -177,12 +177,12 @@ class CycleGAN(StaticTranslationGAN):
             source_domain = self.get_other_domains(target_domain)[0]
             img = data_batch[f'img_{source_domain}']
             # translation process
-            results = self.forward(
+            results = self(
                 img, test_mode=False, target_domain=target_domain)
             outputs[f'real_{source_domain}'] = results['source']
             outputs[f'fake_{target_domain}'] = results['target']
             # cycle process
-            results = self.forward(
+            results = self(
                 results['target'],
                 test_mode=False,
                 target_domain=source_domain)

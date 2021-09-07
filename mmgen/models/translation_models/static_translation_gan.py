@@ -1,9 +1,10 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from copy import deepcopy
 
 import torch.nn as nn
 
 from ..builder import MODELS, build_module
-from .base_gan import BaseGAN
+from ..gans import BaseGAN
 from .base_translation_model import BaseTranslationModel
 
 
@@ -106,8 +107,8 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
         # basic testing information
         self.batch_size = self.test_cfg.get('batch_size', 1)
 
-    def _get_domain_generator(self, domain):
-        """get domain generator."""
+    def _get_target_generator(self, domain):
+        """get target generator."""
         assert self.is_domain_reachable(
             domain
         ), f'{domain} domain is not reachable, available domain list is\
@@ -115,8 +116,8 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
 
         return self.generators[domain]
 
-    def _get_domain_discriminator(self, domain):
-        """get domain discriminator."""
+    def _get_target_discriminator(self, domain):
+        """get target discriminator."""
         assert self.is_domain_reachable(
             domain
         ), f'{domain} domain is not reachable, available domain list is\
