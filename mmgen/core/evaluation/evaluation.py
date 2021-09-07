@@ -240,7 +240,7 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
     # parameter. To make the model return probabilistic
 
     special_metrics = []
-    probabilistic_metric = []
+    probabilistic_metrics = []
     vanilla_metrics = []
     special_metric_name = ['PPL']
     probabilistic_metric_name = ['GaussianKLD']
@@ -248,7 +248,7 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         if metric.name in special_metric_name:
             special_metrics.append(metric)
         elif metric.name in probabilistic_metric_name:
-            probabilistic_metric.append(metric)
+            probabilistic_metrics.append(metric)
         else:
             vanilla_metrics.append(metric)
 
@@ -339,7 +339,7 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         sys.stdout.write('\n')
 
     # feed probabilistic metric
-    for metric in probabilistic_metric:
+    for metric in probabilistic_metrics:
         metric.prepare()
         pbar = mmcv.ProgressBar(len(data_loader))
         # here we assert probabilistic model have reconstruction mode

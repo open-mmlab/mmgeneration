@@ -1,11 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import numpy as np
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from mmgen.models.builder import MODULES
 from .utils import weighted_loss
 
-_reduction_modes = ['none', 'mean', 'sum']
+_reduction_modes = ['none', 'mean', 'sum', 'batchmean']
 
 
 @weighted_loss
@@ -34,6 +36,47 @@ def mse_loss(pred, target):
         Tensor: Calculated MSE loss.
     """
     return F.mse_loss(pred, target, reduction='none')
+
+
+@weighted_loss
+def gaussian_kld(mean_1, mean_2, logvar_1, logvar_2, base='e'):
+    r"""Calculate KLD (Kullback-Leibler divergence) of two gaussian
+    distribution.
+    To be noted that in this function, KLD is calcuated in base `e`.
+
+    .. math::
+        :nowarp:
+        \begin{eqnarray}
+        KLD(p||q) &= -\int{p(x)\log{q(x)} dx} + \int{p(x)\log{p(x)} dx} \\
+            &= \frac{1}{2}\log{(2\pi \sigma_2^2)} +
+            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\simga_2^2} -
+            \frac{1}{2}(1 + \log{2\pi \sigma_1^2}) \\
+            &= \log{\frac{\sigma_2}{\sigma_1}} +
+            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\simga_2^2} - \frac{1}{2}
+        \end{eqnarray}
+
+    Args:
+        mean_1 (torch.Tensor): Mean of the first (or the target) distribution.
+        mean_2 (torch.Tensor): Mean of the second (or the predicted)
+            distribution.
+        logvar_1 (torch.Tensor): Log variance of the first (or the target)
+            distribution
+        logvar_2 (torch.Tensor): Log variance of the second (or the predicted)
+            distribution.
+        base (str, optional): The log base of calculated KLD. Support ``'e'``
+            and ``'2'``. Defaults to ``'e'``.
+
+    Returns:
+        torch.Tensor: KLD between two given distribution.
+    """
+    if base not in ['e', '2']:
+        raise ValueError('Only support 2 and e for log base, but receive '
+                         f'{base}')
+    kld = 0.5 * (-1.0 + logvar_2 - logvar_1 + torch.exp(logvar_1 - logvar_2) +
+                 ((mean_1 - mean_2)**2) * torch.exp(-logvar_2))
+    if base == '2':
+        return kld / np.log(2)
+    return kld
 
 
 @MODULES.register_module()

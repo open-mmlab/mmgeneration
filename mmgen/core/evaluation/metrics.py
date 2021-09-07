@@ -3,6 +3,7 @@ import os
 import pickle
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from functools import partial
 
 import mmcv
 import numpy as np
@@ -18,6 +19,7 @@ from torchvision.models.inception import inception_v3
 from mmgen.models.architectures import InceptionV3
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.architectures.lpips import PerceptualLoss
+from mmgen.models.losses import gaussian_kld
 from mmgen.utils import MMGEN_CACHE_DIR
 from mmgen.utils.io_utils import download_from_url
 from ..registry import METRICS
@@ -339,46 +341,6 @@ def sliced_wasserstein(distribution_a,
         results.append(torch.mean(dists).item())
     torch.cuda.empty_cache()
     return sum(results) / dir_repeats
-
-
-def gaussian_kld(mean_1, mean_2, logvar_1, logvar_2, base='e'):
-    r"""Calculate KLD (Kullback-Leibler divergence) of two gaussian
-    distribution.
-    To be noted that in this function, KLD is calcuated in base `e`.
-
-    .. math::
-        :nowarp:
-        \begin{eqnarray}
-        KLD(p||q) &= -\int{p(x)\log{q(x)} dx} + \int{p(x)\log{p(x)} dx} \\
-            &= \frac{1}{2}\log{(2\pi \sigma_2^2)} +
-            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\simga_2^2} -
-            \frac{1}{2}(1 + \log{2\pi \sigma_1^2}) \\
-            &= \log{\frac{\sigma_2}{\sigma_1}} +
-            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\simga_2^2} - \frac{1}{2}
-        \end{eqnarray}
-
-    Args:
-        mean_1 (torch.Tensor): Mean of the first (or the target) distribution.
-        mean_2 (torch.Tensor): Mean of the second (or the predicted)
-            distribution.
-        logvar_1 (torch.Tensor): Log variance of the first (or the target)
-            distribution
-        logvar_2 (torch.Tensor): Log variance of the second (or the predicted)
-            distribution.
-        base (str, optional): The log base of calculated KLD. Support ``'e'``
-            and ``'2'``. Defaults to ``'e'``.
-
-    Returns:
-        torch.Tensor: KLD between two given distribution.
-    """
-    if base not in ['e', '2']:
-        raise ValueError('Only support 2 and e for log base, but receive '
-                         f'{base}')
-    kld = 0.5 * (-1.0 + logvar_2 - logvar_1 + torch.exp(logvar_1 - logvar_2) +
-                 ((mean_1 - mean_2)**2) * torch.exp(-logvar_2))
-    if base == '2':
-        return kld / np.log(2)
-    return kld
 
 
 class Metric(ABC):
@@ -1421,7 +1383,7 @@ class GaussianKLD(Metric):
 
     Args:
         num_images (int): The number of samples to be tested.
-        log_base (str, optional): The log base of calculated KLD. Support
+        base (str, optional): The log base of calculated KLD. Support
             ``'e'`` and ``'2'``. Defaults to ``'e'``.
         reduction (string, optional): Specifies the reduction to apply to the
             output. Support ``'batchmean'``, ``'sum'`` and ``'mean'``. If
@@ -1433,17 +1395,17 @@ class GaussianKLD(Metric):
     """
     name = 'GaussianKLD'
 
-    def __init__(self, num_images, log_base='e', reduction='batchmean'):
+    def __init__(self, num_images, base='e', reduction='batchmean'):
         super().__init__(num_images, image_shape=None)
         assert reduction in [
             'sum', 'batchmean', 'mean'
         ], ('We only support reduction for \'batchmean\', \'sum\' '
             'and \'mean\'')
-        assert log_base in ['e', '2'
-                            ], ('We only support log_base for \'e\' and \'2\'')
-        self.log_base = log_base
+        assert base in ['e',
+                        '2'], ('We only support log_base for \'e\' and \'2\'')
         self.reduction = reduction
         self.num_fake_feeded = self.num_images
+        self.kld = partial(gaussian_kld, weight=1, reduction='none', base=base)
 
     def prepare(self):
         """Prepare for evaluating models with this metric."""
@@ -1472,12 +1434,8 @@ class GaussianKLD(Metric):
                            'the same time. But keys in the given dict are '
                            f'{batch.keys()}. Some of the requirements are '
                            'missing.')
-        kld = gaussian_kld(
-            batch['mean_target'],
-            batch['mean_pred'],
-            batch['logvar_target'],
-            batch['logvar_pred'],
-            base=self.log_base)
+        kld = self.kld(batch['mean_target'], batch['mean_pred'],
+                       batch['logvar_target'], batch['logvar_pred'])
         if dist.is_initialized():
             ws = dist.get_world_size()
             placeholder = [torch.zeros_like(kld) for _ in range(ws)]
