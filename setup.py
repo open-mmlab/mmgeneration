@@ -137,7 +137,7 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.8',
         ],
         url='https://github.com/open-mmlab/mmgen',
-        author='MMGeneration Authors',
+        author='MMGeneration Contributors',
         author_email='openmmlab@gmail.com',
         license='Apache License 2.0',
         setup_requires=['pytest-runner', 'cython', 'numpy'],
