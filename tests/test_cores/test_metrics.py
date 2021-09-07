@@ -272,8 +272,8 @@ def test_kld_gaussian():
     tar_shape = [2, 3, 4, 4]
     mean1, mean2 = torch.rand(*tar_shape, 1), torch.rand(*tar_shape, 1)
     # var1, var2 = torch.rand(2, 3, 4, 4, 1), torch.rand(2, 3, 4, 4, 1)
-    var1 = torch.randint(1, 3, (*tar_shape, 1))
-    var2 = torch.randint(1, 3, (*tar_shape, 1))
+    var1 = torch.randint(1, 3, (*tar_shape, 1)).float()
+    var2 = torch.randint(1, 3, (*tar_shape, 1)).float()
 
     def pdf(x, mean, var):
         return (1 / np.sqrt(2 * np.pi * var) * torch.exp(-(x - mean)**2 /
