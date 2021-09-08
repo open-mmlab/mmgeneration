@@ -40,17 +40,18 @@ class Pix2Pix(StaticTranslationGAN):
     def _get_disc_loss(self, outputs):
         # GAN loss for the discriminator
         losses = dict()
-        # conditional GAN
+        
+        discriminators = self.get_module(self.discriminators)
         target_domain = self._default_domain
         source_domain = self.get_other_domains(target_domain)[0]
         fake_ab = torch.cat((outputs[f'real_{source_domain}'],
                              outputs[f'fake_{target_domain}']), 1)
-        fake_pred = self.discriminators[target_domain](fake_ab.detach())
+        fake_pred = discriminators[target_domain](fake_ab.detach())
         losses['loss_gan_d_fake'] = self.gan_loss(
             fake_pred, target_is_real=False, is_disc=True)
         real_ab = torch.cat((outputs[f'real_{source_domain}'],
                              outputs[f'real_{target_domain}']), 1)
-        real_pred = self.discriminators[target_domain](real_ab)
+        real_pred = discriminators[target_domain](real_ab)
         losses['loss_gan_d_real'] = self.gan_loss(
             real_pred, target_is_real=True, is_disc=True)
 
@@ -63,10 +64,12 @@ class Pix2Pix(StaticTranslationGAN):
         target_domain = self._default_domain
         source_domain = self.get_other_domains(target_domain)[0]
         losses = dict()
+        
+        discriminators = self.get_module(self.discriminators)
         # GAN loss for the generator
         fake_ab = torch.cat((outputs[f'real_{source_domain}'],
                              outputs[f'fake_{target_domain}']), 1)
-        fake_pred = self.discriminators[target_domain](fake_ab)
+        fake_pred = discriminators[target_domain](fake_ab)
         losses['loss_gan_g'] = self.gan_loss(
             fake_pred, target_is_real=True, is_disc=False)
 

@@ -16,27 +16,27 @@ model = dict(
         dict(
             type='L1Loss',
             loss_weight=10.0,
-            data_info=dict(pred='cycle_{domain_a}', target='real_{domain_a}'),
+            data_info=dict(pred=f'cycle_{domain_a}', target=f'real_{domain_a}'),
             reduction='mean'),
         dict(
             type='L1Loss',
             loss_weight=10.0,
             data_info=dict(
-                pred='cycle_{domain_b}',
-                target='real_{domain_b}',
+                pred=f'cycle_{domain_b}',
+                target=f'real_{domain_b}',
             ),
             reduction='mean'),
         dict(
             type='L1Loss',
             loss_weight=0.5,
             data_info=dict(
-                pred='identity_{domain_a}', target='real_{domain_a}'),
+                pred=f'identity_{domain_a}', target=f'real_{domain_a}'),
             reduction='mean'),
         dict(
             type='L1Loss',
             loss_weight=0.5,
             data_info=dict(
-                pred='identity_{domain_b}', target='real_{domain_b}'),
+                pred=f'identity_{domain_b}', target=f'real_{domain_b}'),
             reduction='mean')
     ])
 dataroot = './data/unpaired_facades'

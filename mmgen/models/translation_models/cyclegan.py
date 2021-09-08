@@ -45,22 +45,6 @@ class CycleGAN(StaticTranslationGAN):
         results = dict(source=img.cpu(), target=target.cpu())
         return results
 
-    def get_module(self, module):
-        """Get `nn.ModuleDict` to fit the `MMDistributedDataParallel`
-        interface.
-
-        Args:
-            module (MMDistributedDataParallel | nn.ModuleDict): The input
-                module that needs processing.
-
-        Returns:
-            nn.ModuleDict: The ModuleDict of multiple networks.
-        """
-        if isinstance(module, MMDistributedDataParallel):
-            return module.module
-
-        return module
-
     def _get_disc_loss(self, outputs):
         """Backward function for the discriminators.
 

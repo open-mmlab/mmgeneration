@@ -83,8 +83,8 @@ data = dict(
 
 # optimizer
 optimizer = dict(
-    generator=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)),
-    discriminator=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)))
+    generators=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)),
+    discriminators=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)))
 
 # learning policy
 lr_config = None
