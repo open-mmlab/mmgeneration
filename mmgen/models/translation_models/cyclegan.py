@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from mmcv.parallel import MMDistributedDataParallel
 from torch.nn.parallel.distributed import _find_tensors
 
 from mmgen.models.builder import MODELS

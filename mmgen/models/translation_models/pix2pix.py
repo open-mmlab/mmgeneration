@@ -40,7 +40,7 @@ class Pix2Pix(StaticTranslationGAN):
     def _get_disc_loss(self, outputs):
         # GAN loss for the discriminator
         losses = dict()
-        
+
         discriminators = self.get_module(self.discriminators)
         target_domain = self._default_domain
         source_domain = self.get_other_domains(target_domain)[0]
@@ -64,7 +64,7 @@ class Pix2Pix(StaticTranslationGAN):
         target_domain = self._default_domain
         source_domain = self.get_other_domains(target_domain)[0]
         losses = dict()
-        
+
         discriminators = self.get_module(self.discriminators)
         # GAN loss for the generator
         fake_ab = torch.cat((outputs[f'real_{source_domain}'],

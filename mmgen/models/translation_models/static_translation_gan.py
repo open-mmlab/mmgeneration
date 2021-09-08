@@ -2,11 +2,12 @@
 from copy import deepcopy
 
 import torch.nn as nn
+from mmcv.parallel import MMDistributedDataParallel
 
 from ..builder import MODELS, build_module
 from ..gans import BaseGAN
 from .base_translation_model import BaseTranslationModel
-from mmcv.parallel import MMDistributedDataParallel
+
 
 @MODELS.register_module()
 class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
@@ -107,7 +108,6 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
         # basic testing information
         self.batch_size = self.test_cfg.get('batch_size', 1)
 
-
     def get_module(self, module):
         """Get `nn.ModuleDict` to fit the `MMDistributedDataParallel`
         interface.
@@ -123,8 +123,7 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
             return module.module
 
         return module
-    
-    
+
     def _get_target_generator(self, domain):
         """get target generator."""
         assert self.is_domain_reachable(
@@ -133,7 +132,6 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
             {self._reachable_domains}'
 
         return self.get_module(self.generators)[domain]
-
 
     def _get_target_discriminator(self, domain):
         """get target discriminator."""

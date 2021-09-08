@@ -16,7 +16,8 @@ model = dict(
         dict(
             type='L1Loss',
             loss_weight=10.0,
-            data_info=dict(pred=f'cycle_{domain_a}', target=f'real_{domain_a}'),
+            data_info=dict(
+                pred=f'cycle_{domain_a}', target=f'real_{domain_a}'),
             reduction='mean'),
         dict(
             type='L1Loss',
