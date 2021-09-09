@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - name: "MMGeneration Contributors"
+title: "OpenMMLab's next-generation toolbox for generative models"
+date-released: 2020-07-10
+url: "https://github.com/open-mmlab/mmgeneration"
+license: Apache-2.0
