@@ -33,7 +33,8 @@ model = dict(
             type='L1Loss',
             loss_weight=10.0,
             loss_name='cycle_loss',
-            data_info=dict(pred=f'cycle_{_domain_a}', target=f'real_{_domain_a}'),
+            data_info=dict(
+                pred=f'cycle_{_domain_a}', target=f'real_{_domain_a}'),
             reduction='mean'),
         dict(
             type='L1Loss',
@@ -48,13 +49,15 @@ model = dict(
             type='L1Loss',
             loss_weight=0.5,
             loss_name='id_loss',
-            data_info=dict(pred=f'identity_{_domain_a}', target=f'real_{_domain_a}'),
+            data_info=dict(
+                pred=f'identity_{_domain_a}', target=f'real_{_domain_a}'),
             reduction='mean'),
         dict(
             type='L1Loss',
             loss_weight=0.5,
             loss_name='id_loss',
-            data_info=dict(pred=f'identity_{_domain_b}', target=f'real_{_domain_b}'),
+            data_info=dict(
+                pred=f'identity_{_domain_b}', target=f'real_{_domain_b}'),
             reduction='mean')
     ])
 train_cfg = dict(buffer_size=50)
