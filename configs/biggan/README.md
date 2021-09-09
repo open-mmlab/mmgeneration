@@ -1,5 +1,4 @@
-# LARGE SCALE GAN TRAINING FOR HIGH FIDELITY NATURAL IMAGE SYNTHESIS
-
+# Large Scale GAN Training for High Fidelity Natural Image Synthesis
 ## Introduction
 <!-- [ALGORITHM] -->
 ```latex
