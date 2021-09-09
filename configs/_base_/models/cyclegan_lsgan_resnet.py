@@ -23,7 +23,33 @@ model = dict(
         real_label_val=1.0,
         fake_label_val=0.0,
         loss_weight=1.0),
-    cycle_loss=dict(type='L1Loss', loss_weight=10.0, reduction='mean'),
-    id_loss=dict(type='L1Loss', loss_weight=0.5, reduction='mean'))
-train_cfg = dict(direction='a2b', buffer_size=50)
-test_cfg = dict(direction='a2b', show_input=True)
+    default_domain=None,  # set by user
+    reachable_domains=None,  # set by user
+    related_domains=None,  # set by user
+    gen_auxiliary_loss=[
+        dict(
+            type='L1Loss',
+            loss_weight=10.0,
+            data_info=dict(pred='cycle_photo', target='real_photo'),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=10.0,
+            data_info=dict(
+                pred='cycle_mask',
+                target='real_mask',
+            ),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=0.5,
+            data_info=dict(pred='identity_photo', target='real_photo'),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=0.5,
+            data_info=dict(pred='identity_mask', target='real_mask'),
+            reduction='mean')
+    ])
+train_cfg = dict(buffer_size=50)
+test_cfg = None

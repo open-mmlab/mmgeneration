@@ -2,15 +2,89 @@ _base_ = [
     '../_base_/models/pix2pix_vanilla_unet_bn.py',
     '../_base_/datasets/paired_imgs_256x256.py', '../_base_/default_runtime.py'
 ]
-data_root = 'data/paired/edges2shoes'
+source_domain = 'edges'
+target_domain = 'photo'
+# model settings
+model = dict(
+    default_domain=target_domain,
+    reachable_domains=[target_domain],
+    related_domains=[target_domain, source_domain],
+    gen_auxiliary_loss=dict(
+        data_info=dict(
+            pred=f'fake_{target_domain}', target=f'real_{target_domain}')))
+# dataset settings
+domain_a = source_domain
+domain_b = target_domain
+img_norm_cfg = dict(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+train_pipeline = [
+    dict(
+        type='LoadPairedImageFromFile',
+        io_backend='disk',
+        key='pair',
+        domain_a=domain_a,
+        domain_b=domain_b,
+        flag='color'),
+    dict(
+        type='Resize',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        scale=(286, 286),
+        interpolation='bicubic'),
+    dict(
+        type='FixedCrop',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        crop_size=(256, 256)),
+    dict(
+        type='Flip',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        direction='horizontal'),
+    dict(type='RescaleToZeroOne', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+    dict(
+        type='Normalize',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        to_rgb=False,
+        **img_norm_cfg),
+    dict(type='ImageToTensor', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+    dict(
+        type='Collect',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
+]
+test_pipeline = [
+    dict(
+        type='LoadPairedImageFromFile',
+        io_backend='disk',
+        key='image',
+        domain_a=domain_a,
+        domain_b=domain_b,
+        flag='color'),
+    dict(
+        type='Resize',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        scale=(256, 256),
+        interpolation='bicubic'),
+    dict(type='RescaleToZeroOne', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+    dict(
+        type='Normalize',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        to_rgb=False,
+        **img_norm_cfg),
+    dict(type='ImageToTensor', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+    dict(
+        type='Collect',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
+]
+
+dataroot = 'data/paired/edges2shoes'
 data = dict(
-    train=dict(dataroot=data_root),
-    val=dict(dataroot=data_root),
-    test=dict(dataroot=data_root))
+    train=dict(dataroot=dataroot, pipeline=train_pipeline),
+    val=dict(dataroot=dataroot, pipeline=test_pipeline),
+    test=dict(dataroot=dataroot, pipeline=test_pipeline))
+
 # optimizer
 optimizer = dict(
-    generator=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)),
-    discriminator=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)))
+    generators=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)),
+    discriminators=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)))
 
 # learning policy
 lr_config = None
