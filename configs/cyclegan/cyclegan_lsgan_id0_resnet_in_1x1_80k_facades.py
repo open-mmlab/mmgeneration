@@ -3,10 +3,77 @@ _base_ = [
     '../_base_/datasets/unpaired_imgs_256x256.py',
     '../_base_/default_runtime.py'
 ]
-train_cfg = dict(direction='b2a', buffer_size=50)
-test_cfg = dict(test_direction='b2a', show_input=False)
-model = dict(id_loss=dict(type='L1Loss', loss_weight=0, reduction='mean'))
+train_cfg = dict(buffer_size=50)
+test_cfg = None
+domain_a = 'photo'
+domain_b = 'mask'
+model = dict(
+    default_domain=domain_a,
+    reachable_domains=[domain_a, domain_b],
+    related_domains=[domain_a, domain_b],
+    gen_auxiliary_loss=[
+        dict(
+            type='L1Loss',
+            loss_weight=10.0,
+            data_info=dict(
+                pred=f'cycle_{domain_a}', target=f'real_{domain_a}'),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=10.0,
+            data_info=dict(
+                pred=f'cycle_{domain_b}',
+                target=f'real_{domain_b}',
+            ),
+            reduction='mean')
+    ])
+train_pipeline = [
+    dict(
+        type='LoadImageFromFile',
+        io_backend='disk',
+        key=f'img_{domain_a}',
+        flag='color'),
+    dict(
+        type='LoadImageFromFile',
+        io_backend='disk',
+        key=f'img_{domain_b}',
+        flag='color'),
+    dict(
+        type='Resize',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        scale=(286, 286),
+        interpolation='bicubic'),
+    dict(
+        type='Crop',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        crop_size=(256, 256),
+        random_crop=True),
+    dict(type='Flip', keys=[f'img_{domain_a}'], direction='horizontal'),
+    dict(type='Flip', keys=[f'img_{domain_b}'], direction='horizontal'),
+    dict(type='RescaleToZeroOne', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+    dict(
+        type='Normalize',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        to_rgb=False,
+        mean=[0.5, 0.5, 0.5],
+        std=[0.5, 0.5, 0.5]),
+    dict(type='ImageToTensor', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+    dict(
+        type='Collect',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
+]
+
 dataroot = './data/unpaired_facades'
+data = dict(
+    train=dict(
+        dataroot=dataroot,
+        pipeline=train_pipeline,
+        domain_a=domain_a,
+        domain_b=domain_b),
+    val=dict(dataroot=dataroot, domain_a=domain_a, domain_b=domain_b),
+    test=dict(dataroot=dataroot, domain_a=domain_a, domain_b=domain_b))
+
 data = dict(
     train=dict(dataroot=dataroot),
     val=dict(dataroot=dataroot),
@@ -21,7 +88,7 @@ custom_hooks = [
     dict(
         type='MMGenVisualizationHook',
         output_dir='training_samples',
-        res_name_list=['fake_b'],
+        res_name_list=['fake_photo'],
         interval=5000)
 ]
 

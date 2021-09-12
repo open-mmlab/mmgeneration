@@ -61,16 +61,20 @@ class TestSampleTranslationModel:
             os.path.dirname(__file__), '..', 'data/unpaired/testA/5.jpg')
 
     def test_translation_model_cpu(self):
-        res = sample_img2img_model(self.pix2pix, self.img_path)
+        res = sample_img2img_model(
+            self.pix2pix, self.img_path, target_domain='photo')
         assert res.shape == (1, 3, 256, 256)
 
-        res = sample_img2img_model(self.cyclegan, self.img_path)
+        res = sample_img2img_model(
+            self.cyclegan, self.img_path, target_domain='photo')
         assert res.shape == (1, 3, 256, 256)
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_translation_model_cuda(self):
-        res = sample_img2img_model(self.pix2pix.cuda(), self.img_path)
+        res = sample_img2img_model(
+            self.pix2pix.cuda(), self.img_path, target_domain='photo')
         assert res.shape == (1, 3, 256, 256)
 
-        res = sample_img2img_model(self.cyclegan.cuda(), self.img_path)
+        res = sample_img2img_model(
+            self.cyclegan.cuda(), self.img_path, target_domain='photo')
         assert res.shape == (1, 3, 256, 256)

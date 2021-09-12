@@ -3,8 +3,43 @@ _base_ = [
     '../_base_/datasets/unpaired_imgs_256x256.py',
     '../_base_/default_runtime.py'
 ]
-train_cfg = dict(direction='b2a', buffer_size=50)
-test_cfg = dict(test_direction='b2a', show_input=False)
+train_cfg = dict(buffer_size=50)
+test_cfg = None
+
+domain_a = 'photo'
+domain_b = 'mask'
+model = dict(
+    default_domain=domain_a,
+    reachable_domains=[domain_a, domain_b],
+    related_domains=[domain_a, domain_b],
+    gen_auxiliary_loss=[
+        dict(
+            type='L1Loss',
+            loss_weight=10.0,
+            data_info=dict(
+                pred=f'cycle_{domain_a}', target=f'real_{domain_a}'),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=10.0,
+            data_info=dict(
+                pred=f'cycle_{domain_b}',
+                target=f'real_{domain_b}',
+            ),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=0.5,
+            data_info=dict(
+                pred=f'identity_{domain_a}', target=f'real_{domain_a}'),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=0.5,
+            data_info=dict(
+                pred=f'identity_{domain_b}', target=f'real_{domain_b}'),
+            reduction='mean')
+    ])
 dataroot = './data/unpaired_facades'
 data = dict(
     train=dict(dataroot=dataroot),
@@ -20,7 +55,7 @@ custom_hooks = [
     dict(
         type='MMGenVisualizationHook',
         output_dir='training_samples',
-        res_name_list=['fake_b'],
+        res_name_list=['fake_photo'],
         interval=5000)
 ]
 
