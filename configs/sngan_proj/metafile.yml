@@ -1,0 +1,9 @@
+Collections:
+- Metadata:
+    Architecture:
+    - SNGAN
+  Name: README
+  Paper:
+  - https://openreview.net/forum?id=B1QRgziT-
+  README: configs/sngan_proj/README.md
+Models: []

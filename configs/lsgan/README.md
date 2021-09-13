@@ -3,6 +3,9 @@
 ## Introduction
 <!-- [ALGORITHM] -->
 
+<details>
+<summary align="right"><a href="https://openaccess.thecvf.com/content_iccv_2017/html/Mao_Least_Squares_Generative_ICCV_2017_paper.html">LSGAN (ICCV'2017)</a></summary>
+
 ```latex
 @inproceedings{mao2017least,
   title={Least squares generative adversarial networks},

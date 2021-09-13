@@ -2,6 +2,9 @@
 
 ## Introduction
 <!-- [ALGORITHM] -->
+
+<details>
+<summary align="right"><a href="https://proceedings.mlr.press/v97/zhang19d.html">SAGAN (ICML'2019)</a></summary>
 ```latex
 @inproceedings{zhang2019self,
   title={Self-attention generative adversarial networks},

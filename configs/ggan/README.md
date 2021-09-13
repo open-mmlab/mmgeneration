@@ -3,6 +3,9 @@
 ## Introduction
 <!-- [ALGORITHM] -->
 
+<details>
+<summary align="right"><a href="https://arxiv.org/abs/1705.02894">GGAN (arXiv'2017)</a></summary>
+
 ```latex
 @article{lim2017geometric,
   title={Geometric gan},
