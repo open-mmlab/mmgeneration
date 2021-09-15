@@ -1,6 +1,6 @@
 _base_ = [
-    '../_base_/models/biggan/biggan_32x32.py', '../_base_/datasets/cifar10_noaug.py',
-    '../_base_/default_runtime.py'
+    '../_base_/models/biggan/biggan_32x32.py',
+    '../_base_/datasets/cifar10_noaug.py', '../_base_/default_runtime.py'
 ]
 
 # define dataset
