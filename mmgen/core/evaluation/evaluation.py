@@ -280,7 +280,7 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
                                    'channels in the first, '
                                    'not % d' % reals.shape[1])
             if reals.shape[1] == 1:
-                reals = torch.cat([reals] * 3, dim=1)
+                reals = reals.repeat(1, 3, 1, 1)
             num_feed = metric.feed(reals, 'reals')
             if num_feed <= 0:
                 break
@@ -342,7 +342,7 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
     for metric in probabilistic_metrics:
         metric.prepare()
         pbar = mmcv.ProgressBar(len(data_loader))
-        # here we assert probabilistic model have reconstruction mode
+        # here we assume probabilistic model have reconstruction mode
         kwargs['mode'] = 'reconstruction'
         for data in data_loader:
             # key for unconditional GAN
@@ -362,7 +362,7 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
                                    'channels in the first, '
                                    'not % d' % reals.shape[1])
             if reals.shape[1] == 1:
-                reals = torch.cat([reals] * 3, dim=1)
+                reals = reals.repeat(1, 3, 1, 1)
 
             prob_dict = model(reals, return_loss=False, **kwargs)
             num_feed = metric.feed(prob_dict, 'reals')

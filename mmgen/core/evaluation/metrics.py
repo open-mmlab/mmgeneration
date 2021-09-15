@@ -385,7 +385,7 @@ class Metric(ABC):
         operation in 'feed_op' function.
 
         Args:
-            batch (Tensor|dict[Tensor]): Images or dict to be feeded into
+            batch (Tensor | dict): Images or dict to be feeded into
                 metric object. If ``Tensor`` is passed, the order of ``Tensor``
                 should be "NCHW". If ``dict`` is passed, each term in the
                 ``dict`` are ``Tensor`` with order "NCHW".
@@ -1405,11 +1405,12 @@ class GaussianKLD(Metric):
                         '2'], ('We only support log_base for \'e\' and \'2\'')
         self.reduction = reduction
         self.num_fake_feeded = self.num_images
-        self.kld = partial(gaussian_kld, weight=1, reduction='none', base=base)
+        self.cal_kld = partial(
+            gaussian_kld, weight=1, reduction='none', base=base)
 
     def prepare(self):
         """Prepare for evaluating models with this metric."""
-        self.KLD = []
+        self.kld = []
         self.num_real_feeded = 0
 
     @torch.no_grad()
@@ -1434,8 +1435,8 @@ class GaussianKLD(Metric):
                            'the same time. But keys in the given dict are '
                            f'{batch.keys()}. Some of the requirements are '
                            'missing.')
-        kld = self.kld(batch['mean_target'], batch['mean_pred'],
-                       batch['logvar_target'], batch['logvar_pred'])
+        kld = self.cal_kld(batch['mean_target'], batch['mean_pred'],
+                           batch['logvar_target'], batch['logvar_pred'])
         if dist.is_initialized():
             ws = dist.get_world_size()
             placeholder = [torch.zeros_like(kld) for _ in range(ws)]
@@ -1445,7 +1446,7 @@ class GaussianKLD(Metric):
         # in distributed training, we only collect features at rank-0.
         if (dist.is_initialized()
                 and dist.get_rank() == 0) or not dist.is_initialized():
-            self.KLD.append(kld.cpu())
+            self.kld.append(kld.cpu())
 
     @torch.no_grad()
     def summary(self):
@@ -1454,7 +1455,7 @@ class GaussianKLD(Metric):
         Returns:
             dict | list: Summarized results.
         """
-        kld = torch.cat(self.KLD, dim=0)
+        kld = torch.cat(self.kld, dim=0)
         assert kld.shape[0] >= self.num_images
         kld_np = kld.numpy()
         if self.reduction == 'sum':
