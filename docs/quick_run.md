@@ -50,7 +50,7 @@ import mmcv
 from mmgen.apis import init_model, sample_img2img_model
 
 # Specify the path to model config and checkpoint file
-config_file = 'configs/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes.py'
+config_file = 'configs/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_edges2shoes_1x4_190k.py'
 # you can download this checkpoint in advance and use a local file path.
 checkpoint_file = 'https://download.openmmlab.com/mmgen/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes_convert-bgr_20210410_174116-aaaa3687.pth'
 # Specify the path to image you want to transalte
@@ -254,13 +254,13 @@ metrics = dict(
 Inception score is an objective metric for evaluating the quality of generated images, proposed in [Improved Techniques for Training GANs](https://arxiv.org/pdf/1606.03498.pdf). It uses an InceptionV3 model to predict the class of the generated images, and suppose that 1) If an image is of high quality, it will be categorized into a specific class. 2) If images are of high diversity, the range of images' classes will be wide. So the KL-divergence of the conditional probability and marginal probability can indicate the quality and diversity of generated images. You can see the complete implementation in `metrics.py`, which refers to https://github.com/sbarratt/inception-score-pytorch/blob/master/inception_score.py.
 If you want to evaluate models with `IS` metrics, you can add the `metrics` into your config file like this:
 ```python
-# at the end of the configs/pix2pix/pix2pix_vanilla_unet_bn_1x1_80k_facades.py
+# at the end of the configs/pix2pix/pix2pix_vanilla_unet_bn_facades_1x1_80k.py
 metrics = dict(
     IS=dict(type='IS', num_images=106, image_shape=(3, 256, 256)))
 ```
 You can run the command below to calculate IS.
 ```shell
-python tools/utils/translation_eval.py ./configs/pix2pix/pix2pix_vanilla_unet_bn_1x1_80k_facades.py\
+python tools/utils/translation_eval.py ./configs/pix2pix/pix2pix_vanilla_unet_bn_facades_1x1_80k.py\
     https://download.openmmlab.com/mmgen/pix2pix/pix2pix_vanilla_unet_bn_1x1_80k_facades.py_20210410_174537-36d956f1.pth \
     --eval IS
 ```
