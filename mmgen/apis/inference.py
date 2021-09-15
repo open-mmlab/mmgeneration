@@ -192,6 +192,7 @@ def sample_img2img_model(model, image_path, target_domain, **kwargs):
         Tensor: Translated image tensor.
     """
     assert isinstance(model, BaseTranslationModel)
+    assert target_domain in model._reachable_domains
     cfg = model._cfg
     device = next(model.parameters()).device  # model device
     # build the data pipeline

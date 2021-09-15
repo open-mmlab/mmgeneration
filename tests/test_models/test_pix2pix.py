@@ -249,33 +249,3 @@ def test_pix2pix():
                        data_batch['img_photo'])
     assert torch.is_tensor(outputs['results']['fake_photo'])
     assert outputs['results']['fake_photo'].size() == (1, 3, 256, 256)
-
-    # test b2a translation
-    data_batch['img_mask'] = img_mask.cpu()
-    data_batch['img_photo'] = img_photo.cpu()
-    train_cfg = dict(direction='b2a')
-    synthesizer = build_model(
-        model_cfg, train_cfg=train_cfg, test_cfg=test_cfg)
-    optimizer = {
-        'generators':
-        obj_from_dict(
-            optim_cfg, torch.optim,
-            dict(params=getattr(synthesizer, 'generators').parameters())),
-        'discriminators':
-        obj_from_dict(
-            optim_cfg, torch.optim,
-            dict(params=getattr(synthesizer, 'discriminators').parameters()))
-    }
-    outputs = synthesizer.train_step(data_batch, optimizer)
-    assert isinstance(outputs, dict)
-    assert isinstance(outputs['log_vars'], dict)
-    assert isinstance(outputs['results'], dict)
-    for v in ['loss_gan_d_fake', 'loss_gan_d_real', 'loss_gan_g', 'loss_l1']:
-        assert isinstance(outputs['log_vars'][v], float)
-    assert outputs['num_samples'] == 1
-    assert torch.equal(outputs['results']['real_mask'], data_batch['img_mask'])
-    assert torch.equal(outputs['results']['real_photo'],
-                       data_batch['img_photo'])
-    assert torch.is_tensor(outputs['results']['fake_photo'])
-    assert outputs['results']['fake_photo'].size() == (1, 3, 256, 256)
-    assert synthesizer.iteration == 1
