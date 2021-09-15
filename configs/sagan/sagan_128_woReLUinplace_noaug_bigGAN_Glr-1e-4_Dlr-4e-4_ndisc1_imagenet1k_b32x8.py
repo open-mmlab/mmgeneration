@@ -9,7 +9,7 @@
 # 6. no data augmentation
 
 _base_ = [
-    '../_base_/models/sagan_128x128.py',
+    '../_base_/models/sagan/sagan_128x128.py',
     '../_base_/datasets/imagenet_noaug_128.py', '../_base_/default_runtime.py'
 ]
 

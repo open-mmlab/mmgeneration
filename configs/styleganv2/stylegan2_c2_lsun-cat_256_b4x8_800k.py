@@ -2,7 +2,7 @@
 
 _base_ = [
     '../_base_/datasets/lsun_stylegan.py',
-    '../_base_/models/stylegan2_base.py', '../_base_/default_runtime.py'
+    '../_base_/models/stylegan/stylegan2_base.py', '../_base_/default_runtime.py'
 ]
 
 model = dict(generator=dict(out_size=256), discriminator=dict(in_size=256))

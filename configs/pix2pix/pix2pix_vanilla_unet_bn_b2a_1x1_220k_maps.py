@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/pix2pix_vanilla_unet_bn.py',
+    '../_base_/models/pix2pix/pix2pix_vanilla_unet_bn.py',
     '../_base_/datasets/paired_imgs_256x256_crop.py',
     '../_base_/default_runtime.py'
 ]

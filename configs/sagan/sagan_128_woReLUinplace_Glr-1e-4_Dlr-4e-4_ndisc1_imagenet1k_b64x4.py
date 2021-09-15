@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/sagan_128x128.py', '../_base_/datasets/imagenet_128.py',
+    '../_base_/models/sagan/sagan_128x128.py', '../_base_/datasets/imagenet_128.py',
     '../_base_/default_runtime.py'
 ]
 
