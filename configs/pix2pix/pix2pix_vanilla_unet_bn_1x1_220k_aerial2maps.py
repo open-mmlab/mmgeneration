@@ -105,7 +105,7 @@ use_ddp_wrapper = True
 # runtime settings
 total_iters = 220000
 workflow = [('train', 1)]
-exp_name = 'pix2pix_maps_a2b'
+exp_name = 'pix2pix_aerial2map'
 work_dir = f'./work_dirs/experiments/{exp_name}'
 metrics = dict(
     FID=dict(type='FID', num_images=1098, image_shape=(3, 256, 256)),

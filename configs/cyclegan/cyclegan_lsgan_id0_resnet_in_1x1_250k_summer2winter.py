@@ -13,12 +13,14 @@ model = dict(
         dict(
             type='L1Loss',
             loss_weight=10.0,
+            loss_name='cycle_loss',
             data_info=dict(
                 pred=f'cycle_{domain_a}', target=f'real_{domain_a}'),
             reduction='mean'),
         dict(
             type='L1Loss',
             loss_weight=10.0,
+            loss_name='cycle_loss',
             data_info=dict(
                 pred=f'cycle_{domain_b}',
                 target=f'real_{domain_b}',
@@ -74,7 +76,11 @@ data = dict(
 optimizer = dict(
     generators=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)),
     discriminators=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)))
-lr_config = None
+
+# learning policy
+lr_config = dict(
+    policy='Linear', by_epoch=False, target_lr=0, start=125000, interval=1250)
+
 checkpoint_config = dict(interval=10000, save_optimizer=True, by_epoch=False)
 custom_hooks = [
     dict(

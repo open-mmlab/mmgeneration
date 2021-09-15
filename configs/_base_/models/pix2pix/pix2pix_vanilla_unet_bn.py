@@ -31,6 +31,7 @@ model = dict(
     gen_auxiliary_loss=dict(
         type='L1Loss',
         loss_weight=100.0,
+        loss_name='pixel_loss',
         data_info=dict(
             pred=f'fake_{target_domain}', target=f'real_{target_domain}'),
         reduction='mean'))
