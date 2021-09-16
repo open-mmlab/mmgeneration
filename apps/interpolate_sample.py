@@ -1,5 +1,6 @@
 import argparse
-import os, sys
+import os
+import sys
 
 import mmcv
 import numpy as np
@@ -11,10 +12,11 @@ from torchvision.utils import save_image
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
 
-from mmgen.apis import set_random_seed
-from mmgen.core.evaluation import slerp
-from mmgen.models import build_model
+from mmgen.apis import set_random_seed # isort:skip  # noqa
+from mmgen.core.evaluation import slerp # isort:skip  # noqa
+from mmgen.models import build_model # isort:skip  # noqa
 
+# yapf: enable
 
 
 def parse_args():
