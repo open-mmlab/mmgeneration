@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 import mmcv
 import torch
@@ -8,15 +9,16 @@ from mmcv import Config, DictAction
 from mmcv.runner import load_checkpoint
 from torchvision.utils import save_image
 
-from mmgen.apis import set_random_seed
-from mmgen.core.evaluation import slerp
-from mmgen.models import build_model
-from mmgen.models.architectures import BigGANDeepGenerator, BigGANGenerator
-from mmgen.models.architectures.common import get_module_device
-
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
 
+from mmgen.apis import set_random_seed # isort:skip  # noqa
+from mmgen.core.evaluation import slerp # isort:skip  # noqa
+from mmgen.models import build_model # isort:skip  # noqa
+from mmgen.models.architectures import BigGANDeepGenerator, BigGANGenerator # isort:skip  # noqa
+from mmgen.models.architectures.common import get_module_device # isort:skip  # noqa
+
+# yapf: enable
 
 _default_embedding_name = dict(
     BigGANGenerator='shared_embedding',
