@@ -76,11 +76,6 @@ data = dict(
     val=dict(dataroot=dataroot, domain_a=domain_a, domain_b=domain_b),
     test=dict(dataroot=dataroot, domain_a=domain_a, domain_b=domain_b))
 
-data = dict(
-    train=dict(dataroot=dataroot),
-    val=dict(dataroot=dataroot),
-    test=dict(dataroot=dataroot))
-
 optimizer = dict(
     generators=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)),
     discriminators=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)))
