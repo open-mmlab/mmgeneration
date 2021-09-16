@@ -5,7 +5,7 @@ r"""
     Ref: https://github.com/rosinality/stylegan2-pytorch/blob/master/projector.py # noqa
 """
 import argparse
-import os
+import os, sys
 
 import mmcv
 import numpy as np
@@ -18,6 +18,9 @@ from torch import optim
 from torchvision import transforms
 from torchvision.utils import save_image
 from tqdm import tqdm
+
+# yapf: disable
+sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
 
 from mmgen.apis import set_random_seed
 from mmgen.models import build_model

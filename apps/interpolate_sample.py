@@ -1,5 +1,5 @@
 import argparse
-import os
+import os, sys
 
 import mmcv
 import numpy as np
@@ -8,12 +8,13 @@ from mmcv import Config, DictAction
 from mmcv.runner import load_checkpoint
 from torchvision.utils import save_image
 
+# yapf: disable
+sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
+
 from mmgen.apis import set_random_seed
 from mmgen.core.evaluation import slerp
 from mmgen.models import build_model
 
-# yapf: disable
-sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
 
 
 def parse_args():
