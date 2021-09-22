@@ -3,17 +3,99 @@ _base_ = [
     '../_base_/datasets/unpaired_imgs_256x256.py',
     '../_base_/default_runtime.py'
 ]
-test_cfg = dict(test_direction='a2b', show_input=False)
+
+domain_a = 'horse'
+domain_b = 'zebra'
+model = dict(
+    default_domain=domain_a,
+    reachable_domains=[domain_a, domain_b],
+    related_domains=[domain_a, domain_b],
+    gen_auxiliary_loss=[
+        dict(
+            type='L1Loss',
+            loss_weight=10.0,
+            loss_name='cycle_loss',
+            data_info=dict(
+                pred=f'cycle_{domain_a}', target=f'real_{domain_a}'),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=10.0,
+            loss_name='cycle_loss',
+            data_info=dict(
+                pred=f'cycle_{domain_b}',
+                target=f'real_{domain_b}',
+            ),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=0.5,
+            loss_name='id_loss',
+            data_info=dict(
+                pred=f'identity_{domain_a}', target=f'real_{domain_a}'),
+            reduction='mean'),
+        dict(
+            type='L1Loss',
+            loss_weight=0.5,
+            loss_name='id_loss',
+            data_info=dict(
+                pred=f'identity_{domain_b}', target=f'real_{domain_b}'),
+            reduction='mean')
+    ])
 dataroot = './data/horse2zebra'
+train_pipeline = [
+    dict(
+        type='LoadImageFromFile',
+        io_backend='disk',
+        key=f'img_{domain_a}',
+        flag='color'),
+    dict(
+        type='LoadImageFromFile',
+        io_backend='disk',
+        key=f'img_{domain_b}',
+        flag='color'),
+    dict(
+        type='Resize',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        scale=(286, 286),
+        interpolation='bicubic'),
+    dict(
+        type='Crop',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        crop_size=(256, 256),
+        random_crop=True),
+    dict(type='Flip', keys=[f'img_{domain_a}'], direction='horizontal'),
+    dict(type='Flip', keys=[f'img_{domain_b}'], direction='horizontal'),
+    dict(type='RescaleToZeroOne', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+    dict(
+        type='Normalize',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        to_rgb=False,
+        mean=[0.5, 0.5, 0.5],
+        std=[0.5, 0.5, 0.5]),
+    dict(type='ImageToTensor', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+    dict(
+        type='Collect',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
+]
 data = dict(
-    train=dict(dataroot=dataroot),
-    val=dict(dataroot=dataroot),
-    test=dict(dataroot=dataroot))
+    train=dict(
+        dataroot=dataroot,
+        pipeline=train_pipeline,
+        domain_a=domain_a,
+        domain_b=domain_b),
+    val=dict(dataroot=dataroot, domain_a=domain_a, domain_b=domain_b),
+    test=dict(dataroot=dataroot, domain_a=domain_a, domain_b=domain_b))
 
 optimizer = dict(
     generators=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)),
     discriminators=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)))
-lr_config = None
+
+# learning policy
+lr_config = dict(
+    policy='Linear', by_epoch=False, target_lr=0, start=135000, interval=1350)
+
 checkpoint_config = dict(interval=10000, save_optimizer=True, by_epoch=False)
 custom_hooks = [
     dict(
@@ -27,7 +109,7 @@ runner = None
 use_ddp_wrapper = True
 total_iters = 270000
 workflow = [('train', 1)]
-exp_name = 'cyclegan_facades_id0'
+exp_name = 'cyclegan_horse2zebra'
 work_dir = f'./work_dirs/experiments/{exp_name}'
 # testA 120, testB 140
 metrics = dict(

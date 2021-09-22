@@ -56,7 +56,7 @@ def parse_args():
         '--num-samples',
         type=int,
         default=-1,
-        help='whether to use online mode for evaluation')
+        help='The number of images to be sampled for evaluation.')
     parser.add_argument(
         '--cfg-options',
         nargs='+',

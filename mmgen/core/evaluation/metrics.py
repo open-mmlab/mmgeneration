@@ -3,6 +3,7 @@ import os
 import pickle
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from functools import partial
 
 import mmcv
 import numpy as np
@@ -18,6 +19,7 @@ from torchvision.models.inception import inception_v3
 from mmgen.models.architectures import InceptionV3
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.architectures.lpips import PerceptualLoss
+from mmgen.models.losses import gaussian_kld
 from mmgen.utils import MMGEN_CACHE_DIR
 from mmgen.utils.io_utils import download_from_url
 from ..registry import METRICS
@@ -383,8 +385,10 @@ class Metric(ABC):
         operation in 'feed_op' function.
 
         Args:
-            batch (Tensor): Images feeded into metric object with order "NCHW"
-                and range [-1, 1].
+            batch (Tensor | dict): Images or dict to be feeded into
+                metric object. If ``Tensor`` is passed, the order of ``Tensor``
+                should be "NCHW". If ``dict`` is passed, each term in the
+                ``dict`` are ``Tensor`` with order "NCHW".
             mode (str): Mark the batch as real or fake images. Value can be
                 'reals' or 'fakes',
         """
@@ -392,9 +396,17 @@ class Metric(ABC):
             if self.num_real_feeded == self.num_real_need:
                 return 0
 
-            batch_size = batch.shape[0]
-            end = min(batch_size, self.num_real_need - self.num_real_feeded)
-            self.feed_op(batch[:end, :, :, :], mode)
+            if isinstance(batch, dict):
+                batch_size = [v for v in batch.values()][0].shape[0]
+                end = min(batch_size,
+                          self.num_real_need - self.num_real_feeded)
+                batch_to_feed = {k: v[:end, ...] for k, v in batch.items()}
+            else:
+                batch_size = batch.shape[0]
+                end = min(batch_size,
+                          self.num_real_need - self.num_real_feeded)
+                batch_to_feed = batch[:end, ...]
+            self.feed_op(batch_to_feed, mode)
             self.num_real_feeded += end
             return end
 
@@ -404,13 +416,17 @@ class Metric(ABC):
 
             batch_size = batch.shape[0]
             end = min(batch_size, self.num_fake_need - self.num_fake_feeded)
-            self.feed_op(batch[:end, :, :, :], mode)
+            if isinstance(batch, dict):
+                batch_to_feed = {k: v[:end, ...] for k, v in batch.items()}
+            else:
+                batch_to_feed = batch[:end, ...]
+            self.feed_op(batch_to_feed, mode)
             self.num_fake_feeded += end
             return end
         else:
             raise ValueError(
-                f"The expected mode should be set to 'reals' or 'fakes,\
-                but got '{mode}'")
+                'The expected mode should be set to \'reals\' or \'fakes\','
+                f'but got \'{mode}\'')
 
     def check(self):
         """Check the numbers of image."""
@@ -1343,3 +1359,110 @@ class PPLSampler:
 
         self.idx += 1
         return image
+
+
+class GaussianKLD(Metric):
+    r"""Gaussian KLD (Kullback-Leibler divergence) metric. We calculate the
+    KLD between two gaussian distribution via `mean` and `log_variance`.
+    The passed batch should be a dict instance and contain ``mean_pred``,
+    ``mean_target``, ``logvar_pred``, ``logvar_target``.
+    When call ``feed`` operation, only ``reals`` mode is needed,
+
+    The calculation of KLD can be formulated as:
+    ..math::
+        :nowarp:
+        \begin{eqnarray}
+        KLD(p||q) &= -\int{p(x)\log{q(x)} dx} + \int{p(x)\log{p(x)} dx} \\
+            &= \frac{1}{2}\log{(2\pi \sigma_2^2)} +
+            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\simga_2^2} -
+            \frac{1}{2}(1 + \log{2\pi \sigma_1^2}) \\
+            &= \log{\frac{\sigma_2}{\sigma_1}} +
+            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\simga_2^2} - \frac{1}{2}
+        \end{eqnarray}
+    where `p` and `q` denote target and predicted distribution respectively.
+
+    Args:
+        num_images (int): The number of samples to be tested.
+        base (str, optional): The log base of calculated KLD. Support
+            ``'e'`` and ``'2'``. Defaults to ``'e'``.
+        reduction (string, optional): Specifies the reduction to apply to the
+            output. Support ``'batchmean'``, ``'sum'`` and ``'mean'``. If
+            ``reduction == 'batchmean'``, the sum of the output will be divided
+            by batchsize. If ``reduction == 'sum'``, the output will be summed.
+            If ``reduction == 'mean'``, the output will be divided by the
+            number of elements in the output. Defaults to ``'batchmean'``.
+
+    """
+    name = 'GaussianKLD'
+
+    def __init__(self, num_images, base='e', reduction='batchmean'):
+        super().__init__(num_images, image_shape=None)
+        assert reduction in [
+            'sum', 'batchmean', 'mean'
+        ], ('We only support reduction for \'batchmean\', \'sum\' '
+            'and \'mean\'')
+        assert base in ['e',
+                        '2'], ('We only support log_base for \'e\' and \'2\'')
+        self.reduction = reduction
+        self.num_fake_feeded = self.num_images
+        self.cal_kld = partial(
+            gaussian_kld, weight=1, reduction='none', base=base)
+
+    def prepare(self):
+        """Prepare for evaluating models with this metric."""
+        self.kld = []
+        self.num_real_feeded = 0
+
+    @torch.no_grad()
+    def feed_op(self, batch, mode):
+        """Feed data to the metric.
+
+        Args:
+            batch (Tensor): Input tensor.
+            mode (str): The mode of current data batch. 'reals' or 'fakes'.
+        """
+        if mode == 'fakes':
+            return
+        assert isinstance(batch, dict), ('To calculate GaussianKLD loss, a '
+                                         'dict contains probabilistic '
+                                         'parameters is required.')
+        # check required keys
+        require_keys = [
+            'mean_pred', 'mean_target', 'logvar_pred', 'logvar_target'
+        ]
+        if any([k not in batch for k in require_keys]):
+            raise KeyError(f'The input dict must require {require_keys} at '
+                           'the same time. But keys in the given dict are '
+                           f'{batch.keys()}. Some of the requirements are '
+                           'missing.')
+        kld = self.cal_kld(batch['mean_target'], batch['mean_pred'],
+                           batch['logvar_target'], batch['logvar_pred'])
+        if dist.is_initialized():
+            ws = dist.get_world_size()
+            placeholder = [torch.zeros_like(kld) for _ in range(ws)]
+            dist.all_gather(placeholder, kld)
+            kld = torch.cat(placeholder, dim=0)
+
+        # in distributed training, we only collect features at rank-0.
+        if (dist.is_initialized()
+                and dist.get_rank() == 0) or not dist.is_initialized():
+            self.kld.append(kld.cpu())
+
+    @torch.no_grad()
+    def summary(self):
+        """Summarize the results.
+
+        Returns:
+            dict | list: Summarized results.
+        """
+        kld = torch.cat(self.kld, dim=0)
+        assert kld.shape[0] >= self.num_images
+        kld_np = kld.numpy()
+        if self.reduction == 'sum':
+            kld_result = np.sum(kld_np)
+        elif self.reduction == 'mean':
+            kld_result = np.mean(kld_np)
+        else:
+            kld_result = np.sum(kld_np) / kld_np.shape[0]
+        self._result_str = (f'{kld_result:.4f}')
+        return kld_result
