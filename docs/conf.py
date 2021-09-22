@@ -18,6 +18,7 @@ import pytorch_sphinx_theme
 from m2r import MdInclude
 from recommonmark.transform import AutoStructify
 from sphinx.builders.html import StandaloneHTMLBuilder
+
 sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
@@ -54,6 +55,11 @@ extensions = [
 
 autodoc_mock_imports = [
     'matplotlib', 'pycocotools', 'terminaltables', 'mmgen.version', 'mmcv.ops'
+]
+
+# set priority when building html
+StandaloneHTMLBuilder.supported_image_types = [
+    'image/svg+xml', 'image/gif', 'image/png', 'image/jpeg'
 ]
 
 # Ignore >>> when copying code
@@ -174,8 +180,10 @@ html_css_files = ['css/readthedocs.css']
 
 myst_enable_extensions = ['colon_fence']
 
+
 def builder_inited_handler(app):
     subprocess.run(['./stat.py'])
+
 
 def setup(app):
     app.connect('builder-inited', builder_inited_handler)
