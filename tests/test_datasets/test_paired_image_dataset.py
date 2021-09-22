@@ -12,7 +12,11 @@ class TestPairedImageDataset(object):
         img_norm_cfg = dict(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
         cls.default_pipeline = [
             dict(
-                type='LoadPairedImageFromFile', io_backend='disk', key='pair'),
+                type='LoadPairedImageFromFile',
+                io_backend='disk',
+                key='pair',
+                domain_a='a',
+                domain_b='b'),
             dict(
                 type='Resize',
                 keys=['img_a', 'img_b'],

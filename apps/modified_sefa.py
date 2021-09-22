@@ -72,7 +72,7 @@ if __name__ == '__main__':
         '--degree',
         type=float,
         nargs='+',
-        default=2,
+        default=[2.],
         help='scalar factors for moving latent vectors along eigenvector',
     )
     parser.add_argument(

@@ -340,6 +340,36 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         # finish the pbar stdout
         sys.stdout.write('\n')
 
+    # feed probabilistic metric
+    for metric in probabilistic_metrics:
+        metric.prepare()
+        pbar = mmcv.ProgressBar(len(data_loader))
+        # here we assume probabilistic model have reconstruction mode
+        kwargs['mode'] = 'reconstruction'
+        for data in data_loader:
+            # key for unconditional GAN
+            if 'real_img' in data:
+                reals = data['real_img']
+            # key for conditional GAN
+            elif 'img' in data:
+                reals = data['img']
+            else:
+                raise KeyError('Cannot found key for images in data_dict. '
+                               'Only support `real_img` for unconditional '
+                               'datasets and `img` for conditional '
+                               'datasets.')
+
+            if reals.shape[1] not in [1, 3]:
+                raise RuntimeError('real images should have one or three '
+                                   'channels in the first, '
+                                   'not % d' % reals.shape[1])
+            if reals.shape[1] == 1:
+                reals = reals.repeat(1, 3, 1, 1)
+
+            prob_dict = model(reals, return_loss=False, **kwargs)
+            num_feed = metric.feed(prob_dict, 'reals')
+            pbar.update(num_feed)
+
     for metric in metrics:
         metric.summary()
 
