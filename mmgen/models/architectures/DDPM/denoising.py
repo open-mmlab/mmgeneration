@@ -348,7 +348,10 @@ class DenoisingUnet(nn.Module):
             elif self.var_cfg.upper() == 'LEARNED':
                 output_dict['log_var'] = var
             else:
-                raise AttributeError()
+                raise AttributeError(
+                    'Only support \'FIXED\', \'LEARNED_RANGE\' '
+                    'and \'LEARNED\' for variance output format. But receive '
+                    f'\'{self.var_cfg}\'.')
         else:
             mean = outputs
 
@@ -362,6 +365,7 @@ class DenoisingUnet(nn.Module):
         if return_noise:
             output_dict['x_t'] = x_t
             output_dict['t'] = t
+            output_dict['label'] = label
 
         return output_dict
 
