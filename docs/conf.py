@@ -14,6 +14,10 @@ import os
 import subprocess
 import sys
 
+import pytorch_sphinx_theme
+from m2r import MdInclude
+from recommonmark.transform import AutoStructify
+from sphinx.builders.html import StandaloneHTMLBuilder
 sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
@@ -42,13 +46,19 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
-    'recommonmark',
     'sphinx_markdown_tables',
+    'sphinx.ext.autosectionlabel',
+    'myst_parser',
+    'sphinx_copybutton',
 ]
 
 autodoc_mock_imports = [
     'matplotlib', 'pycocotools', 'terminaltables', 'mmgen.version', 'mmcv.ops'
 ]
+
+# Ignore >>> when copying code
+copybutton_prompt_text = r'>>> |\.\.\. '
+copybutton_prompt_is_regexp = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -74,17 +84,108 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+# html_theme = 'sphinx_rtd_theme'
+html_theme = 'pytorch_sphinx_theme'
+html_theme_path = [pytorch_sphinx_theme.get_html_theme_path()]
+
+html_theme_options = {
+    # 'logo_url': 'https://mmocr.readthedocs.io/en/latest/',
+    'menu': [
+        {
+            'name': 'GitHub',
+            'url': 'https://github.com/open-mmlab/mmgeneration',
+        },
+        {
+            'name':
+            'Projects',
+            'children': [
+                {
+                    'name': 'MMAction2',
+                    'url': 'https://github.com/open-mmlab/mmaction2',
+                },
+                {
+                    'name': 'MMClassification',
+                    'url': 'https://github.com/open-mmlab/mmclassification',
+                },
+                {
+                    'name': 'MMDetection',
+                    'url': 'https://github.com/open-mmlab/mmdetection',
+                },
+                {
+                    'name': 'MMDetection3D',
+                    'url': 'https://github.com/open-mmlab/mmdetection3d',
+                },
+                {
+                    'name': 'MMEditing',
+                    'url': 'https://github.com/open-mmlab/mmediting',
+                },
+                {
+                    'name': 'MMGeneration',
+                    'url': 'https://github.com/open-mmlab/mmgeneration',
+                },
+                {
+                    'name': 'MMOCR',
+                    'url': 'https://github.com/open-mmlab/mmocr',
+                },
+                {
+                    'name': 'MMPose',
+                    'url': 'https://github.com/open-mmlab/mmpose',
+                },
+                {
+                    'name': 'MMSegmentation',
+                    'url': 'https://github.com/open-mmlab/mmsegmentation',
+                },
+                {
+                    'name': 'MMTracking',
+                    'url': 'https://github.com/open-mmlab/mmtracking',
+                },
+            ]
+        },
+        {
+            'name':
+            'OpenMMLab',
+            'children': [
+                {
+                    'name': 'Homepage',
+                    'url': 'https://openmmlab.com/'
+                },
+                {
+                    'name': 'GitHub',
+                    'url': 'https://github.com/open-mmlab/'
+                },
+                {
+                    'name': 'Twitter',
+                    'url': 'https://twitter.com/OpenMMLab'
+                },
+                {
+                    'name': 'Zhihu',
+                    'url': 'https://zhihu.com/people/openmmlab'
+                },
+            ]
+        },
+    ]
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_css_files = ['css/readthedocs.css']
 
+myst_enable_extensions = ['colon_fence']
 
 def builder_inited_handler(app):
     subprocess.run(['./stat.py'])
 
-
 def setup(app):
     app.connect('builder-inited', builder_inited_handler)
+    app.add_config_value('no_underscore_emphasis', False, 'env')
+    app.add_config_value('m2r_parse_relative_links', False, 'env')
+    app.add_config_value('m2r_anonymous_references', False, 'env')
+    app.add_config_value('m2r_disable_inline_math', False, 'env')
+    app.add_directive('mdinclude', MdInclude)
+    app.add_config_value('recommonmark_config', {
+        'auto_toc_tree_section': 'Contents',
+        'enable_eval_rst': True,
+    }, True)
+    app.add_transform(AutoStructify)
