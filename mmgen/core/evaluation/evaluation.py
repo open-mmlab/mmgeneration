@@ -86,10 +86,10 @@ def single_gpu_evaluation(model,
             evaluation. Default to None.
         kwargs (dict): Other arguments.
     """
-    # eval special metric online only
-    special_metric_name = ['PPL']
+    # eval special and probabilistic metric online only
+    online_metric_name = ['PPL', 'GaussianKLD']
     for metric in metrics:
-        assert metric.name not in special_metric_name, 'Please eval '\
+        assert metric.name not in online_metric_name, 'Please eval '\
              f'{metric.name} online'
 
     delete_samples_path = False
@@ -252,43 +252,45 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         else:
             vanilla_metrics.append(metric)
 
-    max_num_images = 0 if len(vanilla_metrics) == 0 else max(
-        metric.num_images for metric in vanilla_metrics)
-    for metric in vanilla_metrics:
+    # define mmcv progress bar
+    max_num_images = 0
+    for metric in vanilla_metrics + probabilistic_metrics:
         metric.prepare()
-        # avoid print empty pbar for metrics do not need reals
-        if metric.num_real_feeded == metric.num_images:
-            continue
-        mmcv.print_log(f'Feed reals to {metric.name} metric.', 'mmgen')
-        pbar = mmcv.ProgressBar(metric.num_real_need)
-        # feed in real images
-        for data in data_loader:
-            # key for unconditional GAN
-            if 'real_img' in data:
-                reals = data['real_img']
-            # key for conditional GAN
-            elif 'img' in data:
-                reals = data['img']
-            else:
-                raise KeyError('Cannot found key for images in data_dict. '
-                               'Only support `real_img` for unconditional '
-                               'datasets and `img` for conditional '
-                               'datasets.')
+        max_num_images = max(max_num_images, metric.num_images)
+    mmcv.print_log(f'Sample {max_num_images} real images for evaluation',
+                   'mmgen')
+    pbar = mmcv.ProgressBar(max_num_images)
+    for data in data_loader:
+        if 'real_img' in data:
+            reals = data['real_img']
+        # key for conditional GAN
+        elif 'img' in data:
+            reals = data['img']
+        else:
+            raise KeyError('Cannot found key for images in data_dict. '
+                           'Only support `real_img` for unconditional '
+                           'datasets and `img` for conditional '
+                           'datasets.')
 
-            if reals.shape[1] not in [1, 3]:
-                raise RuntimeError('real images should have one or three '
-                                   'channels in the first, '
-                                   'not % d' % reals.shape[1])
-            if reals.shape[1] == 1:
-                reals = reals.repeat(1, 3, 1, 1)
-            num_feed = metric.feed(reals, 'reals')
-            if num_feed <= 0:
-                break
+        if reals.shape[1] not in [1, 3]:
+            raise RuntimeError('real images should have one or three '
+                               'channels in the first, '
+                               'not % d' % reals.shape[1])
+        if reals.shape[1] == 1:
+            reals = reals.repeat(1, 3, 1, 1)
 
-            pbar.update(num_feed)
+        num_feed = 0
+        for metric in vanilla_metrics:
+            num_feed_ = metric.feed(reals, 'reals')
+            num_feed = max(num_feed_, num_feed)
+        for metric in probabilistic_metrics:
+            prob_dict = model(reals, return_loss=False, **kwargs)
+            num_feed_ = metric.feed(prob_dict, 'reals')
+            num_feed = max(num_feed_, num_feed)
 
-        # finish the pbar stdout
-        sys.stdout.write('\n')
+        if num_feed <= 0:
+            break
+        pbar.update(num_feed)
 
     mmcv.print_log(f'Sample {max_num_images} fake images for evaluation',
                    'mmgen')
@@ -337,36 +339,6 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
 
         # finish the pbar stdout
         sys.stdout.write('\n')
-
-    # feed probabilistic metric
-    for metric in probabilistic_metrics:
-        metric.prepare()
-        pbar = mmcv.ProgressBar(len(data_loader))
-        # here we assume probabilistic model have reconstruction mode
-        kwargs['mode'] = 'reconstruction'
-        for data in data_loader:
-            # key for unconditional GAN
-            if 'real_img' in data:
-                reals = data['real_img']
-            # key for conditional GAN
-            elif 'img' in data:
-                reals = data['img']
-            else:
-                raise KeyError('Cannot found key for images in data_dict. '
-                               'Only support `real_img` for unconditional '
-                               'datasets and `img` for conditional '
-                               'datasets.')
-
-            if reals.shape[1] not in [1, 3]:
-                raise RuntimeError('real images should have one or three '
-                                   'channels in the first, '
-                                   'not % d' % reals.shape[1])
-            if reals.shape[1] == 1:
-                reals = reals.repeat(1, 3, 1, 1)
-
-            prob_dict = model(reals, return_loss=False, **kwargs)
-            num_feed = metric.feed(prob_dict, 'reals')
-            pbar.update(num_feed)
 
     for metric in metrics:
         metric.summary()
