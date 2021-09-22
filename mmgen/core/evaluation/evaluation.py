@@ -256,7 +256,8 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
     max_num_images = 0
     for metric in vanilla_metrics + probabilistic_metrics:
         metric.prepare()
-        max_num_images = max(max_num_images, metric.num_images)
+        max_num_images = max(max_num_images,
+                             metric.num_real_need - metric.num_real_feeded)
     mmcv.print_log(f'Sample {max_num_images} real images for evaluation',
                    'mmgen')
     pbar = mmcv.ProgressBar(max_num_images)
@@ -292,11 +293,11 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
             break
         pbar.update(num_feed)
 
-    mmcv.print_log(f'Sample {max_num_images} fake images for evaluation',
-                   'mmgen')
     # define mmcv progress bar
     max_num_images = 0 if len(vanilla_metrics) == 0 else max(
         metric.num_fake_need for metric in vanilla_metrics)
+    mmcv.print_log(f'Sample {max_num_images} fake images for evaluation',
+                   'mmgen')
     pbar = mmcv.ProgressBar(max_num_images)
     # sampling fake images and directly send them to metrics
     for begin in range(0, max_num_images, batch_size):
@@ -330,6 +331,9 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         fakedata_iterator = iter(
             metric.get_sampler(model.module, batch_size,
                                basic_table_info['sample_model']))
+        mmcv.print_log(
+            f'Sample {metric.num_images} samples for evaluating {metric.name}',
+            'mmgen')
         pbar = mmcv.ProgressBar(metric.num_images)
         for fakes in fakedata_iterator:
             num_left = metric.feed(fakes, 'fakes')
