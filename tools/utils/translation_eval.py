@@ -56,7 +56,7 @@ def parse_args():
 def main():
     args = parse_args()
     cfg = Config.fromfile(args.config)
-    
+
     dirname = os.path.dirname(args.checkpoint)
     ckpt = os.path.basename(args.checkpoint)
 
@@ -166,7 +166,10 @@ def main():
         # for translation model, we feed them images from dataloader
         data_loader_iter = iter(data_loader)
         data_batch = next(data_loader_iter)
-        output_dict = model(data_batch[f'img_{source_domain}'], test_mode=True, target_domain=target_domain)
+        output_dict = model(
+            data_batch[f'img_{source_domain}'],
+            test_mode=True,
+            target_domain=target_domain)
         fakes = output_dict['target']
         pbar.update(end - begin)
         for i in range(end - begin):
@@ -187,7 +190,7 @@ def main():
     # empty cache to release GPU memory
     torch.cuda.empty_cache()
     fake_dataloader = make_vanilla_dataloader(samples_path, args.batch_size)
-    
+
     for metric in metrics:
         mmcv.print_log(f'Evaluate with {metric.name} metric.', 'mmgen')
         metric.prepare()
