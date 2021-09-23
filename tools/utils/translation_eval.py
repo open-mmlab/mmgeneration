@@ -15,7 +15,7 @@ from mmgen.core import build_metric
 from mmgen.core.evaluation import make_metrics_table, make_vanilla_dataloader
 from mmgen.datasets import build_dataloader, build_dataset
 from mmgen.models import build_model
-from mmgen.models.gans import CycleGAN, Pix2Pix
+from mmgen.models.translation_models import BaseTranslationModel
 from mmgen.utils import get_root_logger
 
 
@@ -23,6 +23,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Evaluate a GAN model')
     parser.add_argument('config', help='evaluation config file path')
     parser.add_argument('checkpoint', help='checkpoint file')
+    parser.add_argument(
+        '--target-domain', type=str, default=None, help='Desired image domain')
     parser.add_argument('--seed', type=int, default=2021, help='random seed')
     parser.add_argument(
         '--deterministic',
@@ -51,13 +53,10 @@ def parse_args():
     return args
 
 
-_supported_model = (Pix2Pix, CycleGAN)
-
-
 def main():
     args = parse_args()
     cfg = Config.fromfile(args.config)
-
+    
     dirname = os.path.dirname(args.checkpoint)
     ckpt = os.path.basename(args.checkpoint)
 
@@ -78,7 +77,7 @@ def main():
     # build the model and load checkpoint
     model = build_model(
         cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
-    assert isinstance(model, _supported_model)
+    assert isinstance(model, BaseTranslationModel)
     # sanity check for models without ema
     if not model.use_ema:
         args.sample_model = 'orig'
@@ -159,18 +158,16 @@ def main():
         # define mmcv progress bar
         pbar = mmcv.ProgressBar(num_needed)
     # select key to fetch fake images
-    fake_key = 'fake_b'
-    if isinstance(model.module, CycleGAN):
-        fake_key = 'fake_b' if model.module.test_direction == 'a2b' else \
-            'fake_a'
+    target_domain = args.target_domain
+    source_domain = model.module.get_other_domains(target_domain)[0]
     # if no images, `num_exist` should be zero
     for begin in range(num_exist, num_needed, args.batch_size):
         end = min(begin + args.batch_size, max_num_images)
         # for translation model, we feed them images from dataloader
         data_loader_iter = iter(data_loader)
         data_batch = next(data_loader_iter)
-        output_dict = model(test_mode=True, **data_batch)
-        fakes = output_dict[fake_key]
+        output_dict = model(data_batch[f'img_{source_domain}'], test_mode=True, target_domain=target_domain)
+        fakes = output_dict['target']
         pbar.update(end - begin)
         for i in range(end - begin):
             images = fakes[i:i + 1]
@@ -190,21 +187,13 @@ def main():
     # empty cache to release GPU memory
     torch.cuda.empty_cache()
     fake_dataloader = make_vanilla_dataloader(samples_path, args.batch_size)
-    # select key to fetch real images
-    if isinstance(model.module, CycleGAN):
-        real_key = 'img_b' if model.module.test_direction == 'a2b' else 'img_a'
-        if model.module.direction == 'b2a':
-            real_key = 'img_a' if real_key == 'img_b' else 'img_b'
-
-    if isinstance(model.module, Pix2Pix):
-        real_key = 'img_b' if model.module.direction == 'a2b' else 'img_a'
-
+    
     for metric in metrics:
         mmcv.print_log(f'Evaluate with {metric.name} metric.', 'mmgen')
         metric.prepare()
         # feed in real images
         for data in data_loader:
-            reals = data[real_key]
+            reals = data[f'img_{target_domain}']
             num_left = metric.feed(reals, 'reals')
             if num_left <= 0:
                 break
