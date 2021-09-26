@@ -54,7 +54,7 @@ test_pipeline = [
     dict(
         type='LoadPairedImageFromFile',
         io_backend='disk',
-        key='image',
+        key='pair',
         domain_a=domain_a,
         domain_b=domain_b,
         flag='color'),
@@ -80,7 +80,7 @@ dataroot = 'data/paired/maps'
 data = dict(
     train=dict(dataroot=dataroot, pipeline=train_pipeline),
     val=dict(dataroot=dataroot, pipeline=test_pipeline),
-    test=dict(dataroot=dataroot, pipeline=test_pipeline))
+    test=dict(dataroot=dataroot, pipeline=test_pipeline, testdir='val'))
 
 # optimizer
 optimizer = dict(

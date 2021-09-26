@@ -29,9 +29,9 @@ class PairedImageDataset(Dataset):
             Default: `False`.
     """
 
-    def __init__(self, dataroot, pipeline, test_mode=False):
+    def __init__(self, dataroot, pipeline, test_mode=False, testdir='test'):
         super().__init__()
-        phase = 'test' if test_mode else 'train'
+        phase = testdir if test_mode else 'train'
         self.dataroot = osp.join(str(dataroot), phase)
         self.data_infos = self.load_annotations()
         self.test_mode = test_mode

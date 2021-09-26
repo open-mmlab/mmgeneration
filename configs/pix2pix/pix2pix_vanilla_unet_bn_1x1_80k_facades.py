@@ -54,7 +54,7 @@ test_pipeline = [
     dict(
         type='LoadPairedImageFromFile',
         io_backend='disk',
-        key='image',
+        key='pair',
         domain_a=domain_a,
         domain_b=domain_b,
         flag='color'),

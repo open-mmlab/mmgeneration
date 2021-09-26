@@ -45,10 +45,90 @@ model = dict(
             reduction='mean')
     ])
 dataroot = './data/unpaired_facades'
+
+train_pipeline = [
+    dict(
+        type='LoadImageFromFile',
+        io_backend='disk',
+        key=f'img_{domain_a}',
+        flag='color'),
+    dict(
+        type='LoadImageFromFile',
+        io_backend='disk',
+        key=f'img_{domain_b}',
+        flag='color'),
+    dict(
+        type='Resize',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        scale=(286, 286),
+        interpolation='bicubic'),
+    dict(
+        type='Crop',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        crop_size=(256, 256),
+        random_crop=True),
+    dict(type='Flip', keys=[f'img_{domain_a}'], direction='horizontal'),
+    dict(type='Flip', keys=[f'img_{domain_b}'], direction='horizontal'),
+    dict(type='RescaleToZeroOne', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+    dict(
+        type='Normalize',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        to_rgb=False,
+        mean=[0.5, 0.5, 0.5],
+        std=[0.5, 0.5, 0.5]),
+    dict(type='ImageToTensor', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+    dict(
+        type='Collect',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
+]
+
+test_pipeline = [
+    dict(
+        type='LoadImageFromFile',
+        io_backend='disk',
+        key=f'img_{domain_a}',
+        flag='color'),
+    dict(
+        type='LoadImageFromFile',
+        io_backend='disk',
+        key=f'img_{domain_b}',
+        flag='color'),
+    dict(
+        type='Resize',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        scale=(256, 256),
+        interpolation='bicubic'),
+    dict(type='RescaleToZeroOne', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+    dict(
+        type='Normalize',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        to_rgb=False,
+        mean=[0.5, 0.5, 0.5],
+        std=[0.5, 0.5, 0.5]),
+    dict(type='ImageToTensor', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+    dict(
+        type='Collect',
+        keys=[f'img_{domain_a}', f'img_{domain_b}'],
+        meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
+]
+
 data = dict(
-    train=dict(dataroot=dataroot),
-    val=dict(dataroot=dataroot),
-    test=dict(dataroot=dataroot))
+    train=dict(
+        dataroot=dataroot,
+        pipeline=train_pipeline,
+        domain_a=domain_a,
+        domain_b=domain_b),
+    val=dict(
+        dataroot=dataroot,
+        domain_a=domain_a,
+        domain_b=domain_b,
+        pipeline=test_pipeline),
+    test=dict(
+        dataroot=dataroot,
+        domain_a=domain_a,
+        domain_b=domain_b,
+        pipeline=test_pipeline))
 
 optimizer = dict(
     generators=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)),
