@@ -202,11 +202,11 @@ def sample_img2img_model(model, image_path, target_domain, **kwargs):
     device = next(model.parameters()).device  # model device
     # build the data pipeline
     test_pipeline = Compose(cfg.test_pipeline)
-    
+
     # prepare data
     data = dict()
     # dirty code to deal with test data pipeline
-    data[f'pair_path'] = image_path
+    data['pair_path'] = image_path
     data[f'img_{source_domain}_path'] = image_path
     data[f'img_{target_domain}_path'] = image_path
 
