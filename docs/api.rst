@@ -1,6 +1,3 @@
-API Reference
-=================
-
 mmgen.apis
 --------------
 .. automodule:: mmgen.apis

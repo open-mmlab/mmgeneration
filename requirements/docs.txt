@@ -1,9 +1,12 @@
 click
+docutils==0.16.0
+m2r
 mmcls==0.10.0
+myst-parser
 opencv-python
 prettytable
-recommonmark
+-e git+https://github.com/open-mmlab/pytorch_sphinx_theme.git#egg=pytorch_sphinx_theme
 scipy
-sphinx
+sphinx==4.0.2
+sphinx-copybutton
 sphinx_markdown_tables
-sphinx_rtd_theme
