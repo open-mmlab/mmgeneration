@@ -49,9 +49,150 @@ def parse_args():
         type=str,
         default=None,
         help='select the metrics you want to access')
+    parser.add_argument(
+        '--online',
+        action='store_true',
+        help='whether to use online mode for evaluation')
     args = parser.parse_args()
     return args
 
+@torch.no_grad()
+def single_gpu_evaluation(model,
+                          data_loader,
+                          metrics,
+                          logger,
+                          basic_table_info,
+                          batch_size,
+                          samples_path=None,
+                          **kwargs):
+    # decide samples path
+    delete_samples_path = False
+    if samples_path:
+        mmcv.mkdir_or_exist(samples_path)
+    else:
+        temp_path = './work_dirs/temp_samples'
+        # if temp_path exists, add suffix
+        suffix = 1
+        samples_path = temp_path
+        while os.path.exists(samples_path):
+            samples_path = temp_path + '_' + str(suffix)
+            suffix += 1
+        os.makedirs(samples_path)
+        delete_samples_path = True
+
+    # sample images
+    num_exist = len(
+        list(
+            mmcv.scandir(
+                samples_path, suffix=('.jpg', '.png', '.jpeg', '.JPEG'))))
+    if basic_table_info['num_samples'] > 0:
+        max_num_images = basic_table_info['num_samples']
+    else:
+        max_num_images = max(metric.num_images for metric in metrics)
+    num_needed = max(max_num_images - num_exist, 0)
+
+    if num_needed > 0:
+        mmcv.print_log(f'Sample {num_needed} fake images for evaluation',
+                       'mmgen')
+        # define mmcv progress bar
+        pbar = mmcv.ProgressBar(num_needed)
+    # select key to fetch fake images
+    target_domain = basic_table_info['target_domain']
+    source_domain = basic_table_info['source_domain']
+    # if no images, `num_exist` should be zero
+    for begin in range(num_exist, num_needed, batch_size):
+        end = min(begin + batch_size, max_num_images)
+        # for translation model, we feed them images from dataloader
+        data_loader_iter = iter(data_loader)
+        data_batch = next(data_loader_iter)
+        output_dict = model(
+            data_batch[f'img_{source_domain}'],
+            test_mode=True,
+            target_domain=target_domain)
+        fakes = output_dict['target']
+        pbar.update(end - begin)
+        for i in range(end - begin):
+            images = fakes[i:i + 1]
+            images = ((images + 1) / 2)
+            images = images[:, [2, 1, 0], ...]
+            images = images.clamp_(0, 1)
+            image_name = str(begin + i) + '.png'
+            save_image(images, os.path.join(samples_path, image_name))
+
+    if num_needed > 0:
+        sys.stdout.write('\n')
+
+    # return if only save sampled images
+    if len(metrics) == 0:
+        return
+
+    # empty cache to release GPU memory
+    torch.cuda.empty_cache()
+    fake_dataloader = make_vanilla_dataloader(samples_path, batch_size)
+
+    for metric in metrics:
+        mmcv.print_log(f'Evaluate with {metric.name} metric.', 'mmgen')
+        metric.prepare()
+        # feed in real images
+        for data in data_loader:
+            reals = data[f'img_{target_domain}']
+            num_left = metric.feed(reals, 'reals')
+            if num_left <= 0:
+                break
+        # feed in fake images
+        for data in fake_dataloader:
+            fakes = data['real_img']
+            num_left = metric.feed(fakes, 'fakes')
+            if num_left <= 0:
+                break
+        metric.summary()
+    table_str = make_metrics_table(basic_table_info['train_cfg'],
+                                   basic_table_info['ckpt'],
+                                   basic_table_info['sample_model'], metrics)
+    logger.info('\n' + table_str)
+    if delete_samples_path:
+        shutil.rmtree(samples_path)
+
+@torch.no_grad()
+def single_gpu_online_evaluation(model, data_loader, metrics, logger,
+                                 basic_table_info, batch_size, **kwargs):
+    # sample images
+    max_num_images = 0 if len(metrics) == 0 else max(
+        metric.num_fake_need for metric in metrics)
+    pbar = mmcv.ProgressBar(max_num_images)
+    
+    # select key to fetch images
+    target_domain = basic_table_info['target_domain']
+    source_domain = basic_table_info['source_domain']
+    
+    for metric in metrics:
+        mmcv.print_log(f'Evaluate with {metric.name} metric.', 'mmgen')
+        metric.prepare()
+        
+    # feed reals and fakes
+    for begin in range(0, max_num_images, batch_size):
+        end = min(begin + batch_size, max_num_images)
+        # for translation model, we feed them images from dataloader
+        data_loader_iter = iter(data_loader)
+        data_batch = next(data_loader_iter)
+        output_dict = model(
+            data_batch[f'img_{source_domain}'],
+            test_mode=True,
+            target_domain=target_domain)
+        fakes = output_dict['target']
+        reals = data_batch[f'img_{target_domain}']
+        pbar.update(end - begin)
+        for metric in metrics:
+            _ = metric.feed(reals, 'reals')
+            _ = metric.feed(fakes, 'fakes')
+
+    for metric in metrics:
+        metric.summary()
+        
+    table_str = make_metrics_table(basic_table_info['train_cfg'],
+                                   basic_table_info['ckpt'],
+                                   basic_table_info['sample_model'], metrics)
+    logger.info('\n' + table_str)
 
 def main():
     args = parse_args()
@@ -102,10 +243,16 @@ def main():
     else:
         metrics = [build_metric(cfg.metrics[metric]) for metric in cfg.metrics]
 
+    # get source domain and target domain
+    target_domain = args.target_domain
+    source_domain = model.module.get_other_domains(target_domain)[0]
+    
     basic_table_info = dict(
         train_cfg=os.path.basename(cfg._filename),
         ckpt=ckpt,
-        sample_model=args.sample_model)
+        sample_model=args.sample_model,
+        source_domain=source_domain,
+        target_domain=target_domain)
 
     # build the dataloader
     if len(metrics) == 0:
@@ -124,95 +271,13 @@ def main():
                                          cfg.data.workers_per_gpu),
             dist=False,
             shuffle=True)
-
-    # decide samples path
-    samples_path = args.samples_path
-    delete_samples_path = False
-    if samples_path:
-        mmcv.mkdir_or_exist(samples_path)
+    
+    if args.online:
+        single_gpu_online_evaluation(model, data_loader, metrics, logger, basic_table_info, args.batch_size)
     else:
-        temp_path = './work_dirs/temp_samples'
-        # if temp_path exists, add suffix
-        suffix = 1
-        samples_path = temp_path
-        while os.path.exists(samples_path):
-            samples_path = temp_path + '_' + str(suffix)
-            suffix += 1
-        os.makedirs(samples_path)
-        delete_samples_path = True
+        single_gpu_evaluation(model, data_loader, metrics, logger, basic_table_info, args.batch_size, args.samples_path)
 
-    # sample images
-    num_exist = len(
-        list(
-            mmcv.scandir(
-                samples_path, suffix=('.jpg', '.png', '.jpeg', '.JPEG'))))
-    if basic_table_info['num_samples'] > 0:
-        max_num_images = basic_table_info['num_samples']
-    else:
-        max_num_images = max(metric.num_images for metric in metrics)
-    num_needed = max(max_num_images - num_exist, 0)
-
-    if num_needed > 0:
-        mmcv.print_log(f'Sample {num_needed} fake images for evaluation',
-                       'mmgen')
-        # define mmcv progress bar
-        pbar = mmcv.ProgressBar(num_needed)
-    # select key to fetch fake images
-    target_domain = args.target_domain
-    source_domain = model.module.get_other_domains(target_domain)[0]
-    # if no images, `num_exist` should be zero
-    for begin in range(num_exist, num_needed, args.batch_size):
-        end = min(begin + args.batch_size, max_num_images)
-        # for translation model, we feed them images from dataloader
-        data_loader_iter = iter(data_loader)
-        data_batch = next(data_loader_iter)
-        output_dict = model(
-            data_batch[f'img_{source_domain}'],
-            test_mode=True,
-            target_domain=target_domain)
-        fakes = output_dict['target']
-        pbar.update(end - begin)
-        for i in range(end - begin):
-            images = fakes[i:i + 1]
-            images = ((images + 1) / 2)
-            images = images[:, [2, 1, 0], ...]
-            images = images.clamp_(0, 1)
-            image_name = str(begin + i) + '.png'
-            save_image(images, os.path.join(samples_path, image_name))
-
-    if num_needed > 0:
-        sys.stdout.write('\n')
-
-    # return if only save sampled images
-    if len(metrics) == 0:
-        return
-
-    # empty cache to release GPU memory
-    torch.cuda.empty_cache()
-    fake_dataloader = make_vanilla_dataloader(samples_path, args.batch_size)
-
-    for metric in metrics:
-        mmcv.print_log(f'Evaluate with {metric.name} metric.', 'mmgen')
-        metric.prepare()
-        # feed in real images
-        for data in data_loader:
-            reals = data[f'img_{target_domain}']
-            num_left = metric.feed(reals, 'reals')
-            if num_left <= 0:
-                break
-        # feed in fake images
-        for data in fake_dataloader:
-            fakes = data['real_img']
-            num_left = metric.feed(fakes, 'fakes')
-            if num_left <= 0:
-                break
-        metric.summary()
-    table_str = make_metrics_table(basic_table_info['train_cfg'],
-                                   basic_table_info['ckpt'],
-                                   basic_table_info['sample_model'], metrics)
-    logger.info('\n' + table_str)
-    if delete_samples_path:
-        shutil.rmtree(samples_path)
+    
 
 
 if __name__ == '__main__':
