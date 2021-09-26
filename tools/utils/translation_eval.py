@@ -56,6 +56,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 @torch.no_grad()
 def single_gpu_evaluation(model,
                           data_loader,
@@ -153,22 +154,23 @@ def single_gpu_evaluation(model,
     if delete_samples_path:
         shutil.rmtree(samples_path)
 
+
 @torch.no_grad()
 def single_gpu_online_evaluation(model, data_loader, metrics, logger,
                                  basic_table_info, batch_size, **kwargs):
     # sample images
-    max_num_images = 0 if len(metrics) == 0 else max(
-        metric.num_fake_need for metric in metrics)
+    max_num_images = 0 if len(metrics) == 0 else max(metric.num_fake_need
+                                                     for metric in metrics)
     pbar = mmcv.ProgressBar(max_num_images)
-    
+
     # select key to fetch images
     target_domain = basic_table_info['target_domain']
     source_domain = basic_table_info['source_domain']
-    
+
     for metric in metrics:
         mmcv.print_log(f'Evaluate with {metric.name} metric.', 'mmgen')
         metric.prepare()
-        
+
     # feed reals and fakes
     for begin in range(0, max_num_images, batch_size):
         end = min(begin + batch_size, max_num_images)
@@ -188,11 +190,12 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
 
     for metric in metrics:
         metric.summary()
-        
+
     table_str = make_metrics_table(basic_table_info['train_cfg'],
                                    basic_table_info['ckpt'],
                                    basic_table_info['sample_model'], metrics)
     logger.info('\n' + table_str)
+
 
 def main():
     args = parse_args()
@@ -246,7 +249,7 @@ def main():
     # get source domain and target domain
     target_domain = args.target_domain
     source_domain = model.module.get_other_domains(target_domain)[0]
-    
+
     basic_table_info = dict(
         train_cfg=os.path.basename(cfg._filename),
         ckpt=ckpt,
@@ -271,13 +274,14 @@ def main():
                                          cfg.data.workers_per_gpu),
             dist=False,
             shuffle=True)
-    
-    if args.online:
-        single_gpu_online_evaluation(model, data_loader, metrics, logger, basic_table_info, args.batch_size)
-    else:
-        single_gpu_evaluation(model, data_loader, metrics, logger, basic_table_info, args.batch_size, args.samples_path)
 
-    
+    if args.online:
+        single_gpu_online_evaluation(model, data_loader, metrics, logger,
+                                     basic_table_info, args.batch_size)
+    else:
+        single_gpu_evaluation(model, data_loader, metrics, logger,
+                              basic_table_info, args.batch_size,
+                              args.samples_path)
 
 
 if __name__ == '__main__':
