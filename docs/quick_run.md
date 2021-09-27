@@ -207,7 +207,7 @@ In `MMGeneration`, we provide two versions for FID calculation. One is the commo
 ```shell
 python tools/utils/inception_stat.py --imgsdir ${IMGS_PATH} --pklname ${PKLNAME} --size ${SIZE}
 ```
-In the above command, the script will take the PyTorch InceptionV3 by default. If you want the Tero's InceptionV3, you will need to switch to the script module:
+In the aforementioned command, the script will take the PyTorch InceptionV3 by default. If you want the Tero's InceptionV3, you will need to switch to the script module:
 
 ```shell
 python tools/utils/inception_stat.py --imgsdir ${IMGS_PATH} --pklname ${PKLNAME} --size ${SIZE} \

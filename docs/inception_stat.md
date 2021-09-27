@@ -1,4 +1,4 @@
-# How to extract inception state
+# How to Extract Inception State
 
 In MMGeneration, we provide a [script](https://github.com/open-mmlab/mmgeneration/blob/master/tools/utils/inception_stat.py) to extract the inception state of the dataset. In this doc, we provide a brief introduction on how to use this script.
 
@@ -17,13 +17,13 @@ In MMGeneration, we provide a [script](https://github.com/open-mmlab/mmgeneratio
 
 We provide two ways to load real data, namely, pass the path of directory that contains real images and pass the dataset config file you want to use.
 
-### Load from directory
+### Load from Directory
 
-If you want pass the path of real images, you can use `--imgsdir` arguments as the follow command.
+If you want to pass the path of real images, you can use `--imgsdir` arguments as the follow command.
 ```shell
 python tools/utils/inception_stat.py --imgsdir ${IMGS_PATH} --pklname ${PKLNAME} --size ${SIZE} --flip ${FLIP}
 ```
-Then a pre-defined pipeline would be used to load images in `${IMGS_PATH}`.
+Then a pre-defined pipeline will be used to load images in `${IMGS_PATH}`.
 ```python
 pipeline = [
     dict(type='LoadImageFromFile', key='real_img'),
@@ -44,14 +44,28 @@ If `${FLIP}` is set as `True`, the following config of horizontal flip operation
 ```python
 dict(type='Flip', keys=['real_img'], direction='horizontal')
 ```
-### Load with dataset config
+
+If you want to use a specific pipeline otherwise the pre-defiend ones, you can use `--pipeline-cfg` to pass a config file contains the data pipeline you want to use.
+```shell
+python tools/utils/inception_stat.py --imgsdir ${IMGS_PATH} --pklname ${PKLNAME} --pipeline-cfg ${PIPELINE}
+```
+To be noted that, the name of the pipeline dict in `${PIPELINE}` should be fixed as `inception_pipeline`. For example,
+```python
+# an example of ${PIPELINE}
+inception_pipeline = [
+    dict(type='LoadImageFromFile', key='real_img'),
+    ...
+]
+```
+
+### Load with Dataset Config
 
 If you want to use a dataset config, you can use `--data-config` arguments as the following command.
 ```shell
 python tools/utils/inception_stat.py --data-config ${CONFIG} --pklname ${PKLNAME} --subset ${SUBSET}
 ```
 
-Then a dataset would be instantiated follow the `${SUBSET}` in the configs, and default to `test`. Take the following dataset config as example,
+Then a dataset will be instantiated following the `${SUBSET}` in the configs, and defaults to `test`. Take the following dataset config as example,
 ```python
 # from `imagenet_128x128_inception_stat.py`
 data = dict(
@@ -74,16 +88,16 @@ data = dict(
 ```
 If not defined, the config in `data['test']` would be used in data loading process. If you want to extract the inception state of the training set, you can set `--subset train` in the command. Then the dataset would be built under the guidance of config in `data['train']` and images under `data/imagenet/train` and process pipeline of `train_pipeline` would be used.
 
-## Define the version of Inception Net
+## Define the Version of Inception Net
 
-In the above command, the script will take the PyTorch InceptionV3 by default. If you want the [Tero's InceptionV3](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt), you will need to switch to the script module:
+In the aforementioned command, the script will take the [PyTorch InceptionV3](https://github.com/pytorch/vision/blob/main/torchvision/models/inception.py) by default. If you want the [Tero's InceptionV3](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt), you will need to switch to the script module:
 
 ```shell
 python tools/utils/inception_stat.py --imgsdir ${IMGS_PATH} --pklname ${PKLNAME} --size ${SIZE} \
     --inception-style stylegan --inception-pth ${PATH_SCRIPT_MODULE}
 ```
 
-## Control number of images to calculate inception state
+## Control Number of Images to Calculate Inception State
 
 In `inception_stat.py`, we provide `--num-samples` argument to control the number of images used to calculate inception state.
 
@@ -93,7 +107,7 @@ python tools/utils/inception_stat.py --data-config ${CONFIG} --pklname ${PKLNAME
 
 If `${NUMS}` is set as `-1`, all images in the defined dataset would be used.
 
-## Control the shuffle operation in data loading
+## Control the Shuffle Operation in Data Loading
 
 In `inception_stat.py`, we provide `--no-shuffle` argument to avoid the shuffle operation in images loading process. For example, you can use the following command:
 
@@ -101,9 +115,9 @@ In `inception_stat.py`, we provide `--no-shuffle` argument to avoid the shuffle 
 python tools/utils/inception_stat.py --data-config ${CONFIG} --pklname ${PKLNAME} --no-shuffle
 ```
 
-## Note on inception state extraction between various code bases.
+## Note on Inception State Extraction between Various Code Bases
 
-For FID evaluation, differences between PyTorch Studio GAN and ours are mainly on the selection of real samples. In MMGen, we follow the pipeline of BigGAN, where the whole training set is adopted to extract inception statistics. Besides, we also use [Tero's Inception](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt) for feature extraction.
+For FID evaluation, differences between [PyTorch Studio GAN](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) and ours are mainly on the selection of real samples. In MMGen, we follow the pipeline of [BigGAN](https://github.com/ajbrock/BigGAN-PyTorch), where the whole training set is adopted to extract inception statistics. Besides, we also use [Tero's Inception](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt) for feature extraction.
 
 You can download the preprocessed inception state by the following url: [CIFAR10](https://download.openmmlab.com/mmgen/evaluation/fid_inception_pkl/cifar10.pkl) and [ImageNet1k](https://download.openmmlab.com/mmgen/evaluation/fid_inception_pkl/imagenet.pkl).
 
