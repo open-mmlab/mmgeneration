@@ -236,26 +236,26 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
     # shared by these metrics. For special metrics like 'PPL', images are
     # generated in a metric-special way and not shared between different
     # metrics.
-    # For probabilistic metrics like 'GaussianKLD', they do not
+    # For reconstruction metrics like 'GaussianKLD', they do not
     # receive images but receive a dict with cooresponding probabilistic
-    # parameter. To make the model return probabilistic
+    # parameter.
 
     special_metrics = []
-    probabilistic_metrics = []
+    recon_metrics = []
     vanilla_metrics = []
     special_metric_name = ['PPL']
-    probabilistic_metric_name = ['GaussianKLD']
+    recon_metric_name = ['GaussianKLD']
     for metric in metrics:
         if metric.name in special_metric_name:
             special_metrics.append(metric)
-        elif metric.name in probabilistic_metric_name:
-            probabilistic_metrics.append(metric)
+        elif metric.name in recon_metric_name:
+            recon_metrics.append(metric)
         else:
             vanilla_metrics.append(metric)
 
     # define mmcv progress bar
     max_num_images = 0
-    for metric in vanilla_metrics + probabilistic_metrics:
+    for metric in vanilla_metrics + recon_metrics:
         metric.prepare()
         max_num_images = max(max_num_images,
                              metric.num_real_need - metric.num_real_feeded)
@@ -285,7 +285,7 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         for metric in vanilla_metrics:
             num_feed_ = metric.feed(reals, 'reals')
             num_feed = max(num_feed_, num_feed)
-        for metric in probabilistic_metrics:
+        for metric in recon_metrics:
             kwargs_ = deepcopy(kwargs)
             kwargs_['mode'] = 'reconstruction'
             prob_dict = model(reals, return_loss=False, **kwargs_)
