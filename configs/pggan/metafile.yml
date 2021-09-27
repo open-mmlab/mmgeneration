@@ -2,7 +2,7 @@ Collections:
 - Metadata:
     Architecture:
     - PGGAN
-  Name: README
+  Name: PGGAN
   Paper:
   - https://arxiv.org/abs/1710.10196
   README: configs/pggan/README.md

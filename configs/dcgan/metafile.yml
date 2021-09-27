@@ -2,7 +2,7 @@ Collections:
 - Metadata:
     Architecture:
     - DCGAN
-  Name: README
+  Name: DCGAN
   Paper:
   - https://arxiv.org/abs/1511.06434
   README: configs/dcgan/README.md

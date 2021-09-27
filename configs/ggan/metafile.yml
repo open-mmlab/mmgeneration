@@ -2,7 +2,7 @@ Collections:
 - Metadata:
     Architecture:
     - GGAN
-  Name: README
+  Name: GGAN
   Paper:
   - https://arxiv.org/abs/1705.02894
   README: configs/ggan/README.md

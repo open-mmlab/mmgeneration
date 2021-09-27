@@ -2,7 +2,7 @@ Collections:
 - Metadata:
     Architecture:
     - BigGAN
-  Name: README
+  Name: BigGAN
   Paper:
   - https://openreview.net/forum?id=B1xsqj09Fm
   README: configs/biggan/README.md

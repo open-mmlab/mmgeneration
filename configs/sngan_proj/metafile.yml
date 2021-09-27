@@ -2,7 +2,7 @@ Collections:
 - Metadata:
     Architecture:
     - SNGAN
-  Name: README
+  Name: SNGAN
   Paper:
   - https://openreview.net/forum?id=B1QRgziT-
   README: configs/sngan_proj/README.md

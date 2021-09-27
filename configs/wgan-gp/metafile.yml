@@ -2,7 +2,7 @@ Collections:
 - Metadata:
     Architecture:
     - StyleGANv2
-  Name: README
+  Name: StyleGANv2
   Paper:
   - https://arxiv.org/abs/1704.00028
   README: configs/wgan-gp/README.md
