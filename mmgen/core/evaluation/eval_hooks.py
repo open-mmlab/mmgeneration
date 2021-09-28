@@ -533,7 +533,8 @@ class TranslationEvalHook(Hook):
             return
 
         runner.model.eval()
-        source_domain = runner.model.module.get_other_domains(self.target_domain)[0]
+        source_domain = runner.model.module.get_other_domains(
+            self.target_domain)[0]
         # feed real images
         max_num_images = max(metric.num_images for metric in self.metrics)
         for metric in self.metrics:
@@ -547,7 +548,8 @@ class TranslationEvalHook(Hook):
                     reals = data[f'img_{self.target_domain}']
                 # key for conditional GAN
                 else:
-                    raise KeyError('Cannot found key for images in data_dict. ')
+                    raise KeyError(
+                        'Cannot found key for images in data_dict. ')
                 num_feed = metric.feed(reals, 'reals')
                 if num_feed <= 0:
                     break
@@ -568,11 +570,16 @@ class TranslationEvalHook(Hook):
                 # key for translation model
                 if f'img_{source_domain}' in data:
                     with torch.no_grad():
-                        output_dict = runner.model(data[f'img_{source_domain}'], test_mode=True, target_domain=self.target_domain, **self.sample_kwargs)
+                        output_dict = runner.model(
+                            data[f'img_{source_domain}'],
+                            test_mode=True,
+                            target_domain=self.target_domain,
+                            **self.sample_kwargs)
                     fakes = output_dict['target']
                 # key for conditional GAN
                 else:
-                    raise KeyError('Cannot found key for images in data_dict. ')
+                    raise KeyError(
+                        'Cannot found key for images in data_dict. ')
                 # sampling fake images and directly send them to metrics
                 for metric in self.metrics:
                     if metric.num_fake_feeded >= metric.num_fake_need:
@@ -580,7 +587,7 @@ class TranslationEvalHook(Hook):
                     num_feed = metric.feed(fakes, 'fakes')
                     if num_feed <= 0:
                         break
-                
+
                 if rank == 0:
                     pbar.update(total_batch_size)
 
@@ -597,7 +604,7 @@ class TranslationEvalHook(Hook):
                     # record best metric and save the best ckpt
                     if self.save_best_ckpt and name in self.best_metric:
                         self._save_best_ckpt(runner, val, name)
-            
+
             runner.log_buffer.ready = True
         runner.model.train()
 

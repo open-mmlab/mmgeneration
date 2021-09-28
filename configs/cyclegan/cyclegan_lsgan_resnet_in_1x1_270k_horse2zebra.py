@@ -114,8 +114,16 @@ data = dict(
         pipeline=train_pipeline,
         domain_a=domain_a,
         domain_b=domain_b),
-    val=dict(dataroot=dataroot, domain_a=domain_a, domain_b=domain_b, pipeline=test_pipeline),
-    test=dict(dataroot=dataroot, domain_a=domain_a, domain_b=domain_b, pipeline=test_pipeline))
+    val=dict(
+        dataroot=dataroot,
+        domain_a=domain_a,
+        domain_b=domain_b,
+        pipeline=test_pipeline),
+    test=dict(
+        dataroot=dataroot,
+        domain_a=domain_a,
+        domain_b=domain_b,
+        pipeline=test_pipeline))
 
 optimizer = dict(
     generators=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)),
@@ -151,10 +159,7 @@ evaluation = dict(
     target_domain='zebra',
     interval=200,
     metrics=[
-        dict(
-            type='FID',
-            num_images=140,
-            bgr2rgb=True),
+        dict(type='FID', num_images=140, bgr2rgb=True),
         dict(type='IS', num_images=140)
     ],
     best_metric=['fid', 'is'])
