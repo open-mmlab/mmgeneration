@@ -7,7 +7,6 @@ Welcome to MMGeneration's documentation!
 
    get_started.md
    modelzoo_statistics.md
-   inception_stat.md
 
 .. toctree::
    :maxdepth: 2
@@ -20,6 +19,7 @@ Welcome to MMGeneration's documentation!
    :caption: Tutorials
 
    tutorials/index.rst
+   inception_stat.md
 
 .. toctree::
    :maxdepth: 2
