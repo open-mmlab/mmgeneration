@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .eval_hooks import GenerativeEvalHook
+from .eval_hooks import GenerativeEvalHook, TranslationEvalHook
 from .evaluation import (make_metrics_table, make_vanilla_dataloader,
                          single_gpu_evaluation, single_gpu_online_evaluation)
 from .metric_utils import slerp
@@ -20,4 +20,5 @@ __all__ = [
     'make_metrics_table',
     'make_vanilla_dataloader',
     'GaussianKLD',
+    'TranslationEvalHook'
 ]
