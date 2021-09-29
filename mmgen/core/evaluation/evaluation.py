@@ -262,6 +262,9 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
     mmcv.print_log(f'Sample {max_num_images} real images for evaluation',
                    'mmgen')
     pbar = mmcv.ProgressBar(max_num_images)
+
+    # avoid `data_loader` is None
+    data_loader = [] if data_loader is None else data_loader
     for data in data_loader:
         if 'real_img' in data:
             reals = data['real_img']
