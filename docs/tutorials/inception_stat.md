@@ -1,4 +1,4 @@
-# How to Extract Inception State
+# Tutorial 5: How to Extract Inception State for FID Evaluation
 
 In MMGeneration, we provide a [script](https://github.com/open-mmlab/mmgeneration/blob/master/tools/utils/inception_stat.py) to extract the inception state of the dataset. In this doc, we provide a brief introduction on how to use this script.
 
@@ -28,7 +28,7 @@ Then a pre-defined pipeline will be used to load images in `${IMGS_PATH}`.
 pipeline = [
     dict(type='LoadImageFromFile', key='real_img'),
     dict(
-        type='Resize', keys=['real_img'], scale=${SIZE},
+        type='Resize', keys=['real_img'], scale=SIZE,
         keep_ratio=False),
     dict(
         type='Normalize',

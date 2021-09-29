@@ -1369,16 +1369,19 @@ class GaussianKLD(Metric):
     When call ``feed`` operation, only ``reals`` mode is needed,
 
     The calculation of KLD can be formulated as:
-    ..math::
-        :nowarp:
-        \begin{eqnarray}
+
+    .. math::
+        :nowrap:
+
+        \begin{align}
         KLD(p||q) &= -\int{p(x)\log{q(x)} dx} + \int{p(x)\log{p(x)} dx} \\
             &= \frac{1}{2}\log{(2\pi \sigma_2^2)} +
-            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\simga_2^2} -
+            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\sigma_2^2} -
             \frac{1}{2}(1 + \log{2\pi \sigma_1^2}) \\
             &= \log{\frac{\sigma_2}{\sigma_1}} +
-            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\simga_2^2} - \frac{1}{2}
-        \end{eqnarray}
+            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\sigma_2^2} - \frac{1}{2}
+        \end{align}
+
     where `p` and `q` denote target and predicted distribution respectively.
 
     Args:

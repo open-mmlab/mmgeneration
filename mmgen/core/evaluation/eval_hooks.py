@@ -35,8 +35,8 @@ class GenerativeEvalHook(Hook):
 
     #. Only use FID for evaluation
 
-    .. code-blcok:: python
-        :linenos
+    .. code-block:: python
+        :linenos:
 
         evaluation = dict(
             type='GenerativeEvalHook',
@@ -51,7 +51,7 @@ class GenerativeEvalHook(Hook):
     #. Use FID and IS simutaneously and save the best checkpoints respectively
 
     .. code-block:: python
-        :linenos
+        :linenos:
 
         evaluation = dict(
             type='GenerativeEvalHook',
@@ -69,7 +69,7 @@ class GenerativeEvalHook(Hook):
     #. Use dynamic evaluation intervals
 
     .. code-block:: python
-        :linenos
+        :linenos:
 
         # interval = 10000 if iter < 50000,
         # interval = 4000, if 50000 <= iter < 750000,

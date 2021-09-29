@@ -19,7 +19,6 @@ Welcome to MMGeneration's documentation!
    :caption: Tutorials
 
    tutorials/index.rst
-   inception_stat.md
 
 .. toctree::
    :maxdepth: 2
