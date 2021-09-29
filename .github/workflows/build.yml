@@ -47,12 +47,6 @@ jobs:
             torchvision: 0.9.0+cu101
             mmcv_link: "torch1.8.0"
             CUDA: 10.1.105-1
-          - torch: 1.8.0+cu101
-            torch_version: torch1.8.0
-            torchvision: 0.9.0+cu101
-            mmcv_link: "torch1.8.0"
-            python-version: 3.9
-            CUDA: 10.1.105-1
 
     steps:
       - uses: actions/checkout@v2
