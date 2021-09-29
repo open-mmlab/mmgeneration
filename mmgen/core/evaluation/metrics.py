@@ -1361,6 +1361,7 @@ class PPLSampler:
         return image
 
 
+@METRICS.register_module()
 class GaussianKLD(Metric):
     r"""Gaussian KLD (Kullback-Leibler divergence) metric. We calculate the
     KLD between two gaussian distribution via `mean` and `log_variance`.
