@@ -35,28 +35,24 @@ jobs:
           - torch: 1.5.1+cu101
             torch_version: torch1.5.1
             torchvision: 0.6.1+cu101
-            mmcv: "latest+torch1.5.0+cu101"
+            mmcv_link: "torch1.5.1"
             CUDA: 10.1.105-1
-            CUDA_SHORT: 10.1
           - torch: 1.7.0+cu101
             torch_version: torch1.7.0
             torchvision: 0.8.1+cu101
-            mmcv: "latest+torch1.7.0+cu101"
+            mmcv_link: "torch1.7.0"
             CUDA: 10.1.105-1
-            CUDA_SHORT: 10.1
           - torch: 1.8.0+cu101
             torch_version: torch1.8.0
             torchvision: 0.9.0+cu101
-            mmcv: "latest+torch1.8.0+cu101"
+            mmcv_link: "torch1.8.0"
             CUDA: 10.1.105-1
-            CUDA_SHORT: 10.1
           - torch: 1.8.0+cu101
             torch_version: torch1.8.0
             torchvision: 0.9.0+cu101
-            mmcv: "latest+torch1.8.0+cu101"
+            mmcv_link: "torch1.8.0"
             python-version: 3.9
             CUDA: 10.1.105-1
-            CUDA_SHORT: 10.1
 
     steps:
       - uses: actions/checkout@v2
@@ -73,7 +69,7 @@ jobs:
         run: pip install torch==${{matrix.torch}} torchvision==${{matrix.torchvision}} -f https://download.pytorch.org/whl/torch_stable.html
       - name: Install mmgen dependencies
         run: |
-          pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/${CUDA_SHORT/-/}/${{matrix.torch_version}}/index.html
+          pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu101/${{matrix.mmcv_link}}/index.html
           pip install -r requirements.txt
           python -c 'import mmcv; print(mmcv.__version__)'
       - name: Build and install
@@ -111,7 +107,6 @@ jobs:
             torchvision: 0.10.0+cu102
             mmcv: "latest+torch1.9.0+cu102"
             CUDA: 10.2.89-1
-            CUDA_SHORT: 10-2
 
     steps:
       - uses: actions/checkout@v2
@@ -128,7 +123,7 @@ jobs:
         run: pip install torch==${{matrix.torch}} torchvision==${{matrix.torchvision}} -f https://download.pytorch.org/whl/torch_stable.html
       - name: Install mmgen dependencies
         run: |
-          pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/${CUDA_SHORT/-/}/${{matrix.torch_version}}/index.html
+          pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu102/${{matrix.torch_version}}/index.html
           pip install -r requirements.txt
           python -c 'import mmcv; print(mmcv.__version__)'
       - name: Build and install
