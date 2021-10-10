@@ -66,6 +66,24 @@ def single_gpu_evaluation(model,
                           batch_size,
                           samples_path=None,
                           **kwargs):
+    """Evaluate model with a single gpu.
+
+    This method evaluate model with a single gpu and displays eval progress
+        bar.
+
+    Args:
+        model (nn.Module): Model to be tested.
+        data_loader (nn.Dataloader): PyTorch data loader.
+        metrics (list): List of metric objects.
+        logger (Logger): logger used to record results of evaluation.
+        basic_table_info (dict): Dictionary containing the basic information \
+            of the metric table include training configuration and ckpt.
+        batch_size (int): Batch size of images fed into metrics.
+        samples_path (str): Used to save generated images. If it's none, we'll
+            give it a default directory and delete it after finishing the
+            evaluation. Default to None.
+        kwargs (dict): Other arguments.
+    """
     # decide samples path
     delete_samples_path = False
     if samples_path:
@@ -101,10 +119,10 @@ def single_gpu_evaluation(model,
     target_domain = basic_table_info['target_domain']
     source_domain = basic_table_info['source_domain']
     # if no images, `num_exist` should be zero
+    data_loader_iter = iter(data_loader)
     for begin in range(num_exist, num_needed, batch_size):
         end = min(begin + batch_size, max_num_images)
         # for translation model, we feed them images from dataloader
-        data_loader_iter = iter(data_loader)
         data_batch = next(data_loader_iter)
         output_dict = model(
             data_batch[f'img_{source_domain}'],
@@ -158,6 +176,26 @@ def single_gpu_evaluation(model,
 @torch.no_grad()
 def single_gpu_online_evaluation(model, data_loader, metrics, logger,
                                  basic_table_info, batch_size, **kwargs):
+    """Evaluate model with a single gpu in online mode.
+
+    This method evaluate model with a single gpu and displays eval progress
+    bar. Different form `single_gpu_evaluation`, this function will not save
+    the images or read images from disks. Namely, there do not exist any IO
+    operations in this function. Thus, in general, `online` mode will achieve a
+    faster evaluation. However, this mode will take much more memory cost.
+    Therefore this evaluation function is recommended to evaluate your model
+    with a single metric.
+
+    Args:
+        model (nn.Module): Model to be tested.
+        data_loader (nn.Dataloader): PyTorch data loader.
+        metrics (list): List of metric objects.
+        logger (Logger): logger used to record results of evaluation.
+        basic_table_info (dict): Dictionary containing the basic information \
+            of the metric table include training configuration and ckpt.
+        batch_size (int): Batch size of images fed into metrics.
+        kwargs (dict): Other arguments.
+    """
     # sample images
     max_num_images = 0 if len(metrics) == 0 else max(metric.num_fake_need
                                                      for metric in metrics)
@@ -172,10 +210,10 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         metric.prepare()
 
     # feed reals and fakes
+    data_loader_iter = iter(data_loader)
     for begin in range(0, max_num_images, batch_size):
         end = min(begin + batch_size, max_num_images)
         # for translation model, we feed them images from dataloader
-        data_loader_iter = iter(data_loader)
         data_batch = next(data_loader_iter)
         output_dict = model(
             data_batch[f'img_{source_domain}'],
@@ -185,8 +223,8 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         reals = data_batch[f'img_{target_domain}']
         pbar.update(end - begin)
         for metric in metrics:
-            _ = metric.feed(reals, 'reals')
-            _ = metric.feed(fakes, 'fakes')
+            metric.feed(reals, 'reals')
+            metric.feed(fakes, 'fakes')
 
     for metric in metrics:
         metric.summary()
