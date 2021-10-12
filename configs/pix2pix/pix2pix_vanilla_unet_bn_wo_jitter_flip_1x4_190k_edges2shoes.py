@@ -95,7 +95,7 @@ custom_hooks = [
     dict(
         type='MMGenVisualizationHook',
         output_dir='training_samples',
-        res_name_list=['fake_b'],
+        res_name_list=[f'fake_{target_domain}'],
         interval=5000)
 ]
 runner = None
@@ -109,4 +109,8 @@ work_dir = f'./work_dirs/experiments/{exp_name}'
 metrics = dict(
     FID=dict(
         type='FID', num_images=200, image_shape=(3, 256, 256), bgr2rgb=True),
-    IS=dict(type='IS', num_images=200, image_shape=(3, 256, 256)))
+    IS=dict(
+        type='IS',
+        num_images=200,
+        image_shape=(3, 256, 256),
+        inception_args=dict(type='pytorch')))

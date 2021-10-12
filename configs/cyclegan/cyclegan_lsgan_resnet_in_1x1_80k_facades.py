@@ -143,7 +143,7 @@ custom_hooks = [
     dict(
         type='MMGenVisualizationHook',
         output_dir='training_samples',
-        res_name_list=['fake_photo'],
+        res_name_list=[f'fake_{domain_a}', f'fake_{domain_b}'],
         interval=5000)
 ]
 
@@ -155,4 +155,8 @@ exp_name = 'cyclegan_facades'
 work_dir = f'./work_dirs/experiments/{exp_name}'
 metrics = dict(
     FID=dict(type='FID', num_images=106, image_shape=(3, 256, 256)),
-    IS=dict(type='IS', num_images=106, image_shape=(3, 256, 256)))
+    IS=dict(
+        type='IS',
+        num_images=106,
+        image_shape=(3, 256, 256),
+        inception_args=dict(type='pytorch')))
