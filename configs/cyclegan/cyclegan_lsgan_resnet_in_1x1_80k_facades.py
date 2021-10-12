@@ -6,10 +6,10 @@ _base_ = [
 train_cfg = dict(buffer_size=50)
 test_cfg = None
 
-domain_a = 'photo'
-domain_b = 'mask'
+domain_a = 'mask'
+domain_b = 'photo'
 model = dict(
-    default_domain=domain_a,
+    default_domain=domain_b,
     reachable_domains=[domain_a, domain_b],
     related_domains=[domain_a, domain_b],
     gen_auxiliary_loss=[
