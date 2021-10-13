@@ -12,38 +12,32 @@ except ImportError:
     package_model = None
 
 
-def mmgen2torchserver(
-    config_file: str,
-    checkpoint_file: str,
-    output_folder: str,
-    model_name: str,
-    model_version: str = '1.0',
-    model_type: str = 'unconditional',
-    force: bool = False,
-):
+def mmgen2torchserver(config_file: str,
+                      checkpoint_file: str,
+                      output_folder: str,
+                      model_name: str,
+                      model_version: str = '1.0',
+                      model_type: str = 'unconditional',
+                      force: bool = False):
     """Converts MMGeneration model (config + checkpoint) to TorchServe `.mar`.
 
     Args:
-        config_file:
-            In MMGeneration config format.
-            The contents vary for each task repository.
-        checkpoint_file:
-            In MMGeneration checkpoint format.
-            The contents vary for each task repository.
-        output_folder:
-            Folder where `{model_name}.mar` will be created.
+        config_file (str): Path of config file. The config should in
+            MMGeneration format.
+        checkpoint_file (str): Path of checkpoint. The checkpoint should in
+            MMGeneration checkpoint format.
+        output_folder (str): Folder where `{model_name}.mar` will be created.
             The file created will be in TorchServe archive format.
-        model_name:
-            If not None, used for naming the `{model_name}.mar` file
-            that will be created under `output_folder`.
-            If None, `{Path(checkpoint_file).stem}` will be used.
-        model_version:
-            Model's version.
-        model_type:
-            Model's type.
-        force:
-            If True, if there is an existing `{model_name}.mar`
-            file under `output_folder` it will be overwritten.
+        model_name (str): Name of the generated ``'mar'`` file. If not None,
+            used for naming the `{model_name}.mar` file that will be created
+            under `output_folder`. If None, `{Path(checkpoint_file).stem}`
+            will be used.
+        model_version (str, optional): Model's version. Defaults to '1.0'.
+        model_type (str, optional): Type of the model to be convert. Handler
+            named ``{model_type}_handler`` would be used to generate ``mar``
+            file. Defaults to 'unconditional'.
+        force (bool, optional): If True, existing `{model_name}.mar` will be
+            overwritten. Default to False.
     """
     mmcv.mkdir_or_exist(output_folder)
 

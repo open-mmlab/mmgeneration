@@ -27,12 +27,19 @@ class MMGenUnconditionalHandler(BaseHandler):
         self.initialized = True
 
     def preprocess(self, data, *args, **kwargs):
-        # we do not need any input data for unconditional models
-        return None
+        data_decode = dict()
+        # `data` type is `list[dict]`
+        for k, v in data[0].items():
+            # deocde strings
+            if isinstance(v, bytearray):
+                data_decode[k] = v.decode()
+        return data_decode
 
     def inference(self, data, *args, **kwargs):
+        sample_model = data['sample_model']
+        print(sample_model)
         results = self.model.sample_from_noise(
-            data, num_batches=1, sample_model='orig', **kwargs)
+            None, num_batches=1, sample_model=sample_model, **kwargs)
         return results
 
     def postprocess(self, data):
