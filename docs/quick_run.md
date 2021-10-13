@@ -292,16 +292,16 @@ We also perform a survey on the influence of data loading pipeline and the versi
 ## PPL
 Perceptual path length measures the difference between consecutive images (their VGG16 embeddings) when interpolating between two random inputs. Drastic changes mean that multiple features have changed together and that they might be entangled. Thus, a smaller PPL score appears to indicate higher overall image quality by experiments. \
 As a basis for our metric, we use a perceptually-based pairwise image distance that is calculated as a weighted difference between two VGG16 embeddings, where the weights are fit so that the metric agrees with human perceptual similarity judgments.
-If we subdivide a latent space interpolation path into linear segments, we can define the total perceptual length of this segmented path as the sum of perceptual differences over each segment, and a natural definition for the perceptual path length would be the limit of this sum under infinitely fine subdivision, but in practice we approximate it using a small subdivision <img src="https://latex.codecogs.com/svg.image?\epsilon&space;=&space;10^{-4}" title="\epsilon = 10^{-4}" />.
+If we subdivide a latent space interpolation path into linear segments, we can define the total perceptual length of this segmented path as the sum of perceptual differences over each segment, and a natural definition for the perceptual path length would be the limit of this sum under infinitely fine subdivision, but in practice we approximate it using a small subdivision ``$`\epsilon=10^{-4}`$``.
 The average perceptual path length in latent `space` Z, over all possible endpoints, is therefore
 
-<img src="https://latex.codecogs.com/svg.image?L_Z&space;=&space;E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))),&space;G(slerp(z_1,z_2;t&plus;\epsilon)))]" title="L_Z = E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))), G(slerp(z_1,z_2;t+\epsilon)))]" />
+``$$`L_Z = E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))), G(slerp(z_1,z_2;t+\epsilon)))]`$$``
 
 Computing the average perceptual path length in latent `space` W is carried out in a similar fashion:
 
-<img src="https://latex.codecogs.com/svg.image?L_Z&space;=&space;E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))),&space;G(slerp(z_1,z_2;t&plus;\epsilon)))]" title="L_Z = E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))), G(slerp(z_1,z_2;t+\epsilon)))]" />
+``$$`L_Z = E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))), G(slerp(z_1,z_2;t+\epsilon)))]`$$``
 
-Where <img src="https://latex.codecogs.com/svg.image?\inline&space;z_1,&space;z_2&space;\sim&space;P(z)" title="\inline z_1, z_2 \sim P(z)" />, and <img src="https://latex.codecogs.com/svg.image?\inline&space;t&space;\sim&space;U(0,1)" title="\inline t \sim U(0,1)" /> if we set `sampling` to full, <img src="https://latex.codecogs.com/svg.image?\inline&space;t&space;\in&space;\{0,1\}" title="\inline t \in \{0,1\}" /> if we set `sampling` to end. <img src="https://latex.codecogs.com/svg.image?\inline&space;G" title="\inline G" /> is the generator(i.e. <img src="https://latex.codecogs.com/svg.image?\inline&space;g&space;\circ&space;f" title="\inline g \circ f" /> for style-based networks), and <img src="https://latex.codecogs.com/svg.image?\inline&space;d(.,.)" title="\inline d(.,.)" /> evaluates the perceptual distance between the resulting images.We compute the expectation by taking 100,000 samples (set `num_images` to 50,000 in our code).
+Where ``$`z_1, z_2 \sim P(z)`$``, and ``$` t \sim U(0,1)`$`` if we set `sampling` to full, ``$` t \in \{0,1\}`$`` if we set `sampling` to end. ``$` G`$`` is the generator(i.e. ``$` g \circ f`$`` for style-based networks), and ``$` d(.,.)`$`` evaluates the perceptual distance between the resulting images.We compute the expectation by taking 100,000 samples (set `num_images` to 50,000 in our code).
 
 You can find the complete implementation in `metrics.py`, which refers to https://github.com/rosinality/stylegan2-pytorch/blob/master/ppl.py.
 If you want to evaluate models with `PPL` metrics, you can add the `metrics` into your config file like this:
