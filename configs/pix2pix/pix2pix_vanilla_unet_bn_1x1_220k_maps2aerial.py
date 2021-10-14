@@ -54,7 +54,7 @@ test_pipeline = [
     dict(
         type='LoadPairedImageFromFile',
         io_backend='disk',
-        key='image',
+        key='pair',
         domain_a=domain_a,
         domain_b=domain_b,
         flag='color'),
@@ -80,7 +80,7 @@ dataroot = 'data/paired/maps'
 data = dict(
     train=dict(dataroot=dataroot, pipeline=train_pipeline),
     val=dict(dataroot=dataroot, pipeline=test_pipeline),
-    test=dict(dataroot=dataroot, pipeline=test_pipeline))
+    test=dict(dataroot=dataroot, pipeline=test_pipeline, testdir='val'))
 # optimizer
 optimizer = dict(
     generators=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)),
@@ -95,7 +95,7 @@ custom_hooks = [
     dict(
         type='MMGenVisualizationHook',
         output_dir='training_samples',
-        res_name_list=['fake_b'],
+        res_name_list=[f'fake_{target_domain}'],
         interval=5000)
 ]
 runner = None
@@ -108,4 +108,8 @@ exp_name = 'pix2pix_maps2aerial'
 work_dir = f'./work_dirs/experiments/{exp_name}'
 metrics = dict(
     FID=dict(type='FID', num_images=1098, image_shape=(3, 256, 256)),
-    IS=dict(type='IS', num_images=1098, image_shape=(3, 256, 256)))
+    IS=dict(
+        type='IS',
+        num_images=1098,
+        image_shape=(3, 256, 256),
+        inception_args=dict(type='pytorch')))

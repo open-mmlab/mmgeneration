@@ -7,7 +7,7 @@ _base_ = [
 domain_a = 'horse'
 domain_b = 'zebra'
 model = dict(
-    default_domain=domain_a,
+    default_domain=domain_b,
     reachable_domains=[domain_a, domain_b],
     related_domains=[domain_a, domain_b],
     gen_auxiliary_loss=[
@@ -138,7 +138,7 @@ custom_hooks = [
     dict(
         type='MMGenVisualizationHook',
         output_dir='training_samples',
-        res_name_list=['fake_b'],
+        res_name_list=[f'fake_{domain_a}', f'fake_{domain_b}'],
         interval=5000)
 ]
 
@@ -151,15 +151,8 @@ work_dir = f'./work_dirs/experiments/{exp_name}'
 # testA 120, testB 140
 metrics = dict(
     FID=dict(type='FID', num_images=140, image_shape=(3, 256, 256)),
-    IS=dict(type='IS', num_images=140, image_shape=(3, 256, 256)))
-
-# inception_pkl = None
-evaluation = dict(
-    type='TranslationEvalHook',
-    target_domain='zebra',
-    interval=200,
-    metrics=[
-        dict(type='FID', num_images=140, bgr2rgb=True),
-        dict(type='IS', num_images=140)
-    ],
-    best_metric=['fid', 'is'])
+    IS=dict(
+        type='IS',
+        num_images=140,
+        image_shape=(3, 256, 256),
+        inception_args=dict(type='pytorch')))

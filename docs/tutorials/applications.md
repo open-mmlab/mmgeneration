@@ -1,4 +1,4 @@
-# Tutorial 7: Applications with Generative Models
+# Tutorial 8: Applications with Generative Models
 
 ## Interpolation
 The generative model in the GAN architecture learns to map points in the latent space to generated images. The latent space has no meaning other than the meaning applied to it via the generative model. Generally, we want to explore the structure of latent space, one thing we can do is to interpolate a sequence of points between two endpoints in the latent space, and see the results these points yield. (Eg. we believe that features that are absent in either endpoint appear in the middle of a linear interpolation path is a sign that the latent space is entangled and the factors of variation are not properly separated.)
