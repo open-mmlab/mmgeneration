@@ -326,9 +326,9 @@ class GenerativeEvalHook(Hook):
 class TranslationEvalHook(GenerativeEvalHook):
     """Evaluation Hook for Translation Models.
 
-    This evaluation hook can be used to evaluate translation models. Note 
-    that only ``FID`` and ``IS`` metric are supported for the distributed 
-    training now. In the future, we will support more metrics for the 
+    This evaluation hook can be used to evaluate translation models. Note
+    that only ``FID`` and ``IS`` metric are supported for the distributed
+    training now. In the future, we will support more metrics for the
     evaluation during the training procedure.
 
     In our config system, you only need to add `evaluation` with the detailed
@@ -364,7 +364,10 @@ class TranslationEvalHook(GenerativeEvalHook):
             interval=10000,
             metrics=[
                 dict(type='FID', num_images=106, bgr2rgb=True),
-                dict(type='IS', num_images=106, inception_args=dict(type='pytorch'))
+                dict(
+                    type='IS',
+                    num_images=106,
+                    inception_args=dict(type='pytorch'))
             ],
             best_metric=['fid', 'is'])
 
@@ -392,7 +395,7 @@ class TranslationEvalHook(GenerativeEvalHook):
     Args:
         target_domain (str): Target domain of output image.
     """
-    
+
     def __init__(self, *args, target_domain, **kwargs):
         super().__init__(*args, **kwargs)
         self.target_domain = target_domain
@@ -431,7 +434,6 @@ class TranslationEvalHook(GenerativeEvalHook):
 
         mmcv.print_log(f'Sample {max_num_images} fake images for evaluation',
                        'mmgen')
-        batch_size = self.dataloader.batch_size
 
         rank, ws = get_dist_info()
 
@@ -452,8 +454,7 @@ class TranslationEvalHook(GenerativeEvalHook):
                 fakes = output_dict['target']
             # key Error
             else:
-                raise KeyError(
-                    'Cannot found key for images in data_dict. ')
+                raise KeyError('Cannot found key for images in data_dict. ')
             # sampling fake images and directly send them to metrics
             # pbar update number for one proc
             num_update = 0
@@ -467,7 +468,7 @@ class TranslationEvalHook(GenerativeEvalHook):
 
             if rank == 0:
                 if num_update > 0:
-                    pbar.update(num_update* ws)
+                    pbar.update(num_update * ws)
 
         runner.log_buffer.clear()
         # a dirty walkround to change the line at the end of pbar

@@ -153,6 +153,9 @@ evaluation = dict(
     interval=10000,
     metrics=[
         dict(type='FID', num_images=num_images, bgr2rgb=True),
-        dict(type='IS', num_images=num_images, inception_args=dict(type='pytorch'))
+        dict(
+            type='IS',
+            num_images=num_images,
+            inception_args=dict(type='pytorch'))
     ],
     best_metric=['fid', 'is'])
