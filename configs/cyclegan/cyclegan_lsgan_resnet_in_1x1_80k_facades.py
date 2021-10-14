@@ -153,10 +153,21 @@ total_iters = 80000
 workflow = [('train', 1)]
 exp_name = 'cyclegan_facades'
 work_dir = f'./work_dirs/experiments/{exp_name}'
+num_images = 106
 metrics = dict(
-    FID=dict(type='FID', num_images=106, image_shape=(3, 256, 256)),
+    FID=dict(type='FID', num_images=num_images, image_shape=(3, 256, 256)),
     IS=dict(
         type='IS',
-        num_images=106,
+        num_images=num_images,
         image_shape=(3, 256, 256),
         inception_args=dict(type='pytorch')))
+
+evaluation = dict(
+    type='TranslationEvalHook',
+    target_domain=domain_b,
+    interval=10000,
+    metrics=[
+        dict(type='FID', num_images=num_images, bgr2rgb=True),
+        dict(type='IS', num_images=num_images, inception_args=dict(type='pytorch'))
+    ],
+    best_metric=['fid', 'is'])

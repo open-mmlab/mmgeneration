@@ -149,10 +149,21 @@ workflow = [('train', 1)]
 exp_name = 'cyclegan_horse2zebra'
 work_dir = f'./work_dirs/experiments/{exp_name}'
 # testA 120, testB 140
+num_images = 140
 metrics = dict(
-    FID=dict(type='FID', num_images=140, image_shape=(3, 256, 256)),
+    FID=dict(type='FID', num_images=num_images, image_shape=(3, 256, 256)),
     IS=dict(
         type='IS',
-        num_images=140,
+        num_images=num_images,
         image_shape=(3, 256, 256),
         inception_args=dict(type='pytorch')))
+
+evaluation = dict(
+    type='TranslationEvalHook',
+    target_domain=domain_b,
+    interval=10000,
+    metrics=[
+        dict(type='FID', num_images=num_images, bgr2rgb=True),
+        dict(type='IS', num_images=num_images, inception_args=dict(type='pytorch'))
+    ],
+    best_metric=['fid', 'is'])

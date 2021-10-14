@@ -18,7 +18,7 @@ class GenerativeEvalHook(Hook):
     """Evaluation Hook for Generative Models.
 
     This evaluation hook can be used to evaluate unconditional and conditional
-    models. Note that only ``FID`` and ``IS`` metric is supported for the
+    models. Note that only ``FID`` and ``IS`` metric are supported for the
     distributed training now. In the future, we will support more metrics for
     the evaluation during the training procedure.
 
@@ -223,7 +223,7 @@ class GenerativeEvalHook(Hook):
 
         runner.model.eval()
 
-        # sample fake images
+        # sample real images
         max_num_images = max(metric.num_images for metric in self.metrics)
         for metric in self.metrics:
             if metric.num_real_feeded >= metric.num_real_need:
@@ -323,13 +323,13 @@ class GenerativeEvalHook(Hook):
 
 
 @HOOKS.register_module()
-class TranslationEvalHook(Hook):
+class TranslationEvalHook(GenerativeEvalHook):
     """Evaluation Hook for Translation Models.
 
-    This evaluation hook can be used to evaluate unconditional and conditional
-    models. Note that only ``FID`` and ``IS`` metric is supported for the
-    distributed training now. In the future, we will support more metrics for
-    the evaluation during the training procedure.
+    This evaluation hook can be used to evaluate translation models. Note 
+    that only ``FID`` and ``IS`` metric are supported for the distributed 
+    training now. In the future, we will support more metrics for the 
+    evaluation during the training procedure.
 
     In our config system, you only need to add `evaluation` with the detailed
     configureations. Below is serveral usage cases for different situations.
@@ -348,14 +348,10 @@ class TranslationEvalHook(Hook):
         :linenos
 
         evaluation = dict(
-            type='GenerativeEvalHook',
+            type='TranslationEvalHook',
+            target_domain='photo',
             interval=10000,
-            metrics=dict(
-                type='FID',
-                num_images=50000,
-                inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
-                bgr2rgb=True),
-            sample_kwargs=dict(sample_model='ema'))
+            metrics=dict(type='FID', num_images=106, bgr2rgb=True))
 
     #. Use FID and IS simutaneously and save the best checkpoints respectively
 
@@ -363,164 +359,43 @@ class TranslationEvalHook(Hook):
         :linenos
 
         evaluation = dict(
-            type='GenerativeEvalHook',
+            type='TranslationEvalHook',
+            target_domain='photo',
             interval=10000,
-            metrics=[dict(
-                type='FID',
-                num_images=50000,
-                inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
-                bgr2rgb=True),
-                dict(type='IS',
-                num_images=50000)],
-            best_metric=['fid', 'is'],
-            sample_kwargs=dict(sample_model='ema'))
+            metrics=[
+                dict(type='FID', num_images=106, bgr2rgb=True),
+                dict(type='IS', num_images=106, inception_args=dict(type='pytorch'))
+            ],
+            best_metric=['fid', 'is'])
 
     #. Use dynamic evaluation intervals
 
     .. code-block:: python
         :linenos
 
-        # interval = 10000 if iter < 50000,
-        # interval = 4000, if 50000 <= iter < 750000,
-        # interval = 2000, if iter >= 750000
+        # interval = 10000 if iter < 100000,
+        # interval = 4000, if 100000 <= iter < 200000,
+        # interval = 2000, if iter >= 200000
 
         evaluation = dict(
-            type='GenerativeEvalHook',
-            interval=dict(milestones=[500000, 750000],
-                          interval=[10000, 4000, 2000])
-            metrics=[dict(
-                type='FID',
-                num_images=50000,
-                inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
-                bgr2rgb=True),
-                dict(type='IS',
-                num_images=50000)],
-            best_metric=['fid', 'is'],
-            sample_kwargs=dict(sample_model='ema'))
+            type='TranslationEvalHook',
+            interval=dict(milestones=[100000, 200000],
+                          interval=[10000, 4000, 2000]),
+            target_domain='zebra',
+            metrics=[
+                dict(type='FID', num_images=140, bgr2rgb=True),
+                dict(type='IS', num_images=140)
+            ],
+            best_metric=['fid', 'is'])
 
 
     Args:
-        dataloader (DataLoader): A PyTorch dataloader.
-        interval (int | dict): Evaluation interval. If int is passed,
-            ``eval_hook`` would run under given interval. If a dict is passed,
-            The key and value would be interpret as 'milestones' and 'interval'
-            of the evaluation.  Default: 1.
-        dist (bool, optional): Whether to use distributed evaluation.
-            Defaults to True.
-        metrics (dict | list[dict], optional): Configs for metrics that will be
-            used in evaluation hook. Defaults to None.
-        sample_kwargs (dict | None, optional): Additional keyword arguments for
-            sampling images. Defaults to None.
-        save_best_ckpt (bool, optional): Whether to save the best checkpoint
-            according to ``best_metric``. Defaults to ``True``.
-        best_metric (str | list, optional): Which metric to be used in saving
-            the best checkpoint. Multiple metrics have been supported by
-            inputing a list of metric names, e.g., ``['fid', 'is']``.
-            Defaults to ``'fid'``.
+        target_domain (str): Target domain of output image.
     """
-    rule_map = {'greater': lambda x, y: x > y, 'less': lambda x, y: x < y}
-    init_value_map = {'greater': -math.inf, 'less': math.inf}
-    greater_keys = ['acc', 'top', 'AR@', 'auc', 'precision', 'mAP', 'is']
-    less_keys = ['loss', 'fid']
-    _supported_best_metrics = ['fid', 'is']
-
-    def __init__(self,
-                 dataloader,
-                 target_domain,
-                 interval=1,
-                 dist=True,
-                 metrics=None,
-                 sample_kwargs=None,
-                 save_best_ckpt=True,
-                 best_metric='fid'):
-        assert metrics is not None
-        self.dataloader = dataloader
+    
+    def __init__(self, *args, target_domain, **kwargs):
+        super().__init__(*args, **kwargs)
         self.target_domain = target_domain
-        self.dist = dist
-        self.sample_kwargs = sample_kwargs if sample_kwargs else dict()
-        self.save_best_ckpt = save_best_ckpt
-        self.best_metric = best_metric
-
-        if isinstance(interval, int):
-            self.interval = interval
-        elif isinstance(interval, dict):
-            if 'milestones' not in interval or 'interval' not in interval:
-                raise KeyError(
-                    '`milestones` and `interval` must exist in interval dict '
-                    'if you want to use the dynamic interval evaluation '
-                    f'strategy. But receive [{[k for k in interval.keys()]}] '
-                    'in the interval dict.')
-
-            self.milestones = interval['milestones']
-            self.interval = interval['interval']
-            # check if length of interval match with the milestones
-            if len(self.interval) != len(self.milestones) + 1:
-                raise ValueError(
-                    f'Length of `interval`(={len(self.interval)}) cannot '
-                    f'match length of `milestones`(={len(self.milestones)}).')
-
-            # check if milestones is in order
-            for idx in range(len(self.milestones) - 1):
-                former, latter = self.milestones[idx], self.milestones[idx + 1]
-                if former >= latter:
-                    raise ValueError(
-                        'Elements in `milestones` shoule in ascending order.')
-        else:
-            raise TypeError('`interval` only support `int` or `dict`,'
-                            f'recieve {type(self.interval)} instead.')
-
-        if isinstance(best_metric, str):
-            self.best_metric = [self.best_metric]
-
-        if self.save_best_ckpt:
-            not_supported = set(self.best_metric) - set(
-                self._supported_best_metrics)
-            assert len(not_supported) == 0, (
-                f'{not_supported} is not supported for saving best ckpt')
-
-        self.metrics = build_metric(metrics)
-
-        if isinstance(metrics, dict):
-            self.metrics = [self.metrics]
-
-        for metric in self.metrics:
-            metric.prepare()
-
-        # add support for saving best ckpt
-        if self.save_best_ckpt:
-            self.rule = {}
-            self.compare_func = {}
-            self._curr_best_score = {}
-            self._curr_best_ckpt_path = {}
-            for name in self.best_metric:
-                if name in self.greater_keys:
-                    self.rule[name] = 'greater'
-                else:
-                    self.rule[name] = 'less'
-                self.compare_func[name] = self.rule_map[self.rule[name]]
-                self._curr_best_score[name] = self.init_value_map[
-                    self.rule[name]]
-                self._curr_best_ckpt_path[name] = None
-
-    def get_current_interval(self, runner):
-        if isinstance(self.interval, int):
-            return self.interval
-        else:
-            curr_iter = runner.iter + 1
-            index = bisect_right(self.milestones, curr_iter)
-            return self.interval[index]
-
-    def before_run(self, runner):
-        """The behavior before running.
-
-        Args:
-            runner (``mmcv.runner.BaseRunner``): The runner.
-        """
-        if self.save_best_ckpt is not None:
-            if runner.meta is None:
-                warnings.warn('runner.meta is None. Creating an empty one.')
-                runner.meta = dict()
-            runner.meta.setdefault('hook_msgs', dict())
 
     def after_train_iter(self, runner):
         """The behavior after each train iteration.
@@ -559,37 +434,40 @@ class TranslationEvalHook(Hook):
         batch_size = self.dataloader.batch_size
 
         rank, ws = get_dist_info()
-        total_batch_size = batch_size * ws
 
         # define mmcv progress bar
         if rank == 0:
             pbar = mmcv.ProgressBar(max_num_images)
 
-            # feed in real images
-            for data in self.dataloader:
-                # key for translation model
-                if f'img_{source_domain}' in data:
-                    with torch.no_grad():
-                        output_dict = runner.model(
-                            data[f'img_{source_domain}'],
-                            test_mode=True,
-                            target_domain=self.target_domain,
-                            **self.sample_kwargs)
-                    fakes = output_dict['target']
-                # key for conditional GAN
-                else:
-                    raise KeyError(
-                        'Cannot found key for images in data_dict. ')
-                # sampling fake images and directly send them to metrics
-                for metric in self.metrics:
-                    if metric.num_fake_feeded >= metric.num_fake_need:
-                        continue
-                    num_feed = metric.feed(fakes, 'fakes')
-                    if num_feed <= 0:
-                        break
+        # feed in fake images
+        for data in self.dataloader:
+            # key for translation model
+            if f'img_{source_domain}' in data:
+                with torch.no_grad():
+                    output_dict = runner.model(
+                        data[f'img_{source_domain}'],
+                        test_mode=True,
+                        target_domain=self.target_domain,
+                        **self.sample_kwargs)
+                fakes = output_dict['target']
+            # key Error
+            else:
+                raise KeyError(
+                    'Cannot found key for images in data_dict. ')
+            # sampling fake images and directly send them to metrics
+            # pbar update number for one proc
+            num_update = 0
+            for metric in self.metrics:
+                if metric.num_fake_feeded >= metric.num_fake_need:
+                    continue
+                num_feed = metric.feed(fakes, 'fakes')
+                num_update = max(num_update, num_feed)
+                if num_feed <= 0:
+                    break
 
-                if rank == 0:
-                    pbar.update(total_batch_size)
+            if rank == 0:
+                if num_update > 0:
+                    pbar.update(num_update* ws)
 
         runner.log_buffer.clear()
         # a dirty walkround to change the line at the end of pbar
@@ -611,29 +489,3 @@ class TranslationEvalHook(Hook):
         # clear all current states for next evaluation
         for metric in self.metrics:
             metric.clear()
-
-    def _save_best_ckpt(self, runner, new_score, metric_name):
-        curr_iter = f'iter_{runner.iter + 1}'
-
-        if self.compare_func[metric_name](new_score,
-                                          self._curr_best_score[metric_name]):
-            best_ckpt_name = f'best_{metric_name}_{curr_iter}.pth'
-            runner.meta['hook_msgs'][f'best_score_{metric_name}'] = new_score
-
-            if self._curr_best_ckpt_path[metric_name] and osp.isfile(
-                    self._curr_best_ckpt_path[metric_name]):
-                os.remove(self._curr_best_ckpt_path[metric_name])
-
-            self._curr_best_ckpt_path[metric_name] = osp.join(
-                runner.work_dir, best_ckpt_name)
-            runner.save_checkpoint(
-                runner.work_dir, best_ckpt_name, create_symlink=False)
-            runner.meta['hook_msgs'][
-                f'best_ckpt_{metric_name}'] = self._curr_best_ckpt_path[
-                    metric_name]
-
-            self._curr_best_score[metric_name] = new_score
-            runner.logger.info(
-                f'Now best checkpoint is saved as {best_ckpt_name}.')
-            runner.logger.info(f'Best {metric_name} is {new_score:0.4f} '
-                               f'at {curr_iter}.')
