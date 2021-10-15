@@ -4,7 +4,7 @@ dataset_type = 'mmcls.ImageNet'
 # different from mmcls, we adopt the setting used in BigGAN.
 # Importantly, the `to_rgb` is set to `False` to remain image orders as BGR.
 # Remove `RandomFlip` augmentation and change `RandomCropLongEdge` to
-# `CenterCropLongEdge` to elminate randomness.
+# `CenterCropLongEdge` to elminiate randomness.
 img_norm_cfg = dict(
     mean=[127.5, 127.5, 127.5], std=[127.5, 127.5, 127.5], to_rgb=False)
 train_pipeline = [

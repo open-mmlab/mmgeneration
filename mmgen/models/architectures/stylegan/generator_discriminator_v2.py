@@ -75,7 +75,7 @@ class StyleGANv2Generator(nn.Module):
         num_fp16_scales (int, optional): The number of resolutions to use auto
             fp16 training. Different from ``fp16_enabled``, this argument
             allows users to adopt FP16 training only in several blocks.
-            This behaviour is much more similar to the offical implementation
+            This behaviour is much more similar to the official implementation
             by Tero. Defaults to 0.
         fp16_enabled (bool, optional): Whether to use fp16 training in this
             module. If this flag is `True`, the whole module will be wrapped

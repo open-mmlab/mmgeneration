@@ -196,7 +196,7 @@ class FIDInceptionA(models.inception.InceptionA):
             x (torch.Tensor): Input tensor of shape BxCxHxW.
 
         Returns:
-            torch.Tensor: Feature Maps of x outputed by this block.
+            torch.Tensor: Feature Maps of x outputted by this block.
         """
         branch1x1 = self.branch1x1(x)
 
@@ -230,7 +230,7 @@ class FIDInceptionC(models.inception.InceptionC):
             x (torch.Tensor): Input tensor of shape BxCxHxW.
 
         Returns:
-            torch.Tensor: Feature Maps of x outputed by this block.
+            torch.Tensor: Feature Maps of x outputted by this block.
         """
         branch1x1 = self.branch1x1(x)
 
@@ -267,7 +267,7 @@ class FIDInceptionE_1(models.inception.InceptionE):
             x (torch.Tensor): Input tensor of shape BxCxHxW.
 
         Returns:
-            torch.Tensor: Feature Maps of x outputed by this block.
+            torch.Tensor: Feature Maps of x outputted by this block.
         """
         branch1x1 = self.branch1x1(x)
 
@@ -309,7 +309,7 @@ class FIDInceptionE_2(models.inception.InceptionE):
             x (torch.Tensor): Input tensor of shape BxCxHxW.
 
         Returns:
-            torch.Tensor: Feature Maps of x outputed by this block.
+            torch.Tensor: Feature Maps of x outputted by this block.
         """
         branch1x1 = self.branch1x1(x)
 

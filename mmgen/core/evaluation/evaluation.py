@@ -237,7 +237,7 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
     # generated in a metric-special way and not shared between different
     # metrics.
     # For reconstruction metrics like 'GaussianKLD', they do not
-    # receive images but receive a dict with cooresponding probabilistic
+    # receive images but receive a dict with corresponding probabilistic
     # parameter.
 
     special_metrics = []

@@ -23,7 +23,7 @@ class GenerativeEvalHook(Hook):
     the evaluation during the training procedure.
 
     In our config system, you only need to add `evaluation` with the detailed
-    configureations. Below is serveral usage cases for different situations.
+    configureations. Below is several usage cases for different situations.
     What you need to do is to add these lines at the end of your config file.
     Then, you can use this evaluation hook in the training procedure.
 
@@ -48,7 +48,7 @@ class GenerativeEvalHook(Hook):
                 bgr2rgb=True),
             sample_kwargs=dict(sample_model='ema'))
 
-    #. Use FID and IS simutaneously and save the best checkpoints respectively
+    #. Use FID and IS simultaneously and save the best checkpoints respectively
 
     .. code-block:: python
         :linenos:
@@ -153,7 +153,7 @@ class GenerativeEvalHook(Hook):
                 former, latter = self.milestones[idx], self.milestones[idx + 1]
                 if former >= latter:
                     raise ValueError(
-                        'Elements in `milestones` shoule in ascending order.')
+                        'Elements in `milestones` should in ascending order.')
         else:
             raise TypeError('`interval` only support `int` or `dict`,'
                             f'recieve {type(self.interval)} instead.')
