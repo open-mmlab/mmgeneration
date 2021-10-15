@@ -27,6 +27,8 @@ class PairedImageDataset(Dataset):
         pipeline (List[dict | callable]): A sequence of data transformations.
         test_mode (bool): Store `True` when building test dataset.
             Default: `False`.
+        testdir (str): Subfolder of dataroot which contain test images.
+            Default: 'test'.
     """
 
     def __init__(self, dataroot, pipeline, test_mode=False, testdir='test'):
