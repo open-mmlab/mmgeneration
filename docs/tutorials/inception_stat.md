@@ -45,7 +45,7 @@ If `${FLIP}` is set as `True`, the following config of horizontal flip operation
 dict(type='Flip', keys=['real_img'], direction='horizontal')
 ```
 
-If you want to use a specific pipeline otherwise the pre-defiend ones, you can use `--pipeline-cfg` to pass a config file contains the data pipeline you want to use.
+If you want to use a specific pipeline otherwise the pre-defined ones, you can use `--pipeline-cfg` to pass a config file contains the data pipeline you want to use.
 ```shell
 python tools/utils/inception_stat.py --imgsdir ${IMGS_PATH} --pklname ${PKLNAME} --pipeline-cfg ${PIPELINE}
 ```

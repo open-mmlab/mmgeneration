@@ -79,22 +79,23 @@ class SNGANGenerator(nn.Module):
         act_cfg (dict, optional): Activation config for the final output
             layer. Defaults to ``dict(type='ReLU')``.
         use_cbn (bool, optional): Whether use conditional normalization. This
-            argument would pass to norm layers. Default to True.
+            argument would pass to norm layers. Defaults to True.
         auto_sync_bn (bool, optional): Whether convert Batch Norm to
-            Synchronized ones when Distributed training is on. Defualt to True.
+            Synchronized ones when Distributed training is on. Defaults to
+            True.
         with_spectral_norm (bool, optional): Whether use spectral norm for
             conv blocks or not. Default to False.
         with_embedding_spectral_norm (bool, optional): Whether use spectral
             norm for embedding layers in normalization blocks or not. If not
             specified (set as ``None``), ``with_embedding_spectral_norm`` would
             be set as the same value as ``with_spectral_norm``.
-            Default to None.
+            Defaults to None.
         norm_eps (float, optional): eps for Normalization layers (both
             conditional and non-conditional ones). Default to `1e-4`.
         sn_eps (float, optional): eps for spectral normalization operation.
-            Default to `1e-12`.
+            Defaults to `1e-12`.
         init_cfg (string, optional): Config for weight initialization.
-            Default to ``dict(type='BigGAN')``.
+            Defaults to ``dict(type='BigGAN')``.
         pretrained (str | dict, optional): Path for the pretrained model or
             dict containing information for pretained models whose necessary
             key is 'ckpt_path'. Besides, you can also provide 'prefix' to load
@@ -408,7 +409,7 @@ class SNGANGenerator(nn.Module):
 @MODULES.register_module('SAGANDiscriminator')
 @MODULES.register_module()
 class ProjDiscriminator(nn.Module):
-    r"""Discriminator for SNGAN / Proj-GAN. The inplementation is refer to
+    r"""Discriminator for SNGAN / Proj-GAN. The implementation is refer to
     https://github.com/pfnet-research/sngan_projection/tree/master/dis_models
 
     The overall structure of the projection discriminator can be split into a

@@ -192,7 +192,7 @@ class SinGANMSGeneratorPE(SinGANMultiScaleGenerator):
                 head_grid = self.head_position_encode(fixed_noises[0])
                 noise_ = noise_ + head_grid
 
-            # add pading at head
+            # add padding at head
             if self.pad_at_head:
                 if self.interp_pad:
                     if self.noise_with_pad:

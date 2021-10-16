@@ -35,7 +35,7 @@ def build_dataset(cfg, default_args=None):
             Defaults to None.
 
     Returns:
-        Objet: Dataset for sampling data batch.
+        Object: Dataset for sampling data batch.
     """
     from .dataset_wrappers import RepeatDataset
     if isinstance(cfg, (list, tuple)):

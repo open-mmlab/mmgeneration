@@ -102,7 +102,7 @@ class BasicConditionalGAN(BaseGAN):
         # detailed differences in BN). Note that `self.disc_steps` should be
         # set according to the batch accumulation strategy.
         # In addition, in the detailed implementation, there is a difference
-        # bwtween the batch accumulation in the generator and discriminator.
+        # between the batch accumulation in the generator and discriminator.
         self.batch_accumulation_steps = self.train_cfg.get(
             'batch_accumulation_steps', 1)
 

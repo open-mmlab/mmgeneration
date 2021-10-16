@@ -30,7 +30,7 @@ class MMGenUnconditionalHandler(BaseHandler):
         data_decode = dict()
         # `data` type is `list[dict]`
         for k, v in data[0].items():
-            # deocde strings
+            # decode strings
             if isinstance(v, bytearray):
                 data_decode[k] = v.decode()
         return data_decode
@@ -43,7 +43,7 @@ class MMGenUnconditionalHandler(BaseHandler):
         return results
 
     def postprocess(self, data):
-        # convert torch tensor to numpy and then covert to bytes
+        # convert torch tensor to numpy and then convert to bytes
         output_list = []
         for data_ in data:
             data_ = (data_ + 1) / 2

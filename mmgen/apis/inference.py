@@ -67,7 +67,7 @@ def sample_uncoditional_model(model,
     """
     # set eval mode
     model.eval()
-    # constrcut sampling list for batches
+    # construct sampling list for batches
     n_repeat = num_samples // num_batches
     batches_list = [num_batches] * n_repeat
 
@@ -111,7 +111,7 @@ def sample_conditional_model(model,
     """
     # set eval mode
     model.eval()
-    # constrcut sampling list for batches
+    # construct sampling list for batches
     n_repeat = num_samples // num_batches
     batches_list = [num_batches] * n_repeat
 

@@ -19,7 +19,7 @@ from mmgen.utils import get_root_logger
 def set_random_seed(seed, deterministic=False, use_rank_shift=True):
     """Set random seed.
 
-    In this function, we just modify the default behavior of the simliar
+    In this function, we just modify the default behavior of the similar
     function defined in MMCV.
 
     Args:

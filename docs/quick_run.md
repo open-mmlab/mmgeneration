@@ -53,7 +53,7 @@ from mmgen.apis import init_model, sample_img2img_model
 config_file = 'configs/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes.py'
 # you can download this checkpoint in advance and use a local file path.
 checkpoint_file = 'https://download.openmmlab.com/mmgen/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes_convert-bgr_20210410_174116-aaaa3687.pth'
-# Specify the path to image you want to transalte
+# Specify the path to image you want to translate
 image_path = 'tests/data/paired/test/33_AB.jpg'
 device = 'cuda:0'
 # init a generatvie
@@ -174,7 +174,7 @@ Then, users can use the evaluation script with the following command:
 ```shell
 bash eval.sh ${CONFIG_FILE} ${CKPT_FILE} --batch-size 10 --online
 ```
-If you are in slurm enviroment, please switch to the [tools/slurm_eval.sh](https://github.com/open-mmlab/mmgeneration/tree/master/tools/slurm_eval.sh) by using the following commands:
+If you are in slurm environment, please switch to the [tools/slurm_eval.sh](https://github.com/open-mmlab/mmgeneration/tree/master/tools/slurm_eval.sh) by using the following commands:
 
 ```shell
 bash slurm_eval.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CONFIG_FILE} \
@@ -269,7 +269,7 @@ To be noted that, the selection of Inception V3 and image resize method can sign
 
 We also perform a survey on the influence of data loading pipeline and the version of pretrained Inception V3 on the IS result. All IS are evaluated on the same group of images which are randomly selected from the ImageNet dataset.
 
-<details> <summary> Show the Comparsion Results </summary>
+<details> <summary> Show the Comparison Results </summary>
 
 | Code Base | Inception V3 Version | Data Loader Backend | Resize Interpolation Method | IS |
 | -- | -- | -- | -- | -- |
@@ -357,7 +357,7 @@ In this section, we will discuss how to evaluate the generative models, especial
 In [eval_hooks.py](https://github.com/open-mmlab/mmgeneration/blob/master/mmgen/core/evaluation/eval_hooks.py), `GenerativeEvalHook` is provided to evaluate generative models duiring training. The most important argument for this hook is `metrics`. In fact, users can directly copy the configs in the last section to define the evaluation metric. To evaluate the model with `FID` metric, please add the following python codes in your config file:
 
 ```python
-# define the evaluation keywords, otherwise evalution will not be
+# define the evaluation keywords, otherwise evaluation will not be
 # added in training
 evaluation = dict(
     type='GenerativeEvalHook',

@@ -44,7 +44,7 @@ def parse_args():
     parser.add_argument(
         '--fix-z',
         action='store_true',
-        help='whether to fix the noise for conditonal model')
+        help='whether to fix the noise for conditional model')
     parser.add_argument(
         '--fix-y',
         action='store_true',
