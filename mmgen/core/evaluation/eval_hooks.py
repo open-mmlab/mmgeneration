@@ -332,7 +332,7 @@ class TranslationEvalHook(GenerativeEvalHook):
     evaluation during the training procedure.
 
     In our config system, you only need to add `evaluation` with the detailed
-    configureations. Below is serveral usage cases for different situations.
+    configureations. Below is several usage cases for different situations.
     What you need to do is to add these lines at the end of your config file.
     Then, you can use this evaluation hook in the training procedure.
 
@@ -353,7 +353,7 @@ class TranslationEvalHook(GenerativeEvalHook):
             interval=10000,
             metrics=dict(type='FID', num_images=106, bgr2rgb=True))
 
-    #. Use FID and IS simutaneously and save the best checkpoints respectively
+    #. Use FID and IS simultaneously and save the best checkpoints respectively
 
     .. code-block:: python
         :linenos
