@@ -78,7 +78,7 @@ test_pipeline = [
 dataroot = 'data/paired/edges2shoes'
 data = dict(
     train=dict(dataroot=dataroot, pipeline=train_pipeline),
-    val=dict(dataroot=dataroot, pipeline=test_pipeline),
+    val=dict(dataroot=dataroot, pipeline=test_pipeline, testdir='val'),
     test=dict(dataroot=dataroot, pipeline=test_pipeline, testdir='val'))
 
 # optimizer
@@ -106,11 +106,24 @@ total_iters = 190000
 workflow = [('train', 1)]
 exp_name = 'pix2pix_edges2shoes_wo_jitter_flip'
 work_dir = f'./work_dirs/experiments/{exp_name}'
+num_images = 200
 metrics = dict(
-    FID=dict(
-        type='FID', num_images=200, image_shape=(3, 256, 256), bgr2rgb=True),
+    FID=dict(type='FID', num_images=num_images, image_shape=(3, 256, 256)),
     IS=dict(
         type='IS',
-        num_images=200,
+        num_images=num_images,
         image_shape=(3, 256, 256),
         inception_args=dict(type='pytorch')))
+
+evaluation = dict(
+    type='TranslationEvalHook',
+    target_domain=domain_b,
+    interval=10000,
+    metrics=[
+        dict(type='FID', num_images=num_images, bgr2rgb=True),
+        dict(
+            type='IS',
+            num_images=num_images,
+            inception_args=dict(type='pytorch'))
+    ],
+    best_metric=['fid', 'is'])

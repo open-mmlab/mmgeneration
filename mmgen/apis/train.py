@@ -172,9 +172,9 @@ def train_model(model,
         val_dataloader = build_dataloader(
             val_dataset, dist=distributed, **val_loader_cfg)
         eval_cfg = deepcopy(cfg.get('evaluation'))
+        priority = eval_cfg.pop('priority', 'LOW')
         eval_cfg.update(dict(dist=distributed, dataloader=val_dataloader))
         eval_hook = build_from_cfg(eval_cfg, HOOKS)
-        priority = eval_cfg.pop('priority', 'NORMAL')
         runner.register_hook(eval_hook, priority=priority)
 
     # user-defined hooks
