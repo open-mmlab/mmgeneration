@@ -1,6 +1,6 @@
 _base_ = [
     '../_base_/datasets/unconditional_imgs_128x128.py',
-    '../_base_/models/wgangp_base.py'
+    '../_base_/models/wgangp_base.py', '../_base_/default_runtime.py'
 ]
 
 data = dict(
@@ -19,6 +19,11 @@ custom_hooks = [
 
 lr_config = None
 total_iters = 160000
+
+runner = dict(
+    type='DynamicIterBasedRunner',
+    is_dynamic_ddp=False,  # Note that this flag should be False.
+    pass_training_status=True)
 
 metrics = dict(
     ms_ssim10k=dict(type='MS_SSIM', num_images=10000),

@@ -49,8 +49,8 @@ class Crop:
                 y_offset = max(0, (data_h - crop_h)) // 2
 
             crop_bbox = [x_offset, y_offset, crop_w, crop_h]
-            item_ = item[y_offset:y_offset + crop_h,
-                         x_offset:x_offset + crop_w, ...]
+            item_ = item[y_offset:y_offset + crop_h, x_offset:x_offset +
+                         crop_w, ...]
             crop_bbox_list.append(crop_bbox)
             data_list_.append(item_)
 
@@ -111,8 +111,8 @@ class FixedCrop:
 
     def _crop(self, data, x_offset, y_offset, crop_w, crop_h):
         crop_bbox = [x_offset, y_offset, crop_w, crop_h]
-        data_ = data[y_offset:y_offset + crop_h, x_offset:x_offset + crop_w,
-                     ...]
+        data_ = data[y_offset:y_offset + crop_h, x_offset:x_offset +
+                     crop_w, ...]
         return data_, crop_bbox
 
     def __call__(self, results):

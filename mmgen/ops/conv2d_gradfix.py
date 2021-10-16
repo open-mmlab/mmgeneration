@@ -121,12 +121,7 @@ def no_weight_gradients():
     weight_gradients_disabled = old
 
 
-def conv2d(input,
-           weight,
-           bias=None,
-           stride=1,
-           padding=0,
-           dilation=1,
+def conv2d(input, weight, bias=None, stride=1, padding=0, dilation=1,
            groups=1):
     if _should_use_custom_op(input):
         return _conv2d_gradfix(

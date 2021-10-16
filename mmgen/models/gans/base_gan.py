@@ -28,9 +28,9 @@ class BaseGAN(nn.Module, metaclass=ABCMeta):
     @property
     def with_gen_auxiliary_loss(self):
         """bool: whether the GAN adopts auxiliary loss in the generator."""
-        return hasattr(self,
-                       'gen_auxiliary_losses') and (self.gen_auxiliary_losses
-                                                    is not None)
+        return hasattr(
+            self,
+            'gen_auxiliary_losses') and (self.gen_auxiliary_losses is not None)
 
     @property
     def with_disc_auxiliary_loss(self):

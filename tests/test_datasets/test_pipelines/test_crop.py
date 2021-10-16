@@ -131,12 +131,12 @@ class TestAugmentations(object):
         assert crop_w == results['img_b_crop_bbox'][2]
         assert crop_h == results['img_b_crop_bbox'][3]
         assert np.array_equal(
-            self.results['img_a'][y_offset:y_offset + crop_h,
-                                  x_offset:x_offset + crop_w, :],
+            self.results['img_a'][y_offset:y_offset +
+                                  crop_h, x_offset:x_offset + crop_w, :],
             results['img_a'])
         assert np.array_equal(
-            self.results['img_b'][y_offset:y_offset + crop_h,
-                                  x_offset:x_offset + crop_w, :],
+            self.results['img_b'][y_offset:y_offset +
+                                  crop_h, x_offset:x_offset + crop_w, :],
             results['img_b'])
 
         # test given pos crop for lager size than the original shape
