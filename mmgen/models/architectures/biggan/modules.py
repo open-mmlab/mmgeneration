@@ -12,7 +12,34 @@ from torch.nn.modules.batchnorm import SyncBatchNorm
 from torch.nn.utils import spectral_norm
 
 from mmgen.models.builder import MODULES
+from .biggan_snmodule import SNConv2d, SNLinear
 
+# class SNConvModule(ConvModule):
+#     """Spectral Normalization ConvModule.
+
+#     In this module, we inherit default ``mmcv.cnn.ConvModule`` and adopt
+#     spectral normalization. The spectral normalization is proposed in:
+#     Spectral Normalization for Generative Adversarial Networks.
+
+#     Args:
+#         with_spectral_norm (bool, optional): Whether to use Spectral
+#             Normalization. Defaults to False.
+#         spectral_norm_cfg (dict, optional): Config for Spectral Normalization.
+#             Defaults to None.
+#     """
+
+#     def __init__(self,
+#                  *args,
+#                  with_spectral_norm=False,
+#                  spectral_norm_cfg=None,
+#                  **kwargs):
+#         super().__init__(*args, with_spectral_norm=False, **kwargs)
+#         self.with_spectral_norm = with_spectral_norm
+#         self.spectral_norm_cfg = deepcopy(
+#             spectral_norm_cfg) if spectral_norm_cfg else dict()
+
+#         if self.with_spectral_norm:
+#             self.conv = spectral_norm(self.conv, **self.spectral_norm_cfg)
 
 class SNConvModule(ConvModule):
     """Spectral Normalization ConvModule.
@@ -38,9 +65,23 @@ class SNConvModule(ConvModule):
         self.spectral_norm_cfg = deepcopy(
             spectral_norm_cfg) if spectral_norm_cfg else dict()
 
+        self.sn_eps = self.spectral_norm_cfg.get('eps', 1e-6)
+        self.sn_style = self.spectral_norm_cfg.get('sn_style', 'torch')
+        
         if self.with_spectral_norm:
-            self.conv = spectral_norm(self.conv, **self.spectral_norm_cfg)
-
+            if self.sn_style == 'torch':
+                self.conv = spectral_norm(self.conv, eps=self.sn_eps)
+            elif self.sn_style == 'biggan':
+                self.snconv_kwargs = deepcopy(kwargs) if kwargs else dict()
+                if 'act_cfg' in self.snconv_kwargs.keys():
+                    self.snconv_kwargs.pop('act_cfg')
+                if 'norm_cfg' in self.snconv_kwargs.keys():
+                    self.snconv_kwargs.pop('norm_cfg')
+                if 'order' in self.snconv_kwargs.keys():
+                    self.snconv_kwargs.pop('order')
+                self.conv = SNConv2d(*args, **self.snconv_kwargs, eps=self.sn_eps)
+            else:
+                raise NotImplementedError('sn style')
 
 @MODULES.register_module()
 class BigGANGenResBlock(nn.Module):
@@ -72,6 +113,7 @@ class BigGANGenResBlock(nn.Module):
                  act_cfg=dict(type='ReLU'),
                  upsample_cfg=dict(type='nearest', scale_factor=2),
                  sn_eps=1e-6,
+                 sn_style='torch',
                  with_spectral_norm=True,
                  input_is_label=False,
                  auto_sync_bn=True):
@@ -91,13 +133,14 @@ class BigGANGenResBlock(nn.Module):
                 padding=0,
                 act_cfg=None,
                 with_spectral_norm=with_spectral_norm,
-                spectral_norm_cfg=dict(eps=sn_eps))
+                spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
         # Here in_channels of BigGANGenResBlock equal to num_features of
         # BigGANConditionBN
         self.bn1 = BigGANConditionBN(
             in_channels,
             dim_after_concat,
             sn_eps=sn_eps,
+            sn_style=sn_style,
             input_is_label=input_is_label,
             with_spectral_norm=with_spectral_norm,
             auto_sync_bn=auto_sync_bn)
@@ -107,6 +150,7 @@ class BigGANGenResBlock(nn.Module):
             out_channels,
             dim_after_concat,
             sn_eps=sn_eps,
+            sn_style=sn_style,
             input_is_label=input_is_label,
             with_spectral_norm=with_spectral_norm,
             auto_sync_bn=auto_sync_bn)
@@ -119,7 +163,7 @@ class BigGANGenResBlock(nn.Module):
             padding=1,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
 
         self.conv2 = SNConvModule(
             in_channels=out_channels,
@@ -129,7 +173,7 @@ class BigGANGenResBlock(nn.Module):
             padding=1,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
 
     def forward(self, x, y):
         """Forward function.
@@ -183,6 +227,7 @@ class BigGANConditionBN(nn.Module):
                  linear_input_channels,
                  bn_eps=1e-5,
                  sn_eps=1e-6,
+                 sn_style='torch',
                  momentum=0.1,
                  input_is_label=False,
                  with_spectral_norm=True,
@@ -202,8 +247,16 @@ class BigGANConditionBN(nn.Module):
                     linear_input_channels, num_features, bias=False)
                 # please pay attention if shared_embedding is False
                 if with_spectral_norm:
-                    self.gain = spectral_norm(self.gain, eps=sn_eps)
-                    self.bias = spectral_norm(self.bias, eps=sn_eps)
+                    if sn_style=='torch':
+                        self.gain = spectral_norm(self.gain, eps=sn_eps)
+                        self.bias = spectral_norm(self.bias, eps=sn_eps)
+                    elif sn_style=='biggan':
+                        self.gain = SNLinear(
+                            linear_input_channels, num_features, bias=False, eps=sn_eps)
+                        self.bias = SNLinear(
+                            linear_input_channels, num_features, bias=False, eps=sn_eps)
+                    else:
+                        raise NotImplementedError('sn style')
             else:
                 self.gain = nn.Embedding(linear_input_channels, num_features)
                 self.bias = nn.Embedding(linear_input_channels, num_features)
@@ -251,7 +304,7 @@ class SelfAttentionBlock(nn.Module):
             Defaults to 1e-6.
     """
 
-    def __init__(self, in_channels, with_spectral_norm=True, sn_eps=1e-6):
+    def __init__(self, in_channels, with_spectral_norm=True, sn_eps=1e-6, sn_style='torch'):
         super(SelfAttentionBlock, self).__init__()
 
         self.in_channels = in_channels
@@ -263,7 +316,7 @@ class SelfAttentionBlock(nn.Module):
             bias=False,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
         self.phi = SNConvModule(
             self.in_channels,
             self.in_channels // 8,
@@ -272,7 +325,7 @@ class SelfAttentionBlock(nn.Module):
             bias=False,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
         self.g = SNConvModule(
             self.in_channels,
             self.in_channels // 2,
@@ -281,7 +334,7 @@ class SelfAttentionBlock(nn.Module):
             bias=False,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
         self.o = SNConvModule(
             self.in_channels // 2,
             self.in_channels,
@@ -290,7 +343,7 @@ class SelfAttentionBlock(nn.Module):
             bias=False,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
         # Learnable gain parameter
         self.gamma = Parameter(torch.tensor(0.), requires_grad=True)
 
@@ -344,6 +397,7 @@ class BigGANDiscResBlock(nn.Module):
                  out_channels,
                  act_cfg=dict(type='ReLU', inplace=False),
                  sn_eps=1e-6,
+                 sn_style='torch',
                  with_downsample=True,
                  with_spectral_norm=True,
                  is_head_block=False):
@@ -363,7 +417,7 @@ class BigGANDiscResBlock(nn.Module):
                 padding=0,
                 act_cfg=None,
                 with_spectral_norm=with_spectral_norm,
-                spectral_norm_cfg=dict(eps=sn_eps))
+                spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
 
         self.conv1 = SNConvModule(
             in_channels=in_channels,
@@ -373,7 +427,7 @@ class BigGANDiscResBlock(nn.Module):
             padding=1,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
 
         self.conv2 = SNConvModule(
             in_channels=out_channels,
@@ -383,7 +437,7 @@ class BigGANDiscResBlock(nn.Module):
             padding=1,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
 
     def forward_sc(self, x):
         """Forward function of shortcut.
@@ -462,6 +516,7 @@ class BigGANDeepGenResBlock(nn.Module):
                  act_cfg=dict(type='ReLU'),
                  upsample_cfg=dict(type='nearest', scale_factor=2),
                  sn_eps=1e-6,
+                 sn_style='torch',
                  bn_eps=1e-5,
                  with_spectral_norm=True,
                  input_is_label=False,
@@ -482,6 +537,7 @@ class BigGANDeepGenResBlock(nn.Module):
             in_channels,
             dim_after_concat,
             sn_eps=sn_eps,
+            sn_style=sn_style,
             bn_eps=bn_eps,
             input_is_label=input_is_label,
             with_spectral_norm=with_spectral_norm,
@@ -492,6 +548,7 @@ class BigGANDeepGenResBlock(nn.Module):
             self.hidden_channels,
             dim_after_concat,
             sn_eps=sn_eps,
+            sn_style=sn_style,
             bn_eps=bn_eps,
             input_is_label=input_is_label,
             with_spectral_norm=with_spectral_norm,
@@ -501,6 +558,7 @@ class BigGANDeepGenResBlock(nn.Module):
             self.hidden_channels,
             dim_after_concat,
             sn_eps=sn_eps,
+            sn_style=sn_style,
             bn_eps=bn_eps,
             input_is_label=input_is_label,
             with_spectral_norm=with_spectral_norm,
@@ -510,6 +568,7 @@ class BigGANDeepGenResBlock(nn.Module):
             self.hidden_channels,
             dim_after_concat,
             sn_eps=sn_eps,
+            sn_style=sn_style,
             bn_eps=bn_eps,
             input_is_label=input_is_label,
             with_spectral_norm=with_spectral_norm,
@@ -523,7 +582,7 @@ class BigGANDeepGenResBlock(nn.Module):
             padding=0,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
 
         self.conv2 = SNConvModule(
             in_channels=self.hidden_channels,
@@ -533,7 +592,7 @@ class BigGANDeepGenResBlock(nn.Module):
             padding=1,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
 
         self.conv3 = SNConvModule(
             in_channels=self.hidden_channels,
@@ -543,7 +602,7 @@ class BigGANDeepGenResBlock(nn.Module):
             padding=1,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
 
         self.conv4 = SNConvModule(
             in_channels=self.hidden_channels,
@@ -553,7 +612,7 @@ class BigGANDeepGenResBlock(nn.Module):
             padding=0,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
 
     def forward(self, x, y):
         """Forward function.
@@ -616,6 +675,7 @@ class BigGANDeepDiscResBlock(nn.Module):
                  channel_ratio=4,
                  act_cfg=dict(type='ReLU', inplace=False),
                  sn_eps=1e-6,
+                 sn_style='torch',
                  with_downsample=True,
                  with_spectral_norm=True):
         super().__init__()
@@ -638,7 +698,7 @@ class BigGANDeepDiscResBlock(nn.Module):
                 padding=0,
                 act_cfg=None,
                 with_spectral_norm=with_spectral_norm,
-                spectral_norm_cfg=dict(eps=sn_eps))
+                spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
 
         self.conv1 = SNConvModule(
             in_channels=in_channels,
@@ -648,7 +708,7 @@ class BigGANDeepDiscResBlock(nn.Module):
             padding=0,
             act_cfg=act_cfg,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps),
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style),
             order=('act', 'conv', 'norm'))
 
         self.conv2 = SNConvModule(
@@ -659,7 +719,7 @@ class BigGANDeepDiscResBlock(nn.Module):
             padding=1,
             act_cfg=act_cfg,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps),
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style),
             order=('act', 'conv', 'norm'))
 
         self.conv3 = SNConvModule(
@@ -670,7 +730,7 @@ class BigGANDeepDiscResBlock(nn.Module):
             padding=1,
             act_cfg=act_cfg,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps),
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style),
             order=('act', 'conv', 'norm'))
 
         self.conv4 = SNConvModule(
@@ -681,7 +741,7 @@ class BigGANDeepDiscResBlock(nn.Module):
             padding=0,
             act_cfg=None,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps))
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style))
 
     def forward_sc(self, x):
         """Forward function of shortcut.
