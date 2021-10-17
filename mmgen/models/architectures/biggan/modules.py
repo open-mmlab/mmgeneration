@@ -41,6 +41,7 @@ from .biggan_snmodule import SNConv2d, SNLinear
 #         if self.with_spectral_norm:
 #             self.conv = spectral_norm(self.conv, **self.spectral_norm_cfg)
 
+
 class SNConvModule(ConvModule):
     """Spectral Normalization ConvModule.
 
@@ -67,7 +68,7 @@ class SNConvModule(ConvModule):
 
         self.sn_eps = self.spectral_norm_cfg.get('eps', 1e-6)
         self.sn_style = self.spectral_norm_cfg.get('sn_style', 'torch')
-        
+
         if self.with_spectral_norm:
             if self.sn_style == 'torch':
                 self.conv = spectral_norm(self.conv, eps=self.sn_eps)
@@ -79,9 +80,11 @@ class SNConvModule(ConvModule):
                     self.snconv_kwargs.pop('norm_cfg')
                 if 'order' in self.snconv_kwargs.keys():
                     self.snconv_kwargs.pop('order')
-                self.conv = SNConv2d(*args, **self.snconv_kwargs, eps=self.sn_eps)
+                self.conv = SNConv2d(
+                    *args, **self.snconv_kwargs, eps=self.sn_eps)
             else:
                 raise NotImplementedError('sn style')
+
 
 @MODULES.register_module()
 class BigGANGenResBlock(nn.Module):
@@ -247,14 +250,20 @@ class BigGANConditionBN(nn.Module):
                     linear_input_channels, num_features, bias=False)
                 # please pay attention if shared_embedding is False
                 if with_spectral_norm:
-                    if sn_style=='torch':
+                    if sn_style == 'torch':
                         self.gain = spectral_norm(self.gain, eps=sn_eps)
                         self.bias = spectral_norm(self.bias, eps=sn_eps)
-                    elif sn_style=='biggan':
+                    elif sn_style == 'biggan':
                         self.gain = SNLinear(
-                            linear_input_channels, num_features, bias=False, eps=sn_eps)
+                            linear_input_channels,
+                            num_features,
+                            bias=False,
+                            eps=sn_eps)
                         self.bias = SNLinear(
-                            linear_input_channels, num_features, bias=False, eps=sn_eps)
+                            linear_input_channels,
+                            num_features,
+                            bias=False,
+                            eps=sn_eps)
                     else:
                         raise NotImplementedError('sn style')
             else:
@@ -304,7 +313,11 @@ class SelfAttentionBlock(nn.Module):
             Defaults to 1e-6.
     """
 
-    def __init__(self, in_channels, with_spectral_norm=True, sn_eps=1e-6, sn_style='torch'):
+    def __init__(self,
+                 in_channels,
+                 with_spectral_norm=True,
+                 sn_eps=1e-6,
+                 sn_style='torch'):
         super(SelfAttentionBlock, self).__init__()
 
         self.in_channels = in_channels

@@ -13,8 +13,9 @@ from torch.nn.utils import spectral_norm
 from mmgen.models.builder import MODULES, build_module
 from mmgen.utils import get_root_logger
 from ..common import get_module_device
+from .biggan_snmodule import SNConv2d, SNEmbedding, SNLinear
 from .modules import SelfAttentionBlock, SNConvModule
-from .biggan_snmodule import SNConv2d, SNLinear, SNEmbedding
+
 
 @MODULES.register_module()
 class BigGANGenerator(nn.Module):
@@ -157,15 +158,16 @@ class BigGANGenerator(nn.Module):
             self.noise_size // self.num_slots,
             self.arch['in_channels'][0] * (self.input_scale**2))
         if with_spectral_norm:
-            if sn_style=='torch':
+            if sn_style == 'torch':
                 self.noise2feat = spectral_norm(self.noise2feat, eps=sn_eps)
-            elif sn_style=='biggan':
+            elif sn_style == 'biggan':
                 self.noise2feat = SNLinear(
                     self.noise_size // self.num_slots,
-                    self.arch['in_channels'][0] * (self.input_scale**2), eps=sn_eps)
+                    self.arch['in_channels'][0] * (self.input_scale**2),
+                    eps=sn_eps)
             else:
                 raise NotImplementedError(f'Your {sn_style} is not supported')
-            
+
         # If using 'shared_embedding', we will get an unified embedding of
         # label for all blocks. If not, we just pass the label to each
         # block.
@@ -207,7 +209,8 @@ class BigGANGenerator(nn.Module):
                     SelfAttentionBlock(
                         out_ch,
                         with_spectral_norm=with_spectral_norm,
-                        sn_eps=sn_eps, sn_style=sn_style))
+                        sn_eps=sn_eps,
+                        sn_style=sn_style))
 
         self.output_layer = SNConvModule(
             self.arch['out_channels'][-1],
@@ -543,30 +546,34 @@ class BigGANDiscriminator(nn.Module):
                     SelfAttentionBlock(
                         out_ch,
                         with_spectral_norm=with_spectral_norm,
-                        sn_eps=sn_eps, sn_style=sn_style))
+                        sn_eps=sn_eps,
+                        sn_style=sn_style))
 
         self.activate = build_activation_layer(act_cfg)
 
         self.decision = nn.Linear(self.arch['out_channels'][-1], out_channels)
         if with_spectral_norm:
-            if sn_style=='torch':
+            if sn_style == 'torch':
                 self.decision = spectral_norm(self.decision, eps=sn_eps)
-            elif sn_style=='biggan':
-                self.decision = SNLinear(self.arch['out_channels'][-1], out_channels, eps=sn_eps)
+            elif sn_style == 'biggan':
+                self.decision = SNLinear(
+                    self.arch['out_channels'][-1], out_channels, eps=sn_eps)
             else:
                 raise NotImplementedError('sn style')
-            
+
         if self.num_classes > 0:
             self.proj_y = nn.Embedding(self.num_classes,
                                        self.arch['out_channels'][-1])
             if with_spectral_norm:
-                if sn_style=='torch':
+                if sn_style == 'torch':
                     self.proj_y = spectral_norm(self.proj_y, eps=sn_eps)
-                elif sn_style=='biggan':
-                    self.proj_y = SNEmbedding(self.num_classes,
-                                       self.arch['out_channels'][-1], eps=sn_eps)
+                elif sn_style == 'biggan':
+                    self.proj_y = SNEmbedding(
+                        self.num_classes,
+                        self.arch['out_channels'][-1],
+                        eps=sn_eps)
                 else:
-                    raise NotImplementedError("sn style")
+                    raise NotImplementedError('sn style')
         self.init_weights(pretrained=pretrained, init_type=init_type)
 
     def _get_default_arch_cfg(self, input_scale, in_channels, base_channels):
