@@ -91,7 +91,7 @@ custom_hooks = [  # add customized hooks for training
 
 metrics = dict(  # metrics we used to test this model
     fid50k=dict(
-        inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',  # provdie the inception pkl for FID
+        inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',  # provide the inception pkl for FID
         bgr2rgb=True))  # change the order of the image channel when extracting inception features
 
 checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=30)  # define checkpoint hook

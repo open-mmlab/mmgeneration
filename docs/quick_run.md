@@ -53,7 +53,7 @@ from mmgen.apis import init_model, sample_img2img_model
 config_file = 'configs/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_edges2shoes_1x4_190k.py'
 # you can download this checkpoint in advance and use a local file path.
 checkpoint_file = 'https://download.openmmlab.com/mmgen/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes_convert-bgr_20210410_174116-aaaa3687.pth'
-# Specify the path to image you want to transalte
+# Specify the path to image you want to translate
 image_path = 'tests/data/paired/test/33_AB.jpg'
 device = 'cuda:0'
 # init a generatvie
@@ -174,7 +174,7 @@ Then, users can use the evaluation script with the following command:
 ```shell
 bash eval.sh ${CONFIG_FILE} ${CKPT_FILE} --batch-size 10 --online
 ```
-If you are in slurm enviroment, please switch to the [tools/slurm_eval.sh](https://github.com/open-mmlab/mmgeneration/tree/master/tools/slurm_eval.sh) by using the following commands:
+If you are in slurm environment, please switch to the [tools/slurm_eval.sh](https://github.com/open-mmlab/mmgeneration/tree/master/tools/slurm_eval.sh) by using the following commands:
 
 ```shell
 bash slurm_eval.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CONFIG_FILE} \
@@ -205,14 +205,15 @@ In `MMGeneration`, we provide two versions for FID calculation. One is the commo
 **About extracting real inception data:** For convenience, we always extract the features for real images in advance. In `MMGeneration`, we have provided [tools/utils/inception_stat.py](https://github.com/open-mmlab/mmgeneration/blob/master/tools/utils/inception_stat.py) for users to prepare the real inception data. After running the following command, the extracted features will be saved in a `pkl` file.
 
 ```shell
-python tools/utils/inception_stat.py ${IMGS_PATH} ${PKLNAME} --size ${SIZE}
+python tools/utils/inception_stat.py --imgsdir ${IMGS_PATH} --pklname ${PKLNAME} --size ${SIZE}
 ```
-In the above command, the script will take the PyTorch InceptionV3 by default. If you want the Tero's InceptionV3, you will need to switch to the script module:
+In the aforementioned command, the script will take the PyTorch InceptionV3 by default. If you want the Tero's InceptionV3, you will need to switch to the script module:
 
 ```shell
-python tools/utils/inception_stat.py ${IMGS_PATH} ${PKLNAME} --size ${SIZE} \
+python tools/utils/inception_stat.py --imgsdir ${IMGS_PATH} --pklname ${PKLNAME} --size ${SIZE} \
     --inception-style stylegan --inception-pth ${PATH_SCRIPT_MODULE}
 ```
+If you want to know more information about how to extract the inception state please refer to this [doc](https://github.com/open-mmlab/mmgeneration/blob/master/docs/tutorials/inception_stat.md).
 
 To use the FID metric, you should add the metric in a config file like this:
 
@@ -268,7 +269,7 @@ To be noted that, the selection of Inception V3 and image resize method can sign
 
 We also perform a survey on the influence of data loading pipeline and the version of pretrained Inception V3 on the IS result. All IS are evaluated on the same group of images which are randomly selected from the ImageNet dataset.
 
-<details> <summary> Show the Comparsion Results </summary>
+<details> <summary> Show the Comparison Results </summary>
 
 | Code Base | Inception V3 Version | Data Loader Backend | Resize Interpolation Method | IS |
 | -- | -- | -- | -- | -- |
@@ -291,16 +292,16 @@ We also perform a survey on the influence of data loading pipeline and the versi
 ## PPL
 Perceptual path length measures the difference between consecutive images (their VGG16 embeddings) when interpolating between two random inputs. Drastic changes mean that multiple features have changed together and that they might be entangled. Thus, a smaller PPL score appears to indicate higher overall image quality by experiments. \
 As a basis for our metric, we use a perceptually-based pairwise image distance that is calculated as a weighted difference between two VGG16 embeddings, where the weights are fit so that the metric agrees with human perceptual similarity judgments.
-If we subdivide a latent space interpolation path into linear segments, we can define the total perceptual length of this segmented path as the sum of perceptual differences over each segment, and a natural definition for the perceptual path length would be the limit of this sum under infinitely fine subdivision, but in practice we approximate it using a small subdivision <img src="https://latex.codecogs.com/svg.image?\epsilon&space;=&space;10^{-4}" title="\epsilon = 10^{-4}" />.
+If we subdivide a latent space interpolation path into linear segments, we can define the total perceptual length of this segmented path as the sum of perceptual differences over each segment, and a natural definition for the perceptual path length would be the limit of this sum under infinitely fine subdivision, but in practice we approximate it using a small subdivision ``$`\epsilon=10^{-4}`$``.
 The average perceptual path length in latent `space` Z, over all possible endpoints, is therefore
 
-<img src="https://latex.codecogs.com/svg.image?L_Z&space;=&space;E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))),&space;G(slerp(z_1,z_2;t&plus;\epsilon)))]" title="L_Z = E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))), G(slerp(z_1,z_2;t+\epsilon)))]" />
+``$$`L_Z = E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))), G(slerp(z_1,z_2;t+\epsilon)))]`$$``
 
 Computing the average perceptual path length in latent `space` W is carried out in a similar fashion:
 
-<img src="https://latex.codecogs.com/svg.image?L_Z&space;=&space;E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))),&space;G(slerp(z_1,z_2;t&plus;\epsilon)))]" title="L_Z = E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))), G(slerp(z_1,z_2;t+\epsilon)))]" />
+``$$`L_Z = E[\frac{1}{\epsilon^2}d(G(slerp(z_1,z_2;t))), G(slerp(z_1,z_2;t+\epsilon)))]`$$``
 
-Where <img src="https://latex.codecogs.com/svg.image?\inline&space;z_1,&space;z_2&space;\sim&space;P(z)" title="\inline z_1, z_2 \sim P(z)" />, and <img src="https://latex.codecogs.com/svg.image?\inline&space;t&space;\sim&space;U(0,1)" title="\inline t \sim U(0,1)" /> if we set `sampling` to full, <img src="https://latex.codecogs.com/svg.image?\inline&space;t&space;\in&space;\{0,1\}" title="\inline t \in \{0,1\}" /> if we set `sampling` to end. <img src="https://latex.codecogs.com/svg.image?\inline&space;G" title="\inline G" /> is the generator(i.e. <img src="https://latex.codecogs.com/svg.image?\inline&space;g&space;\circ&space;f" title="\inline g \circ f" /> for style-based networks), and <img src="https://latex.codecogs.com/svg.image?\inline&space;d(.,.)" title="\inline d(.,.)" /> evaluates the perceptual distance between the resulting images.We compute the expectation by taking 100,000 samples (set `num_images` to 50,000 in our code).
+Where ``$`z_1, z_2 \sim P(z)`$``, and ``$` t \sim U(0,1)`$`` if we set `sampling` to full, ``$` t \in \{0,1\}`$`` if we set `sampling` to end. ``$` G`$`` is the generator(i.e. ``$` g \circ f`$`` for style-based networks), and ``$` d(.,.)`$`` evaluates the perceptual distance between the resulting images.We compute the expectation by taking 100,000 samples (set `num_images` to 50,000 in our code).
 
 You can find the complete implementation in `metrics.py`, which refers to https://github.com/rosinality/stylegan2-pytorch/blob/master/ppl.py.
 If you want to evaluate models with `PPL` metrics, you can add the `metrics` into your config file like this:
@@ -356,7 +357,7 @@ In this section, we will discuss how to evaluate the generative models, especial
 In [eval_hooks.py](https://github.com/open-mmlab/mmgeneration/blob/master/mmgen/core/evaluation/eval_hooks.py), `GenerativeEvalHook` is provided to evaluate generative models duiring training. The most important argument for this hook is `metrics`. In fact, users can directly copy the configs in the last section to define the evaluation metric. To evaluate the model with `FID` metric, please add the following python codes in your config file:
 
 ```python
-# define the evaluation keywords, otherwise evalution will not be
+# define the evaluation keywords, otherwise evaluation will not be
 # added in training
 evaluation = dict(
     type='GenerativeEvalHook',

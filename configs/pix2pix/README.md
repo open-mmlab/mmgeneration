@@ -28,14 +28,14 @@ We use `FID` and `IS` metrics to evaluate the generation performance of pix2pix.
 | Dataset  | [facades](https://github.com/open-mmlab/mmgeneration/tree/master/configs/pix2pix/pix2pix_vanilla_unet_bn_facades_1x1_80k.py) | [aerial2maps](https://github.com/open-mmlab/mmgeneration/tree/master/configs/pix2pix/pix2pix_vanilla_unet_bn_aerial2maps_1x1_220k.py) | [maps2aerial](https://github.com/open-mmlab/mmgeneration/tree/master/configs/pix2pix/pix2pix_vanilla_unet_bn_maps2aerial_1x1_220k.py) | [edges2shoes](https://github.com/open-mmlab/mmgeneration/tree/master/configs/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_edges2shoes_1x4_190k.py) |   average    |
 | :------: | :--------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------: | :----------: |
 | official |                                                         **119.135**                                                          |                                                              149.731                                                              |                                                              102.072                                                              |                                                                       **75.774**                                                                       |   111.678    |
-|   ours   |                                                           124.372                                                            |                                                            **122.691**                                                            |                                                            **88.378**                                                             |                                                                         85.144                                                                         | **105.1463** |
+|       ours       | 124.9773 |    **122.5856** |      **88.4635**  |         84.3750   |     **105.1003**  |
 
 `IS` evaluation:
 
 | Dataset  |  facades  | aerial2maps  | maps2aerial  | edges2shoes |  average  |
 | :------: | :-------: | :-------: | :-------: | :---------: | :-------: |
-| official |   1.650   |   2.529   |   3.552   |    2.766    |   2.624   |
-|   ours   | **1.665** | **3.337** | **3.585** |  **2.797**  | **2.846** |
+| official |   **1.650**   |   2.529   |   **3.552**   |    2.766    |   2.624   |
+|   ours   | 1.620 | **3.137** | 3.310 |  **2.815**  | **2.7205** |
 
 Model and log downloads:
 

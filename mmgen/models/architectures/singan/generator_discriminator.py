@@ -138,7 +138,7 @@ class SinGANMultiScaleGenerator(nn.Module):
             if return_noise:
                 noise_list.append(noise_)
 
-            # add pading at head
+            # add padding at head
             pad_ = (self.pad_head, ) * 4
             noise_ = F.pad(noise_, pad_)
             g_res_pad = F.pad(g_res, pad_)

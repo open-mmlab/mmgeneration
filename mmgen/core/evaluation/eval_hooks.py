@@ -18,12 +18,12 @@ class GenerativeEvalHook(Hook):
     """Evaluation Hook for Generative Models.
 
     This evaluation hook can be used to evaluate unconditional and conditional
-    models. Note that only ``FID`` and ``IS`` metric is supported for the
+    models. Note that only ``FID`` and ``IS`` metric are supported for the
     distributed training now. In the future, we will support more metrics for
     the evaluation during the training procedure.
 
     In our config system, you only need to add `evaluation` with the detailed
-    configureations. Below is serveral usage cases for different situations.
+    configureations. Below is several usage cases for different situations.
     What you need to do is to add these lines at the end of your config file.
     Then, you can use this evaluation hook in the training procedure.
 
@@ -35,8 +35,8 @@ class GenerativeEvalHook(Hook):
 
     #. Only use FID for evaluation
 
-    .. code-blcok:: python
-        :linenos
+    .. code-block:: python
+        :linenos:
 
         evaluation = dict(
             type='GenerativeEvalHook',
@@ -48,10 +48,10 @@ class GenerativeEvalHook(Hook):
                 bgr2rgb=True),
             sample_kwargs=dict(sample_model='ema'))
 
-    #. Use FID and IS simutaneously and save the best checkpoints respectively
+    #. Use FID and IS simultaneously and save the best checkpoints respectively
 
     .. code-block:: python
-        :linenos
+        :linenos:
 
         evaluation = dict(
             type='GenerativeEvalHook',
@@ -69,7 +69,7 @@ class GenerativeEvalHook(Hook):
     #. Use dynamic evaluation intervals
 
     .. code-block:: python
-        :linenos
+        :linenos:
 
         # interval = 10000 if iter < 50000,
         # interval = 4000, if 50000 <= iter < 750000,
@@ -153,7 +153,7 @@ class GenerativeEvalHook(Hook):
                 former, latter = self.milestones[idx], self.milestones[idx + 1]
                 if former >= latter:
                     raise ValueError(
-                        'Elements in `milestones` shoule in ascending order.')
+                        'Elements in `milestones` should in ascending order.')
         else:
             raise TypeError('`interval` only support `int` or `dict`,'
                             f'recieve {type(self.interval)} instead.')
@@ -223,7 +223,7 @@ class GenerativeEvalHook(Hook):
 
         runner.model.eval()
 
-        # sample fake images
+        # sample real images
         max_num_images = max(metric.num_images for metric in self.metrics)
         for metric in self.metrics:
             if metric.num_real_feeded >= metric.num_real_need:
@@ -320,3 +320,173 @@ class GenerativeEvalHook(Hook):
                 f'Now best checkpoint is saved as {best_ckpt_name}.')
             runner.logger.info(f'Best {metric_name} is {new_score:0.4f} '
                                f'at {curr_iter}.')
+
+
+@HOOKS.register_module()
+class TranslationEvalHook(GenerativeEvalHook):
+    """Evaluation Hook for Translation Models.
+
+    This evaluation hook can be used to evaluate translation models. Note
+    that only ``FID`` and ``IS`` metric are supported for the distributed
+    training now. In the future, we will support more metrics for the
+    evaluation during the training procedure.
+
+    In our config system, you only need to add `evaluation` with the detailed
+    configureations. Below is several usage cases for different situations.
+    What you need to do is to add these lines at the end of your config file.
+    Then, you can use this evaluation hook in the training procedure.
+
+    To be noted that, this evaluation hook support evaluation with dynamic
+    intervals for FID or other metrics may fluctuate frequently at the end of
+    the training process.
+
+    # TODO: fix the online doc
+
+    #. Only use FID for evaluation
+
+    .. code-blcok:: python
+        :linenos
+
+        evaluation = dict(
+            type='TranslationEvalHook',
+            target_domain='photo',
+            interval=10000,
+            metrics=dict(type='FID', num_images=106, bgr2rgb=True))
+
+    #. Use FID and IS simultaneously and save the best checkpoints respectively
+
+    .. code-block:: python
+        :linenos
+
+        evaluation = dict(
+            type='TranslationEvalHook',
+            target_domain='photo',
+            interval=10000,
+            metrics=[
+                dict(type='FID', num_images=106, bgr2rgb=True),
+                dict(
+                    type='IS',
+                    num_images=106,
+                    inception_args=dict(type='pytorch'))
+            ],
+            best_metric=['fid', 'is'])
+
+    #. Use dynamic evaluation intervals
+
+    .. code-block:: python
+        :linenos
+
+        # interval = 10000 if iter < 100000,
+        # interval = 4000, if 100000 <= iter < 200000,
+        # interval = 2000, if iter >= 200000
+
+        evaluation = dict(
+            type='TranslationEvalHook',
+            interval=dict(milestones=[100000, 200000],
+                          interval=[10000, 4000, 2000]),
+            target_domain='zebra',
+            metrics=[
+                dict(type='FID', num_images=140, bgr2rgb=True),
+                dict(type='IS', num_images=140)
+            ],
+            best_metric=['fid', 'is'])
+
+
+    Args:
+        target_domain (str): Target domain of output image.
+    """
+
+    def __init__(self, *args, target_domain, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.target_domain = target_domain
+
+    def after_train_iter(self, runner):
+        """The behavior after each train iteration.
+
+        Args:
+            runner (``mmcv.runner.BaseRunner``): The runner.
+        """
+        interval = self.get_current_interval(runner)
+        if not self.every_n_iters(runner, interval):
+            return
+
+        runner.model.eval()
+        source_domain = runner.model.module.get_other_domains(
+            self.target_domain)[0]
+        # feed real images
+        max_num_images = max(metric.num_images for metric in self.metrics)
+        for metric in self.metrics:
+            if metric.num_real_feeded >= metric.num_real_need:
+                continue
+            mmcv.print_log(f'Feed reals to {metric.name} metric.', 'mmgen')
+            # feed in real images
+            for data in self.dataloader:
+                # key for translation model
+                if f'img_{self.target_domain}' in data:
+                    reals = data[f'img_{self.target_domain}']
+                # key for conditional GAN
+                else:
+                    raise KeyError(
+                        'Cannot found key for images in data_dict. ')
+                num_feed = metric.feed(reals, 'reals')
+                if num_feed <= 0:
+                    break
+
+        mmcv.print_log(f'Sample {max_num_images} fake images for evaluation',
+                       'mmgen')
+
+        rank, ws = get_dist_info()
+
+        # define mmcv progress bar
+        if rank == 0:
+            pbar = mmcv.ProgressBar(max_num_images)
+
+        # feed in fake images
+        for data in self.dataloader:
+            # key for translation model
+            if f'img_{source_domain}' in data:
+                with torch.no_grad():
+                    output_dict = runner.model(
+                        data[f'img_{source_domain}'],
+                        test_mode=True,
+                        target_domain=self.target_domain,
+                        **self.sample_kwargs)
+                fakes = output_dict['target']
+            # key Error
+            else:
+                raise KeyError('Cannot found key for images in data_dict. ')
+            # sampling fake images and directly send them to metrics
+            # pbar update number for one proc
+            num_update = 0
+            for metric in self.metrics:
+                if metric.num_fake_feeded >= metric.num_fake_need:
+                    continue
+                num_feed = metric.feed(fakes, 'fakes')
+                num_update = max(num_update, num_feed)
+                if num_feed <= 0:
+                    break
+
+            if rank == 0:
+                if num_update > 0:
+                    pbar.update(num_update * ws)
+
+        runner.log_buffer.clear()
+        # a dirty walkround to change the line at the end of pbar
+        if rank == 0:
+            sys.stdout.write('\n')
+            for metric in self.metrics:
+                with torch.no_grad():
+                    metric.summary()
+                for name, val in metric._result_dict.items():
+                    runner.log_buffer.output[name] = val
+
+                    # record best metric and save the best ckpt
+                    if self.save_best_ckpt and name in self.best_metric:
+                        self._save_best_ckpt(runner, val, name)
+
+            runner.log_buffer.ready = True
+        runner.model.train()
+
+        # clear all current states for next evaluation
+        for metric in self.metrics:
+            metric.clear()

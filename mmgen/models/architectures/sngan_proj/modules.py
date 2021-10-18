@@ -22,7 +22,7 @@ class SNGANGenResBlock(nn.Module):
         out_channels (int): Output channels.
         hidden_channels (int, optional): Input channels of the second Conv
             layer of the block. If ``None`` is given, would be set as
-            ``out_channels``. Defualt to None.
+            ``out_channels``. Default to None.
         num_classes (int, optional): Number of classes would like to generate.
             This argument would pass to norm layers and influence the structure
             and behavior of the normalization process. Default to 0.
@@ -37,7 +37,7 @@ class SNGANGenResBlock(nn.Module):
         upsample (bool, optional): Whether apply upsample operation in this
             module. Default to True.
         auto_sync_bn (bool, optional): Whether convert Batch Norm to
-            Synchronized ones when Distributed training is on. Defualt to True.
+            Synchronized ones when Distributed training is on. Default to True.
         conv_cfg (dict | None): Config for conv blocks of this module. If pass
             ``None``, would use ``_default_conv_cfg``. Default to ``None``.
         with_spectral_norm (bool, optional): Whether use spectral norm for
@@ -204,19 +204,19 @@ class SNGANDiscResBlock(nn.Module):
         out_channels (int): output channels.
         hidden_channels (int, optional): input channels of the second conv
             layer of the block. if ``none`` is given, would be set as
-            ``out_channels``. defualt to none.
+            ``out_channels``. Defaults to none.
         downsample (bool, optional): whether apply downsample operation in this
-            module.  default to false.
+            module.  Defaults to false.
         act_cfg (dict, optional): config for activate function. default
             to ``dict(type='relu')``.
         conv_cfg (dict | none): config for conv blocks of this module. if pass
             ``none``, would use ``_default_conv_cfg``. default to ``none``.
         with_spectral_norm (bool, optional): whether use spectral norm for
-            conv blocks and norm layers. default to true.
+            conv blocks and norm layers. Defaults to true.
         sn_eps (float, optional): eps for spectral normalization operation.
             Default to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
-            Default to ``dict(type='BigGAN')``.
+            Defaults to ``dict(type='BigGAN')``.
     """
 
     _default_conv_cfg = dict(kernel_size=3, stride=1, padding=1, act_cfg=None)
@@ -465,18 +465,18 @@ class SNConditionNorm(nn.Module):
         use_cbn (bool, optional): Whether use conditional normalization. If
             ``use_cbn`` is True, two embedding layers would be used to mapping
             label to weight and bias used in normalization process.
-        norm_cfg (dict, optional): Config for normalization method. Default
+        norm_cfg (dict, optional): Config for normalization method. Defaults
             to ``dict(type='BN')``.
         auto_sync_bn (bool, optional): Whether convert Batch Norm to
-            Synchronized ones when Distributed training is on. Defualt to True.
+            Synchronized ones when Distributed training is on. Defaults to True.
         with_spectral_norm (bool, optional): whether use spectral norm for
-            conv blocks and norm layers. default to true.
+            conv blocks and norm layers. Defaults to true.
         norm_eps (float, optional): eps for Normalization layers (both
-            conditional and non-conditional ones). Default to `1e-4`.
+            conditional and non-conditional ones). Defaults to `1e-4`.
         sn_eps (float, optional): eps for spectral normalization operation.
-            Default to `1e-12`.
+            Defaults to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
-            Default to ``dict(type='BigGAN')``.
+            Defaults to ``dict(type='BigGAN')``.
     """
 
     def __init__(self,

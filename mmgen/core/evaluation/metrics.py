@@ -363,8 +363,8 @@ class Metric(ABC):
         self.image_shape = image_shape
         self.num_real_need = num_images
         self.num_fake_need = num_images
-        self.num_real_feeded = 0  # record of the feeded real images
-        self.num_fake_feeded = 0  # record of the feeded fake images
+        self.num_real_feeded = 0  # record of the fed real images
+        self.num_fake_feeded = 0  # record of the fed fake images
         self._result_str = None  # string of metric result
 
     @property
@@ -385,7 +385,7 @@ class Metric(ABC):
         operation in 'feed_op' function.
 
         Args:
-            batch (Tensor | dict): Images or dict to be feeded into
+            batch (Tensor | dict): Images or dict to be fed into
                 metric object. If ``Tensor`` is passed, the order of ``Tensor``
                 should be "NCHW". If ``dict`` is passed, each term in the
                 ``dict`` are ``Tensor`` with order "NCHW".
@@ -736,6 +736,7 @@ class SWD(Metric):
         if mode == 'reals':
             real_pyramid = laplacian_pyramid(minibatch, self.n_pyramids - 1,
                                              self.gaussian_k)
+            # lod: layer_of_descriptors
             for lod, level in enumerate(real_pyramid):
                 desc = get_descriptors_for_minibatch(level, self.nhood_size,
                                                      self.nhoods_per_image)
@@ -960,7 +961,7 @@ class PR(Metric):
 class IS(Metric):
     """IS (Inception Score) metric.
 
-    The images are splitted into groups, and the inception score is calculated
+    The images are split into groups, and the inception score is calculated
     on each group of images, then the mean and standard deviation of the score
     is reported. The calculation of the inception score on a group of images
     involves first using the inception v3 model to calculate the conditional
@@ -1034,7 +1035,7 @@ class IS(Metric):
 
     def pil_resize(self, x):
         """Apply Bicubic interpolation with Pillow backend. Before and after
-        interpolation operation, we have to perform a type convertion beteen
+        interpolation operation, we have to perform a type conversion between
         torch.tensor and PIL.Image, and these operations make resize process a
         bit slow.
 
@@ -1361,6 +1362,7 @@ class PPLSampler:
         return image
 
 
+@METRICS.register_module()
 class GaussianKLD(Metric):
     r"""Gaussian KLD (Kullback-Leibler divergence) metric. We calculate the
     KLD between two gaussian distribution via `mean` and `log_variance`.
@@ -1369,16 +1371,19 @@ class GaussianKLD(Metric):
     When call ``feed`` operation, only ``reals`` mode is needed,
 
     The calculation of KLD can be formulated as:
-    ..math::
-        :nowarp:
-        \begin{eqnarray}
+
+    .. math::
+        :nowrap:
+
+        \begin{align}
         KLD(p||q) &= -\int{p(x)\log{q(x)} dx} + \int{p(x)\log{p(x)} dx} \\
             &= \frac{1}{2}\log{(2\pi \sigma_2^2)} +
-            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\simga_2^2} -
+            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\sigma_2^2} -
             \frac{1}{2}(1 + \log{2\pi \sigma_1^2}) \\
             &= \log{\frac{\sigma_2}{\sigma_1}} +
-            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\simga_2^2} - \frac{1}{2}
-        \end{eqnarray}
+            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\sigma_2^2} - \frac{1}{2}
+        \end{align}
+
     where `p` and `q` denote target and predicted distribution respectively.
 
     Args:

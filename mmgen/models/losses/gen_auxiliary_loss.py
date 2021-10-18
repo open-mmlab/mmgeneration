@@ -38,7 +38,7 @@ def gen_path_regularizer(generator,
         weight (float, optional): Weight of this loss item. Defaults to ``1.``.
         pl_batch_size (int | None, optional): The batch size in calculating
             generator path. Once this argument is set, the ``num_batches`` will
-            be overrided with this argument and won't be affectted by
+            be overridden with this argument and won't be affectted by
             ``pl_batch_shrink``. Defaults to None.
         sync_mean_buffer (bool, optional): Whether to sync mean path length
             across all of GPUs. Defaults to False.
@@ -169,7 +169,7 @@ class GeneratorPathRegularizer(nn.Module):
             Defaults to 0.01.
         pl_batch_size (int | None, optional): The batch size in calculating
             generator path. Once this argument is set, the ``num_batches`` will
-            be overrided with this argument and won't be affectted by
+            be overridden with this argument and won't be affectted by
             ``pl_batch_shrink``. Defaults to None.
         sync_mean_buffer (bool, optional): Whether to sync mean path length
             across all of GPUs. Defaults to False.

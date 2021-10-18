@@ -36,7 +36,7 @@ Evaluation of our trained BIgGAN.
 Note: This is an unfinished version (1150k iter) of BigGAN trained on `ImageNet1k`. The model with the best performance is still on the way.
 
 ## Converted weights
-Since we havn't finished training our models, we provide you with several pre-trained weights which have been evaluated. Here, we refer to [BigGAN-PyTorch](https://github.com/ajbrock/BigGAN-PyTorch) and [pytorch-pretrained-BigGAN](https://github.com/huggingface/pytorch-pretrained-BigGAN).
+Since we haven't finished training our models, we provide you with several pre-trained weights which have been evaluated. Here, we refer to [BigGAN-PyTorch](https://github.com/ajbrock/BigGAN-PyTorch) and [pytorch-pretrained-BigGAN](https://github.com/huggingface/pytorch-pretrained-BigGAN).
 
 Evaluation results and download links are provided below.
 

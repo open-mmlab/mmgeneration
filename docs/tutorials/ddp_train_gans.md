@@ -1,4 +1,4 @@
-# Tutorial 5: DDP Training in MMGeneration
+# Tutorial 6: DDP Training in MMGeneration
 
 In this section, we will discuss the `DDP` (Distributed Data-Parallel) training for generative models, especially for GANs.
 

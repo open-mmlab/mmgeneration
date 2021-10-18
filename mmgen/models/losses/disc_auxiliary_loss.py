@@ -345,7 +345,7 @@ def r1_gradient_penalty_loss(discriminator,
     R1 regularizer comes from:
     "Which Training Methods for GANs do actually Converge?" ICML'2018
 
-    Diffrent from original gradient penalty, this regularizer only penalized
+    Different from original gradient penalty, this regularizer only penalized
     gradient w.r.t. real data.
 
     Args:
@@ -412,7 +412,7 @@ class R1GradientPenalty(nn.Module):
     R1 regularizer comes from:
     "Which Training Methods for GANs do actually Converge?" ICML'2018
 
-    Diffrent from original gradient penalty, this regularizer only penalized
+    Different from original gradient penalty, this regularizer only penalized
     gradient w.r.t. real data.
 
     **Note for the design of ``data_info``:**

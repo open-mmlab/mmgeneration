@@ -45,15 +45,16 @@ def gaussian_kld(mean_1, mean_2, logvar_1, logvar_2, base='e'):
     To be noted that in this function, KLD is calcuated in base `e`.
 
     .. math::
-        :nowarp:
-        \begin{eqnarray}
+        :nowrap:
+
+        \begin{align}
         KLD(p||q) &= -\int{p(x)\log{q(x)} dx} + \int{p(x)\log{p(x)} dx} \\
             &= \frac{1}{2}\log{(2\pi \sigma_2^2)} +
-            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\simga_2^2} -
+            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\sigma_2^2} -
             \frac{1}{2}(1 + \log{2\pi \sigma_1^2}) \\
             &= \log{\frac{\sigma_2}{\sigma_1}} +
-            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\simga_2^2} - \frac{1}{2}
-        \end{eqnarray}
+            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\sigma_2^2} - \frac{1}{2}
+        \end{align}
 
     Args:
         mean_1 (torch.Tensor): Mean of the first (or the target) distribution.
@@ -235,7 +236,7 @@ class L1Loss(nn.Module):
             Defaults to ``1.``.
         reduction (str, optional): Same as built-in losses of PyTorch.
             Defaults to 'mean'.
-        avg_factor (float | None, optional): Avarage factor when computing the
+        avg_factor (float | None, optional): Average factor when computing the
             mean of losses. Defaults to ``None``.
         data_info (dict, optional): Dictionary contains the mapping between
             loss input args and data dictionary. If ``None``, this module will

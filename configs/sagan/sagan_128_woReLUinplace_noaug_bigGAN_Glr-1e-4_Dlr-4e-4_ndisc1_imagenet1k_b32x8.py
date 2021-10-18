@@ -60,7 +60,7 @@ evaluation = dict(
         dict(type='IS', num_images=50000)
     ],
     best_metric=['fid', 'is'],
-    sample_kwargs=dict(sample_model='orig'))
+    sample_kwargs=dict(sample_model='ema'))
 
 total_iters = 1000000 * n_disc
 # use ddp wrapper for faster training
