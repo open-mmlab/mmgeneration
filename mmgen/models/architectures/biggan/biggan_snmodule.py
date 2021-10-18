@@ -1,11 +1,7 @@
 """Layers This file contains various layers for the BigGAN models."""
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-from torch.nn import Parameter as P
-from torch.nn import init
 
 
 # Projection of x onto y
@@ -35,16 +31,14 @@ def power_iteration(W, u_, update=True, eps=1e-12):
             # Update the other singular vector
             u = torch.matmul(v, W.t())
             # Run Gram-Schmidt to subtract components of all other singular vectors
-            # print('fuck', u.mean(), us)
             u = F.normalize(gram_schmidt(u, us), eps=eps)
             # Add to the list
             us += [u]
             if update:
                 u_[i][:] = u
         # Compute this singular value and add it to the list
-        # print('fuck', u.mean(), W.mean(), v.mean())
         svs += [torch.squeeze(torch.matmul(torch.matmul(v, W.t()), u.t()))]
-        #svs += [torch.sum(F.linear(u, W.transpose(0, 1)) * v)]
+        # svs += [torch.sum(F.linear(u, W.transpose(0, 1)) * v)]
     return svs, us, vs
 
 
@@ -103,7 +97,6 @@ class SN(object):
             ):  # Make sure to do this in a no_grad() context or you'll get memory leaks!
                 for i, sv in enumerate(svs):
                     self.sv[i][:] = sv
-        # print("fuck", svs[0])
         return self.weight / svs[0]
 
 

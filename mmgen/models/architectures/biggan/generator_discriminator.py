@@ -13,7 +13,7 @@ from torch.nn.utils import spectral_norm
 from mmgen.models.builder import MODULES, build_module
 from mmgen.utils import get_root_logger
 from ..common import get_module_device
-from .biggan_snmodule import SNConv2d, SNEmbedding, SNLinear
+from .biggan_snmodule import SNEmbedding, SNLinear
 from .modules import SelfAttentionBlock, SNConvModule
 
 
