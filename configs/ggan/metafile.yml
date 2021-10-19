@@ -20,7 +20,7 @@ Models:
       MS-SSIM: 0.3318
       Models: GGAN 64x64
       SWD: 11.18, 12.21, 39.16/20.85
-    Task: ggan
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/ggan/ggan_celeba-cropped_dcgan-archi_lr-1e-3_64_b128x1_12m.pth?versionId=CAEQKhiBgICoybGKyRciIDg2M2UyMTMwNGVhMTQ3NDA4NWUxYTcxOTMyNjc5MjQ4
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/ggan/ggan_celeba-cropped_dcgan-archi_lr-1e-4_128_b64x1_10m.py
   In Collection: README
@@ -35,7 +35,7 @@ Models:
       MS-SSIM: 0.3149
       Models: GGAN 128x128
       SWD: 9.81, 11.29, 19.22, 47.79/22.03
-    Task: ggan
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/ggan/ggan_celeba-cropped_dcgan-archi_lr-1e-4_128_b64x1_10m_20210430_143027-516423dc.pth?versionId=CAEQKhiBgMCp9J6HyRciIDg3YzMyYzliM2M5YTRkZDBhNTY4MWIwMWIxZjE4MzU5
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/ggan/ggan_lsun-bedroom_lsgan_archi_lr-1e-4_64_b128x1_20m.py
   In Collection: README
@@ -50,5 +50,5 @@ Models:
       MS-SSIM: 0.0649
       Models: GGAN 64x64
       SWD: 9.1, 6.2, 12.27/9.19
-    Task: ggan
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/ggan/ggan_lsun-bedroom_lsgan_archi_lr-1e-4_64_b128x1_20m_20210430_143114-5d99b76c.pth?versionId=CAEQKhiBgICZ9J6HyRciIGI2MDA4ZjJlMmUxODRjODk4OTIyMzkzMmE1MDBhNWJk

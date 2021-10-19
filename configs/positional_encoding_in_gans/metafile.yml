@@ -20,7 +20,7 @@ Models:
       P&R10k: 75.92/51.24
       Reference in Paper: Tab.5 config-a
       Scales: 256.0
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/stylegan2_c2_config-a_ffhq_256x256_b3x8_1100k_20210406_145127-71d9634b.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/stylegan2_c2_ffhq_512_b3x8_1100k.py
   In Collection: README
@@ -35,7 +35,7 @@ Models:
       P&R10k: 75.65/54.58
       Reference in Paper: Tab.5 config-b
       Scales: 512.0
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/stylegan2_c2_config-b_ffhq_512x512_b3x8_1100k_20210406_145142-e85e5cf4.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-c_ffhq_256-512_b3x8_1100k.py
   In Collection: README
@@ -50,7 +50,7 @@ Models:
       P&R10k: 73.84/55.77
       Reference in Paper: Tab.5 config-c
       Scales: 256, 384, 512
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-c_ffhq_256-512_b3x8_1100k_20210406_144824-9f43b07d.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-d_ffhq_256-512_b3x8_1100k.py
   In Collection: README
@@ -65,7 +65,7 @@ Models:
       P&R10k: 73.28/56.16
       Reference in Paper: Tab.5 config-d
       Scales: 256, 384, 512
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-d_ffhq_256-512_b3x8_1100k_20210406_144840-dbefacf6.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-e_ffhq_256-512_b3x8_1100k.py
   In Collection: README
@@ -80,7 +80,7 @@ Models:
       P&R10k: 74.13/56.88
       Reference in Paper: Tab.5 config-e
       Scales: 256, 384, 512
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-e_ffhq_256-512_b3x8_1100k_20210406_144906-98d5a42a.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-f_ffhq_256-512_b3x8_1100k.py
   In Collection: README
@@ -95,7 +95,7 @@ Models:
       P&R10k: 73.51/57.32
       Reference in Paper: Tab.5 config-f
       Scales: 256, 384, 512
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-f_ffhq_256-512_b3x8_1100k_20210406_144927-4f4d5391.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c1_config-g_ffhq_256-512_b3x8_1100k.py
   In Collection: README
@@ -110,7 +110,7 @@ Models:
       P&R10k: 73.05/56.45
       Reference in Paper: Tab.5 config-g
       Scales: 256, 384, 512
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c1_config-g_ffhq_256-512_b3x8_1100k_20210406_144758-2df61752.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-h_ffhq_256-512_b3x8_1100k.py
   In Collection: README
@@ -125,7 +125,7 @@ Models:
       P&R10k: 72.81/54.35
       Reference in Paper: Tab.5 config-h
       Scales: 256, 384, 512
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-h_ffhq_256-512_b3x8_1100k_20210406_145006-84cf3f48.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-i_ffhq_256-512_b3x8_1100k.py
   In Collection: README
@@ -140,7 +140,7 @@ Models:
       P&R10k: 73.26/54.71
       Reference in Paper: Tab.5 config-i
       Scales: 256, 384, 512
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-i_ffhq_256-512_b3x8_1100k_20210406_145023-c2b0accf.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-j_ffhq_256-512_b3x8_1100k.py
   In Collection: README
@@ -155,7 +155,7 @@ Models:
       P&R10k: 73.11/54.63
       Reference in Paper: Tab.5 config-j
       Scales: 256, 384, 512
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-j_ffhq_256-512_b3x8_1100k_20210406_145044-c407481b.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-k_ffhq_256-512_b3x8_1100k.py
   In Collection: README
@@ -170,7 +170,7 @@ Models:
       P&R10k: 73.05/51.07
       Reference in Paper: Tab.5 config-k
       Scales: 256, 384, 512
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-k_ffhq_256-512_b3x8_1100k_20210406_145105-6d8cc39f.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-f_ffhq_256-896_b3x8_1100k.py
   In Collection: README
@@ -185,7 +185,7 @@ Models:
       P&R10k: 72.21/50.29
       Reference in Paper: higher-resolution
       Scales: 256, 512, 896
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-f_ffhq_256-896_b3x8_1100k_20210406_144943-6c18ad5d.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c1_config-f_ffhq_256-1024_b2x8_1600k.py
   In Collection: README
@@ -200,7 +200,7 @@ Models:
       P&R10k: 71.79/49.92
       Reference in Paper: higher-resolution
       Scales: 256, 512, 1024
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c1_config-f_ffhq_256-1024_b2x8_1600k_20210406_144716-81cbdc96.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_interp-pad_balloons.py
   In Collection: README
@@ -211,7 +211,7 @@ Models:
   - Dataset: Others
     Metrics:
       Num Scales: 8.0
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_interp-pad_balloons_20210406_180014-96f51555.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_interp-pad_disc-nobn_balloons.py
   In Collection: README
@@ -222,7 +222,7 @@ Models:
   - Dataset: Others
     Metrics:
       Num Scales: 8.0
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_interp-pad_disc-nobn_balloons_20210406_180059-7d63e65d.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_interp-pad_disc-nobn_fish.py
   In Collection: README
@@ -233,7 +233,7 @@ Models:
   - Dataset: Others
     Metrics:
       Num Scales: 10.0
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_interp-pad_disc-nobn_fis_20210406_175720-9428517a.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_csg_fish.py
   In Collection: README
@@ -244,7 +244,7 @@ Models:
   - Dataset: Others
     Metrics:
       Num Scales: 10.0
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_csg_fis_20210406_175532-f0ec7b61.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_csg_bohemian.py
   In Collection: README
@@ -255,7 +255,7 @@ Models:
   - Dataset: Others
     Metrics:
       Num Scales: 10.0
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_csg_bohemian_20210407_195455-5ed56db2.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_spe-dim4_fish.py
   In Collection: README
@@ -266,7 +266,7 @@ Models:
   - Dataset: Others
     Metrics:
       Num Scales: 10.0
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_spe-dim4_fish_20210406_175933-f483a7e3.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_spe-dim4_bohemian.py
   In Collection: README
@@ -277,7 +277,7 @@ Models:
   - Dataset: Others
     Metrics:
       Num Scales: 10.0
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_spe-dim4_bohemian_20210406_175820-6e484a35.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_spe-dim8_bohemian.py
   In Collection: README
@@ -288,5 +288,5 @@ Models:
   - Dataset: Others
     Metrics:
       Num Scales: 10.0
-    Task: positional_encoding_in_gans
+    Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_spe-dim8_bohemian_20210406_175858-7faa50f3.pth

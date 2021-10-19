@@ -74,27 +74,43 @@ def collate_metrics(keys):
     return used_metrics
 
 
-def get_task_name(md_file):
-    """Get task name from README.md".
+def get_task_dict(md_file):
+    """Get task dict from repo's README.md".
 
     Args:
-        md_file: Path to .md file.
+        md_file: Path to repo's README.md file.
 
     Returns:
-        Str: Task name.
+        dict: Task name of each method.
     """
-    layers = md_file.split('/')
-    for i in range(len(layers) - 1):
-        if layers[i] == 'configs':
-            return layers[i + 1]
-    return 'Unknown'
+    with open(md_file, 'r') as md:
+        lines = md.readlines()
+    i = 0
+    task_dict = dict()
+    while i < len(lines):
+        if '<details open>' in lines[i] and '<summary>' in lines[i + 1]:
+            task = re.findall(r'<summary>(.*) \(click to collapse\)</summary>',
+                              lines[i + 1])[0].strip()
+            j = i + 2
+            while j < len(lines):
+                if '</details>' in lines[j]:
+                    i = j
+                    break
+                if '-' in lines[j]:
+                    path = re.findall(r'-.*\[.*\]\((.*)\).*\)', lines[j])[0]
+                    task_dict[path] = task
+                j += 1
+        i += 1
+
+    return task_dict
 
 
-def parse_md(md_file):
+def parse_md(md_file, task):
     """Parse .md file and convert it to a .yml file which can be used for MIM.
 
     Args:
         md_file: Path to .md file.
+        task (str): Task type of the method.
     Returns:
         Bool: If the target YAML file is different from the original.
     """
@@ -147,7 +163,6 @@ def parse_md(md_file):
 
                 j = i + 2
                 while j < len(lines) and lines[j][0] == '|':
-                    task = get_task_name(md_file)
                     line = lines[j].split('|')[1:-1]
 
                     if line[config_idx].find('](') >= 0:
@@ -261,14 +276,14 @@ if __name__ == '__main__':
     if not file_list:
         sys.exit(0)
 
+    # get task name of each method
+    task_dict = get_task_dict(osp.join(MMEditing_ROOT, 'README.md'))
+
     file_modified = False
     for fn in file_list:
         print(f'process {fn}')
-        file_modified |= parse_md(fn)
-        # try:
-        #     file_modified |= parse_md(fn)
-        # except Exception as e:
-        #     print(e)
+        task = task_dict[fn]
+        file_modified |= parse_md(fn, task)
 
     file_modified |= update_model_index()
 
