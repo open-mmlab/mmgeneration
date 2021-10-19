@@ -4,6 +4,9 @@
 
 <!-- [ALGORITHM] -->
 
+<details>
+<summary align="right"><a href="https://openaccess.thecvf.com/content_iccv_2017/html/Zhu_Unpaired_Image-To-Image_Translation_ICCV_2017_paper.html">CycleGAN (ICCV'2017)</a></summary>
+
 ```bibtex
 @inproceedings{zhu2017unpaired,
   title={Unpaired image-to-image translation using cycle-consistent adversarial networks},

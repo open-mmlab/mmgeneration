@@ -3,6 +3,9 @@
 ## Introduction
 <!-- [ALGORITHM] -->
 
+<details>
+<summary align="right"><a href="https://arxiv.org/abs/1704.00028">StyleGANv2 (WGAN-GP'2017)</a></summary>
+
 ```latex
 @article{gulrajani2017improved,
   title={Improved Training of Wasserstein GANs},

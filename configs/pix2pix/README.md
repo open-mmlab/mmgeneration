@@ -4,6 +4,9 @@
 
 <!-- [ALGORITHM] -->
 
+<details>
+<summary align="right"><a href="https://openaccess.thecvf.com/content_cvpr_2017/html/Isola_Image-To-Image_Translation_With_CVPR_2017_paper.html">Pix2Pix (CVPR'2017)</a></summary>
+
 ```bibtex
 @inproceedings{isola2017image,
   title={Image-to-image translation with conditional adversarial networks},

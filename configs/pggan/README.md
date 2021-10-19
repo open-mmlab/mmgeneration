@@ -2,6 +2,9 @@
 
 ## Introduction
 <!-- [ALGORITHM] -->
+
+<details>
+<summary align="right"><a href="https://arxiv.org/abs/1710.10196">PGGAN (arXiv'2017)</a></summary>
 ```latex
 @article{karras2017progressive,
   title={Progressive growing of gans for improved quality, stability, and variation},

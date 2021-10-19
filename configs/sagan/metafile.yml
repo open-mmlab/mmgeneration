@@ -1,0 +1,9 @@
+Collections:
+- Metadata:
+    Architecture:
+    - SAGAN
+  Name: SAGAN
+  Paper:
+  - https://proceedings.mlr.press/v97/zhang19d.html
+  README: configs/sagan/README.md
+Models: []
