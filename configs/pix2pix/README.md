@@ -35,14 +35,14 @@ We use `FID` and `IS` metrics to evaluate the generation performance of pix2pix.
 |  Ours  | edges2shoes | 84.3750  | 2.815 | [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_190k_edges2shoes.py) | [model](https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes_convert-bgr_20210902_170902-0c828552.pth?versionId=CAEQMhiBgIC57vTj3RciIGZlNmQ4ZDJhN2E1MDQ5ZmJiOWJmYTY5MDg1ZTc0N2Vi) |
 
 
-`FID` comparsion with official:
+`FID` comparison with official:
 
 | Dataset  |   facades   | aerial2maps  | maps2aerial | edges2shoes |   average    |
 | :------: | :---------: | :----------: | :---------: | :---------: | :----------: |
 | official | **119.135** |   149.731    |   102.072   | **75.774**  |   111.678    |
 |   ours   |  124.9773   | **122.5856** | **88.4635** |   84.3750   | **105.1003** |
 
-`IS` comparsion with official:
+`IS` comparison with official:
 
 | Dataset  |  facades  | aerial2maps | maps2aerial | edges2shoes |  average   |
 | :------: | :-------: | :---------: | :---------: | :---------: | :--------: |

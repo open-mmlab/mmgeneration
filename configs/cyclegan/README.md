@@ -48,7 +48,7 @@ We use `FID` and `IS` metrics to evaluate the generation performance of CycleGAN
 | official | **123.626** | **119.726** |  **77.342**   |    **76.773**     |  **72.631**   |      74.239       | **62.111**  |     77.202      | **138.646** |   **137.050**   | **95.935** |
 |   ours   |  124.8033   |  125.1694   |    83.7177    |      83.1418      |    72.8025    |    **73.5001**    |   64.5225   |   **74.7770**   |  141.1571   |  **134.3728**   |   97.79    |
 
-`IS` comparsion with evaluation:
+`IS` comparison with evaluation:
 
 | Dataset  |  facades  | facades-id0 | summer2winter | summer2winter-id0 | winter2summer | winter2summer-id0 | horse2zebra | horse2zebra-id0 | zebra2horse | zebra2horse-id0 |  average  |
 | :------: | :-------: | :---------: | :-----------: | :---------------: | :-----------: | :---------------: | :---------: | :-------------: | :---------: | :-------------: | :-------: |
