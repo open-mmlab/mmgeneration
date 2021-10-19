@@ -14,6 +14,7 @@ year={2019},
 url={https://openreview.net/forum?id=B1xsqj09Fm},
 }
 ```
+</details>
 
 The `BigGAN/BigGAN-Deep` is a conditional generation model that can generate both high-resolution and high-quality images by scaling up the batch size and the number of model parameters.
 
