@@ -2,6 +2,9 @@
 
 ## Introduction
 <!-- [ALGORITHM] -->
+
+<details>
+<summary align="right"><a href="https://openreview.net/forum?id=B1QRgziT-">SNGAN (ICLR'2018)</a></summary>
 ```latex
 @inproceedings{miyato2018spectral,
   title={Spectral Normalization for Generative Adversarial Networks},

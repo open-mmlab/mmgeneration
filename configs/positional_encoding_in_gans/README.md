@@ -3,6 +3,9 @@
 ## Introduction
 <!-- [ALGORITHM] -->
 
+<details>
+<summary align="right"><a href="https://openaccess.thecvf.com/content/CVPR2021/html/Xu_Positional_Encoding_As_Spatial_Inductive_Bias_in_GANs_CVPR_2021_paper.html">Positional Encoding in GANs (arXiv'2020)</a></summary>
+
 ```latex
 @article{xu2020positional,
   title={Positional Encoding as Spatial Inductive Bias in GANs},

@@ -1,6 +1,9 @@
 # Large Scale GAN Training for High Fidelity Natural Image Synthesis
 ## Introduction
 <!-- [ALGORITHM] -->
+
+<details>
+<summary align="right"><a href="https://openreview.net/forum?id=B1xsqj09Fm">BigGAN (ICLR'2019)</a></summary>
 ```latex
 @inproceedings{
 brock2018large,
