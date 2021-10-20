@@ -8,7 +8,7 @@ Collections:
   README: configs/ggan/README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/ggan/ggan_celeba-cropped_dcgan-archi_lr-1e-3_64_b128x1_12m.py
-  In Collection: README
+  In Collection: GGAN
   Metadata:
     Training Data: CELEBA
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--ggan--ggan_celeba-cropped_dcgan-archi_lr-1e-3_64_b128x1_12m
@@ -23,7 +23,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/ggan/ggan_celeba-cropped_dcgan-archi_lr-1e-3_64_b128x1_12m.pth?versionId=CAEQKhiBgICoybGKyRciIDg2M2UyMTMwNGVhMTQ3NDA4NWUxYTcxOTMyNjc5MjQ4
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/ggan/ggan_celeba-cropped_dcgan-archi_lr-1e-4_128_b64x1_10m.py
-  In Collection: README
+  In Collection: GGAN
   Metadata:
     Training Data: CELEBA
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--ggan--ggan_celeba-cropped_dcgan-archi_lr-1e-4_128_b64x1_10m
@@ -38,7 +38,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/ggan/ggan_celeba-cropped_dcgan-archi_lr-1e-4_128_b64x1_10m_20210430_143027-516423dc.pth?versionId=CAEQKhiBgMCp9J6HyRciIDg3YzMyYzliM2M5YTRkZDBhNTY4MWIwMWIxZjE4MzU5
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/ggan/ggan_lsun-bedroom_lsgan_archi_lr-1e-4_64_b128x1_20m.py
-  In Collection: README
+  In Collection: GGAN
   Metadata:
     Training Data: LSUN
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--ggan--ggan_lsun-bedroom_lsgan_archi_lr-1e-4_64_b128x1_20m
