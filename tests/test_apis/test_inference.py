@@ -53,8 +53,8 @@ class TestSampleTranslationModel:
         cyclegan_config = mmcv.Config.fromfile(
             os.path.join(
                 project_dir,
-                'configs/cyclegan/cyclegan_lsgan_resnet_in_facades_b1x1_80k.\
-                    py'))
+                'configs/cyclegan/cyclegan_lsgan_resnet_in_facades_b1x1_80k.py'
+            ))
         cls.cyclegan = init_model(
             cyclegan_config, checkpoint=None, device='cpu')
         cls.img_path = os.path.join(
