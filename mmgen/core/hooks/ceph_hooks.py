@@ -9,7 +9,7 @@ from mmcv.runner import HOOKS, Hook, master_only
 class PetrelUploadHook(Hook):
     """Upload Data with Petrel.
 
-    With this hook, users can easily upload datas to the cloud server for
+    With this hook, users can easily upload data to the cloud server for
     saving local spaces. Please read the notes below for using this hook,
     especially for the declaration of ``petrel``.
 

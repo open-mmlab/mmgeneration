@@ -2,6 +2,9 @@
 
 ## Introduction
 <!-- [ALGORITHM] -->
+
+<details>
+<summary align="right"><a href="https://openaccess.thecvf.com/content_CVPR_2020/html/Karras_Analyzing_and_Improving_the_Image_Quality_of_StyleGAN_CVPR_2020_paper.html">StyleGANv2 (CVPR'2020)</a></summary>
 ```latex
 @inproceedings{karras2020analyzing,
   title={Analyzing and improving the image quality of stylegan},
@@ -11,8 +14,9 @@
   year={2020},
   url={https://openaccess.thecvf.com/content_CVPR_2020/html/Karras_Analyzing_and_Improving_the_Image_Quality_of_StyleGAN_CVPR_2020_paper.html},
 }
-
 ```
+</details>
+
 ## Results and Models
 <div align="center">
   <b> Results (compressed) from StyleGAN2 config-f trained by MMGeneration</b>
@@ -65,7 +69,7 @@ bash tools/dist_train.sh \
   --work-dir ./work_dirs/quick-test
 ```
 
-With a simliar way, users can switch to [config for partial-GD](https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_fp16_quicktest_ffhq_256_b4x8_800k.py) and [config for globalG-partialD](https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_fp16-globalG-partialD_PL-R1-no-scaler_ffhq_256_b4x8_800k.py) to test the other two mixed precision training configuration.
+With a similar way, users can switch to [config for partial-GD](https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_fp16_quicktest_ffhq_256_b4x8_800k.py) and [config for globalG-partialD](https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_fp16-globalG-partialD_PL-R1-no-scaler_ffhq_256_b4x8_800k.py) to test the other two mixed precision training configuration.
 
 
 *Note that to use the [APEX](https://github.com/NVIDIA/apex) toolkit, you have to installed it following the official guidance. (APEX is not included in our requirements.) If you are using GPUs without tensor core, you would better to switch to the newer PyTorch version (>= 1.7,0). Otherwise, the APEX installation or running may meet several bugs.*

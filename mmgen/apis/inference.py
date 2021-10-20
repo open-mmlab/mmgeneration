@@ -67,7 +67,7 @@ def sample_uncoditional_model(model,
     """
     # set eval mode
     model.eval()
-    # constrcut sampling list for batches
+    # construct sampling list for batches
     n_repeat = num_samples // num_batches
     batches_list = [num_batches] * n_repeat
 
@@ -111,7 +111,7 @@ def sample_conditional_model(model,
     """
     # set eval mode
     model.eval()
-    # constrcut sampling list for batches
+    # construct sampling list for batches
     n_repeat = num_samples // num_batches
     batches_list = [num_batches] * n_repeat
 
@@ -192,13 +192,24 @@ def sample_img2img_model(model, image_path, target_domain, **kwargs):
         Tensor: Translated image tensor.
     """
     assert isinstance(model, BaseTranslationModel)
-    assert target_domain in model._reachable_domains
+
+    # get source domain and target domain
+    if target_domain is None:
+        target_domain = model._default_domain
+    source_domain = model.get_other_domains(target_domain)[0]
+
     cfg = model._cfg
     device = next(model.parameters()).device  # model device
     # build the data pipeline
     test_pipeline = Compose(cfg.test_pipeline)
+
     # prepare data
-    data = dict(image_path=image_path)
+    data = dict()
+    # dirty code to deal with test data pipeline
+    data['pair_path'] = image_path
+    data[f'img_{source_domain}_path'] = image_path
+    data[f'img_{target_domain}_path'] = image_path
+
     data = test_pipeline(data)
     if device.type == 'cpu':
         data = collate([data], samples_per_gpu=1)
@@ -206,17 +217,11 @@ def sample_img2img_model(model, image_path, target_domain, **kwargs):
     else:
         data = scatter(collate([data], samples_per_gpu=1), [device])[0]
 
-    if target_domain is None:
-        target_domain = model._default_domain
-
-    # dirty code to deal with paired data
-    if f'img_{target_domain}' in data.keys():
-        source_domain = model.get_other_domains(target_domain)[0]
-        data['image'] = data[f'img_{source_domain}']
+    source_image = data[f'img_{source_domain}']
     # forward the model
     with torch.no_grad():
         results = model(
-            data['image'],
+            source_image,
             test_mode=True,
             target_domain=target_domain,
             **kwargs)

@@ -3,6 +3,9 @@
 ## Introduction
 <!-- [ALGORITHM] -->
 
+<details>
+<summary align="right"><a href="https://openaccess.thecvf.com/content_ICCV_2019/html/Shaham_SinGAN_Learning_a_Generative_Model_From_a_Single_Natural_Image_ICCV_2019_paper.html">Singan (ICCV'2019)</a></summary>
+
 ```latex
 @inproceedings{shaham2019singan,
   title={Singan: Learning a generative model from a single natural image},
@@ -13,6 +16,7 @@
   url={https://openaccess.thecvf.com/content_ICCV_2019/html/Shaham_SinGAN_Learning_a_Generative_Model_From_a_Single_Natural_Image_ICCV_2019_paper.html},
 }
 ```
+</details>
 
 ## Results and Models
 

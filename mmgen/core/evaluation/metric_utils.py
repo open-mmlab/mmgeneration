@@ -92,7 +92,7 @@ def _hox_downsample(img):
 
 
 def _f_special_gauss(size, sigma):
-    r"""Return a circularly symmetric gaussian kernel.
+    r"""Return a circular symmetric gaussian kernel.
 
     Ref: https://github.com/tkarras/progressive_growing_of_gans/blob/master/metrics/ms_ssim.py  # noqa
 
