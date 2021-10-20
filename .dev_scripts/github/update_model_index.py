@@ -10,7 +10,6 @@ import glob
 import os.path as osp
 import re
 import sys
-import warnings
 
 import mmcv
 
@@ -146,7 +145,7 @@ def parse_md(md_file, task):
                     (lines[i + 1][:3] == '| :' or lines[i + 1][:2] == '|:'):
                 cols = [col.strip() for col in lines[i].split('|')][1:-1]
                 if 'Config' not in cols or 'Download' not in cols:
-                    warnings.warn(f"Lack 'Config' or 'Download' in line {i+1}")
+                    print(f"    ----Lack 'Config' or 'Download' in line {i+1}")
                     i += 1
                     continue
                 # config_idx = cols.index('Model')
@@ -233,7 +232,8 @@ def parse_md(md_file, task):
                 i += 1
 
     if len(models) == 0:
-        warnings.warn('no model is found in this md file')
+        print('    ====no model is found in this md file')
+        pass
 
     result = {'Collections': [collection], 'Models': models}
     yml_file = md_file.replace('README.md', 'metafile.yml')
