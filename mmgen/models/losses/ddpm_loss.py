@@ -25,7 +25,7 @@ class DDPMLoss(nn.Module):
         be called, and ``weight`` or ``sampler`` who contains attribute of
         weight must be passed. Then, loss of timestep `t` would be multiplied
         with `weight[t]`. ``scale`` is allowed as well in ``rescale_cfg``.
-        To be noted that, ``weight`` would be inplace modified in the outter
+        To be noted that, ``weight`` would be inplace modified in the outer
         code.
     If ``rescale_mode`` is not passed, ``rescale_cfg`` would be ignored, and
     all loss terms would not be rescaled.
@@ -239,7 +239,7 @@ class DDPMVLBLoss(DDPMLoss):
     ``DiscretizedGaussianLogLikelihoodLoss`` respectively. If not passed
     ``_default_data_info`` and ``_default_data_info_t_0`` would be used.
     To be noted that, we only penalize variance in this loss term, and tensor
-    in output dict cooresponding to mean would be detached.
+    in output dict corresponding to mean would be detached.
 
     We additional support another log collection function called
     ``name_log_collection``. In this collection method, we would directly

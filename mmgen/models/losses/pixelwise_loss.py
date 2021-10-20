@@ -468,7 +468,7 @@ class GaussianKLDLoss(nn.Module):
             Defaults to ``1.``.
         reduction (str, optional): Same as built-in losses of PyTorch.
             Defaults to 'mean'.
-        avg_factor (float | None, optional): Avarage factor when computing the
+        avg_factor (float | None, optional): Average factor when computing the
             mean of losses. Defaults to ``None``.
         data_info (dict, optional): Dictionary contains the mapping between
             loss input args and data dictionary. If not passed,
@@ -617,7 +617,7 @@ class DiscretizedGaussianLogLikelihoodLoss(nn.Module):
             Defaults to ``1.``.
         reduction (str, optional): Same as built-in losses of PyTorch.
             Defaults to 'batchmean'.
-        avg_factor (float | None, optional): Avarage factor when computing the
+        avg_factor (float | None, optional): Average factor when computing the
             mean of losses. Defaults to ``None``.
         data_info (dict, optional): Dictionary contains the mapping between
             loss input args and data dictionary. If not passed,
