@@ -35,11 +35,11 @@ Models:
       Models: BigGAN 128x128
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1449000_20210906_141519-f9128faf.pth?versionId=CAEQMhiBgIDn.ILn3RciIDFiMTZhZjIxYzA2MjQxMTJiMDQzZjQyNWQ5YTVkY2Jl
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan_128x128_cvt_BigGAN-PyTorch_rgb.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan_128x128_cvt_BigGAN-PyTorch_rgb.py
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--biggan_128x128_cvt_BigGAN-PyTorch_rgb
+  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--biggan--biggan_128x128_cvt_BigGAN-PyTorch_rgb
   Results:
   - Dataset: Others
     Metrics:
@@ -49,11 +49,11 @@ Models:
       Models: BigGAN 128x128
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_cvt_BigGAN-PyTorch_rgb_20210730_125223-3e353fef.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan-deep_128x128_cvt_hugging-face_rgb.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan-deep_128x128_cvt_hugging-face_rgb.py
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--biggan-deep_128x128_cvt_hugging-face_rgb
+  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--biggan--biggan-deep_128x128_cvt_hugging-face_rgb
   Results:
   - Dataset: Others
     Metrics:
@@ -63,11 +63,11 @@ Models:
       Models: BigGAN-Deep 128x128
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan-deep_imagenet1k_128x128_cvt_hugging-face_rgb_20210728_111659-099e96f9.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan-deep_256x256_cvt_hugging-face_rgb.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan-deep_256x256_cvt_hugging-face_rgb.py
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--biggan-deep_256x256_cvt_hugging-face_rgb
+  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--biggan--biggan-deep_256x256_cvt_hugging-face_rgb
   Results:
   - Dataset: Others
     Metrics:
@@ -77,11 +77,11 @@ Models:
       Models: BigGAN-Deep 256x256
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan-deep_imagenet1k_256x256_cvt_hugging-face_rgb_20210728_111735-28651569.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan-deep_512x512_cvt_hugging-face_rgb.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan-deep_512x512_cvt_hugging-face_rgb.py
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--biggan-deep_512x512_cvt_hugging-face_rgb
+  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--biggan--biggan-deep_512x512_cvt_hugging-face_rgb
   Results:
   - Dataset: Others
     Metrics:
