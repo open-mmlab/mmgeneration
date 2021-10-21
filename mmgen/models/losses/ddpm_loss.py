@@ -169,7 +169,13 @@ class DDPMLoss(nn.Module):
                              total_timesteps,
                              prefix_name,
                              reduction='mean'):
-        quartile = (timesteps / total_timesteps * 4).type(torch.LongTensor)
+        if torch.__version__ < '1.6.0':
+            # use true_divide in older torch version
+            quartile = torch.true_divide(timesteps, total_timesteps) * 4
+        else:
+            quartile = (timesteps / total_timesteps * 4)
+        quartile = quartile.type(torch.LongTensor)
+
         log_vars = dict()
 
         for idx in range(4):
