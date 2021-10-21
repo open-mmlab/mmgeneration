@@ -143,6 +143,12 @@ class DDPMLoss(nn.Module):
 
     @torch.no_grad()
     def collect_log(self, loss, timesteps):
+        """Collect logs.
+
+        Args:
+            loss (torch.Tensor): Losses to collect.
+            timesteps (torch.Tensor): Timesteps of each loss items.
+        """
         if not self.log_fn_list:
             return
 
@@ -169,6 +175,21 @@ class DDPMLoss(nn.Module):
                              total_timesteps,
                              prefix_name,
                              reduction='mean'):
+        """Collect loss logs by quartile timesteps.
+
+        Args:
+            loss (torch.Tensor): Loss value of each input. Should shape as
+                [bz, ].
+            timesteps (torch.Tensor): Timesteps corresponding to each losses.
+                Should shape as [bz, ].
+            total_timesteps (int): Total timesteps of diffusion process.
+            prefix_name (str): Prefix want to show in logs.
+            reduction (str, optional): Specifies the reduction to apply to the
+                output losses. Defaults to `mean`.
+
+        Returns:
+            dict: Collected log variables.
+        """
         if torch.__version__ < '1.6.0':
             # use true_divide in older torch version
             quartile = torch.true_divide(timesteps, total_timesteps) * 4
@@ -188,6 +209,17 @@ class DDPMLoss(nn.Module):
         return log_vars
 
     def forward(self, *args, **kwargs):
+        """Forward function.
+
+        If ``self.data_info`` is not ``None``, a dictionary containing all of
+        the data and necessary modules should be passed into this function.
+        If this dictionary is given as a non-keyword argument, it should be
+        offered as the first argument. If you are using keyword argument,
+        please name it as `outputs_dict`.
+
+        If ``self.data_info`` is ``None``, the input argument or key-word
+        argument will be directly passed to loss function, ``mse_loss``.
+        """
         if len(args) == 1:
             assert isinstance(args[0], dict), (
                 'You should offer a dictionary containing network outputs '
@@ -218,6 +250,16 @@ class DDPMLoss(nn.Module):
         return reduce_loss(loss_rescaled, self.reduction)
 
     def _forward_loss(self, output_dict):
+        """Forward function for loss calculation. This method should be
+        implemented by each subclasses.
+
+        Args:
+            outputs_dict (dict): Outputs of the model used to calculate losses.
+
+        Returns:
+            torch.Tensor: Calculated loss.
+        """
+
         raise NotImplementedError
 
     def loss_name(self):
@@ -326,7 +368,20 @@ class DDPMVLBLoss(DDPMLoss):
     @torch.no_grad()
     def name_log_collect(self, loss, timesteps, prefix_name, reduction='mean'):
         """Collect loss logs by name (GaissianKLD and
-        DiscGaussianLogLikelihood)."""
+        DiscGaussianLogLikelihood).
+
+        Args:
+            loss (torch.Tensor): Loss value of each input. Should shape as
+                [bz, ].
+            timesteps (torch.Tensor): Timesteps corresponding to each losses.
+                Should shape as [bz, ].
+            prefix_name (str): Prefix want to show in logs.
+            reduction (str, optional): Specifies the reduction to apply to the
+                output losses. Defaults to `mean`.
+
+        Returns:
+            dict: Collected log variables.
+        """
         log_vars = dict()
         for select_fn, loss_fn in zip(self.loss_select_fn_list,
                                       self.loss_list):
@@ -342,6 +397,13 @@ class DDPMVLBLoss(DDPMLoss):
         return log_vars
 
     def _forward_loss(self, outputs_dict):
+        """Forward function for loss calculation.
+        Args:
+            outputs_dict (dict):
+
+        Returns:
+            torch.Tensor: Calculated loss.
+        """
         # use `zeros` instead of `zeros_like` to avoid get int tensor
         timesteps = outputs_dict['timesteps']
         loss = torch.zeros(*timesteps.shape).to(timesteps.device)
@@ -403,6 +465,13 @@ class DDPMMSELoss(DDPMLoss):
         self.loss_fn = partial(mse_loss, reduction='flatmean')
 
     def _forward_loss(self, outputs_dict):
+        """Forward function for loss calculation.
+        Args:
+            outputs_dict (dict):
+
+        Returns:
+            torch.Tensor: Calculated loss.
+        """
         loss_input_dict = {
             k: outputs_dict[v]
             for k, v in self.data_info.items()
