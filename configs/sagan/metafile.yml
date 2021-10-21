@@ -8,7 +8,7 @@ Collections:
   README: configs/sagan/README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1.py
-  In Collection: README
+  In Collection: SAGAN
   Metadata:
     Training Data: CIFAR
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
@@ -28,7 +28,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_cifar10_32_lr2e-4_ndisc5_b64x1_woReUinplace_is-iter400000_20210730_125743-4008a9ca.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1.py
-  In Collection: README
+  In Collection: SAGAN
   Metadata:
     Training Data: CIFAR
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
@@ -48,7 +48,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_cifar10_32_lr2e-4_ndisc5_b64x1_woReUinplace_fid-iter480000_20210730_125449-d50568a4.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1.py
-  In Collection: README
+  In Collection: SAGAN
   Metadata:
     Training Data: CIFAR
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
@@ -68,7 +68,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_cifar10_32_lr2e-4_ndisc5_b64x1_wReLUinplace_is-iter380000_20210730_124937-c77b4d25.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1.py
-  In Collection: README
+  In Collection: SAGAN
   Metadata:
     Training Data: CIFAR
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
@@ -88,7 +88,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_cifar10_32_lr2e-4_ndisc5_b64x1_wReLUinplace_fid-iter460000_20210730_125155-cbefb354.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_128_woReLUinplace_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b64x4.py
-  In Collection: README
+  In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_128_woReLUinplace_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b64x4
@@ -108,7 +108,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_imagenet1k_128_Glr1e-4_Dlr4e-4_ndisc1_b32x4_woReLUinplace_is-iter980000_20210730_163140-cfbebfc6.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_128_woReLUinplace_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b64x4.py
-  In Collection: README
+  In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_128_woReLUinplace_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b64x4
@@ -128,7 +128,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_imagenet1k_128_Glr1e-4_Dlr4e-4_ndisc1_b32x4_woReLUinplace_fid-iter950000_20210730_163431-d7916963.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_128_woReLUinplace_noaug_bigGAN_Glr1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8.py
-  In Collection: README
+  In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_128_woReLUinplace_noaug_bigGAN_Glr1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8
@@ -148,7 +148,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_128_woReLUinplace_noaug_bigGAN_imagenet1k_b32x8_Glr1e-4_Dlr-4e-4_ndisc1_20210818_210232-3f5686af.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_128_woReLUinplace_noaug_bigGAN_Glr1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8.py
-  In Collection: README
+  In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_128_woReLUinplace_noaug_bigGAN_Glr1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8
@@ -168,7 +168,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_128_woReLUinplace_noaug_bigGAN_imagenet1k_b32x8_Glr1e-4_Dlr-4e-4_ndisc1_20210818_210232-3f5686af.pth
 - Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/sagan_32x32.py
-  In Collection: README
+  In Collection: SAGAN
   Metadata:
     Training Data: Others
   Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--sagan_32x32
@@ -187,7 +187,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_32_cifar10_convert-studio-rgb_20210730_153321-080da7e2.pth
 - Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/sagan_128x128.py
-  In Collection: README
+  In Collection: SAGAN
   Metadata:
     Training Data: Others
   Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--sagan_128x128
