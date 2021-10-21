@@ -16,6 +16,7 @@
   url={https://openaccess.thecvf.com/content_ICCV_2019/html/Shaham_SinGAN_Learning_a_Generative_Model_From_a_Single_Natural_Image_ICCV_2019_paper.html},
 }
 ```
+</details>
 
 ## Results and Models
 
