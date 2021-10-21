@@ -136,6 +136,7 @@ def parse_md(md_file, task):
                 if 'ALGORITHM' in lines[i] or 'BACKBONE' in lines[i]:
                     collection['Metadata']['Architecture'].append(name)
                     collection['Name'] = name
+                    collection_name = name
                 # get paper url
                 collection['Paper'].append(url)
                 i = j + 1
@@ -287,4 +288,4 @@ if __name__ == '__main__':
 
     file_modified |= update_model_index()
 
-    sys.exit(1 if file_modified else 0)
+    sys.exit(0)

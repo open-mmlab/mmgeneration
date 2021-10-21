@@ -8,7 +8,7 @@ Collections:
   README: configs/cyclegan/README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_resnet_in_1x1_80k_facades.py
-  In Collection: README
+  In Collection: CycleGAN
   Metadata:
     Training Data: FACADES
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_1x1_80k_facades
@@ -22,7 +22,7 @@ Models:
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_resnet_in_1x1_80k_facades_20210902_165905-5e2c0876.pth?versionId=CAEQMhiBgICA5rCs3RciIDNmNDdjYzE1YTBiYjRiOTQ4NTI2ZjgwYzMxMDZmZWNk
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_id0_resnet_in_1x1_80k_facades.py
-  In Collection: README
+  In Collection: CycleGAN
   Metadata:
     Training Data: FACADES
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_1x1_80k_facades
@@ -36,7 +36,7 @@ Models:
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_id0_resnet_in_1x1_80k_facades_convert-bgr_20210902_164411-d8e72b45.pth?versionId=CAEQMhiBgMCZ3rCs3RciIDk0NWIwMmZjNzRhMjRkMTdiMjEyNTdhYTBkMmU4MmRi
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_resnet_in_1x1_250k_summer2winter.py
-  In Collection: README
+  In Collection: CycleGAN
   Metadata:
     Training Data: SUMMER2WINTER
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_1x1_250k_summer2winter
@@ -50,7 +50,7 @@ Models:
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_resnet_in_1x1_246200_summer2winter_convert-bgr_20210902_165932-fcf08dc1.pth?versionId=CAEQMhiBgIDT37Cs3RciIDNhYzQ3ZWU3MzZjNTQ1ZmJiZmMyZGZiMTc1NzUyZDM1
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_id0_resnet_in_1x1_250k_summer2winter.py
-  In Collection: README
+  In Collection: CycleGAN
   Metadata:
     Training Data: SUMMER2WINTER
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_1x1_250k_summer2winter
@@ -64,7 +64,7 @@ Models:
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_id0_resnet_in_1x1_246200_summer2winter_convert-bgr_20210902_165640-8b825581.pth?versionId=CAEQMhiBgICe3rCs3RciIGNiM2JmNjViNmQ5ZTRhMTQ4YWI0YjFkOTdmNTE3MzFi
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_resnet_in_1x1_250k_winter2summer.py
-  In Collection: README
+  In Collection: CycleGAN
   Metadata:
     Training Data: Others
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_1x1_250k_winter2summer
@@ -78,7 +78,7 @@ Models:
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_resnet_in_1x1_246200_summer2winter_convert-bgr_20210902_165932-fcf08dc1.pth?versionId=CAEQMhiBgIDT37Cs3RciIDNhYzQ3ZWU3MzZjNTQ1ZmJiZmMyZGZiMTc1NzUyZDM1
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_id0_resnet_in_1x1_250k_winter2summer.py
-  In Collection: README
+  In Collection: CycleGAN
   Metadata:
     Training Data: Others
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_1x1_250k_winter2summer
@@ -92,7 +92,7 @@ Models:
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_id0_resnet_in_1x1_246200_summer2winter_convert-bgr_20210902_165640-8b825581.pth?versionId=CAEQMhiBgICe3rCs3RciIGNiM2JmNjViNmQ5ZTRhMTQ4YWI0YjFkOTdmNTE3MzFi
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_resnet_in_1x1_270k_horse2zebra.py
-  In Collection: README
+  In Collection: CycleGAN
   Metadata:
     Training Data: HORSE2ZEBRA
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_1x1_270k_horse2zebra
@@ -106,7 +106,7 @@ Models:
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_resnet_in_1x1_266800_horse2zebra_convert-bgr_20210902_170004-a32c733a.pth?versionId=CAEQMhiBgMD327Cs3RciIDhkMjhhZDJkYjliYTQyM2M5MzU5ZDYxZGNhZGI5Njc4
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_id0_resnet_in_1x1_270k_horse2zebra.py
-  In Collection: README
+  In Collection: CycleGAN
   Metadata:
     Training Data: HORSE2ZEBRA
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_1x1_270k_horse2zebra
@@ -120,7 +120,7 @@ Models:
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_id0_resnet_in_1x1_266800_horse2zebra_convert-bgr_20210902_165724-77c9c806.pth?versionId=CAEQMhiBgICF4rCs3RciIDA1YzcxZDI3ZmQwNjRhYTBiZjgzMGJmZWY3MmVhNDZj
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_resnet_in_1x1_270k_zebra2horse.py
-  In Collection: README
+  In Collection: CycleGAN
   Metadata:
     Training Data: Others
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_1x1_270k_zebra2horse
@@ -134,7 +134,7 @@ Models:
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_resnet_in_1x1_266800_horse2zebra_convert-bgr_20210902_170004-a32c733a.pth?versionId=CAEQMhiBgMD327Cs3RciIDhkMjhhZDJkYjliYTQyM2M5MzU5ZDYxZGNhZGI5Njc4
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_id0_resnet_in_1x1_270k_zebra2horse.py
-  In Collection: README
+  In Collection: CycleGAN
   Metadata:
     Training Data: Others
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_1x1_270k_zebra2horse
