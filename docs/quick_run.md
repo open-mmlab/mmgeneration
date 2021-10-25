@@ -12,7 +12,7 @@ In this section, we will specify how to sample fake images by using our uncondit
 
 ### Sample images with unconditional GANs
 
-MMGeneration provides high-level APIs for sampling images by using unconditional GANs. Here is an example of building StyleGAN2-256 and obtaining the synthesized images.
+MMGeneration provides high-level APIs for sampling images with unconditional GANs. Here is an example for building StyleGAN2-256 and obtaining the synthesized images.
 
 ```python
 import mmcv
@@ -39,11 +39,11 @@ python demo/unconditional_demo.py \
     [--save-path ${SAVE_PATH}] \
     [--device ${GPU_ID}]
 ```
-Note that more customized arguments are also offered to customizing your sampling procedure. Please use `python demo/unconditional_demo.py --help` to check more details.
+Note that more arguments are also offered to customizing your sampling procedure. Please use `python demo/unconditional_demo.py --help` to check more details.
 
 ### Sample images with conditional GANs
 
-MMGeneration provides high-level APIs for sampling images by using conditional GANs. Here is an example of building SAGAN-128 and obtaining the synthesized images.
+MMGeneration provides high-level APIs for sampling images with conditional GANs. Here is an example for building SAGAN-128 and obtaining the synthesized images.
 
 ```python
 import mmcv
@@ -81,9 +81,9 @@ python demo/conditional_demo.py \
 ```
 If `--label` is not passed, images with random labels would be generated.
 If `--label` is passed, we would generate `${SAMPLES_PER_CLASSES}` images for each input label.
-If `sample_all_classes` is set true in command line, `--label` would be ignored and all labels contained in the dataset would be generated.
+If `sample_all_classes` is set true in command line, `--label` would be ignored and the generator will output images for all categories.
 
-Note that more customized arguments are also offered to customizing your sampling procedure. Please use `python demo/unconditional_demo.py --help` to check more details.
+Note that more arguments are also offered to customizing your sampling procedure. Please use `python demo/conditional_demo.py --help` to check more details.
 
 ### Sample images with image translation models
 MMGeneration provides high-level APIs for translating images by using image translation models. Here is an example of building Pix2Pix and obtaining the translated images.
