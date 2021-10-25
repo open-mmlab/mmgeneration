@@ -63,10 +63,8 @@ Models:
       Models: BigGAN-Deep 128x128
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan-deep_imagenet1k_128x128_cvt_hugging-face_rgb_20210728_111659-099e96f9.pth
-<<<<<<< HEAD
 - Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan-deep_256x256_cvt_hugging-face_rgb.py
   In Collection: BigGAN
->>>>>>> cbe180622cb5dd3c0ca82b673cc63d8e14a03e78
   Metadata:
     Training Data: Others
   Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--biggan--biggan-deep_256x256_cvt_hugging-face_rgb
