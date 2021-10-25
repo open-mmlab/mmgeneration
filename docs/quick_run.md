@@ -237,6 +237,11 @@ bash slurm_eval.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CONFIG_FILE} \
     --eval none
 ```
 
+We also provide [tools/utils/translation_eval.py](https://github.com/open-mmlab/mmgeneration/blob/master/tools/utils/translation_eval.py) for users to evaluate their translation models. You are supposed to set the `target-domain` of the output images and run the following command:
+```shell
+python tools/utils/translation_eval.py ${CONFIG_FILE} ${CKPT_FILE} --t ${target-domain}
+```
+
 Next, we will specify the details of different metrics one by one.
 
 ## **FID**
@@ -398,7 +403,7 @@ python tools/evaluation.py ./configs/pggan/pggan_celeba-cropped_128_g8_12Mimgs.p
 
 In this section, we will discuss how to evaluate the generative models, especially for GANs, in the training. Note that `MMGeneration` only supports distributed training and the evaluation metric adopted in the training procedure should also be run in a distributed style. Currently, only `FID` has been implemented and tested in an efficient distributed version. Other metrics with efficient distributed version will be supported in the recent future. Thus, in the following part, we will specify how to evaluate your models with `FID` metric in training.
 
-In [eval_hooks.py](https://github.com/open-mmlab/mmgeneration/blob/master/mmgen/core/evaluation/eval_hooks.py), `GenerativeEvalHook` is provided to evaluate generative models duiring training. The most important argument for this hook is `metrics`. In fact, users can directly copy the configs in the last section to define the evaluation metric. To evaluate the model with `FID` metric, please add the following python codes in your config file:
+In [eval_hooks.py](https://github.com/open-mmlab/mmgeneration/blob/master/mmgen/core/evaluation/eval_hooks.py), `GenerativeEvalHook` is provided to evaluate generative models during training. The most important argument for this hook is `metrics`. In fact, users can directly copy the configs in the last section to define the evaluation metric. To evaluate the model with `FID` metric, please add the following python codes in your config file:
 
 ```python
 # define the evaluation keywords, otherwise evaluation will not be
@@ -424,3 +429,14 @@ data = dict(
 ```
 
 We highly recommend that users should pre-calculate the inception pickle file in advance, which will reduce the evaluation cost significantly.
+
+We also provide `TranslationEvalHook` for users to evaluate translation models during training. The only difference  with `GenerativeEvalHook` is that you need to specify the target domain of the evaluated model. For example, to evaluate the model with `FID` metric, please add the following python codes in your config file:
+```python
+evaluation = dict(
+    type='TranslationEvalHook',
+    target_domain=target_domain,
+    interval=10000,
+    metrics=[
+        dict(type='FID', num_images=num_images, bgr2rgb=True)
+    ])
+```
