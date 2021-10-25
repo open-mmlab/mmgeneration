@@ -15,6 +15,7 @@
   url={https://arxiv.org/abs/1511.06434},
 }
 ```
+</details>
 
 ## Results and models
 

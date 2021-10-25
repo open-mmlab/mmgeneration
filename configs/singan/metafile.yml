@@ -8,7 +8,7 @@ Collections:
   README: configs/singan/README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/singan/singan_balloons.py
-  In Collection: README
+  In Collection: Singan
   Metadata:
     Training Data: Others
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--singan--singan_balloons
@@ -19,7 +19,7 @@ Models:
     Task: Internal Learning
   Weights: https://download.openmmlab.com/mmgen/singan/singan_balloons_20210406_191047-8fcd94cf.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/singan/singan_fish.py
-  In Collection: README
+  In Collection: Singan
   Metadata:
     Training Data: Others
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--singan--singan_fish
@@ -30,7 +30,7 @@ Models:
     Task: Internal Learning
   Weights: https://download.openmmlab.com/mmgen/singan/singan_fis_20210406_201006-860d91b6.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/singan/singan_bohemian.py
-  In Collection: README
+  In Collection: Singan
   Metadata:
     Training Data: Others
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--singan--singan_bohemian
