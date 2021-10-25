@@ -127,11 +127,11 @@ Models:
       dist_step: 1.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_imagenet1k_128_Glr1e-4_Dlr4e-4_ndisc1_b32x4_woReLUinplace_fid-iter950000_20210730_163431-d7916963.pth
-- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_128_woReLUinplace_noaug_bigGAN_Glr1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8.py
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_128_woReLUinplace_noaug_bigGAN_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8.py
   In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_128_woReLUinplace_noaug_bigGAN_Glr1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8
+  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_128_woReLUinplace_noaug_bigGAN_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -147,11 +147,11 @@ Models:
       dist_step: 1.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_128_woReLUinplace_noaug_bigGAN_imagenet1k_b32x8_Glr1e-4_Dlr-4e-4_ndisc1_20210818_210232-3f5686af.pth
-- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_128_woReLUinplace_noaug_bigGAN_Glr1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8.py
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_128_woReLUinplace_noaug_bigGAN_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8.py
   In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_128_woReLUinplace_noaug_bigGAN_Glr1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8
+  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_128_woReLUinplace_noaug_bigGAN_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8
   Results:
   - Dataset: IMAGENET
     Metrics:
