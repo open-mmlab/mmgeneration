@@ -6,4 +6,144 @@ Collections:
   Paper:
   - https://openaccess.thecvf.com/content_iccv_2017/html/Zhu_Unpaired_Image-To-Image_Translation_ICCV_2017_paper.html
   README: configs/cyclegan/README.md
-Models: []
+Models:
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_resnet_in_facades_b1x1_80k.py
+  In Collection: CycleGAN
+  Metadata:
+    Training Data: FACADES
+  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_facades_b1x1_80k
+  Results:
+  - Dataset: FACADES
+    Metrics:
+      Dataset: facades
+      FID: 124.8033
+      IS: 1.792
+      Models: Ours
+    Task: Image2Image Translation
+  Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_resnet_in_1x1_80k_facades_20210902_165905-5e2c0876.pth?versionId=CAEQMhiBgICA5rCs3RciIDNmNDdjYzE1YTBiYjRiOTQ4NTI2ZjgwYzMxMDZmZWNk
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_id0_resnet_in_facades_b1x1_80k.py
+  In Collection: CycleGAN
+  Metadata:
+    Training Data: FACADES
+  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_facades_b1x1_80k
+  Results:
+  - Dataset: FACADES
+    Metrics:
+      Dataset: facades-id0
+      FID: 125.1694
+      IS: 1.905
+      Models: Ours
+    Task: Image2Image Translation
+  Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_id0_resnet_in_1x1_80k_facades_convert-bgr_20210902_164411-d8e72b45.pth?versionId=CAEQMhiBgMCZ3rCs3RciIDk0NWIwMmZjNzRhMjRkMTdiMjEyNTdhYTBkMmU4MmRi
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_resnet_in_summer2winter_b1x1_250k.py
+  In Collection: CycleGAN
+  Metadata:
+    Training Data: SUMMER2WINTER
+  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_summer2winter_b1x1_250k
+  Results:
+  - Dataset: SUMMER2WINTER
+    Metrics:
+      Dataset: summer2winter
+      FID: 83.7177
+      IS: 2.771
+      Models: Ours
+    Task: Image2Image Translation
+  Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_resnet_in_1x1_246200_summer2winter_convert-bgr_20210902_165932-fcf08dc1.pth?versionId=CAEQMhiBgIDT37Cs3RciIDNhYzQ3ZWU3MzZjNTQ1ZmJiZmMyZGZiMTc1NzUyZDM1
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_id0_resnet_in_summer2winter_b1x1_250k.py
+  In Collection: CycleGAN
+  Metadata:
+    Training Data: SUMMER2WINTER
+  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_summer2winter_b1x1_250k
+  Results:
+  - Dataset: SUMMER2WINTER
+    Metrics:
+      Dataset: summer2winter-id0
+      FID: 83.1418
+      IS: 2.72
+      Models: Ours
+    Task: Image2Image Translation
+  Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_id0_resnet_in_1x1_246200_summer2winter_convert-bgr_20210902_165640-8b825581.pth?versionId=CAEQMhiBgICe3rCs3RciIGNiM2JmNjViNmQ5ZTRhMTQ4YWI0YjFkOTdmNTE3MzFi
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_resnet_in_winter2summer_b1x1_250k.py
+  In Collection: CycleGAN
+  Metadata:
+    Training Data: Others
+  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_winter2summer_b1x1_250k
+  Results:
+  - Dataset: Others
+    Metrics:
+      Dataset: winter2summer
+      FID: 72.8025
+      IS: 3.129
+      Models: Ours
+    Task: Image2Image Translation
+  Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_resnet_in_1x1_246200_summer2winter_convert-bgr_20210902_165932-fcf08dc1.pth?versionId=CAEQMhiBgIDT37Cs3RciIDNhYzQ3ZWU3MzZjNTQ1ZmJiZmMyZGZiMTc1NzUyZDM1
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_id0_resnet_in_winter2summer_b1x1_250k.py
+  In Collection: CycleGAN
+  Metadata:
+    Training Data: Others
+  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_winter2summer_b1x1_250k
+  Results:
+  - Dataset: Others
+    Metrics:
+      Dataset: winter2summer-id0
+      FID: 73.5001
+      IS: 3.107
+      Models: Ours
+    Task: Image2Image Translation
+  Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_id0_resnet_in_1x1_246200_summer2winter_convert-bgr_20210902_165640-8b825581.pth?versionId=CAEQMhiBgICe3rCs3RciIGNiM2JmNjViNmQ5ZTRhMTQ4YWI0YjFkOTdmNTE3MzFi
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_resnet_in_horse2zebra_b1x1_270k.py
+  In Collection: CycleGAN
+  Metadata:
+    Training Data: HORSE2ZEBRA
+  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_horse2zebra_b1x1_270k
+  Results:
+  - Dataset: HORSE2ZEBRA
+    Metrics:
+      Dataset: horse2zebra
+      FID: 64.5225
+      IS: 1.418
+      Models: Ours
+    Task: Image2Image Translation
+  Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_resnet_in_1x1_266800_horse2zebra_convert-bgr_20210902_170004-a32c733a.pth?versionId=CAEQMhiBgMD327Cs3RciIDhkMjhhZDJkYjliYTQyM2M5MzU5ZDYxZGNhZGI5Njc4
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_id0_resnet_in_horse2zebra_b1x1_270k.py
+  In Collection: CycleGAN
+  Metadata:
+    Training Data: HORSE2ZEBRA
+  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_horse2zebra_b1x1_270k
+  Results:
+  - Dataset: HORSE2ZEBRA
+    Metrics:
+      Dataset: horse2zebra-id0
+      FID: 74.777
+      IS: 1.542
+      Models: Ours
+    Task: Image2Image Translation
+  Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_id0_resnet_in_1x1_266800_horse2zebra_convert-bgr_20210902_165724-77c9c806.pth?versionId=CAEQMhiBgICF4rCs3RciIDA1YzcxZDI3ZmQwNjRhYTBiZjgzMGJmZWY3MmVhNDZj
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_resnet_in_zebra2horse_b1x1_270k.py
+  In Collection: CycleGAN
+  Metadata:
+    Training Data: Others
+  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_zebra2horse_b1x1_270k
+  Results:
+  - Dataset: Others
+    Metrics:
+      Dataset: zebra2horse
+      FID: 141.1517
+      IS: 3.154
+      Models: Ours
+    Task: Image2Image Translation
+  Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_resnet_in_1x1_266800_horse2zebra_convert-bgr_20210902_170004-a32c733a.pth?versionId=CAEQMhiBgMD327Cs3RciIDhkMjhhZDJkYjliYTQyM2M5MzU5ZDYxZGNhZGI5Njc4
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_id0_resnet_in_zebra2horse_b1x1_270k.py
+  In Collection: CycleGAN
+  Metadata:
+    Training Data: Others
+  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_zebra2horse_b1x1_270k
+  Results:
+  - Dataset: Others
+    Metrics:
+      Dataset: zebra2horse-id0
+      FID: 134.3728
+      IS: 3.091
+      Models: Ours
+    Task: Image2Image Translation
+  Weights: https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_id0_resnet_in_1x1_266800_horse2zebra_convert-bgr_20210902_165724-77c9c806.pth?versionId=CAEQMhiBgICF4rCs3RciIDA1YzcxZDI3ZmQwNjRhYTBiZjgzMGJmZWY3MmVhNDZj
