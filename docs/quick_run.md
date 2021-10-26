@@ -12,7 +12,7 @@ In this section, we will specify how to sample fake images by using our uncondit
 
 ### Sample images with unconditional GANs
 
-MMGeneration provides high-level APIs for sampling images by using unconditional GANs. Here is an example of building StyleGAN2-256 and obtaining the synthesized images.
+MMGeneration provides high-level APIs for sampling images with unconditional GANs. Here is an example for building StyleGAN2-256 and obtaining the synthesized images.
 
 ```python
 import mmcv
@@ -27,7 +27,7 @@ device = 'cuda:0'
 # init a generatvie
 model = init_model(config_file, checkpoint_file, device=device)
 # sample images
-fake_imgs = sample_uncoditional_model(model, 4)
+fake_imgs = sample_unconditional_model(model, 4)
 ```
 
 Indeed, we have already provided a more friendly demo script to users. You can use [demo/unconditional_demo.py](https://github.com/open-mmlab/mmgeneration/tree/master/mmgen/demo/unconditional_demo.py) with the following commands:
@@ -39,7 +39,51 @@ python demo/unconditional_demo.py \
     [--save-path ${SAVE_PATH}] \
     [--device ${GPU_ID}]
 ```
-Note that more customized arguments are also offered to customizing your sampling procedure. Please use `python demo/unconditional_demo.py --help` to check more details.
+Note that more arguments are also offered to customizing your sampling procedure. Please use `python demo/unconditional_demo.py --help` to check more details.
+
+### Sample images with conditional GANs
+
+MMGeneration provides high-level APIs for sampling images with conditional GANs. Here is an example for building SAGAN-128 and obtaining the synthesized images.
+
+```python
+import mmcv
+from mmgen.apis import init_model, sample_conditional_model
+
+# Specify the path to model config and checkpoint file
+config_file = 'configs/sagan/sagan_128_woReLUinplace_noaug_bigGAN_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8.py'
+# you can download this checkpoint in advance and use a local file path.
+checkpoint_file = 'https://download.openmmlab.com/mmgen/sagan/sagan_128_woReLUinplace_noaug_bigGAN_imagenet1k_b32x8_Glr1e-4_Dlr-4e-4_ndisc1_20210818_210232-3f5686af.pth'
+
+device = 'cuda:0'
+# init a generatvie
+model = init_model(config_file, checkpoint_file, device=device)
+# sample images with random label
+fake_imgs = sample_conditional_model(model, 4)
+
+# sample images with the same label
+fake_imgs = sample_conditional_model(model, 4, label=0)
+
+# sample images with specific labels
+fake_imgs = sample_conditional_model(model, 4, label=[0, 1, 2, 3])
+```
+
+Indeed, we have already provided a more friendly demo script to users. You can use [demo/conditional_demo.py](https://github.com/open-mmlab/mmgeneration/tree/master/mmgen/demo/conditional_demo.py) with the following commands:
+
+```bash
+python demo/conditional_demo.py \
+    ${CONFIG_FILE} \
+    ${CHECKPOINT} \
+    [--label] ${LABEL} \
+    [--samples-per-classes] ${SAMPLES_PER_CLASSES} \
+    [--sample-all-classes] \
+    [--save-path ${SAVE_PATH}] \
+    [--device ${GPU_ID}]
+```
+If `--label` is not passed, images with random labels would be generated.
+If `--label` is passed, we would generate `${SAMPLES_PER_CLASSES}` images for each input label.
+If `sample_all_classes` is set true in command line, `--label` would be ignored and the generator will output images for all categories.
+
+Note that more arguments are also offered to customizing your sampling procedure. Please use `python demo/conditional_demo.py --help` to check more details.
 
 ### Sample images with image translation models
 MMGeneration provides high-level APIs for translating images by using image translation models. Here is an example of building Pix2Pix and obtaining the translated images.
@@ -50,16 +94,16 @@ import mmcv
 from mmgen.apis import init_model, sample_img2img_model
 
 # Specify the path to model config and checkpoint file
-config_file = 'configs/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes.py'
+config_file = 'configs/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_edges2shoes_b1x4_190k.py'
 # you can download this checkpoint in advance and use a local file path.
-checkpoint_file = 'https://download.openmmlab.com/mmgen/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes_convert-bgr_20210410_174116-aaaa3687.pth'
+checkpoint_file = 'https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes_convert-bgr_20210902_170902-0c828552.pth?versionId=CAEQMhiBgIC57vTj3RciIGZlNmQ4ZDJhN2E1MDQ5ZmJiOWJmYTY5MDg1ZTc0N2Vi'
 # Specify the path to image you want to translate
 image_path = 'tests/data/paired/test/33_AB.jpg'
 device = 'cuda:0'
 # init a generatvie
 model = init_model(config_file, checkpoint_file, device=device)
 # translate a single image
-translated_image = sample_img2img_model(model, image_path)
+translated_image = sample_img2img_model(model, image_path, target_domain='photo')
 ```
 
 Indeed, we have already provided a more friendly demo script to users. You can use [demo/translation_demo.py](https://github.com/open-mmlab/mmgeneration/tree/master/mmgen/demo/translation_demo.py) with the following commands:
@@ -255,15 +299,16 @@ metrics = dict(
 Inception score is an objective metric for evaluating the quality of generated images, proposed in [Improved Techniques for Training GANs](https://arxiv.org/pdf/1606.03498.pdf). It uses an InceptionV3 model to predict the class of the generated images, and suppose that 1) If an image is of high quality, it will be categorized into a specific class. 2) If images are of high diversity, the range of images' classes will be wide. So the KL-divergence of the conditional probability and marginal probability can indicate the quality and diversity of generated images. You can see the complete implementation in `metrics.py`, which refers to https://github.com/sbarratt/inception-score-pytorch/blob/master/inception_score.py.
 If you want to evaluate models with `IS` metrics, you can add the `metrics` into your config file like this:
 ```python
-# at the end of the configs/pix2pix/pix2pix_vanilla_unet_bn_1x1_80k_facades.py
+# at the end of the configs/pix2pix/pix2pix_vanilla_unet_bn_facades_b1x1_80k.py
 metrics = dict(
     IS=dict(type='IS', num_images=106, image_shape=(3, 256, 256)))
 ```
 You can run the command below to calculate IS.
 ```shell
-python tools/utils/translation_eval.py ./configs/pix2pix/pix2pix_vanilla_unet_bn_1x1_80k_facades.py\
-    https://download.openmmlab.com/mmgen/pix2pix/pix2pix_vanilla_unet_bn_1x1_80k_facades.py_20210410_174537-36d956f1.pth \
-    --eval IS
+python tools/utils/translation_eval.py --t photo \
+./configs/pix2pix/pix2pix_vanilla_unet_bn_facades_b1x1_80k.py \
+https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_1x1_80k_facades_20210902_170442-c0958d50.pth?versionId=CAEQMhiBgICb8fTj3RciIGU2NmViM2QyYzJkODQ0MDBhYTFhMGE2YzNmMTA0ODk3\
+--eval IS
 ```
 To be noted that, the selection of Inception V3 and image resize method can significantly influence the final IS score. Therefore, we strongly recommend users may download the [Tero's script model of Inception V3](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt) (load this script model need torch >= 1.6) and use `Bicubic` interpolation with `Pillow` backend. We provide a template for the [data process pipline](https://github.com/open-mmlab/mmgeneration/tree/master/configs/_base_/datasets/Inception_Score.py) as well.
 
@@ -271,21 +316,21 @@ We also perform a survey on the influence of data loading pipeline and the versi
 
 <details> <summary> Show the Comparison Results </summary>
 
-| Code Base | Inception V3 Version | Data Loader Backend | Resize Interpolation Method | IS |
-| -- | -- | -- | -- | -- |
-| [OpenAI (baseline)](https://github.com/openai/improved-gan) | Tensorflow | Pillow | Pillow Bicubic | **312.255 +/- 4.970** |
-| [StyleGAN-Ada](https://github.com/NVlabs/stylegan2-ada-pytorch) | Tero's Script Model | Pillow | Pillow Bicubic | 311.895 +/ 4.844 |
-| mmgen (Ours) | Pytorch Pretrained | cv2 | cv2 Bilinear | 322.932 +/- 2.317 |
-| mmgen (Ours) | Pytorch Pretrained | cv2 | cv2 Bicubic | 324.604 +/- 5.157 |
-| mmgen (Ours) | Pytorch Pretrained | cv2 | Pillow Bicubic | 318.161 +/- 5.330 |
-| mmgen (Ours) | Pytorch Pretrained | Pillow | Pillow Bilinear | 313.126 +/- 5.449 |
-| mmgen (Ours) | Pytorch Pretrained | Pillow | cv2 Bilinear | 318.021+/-3.864 |
-| mmgen (Ours) | Pytorch Pretrained | Pillow | Pillow Bicubic | 317.997 +/- 5.350 |
-| mmgen (Ours) | Tero's Script Model | cv2 | cv2 Bilinear | 318.879 +/- 2.433 |
-| mmgen (Ours) | Tero's Script Model | cv2 | cv2 Bicubic | 316.125 +/- 5.718 |
-| mmgen (Ours) | Tero's Script Model | cv2 | Pillow Bicubic | **312.045 +/- 5.440** |
-| mmgen (Ours) | Tero's Script Model | Pillow | Pillow Bilinear | 308.645 +/- 5.374 |
-| mmgen (Ours) | Tero's Script Model | Pillow | Pillow Bicubic | 311.733 +/- 5.375 |
+|                            Code Base                            | Inception V3 Version | Data Loader Backend | Resize Interpolation Method |          IS           |
+|:---------------------------------------------------------------:|:--------------------:|:-------------------:|:---------------------------:|:---------------------:|
+|   [OpenAI (baseline)](https://github.com/openai/improved-gan)   |      Tensorflow      |       Pillow        |       Pillow Bicubic        | **312.255 +/- 4.970** |
+| [StyleGAN-Ada](https://github.com/NVlabs/stylegan2-ada-pytorch) | Tero's Script Model  |       Pillow        |       Pillow Bicubic        |   311.895 +/ 4.844    |
+|                          mmgen (Ours)                           |  Pytorch Pretrained  |         cv2         |        cv2 Bilinear         |   322.932 +/- 2.317   |
+|                          mmgen (Ours)                           |  Pytorch Pretrained  |         cv2         |         cv2 Bicubic         |   324.604 +/- 5.157   |
+|                          mmgen (Ours)                           |  Pytorch Pretrained  |         cv2         |       Pillow Bicubic        |   318.161 +/- 5.330   |
+|                          mmgen (Ours)                           |  Pytorch Pretrained  |       Pillow        |       Pillow Bilinear       |   313.126 +/- 5.449   |
+|                          mmgen (Ours)                           |  Pytorch Pretrained  |       Pillow        |        cv2 Bilinear         |    318.021+/-3.864    |
+|                          mmgen (Ours)                           |  Pytorch Pretrained  |       Pillow        |       Pillow Bicubic        |   317.997 +/- 5.350   |
+|                          mmgen (Ours)                           | Tero's Script Model  |         cv2         |        cv2 Bilinear         |   318.879 +/- 2.433   |
+|                          mmgen (Ours)                           | Tero's Script Model  |         cv2         |         cv2 Bicubic         |   316.125 +/- 5.718   |
+|                          mmgen (Ours)                           | Tero's Script Model  |         cv2         |       Pillow Bicubic        | **312.045 +/- 5.440** |
+|                          mmgen (Ours)                           | Tero's Script Model  |       Pillow        |       Pillow Bilinear       |   308.645 +/- 5.374   |
+|                          mmgen (Ours)                           | Tero's Script Model  |       Pillow        |       Pillow Bicubic        |   311.733 +/- 5.375   |
 
 </details>
 
@@ -354,7 +399,7 @@ python tools/evaluation.py ./configs/pggan/pggan_celeba-cropped_128_g8_12Mimgs.p
 
 In this section, we will discuss how to evaluate the generative models, especially for GANs, in the training. Note that `MMGeneration` only supports distributed training and the evaluation metric adopted in the training procedure should also be run in a distributed style. Currently, only `FID` has been implemented and tested in an efficient distributed version. Other metrics with efficient distributed version will be supported in the recent future. Thus, in the following part, we will specify how to evaluate your models with `FID` metric in training.
 
-In [eval_hooks.py](https://github.com/open-mmlab/mmgeneration/blob/master/mmgen/core/evaluation/eval_hooks.py), `GenerativeEvalHook` is provided to evaluate generative models duiring training. The most important argument for this hook is `metrics`. In fact, users can directly copy the configs in the last section to define the evaluation metric. To evaluate the model with `FID` metric, please add the following python codes in your config file:
+In [eval_hooks.py](https://github.com/open-mmlab/mmgeneration/blob/master/mmgen/core/evaluation/eval_hooks.py), `GenerativeEvalHook` is provided to evaluate generative models during training. The most important argument for this hook is `metrics`. In fact, users can directly copy the configs in the last section to define the evaluation metric. To evaluate the model with `FID` metric, please add the following python codes in your config file:
 
 ```python
 # define the evaluation keywords, otherwise evaluation will not be
@@ -362,6 +407,23 @@ In [eval_hooks.py](https://github.com/open-mmlab/mmgeneration/blob/master/mmgen/
 evaluation = dict(
     type='GenerativeEvalHook',
     interval=10000,
+    metrics=dict(
+        type='FID',
+        num_images=50000,
+        inception_pkl='path_to_inception_pkl',
+        bgr2rgb=True),
+    sample_kwargs=dict(sample_model='ema'))
+```
+
+We also provide `TranslationEvalHook` to evaluate translation models during training. You can use it in almost the same way as `GenerativeEvalHook`. The only difference is that you need to specify the `target_domain` of the evaluated images. To evaluate the model with `FID` metric, please add the following python codes in your config file:
+
+```python
+# define the evaluation keywords, otherwise evaluation will not be
+# added in training
+evaluation = dict(
+    type='TranslationEvalHook',
+    interval=10000,
+    target_domain='target_domain',
     metrics=dict(
         type='FID',
         num_images=50000,

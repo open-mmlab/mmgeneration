@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/pggan_1024.py',
+    '../_base_/models/pggan/pggan_1024.py',
     '../_base_/datasets/grow_scale_imgs_celeba-hq.py',
     '../_base_/default_runtime.py'
 ]

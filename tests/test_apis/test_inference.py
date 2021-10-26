@@ -48,13 +48,13 @@ class TestSampleTranslationModel:
         pix2pix_config = mmcv.Config.fromfile(
             os.path.join(
                 project_dir,
-                'configs/pix2pix/pix2pix_vanilla_unet_bn_1x1_80k_facades.py'))
+                'configs/pix2pix/pix2pix_vanilla_unet_bn_facades_b1x1_80k.py'))
         cls.pix2pix = init_model(pix2pix_config, checkpoint=None, device='cpu')
         cyclegan_config = mmcv.Config.fromfile(
             os.path.join(
                 project_dir,
-                'configs/cyclegan/cyclegan_lsgan_resnet_in_1x1_80k_facades.py')
-        )
+                'configs/cyclegan/cyclegan_lsgan_resnet_in_facades_b1x1_80k.py'
+            ))
         cls.cyclegan = init_model(
             cyclegan_config, checkpoint=None, device='cpu')
         cls.img_path = os.path.join(

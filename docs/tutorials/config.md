@@ -64,7 +64,7 @@ For more detailed usage and the corresponding alternative for each module, pleas
 
 ```python
 _base_ = [
-    '../_base_/datasets/ffhq_flip.py', '../_base_/models/stylegan2_base.py',
+    '../_base_/datasets/ffhq_flip.py', '../_base_/models/stylegan/stylegan2_base.py',
     '../_base_/default_runtime.py', '../_base_/default_metrics.py'
 ]  # base config file which we build new config file on.
 

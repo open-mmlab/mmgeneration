@@ -286,6 +286,8 @@ def main():
 
     # get source domain and target domain
     target_domain = args.target_domain
+    if target_domain is None:
+        target_domain = model.module._default_domain
     source_domain = model.module.get_other_domains(target_domain)[0]
 
     basic_table_info = dict(

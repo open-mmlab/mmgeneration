@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/singan.py', '../_base_/datasets/singan.py',
+    '../_base_/models/singan/singan.py', '../_base_/datasets/singan.py',
     '../_base_/default_runtime.py'
 ]
 
