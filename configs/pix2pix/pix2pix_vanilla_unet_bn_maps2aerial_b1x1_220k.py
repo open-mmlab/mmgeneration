@@ -1,10 +1,10 @@
 _base_ = [
-    '../_base_/models/pix2pix_vanilla_unet_bn.py',
+    '../_base_/models/pix2pix/pix2pix_vanilla_unet_bn.py',
     '../_base_/datasets/paired_imgs_256x256_crop.py',
     '../_base_/default_runtime.py'
 ]
-source_domain = 'aerial'
-target_domain = 'map'
+source_domain = 'map'
+target_domain = 'aerial'
 # model settings
 model = dict(
     default_domain=target_domain,
@@ -14,8 +14,8 @@ model = dict(
         data_info=dict(
             pred=f'fake_{target_domain}', target=f'real_{target_domain}')))
 # dataset settings
-domain_a = source_domain
-domain_b = target_domain
+domain_a = target_domain
+domain_b = source_domain
 img_norm_cfg = dict(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 train_pipeline = [
     dict(
@@ -81,7 +81,6 @@ data = dict(
     train=dict(dataroot=dataroot, pipeline=train_pipeline),
     val=dict(dataroot=dataroot, pipeline=test_pipeline, testdir='val'),
     test=dict(dataroot=dataroot, pipeline=test_pipeline, testdir='val'))
-
 # optimizer
 optimizer = dict(
     generators=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)),
@@ -105,7 +104,7 @@ use_ddp_wrapper = True
 # runtime settings
 total_iters = 220000
 workflow = [('train', 1)]
-exp_name = 'pix2pix_aerial2map'
+exp_name = 'pix2pix_maps2aerial'
 work_dir = f'./work_dirs/experiments/{exp_name}'
 num_images = 1098
 metrics = dict(

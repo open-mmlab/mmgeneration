@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/biggan_128x128.py',
+    '../_base_/models/biggan/biggan_128x128.py',
     '../_base_/datasets/imagenet_noaug_128.py', '../_base_/default_runtime.py'
 ]
 
