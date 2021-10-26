@@ -14,40 +14,64 @@ from .utils import reduce_loss
 
 
 class DDPMLoss(nn.Module):
-    """Base module for DDPM losses. We support loss rescale and log collection
-    for DDPM models in this module.
+    """Base module for DDPM losses. We support loss weight rescale and log
+    collection for DDPM models in this module.
 
     We support two kinds of loss rescale methods, which can be
     controlled by ``rescale_mode`` and ``rescale_cfg``:
     1. ``rescale_mode == 'constant'``: ``constant_rescale`` would be called,
-        and ``rescale_cfg`` should be passed as ``dict(scale=SCALE)``. Then,
-        all loss terms would be rescaled by multiply with ``SCALE``
+        and ``rescale_cfg`` should be passed as ``dict(scale=SCALE)``,
+        e.g., ``dict(scale=1.2)``. Then, all loss terms would be rescaled by
+        multiply with ``SCALE``
     2. ``rescale_mode == timestep_weight``: ``timestep_weight_rescale`` would
         be called, and ``weight`` or ``sampler`` who contains attribute of
-        weight must be passed. Then, loss of timestep `t` would be multiplied
-        with `weight[t]`. ``scale`` is allowed as well in ``rescale_cfg``.
-        To be noted that, ``weight`` would be inplace modified in the outer
-        code.
+        weight must be passed. Then, loss at timestep `t` would be multiplied
+        with `weight[t]`. We also support users further apply a constant
+        rescale factor to all loss terms, e.g.
+        ``rescale_cfg=dict(scale=SCALE)``. The overall rescale function for
+        loss at timestep ``t`` can be formulated as
+        `loss[t] := weight[t] * loss[t] * SCALE`. To be noted that, ``weight``
+        or ``sampler.weight`` would be inplace modified in the outer code.
+        e.g.,
+
+        .. code-blocks:: python
+            :linenos:
+
+            # 1. define weight
+            weight = torch.randn(10, )
+
+            # 2. define loss function
+            loss_fn = DDPMLoss(rescale_mode='timestep_weight', weight=weight)
+
+            # 3 update weight
+            # wrong usage: `weight` in `loss_fn` is not accessible from now
+            # because you assign a new tensor to variable `weight`
+            # weight = torch.randn(10, )
+
+            # correct usage: update `weight` inplace
+            weight[2] = 2
+
     If ``rescale_mode`` is not passed, ``rescale_cfg`` would be ignored, and
     all loss terms would not be rescaled.
 
-    For losses log collection, we support users to pass a list of
-    (or single) config by ``log_cfgs`` argument to define how they want to
-    collect loss terms and show them in the log.
-    Each log configs must contain ``type`` keyword, and may contain ``prefix``
-    and ``reduction`` keywords.
+    For loss log collection, we support users to pass a list of (or single)
+    config by ``log_cfgs`` argument to define how they want to collect loss
+    terms and show them in the log. Each log configs must contain ``type``
+    keyword, and may contain ``prefix`` and ``reduction`` keywords.
 
     ``type``: Use to get the corresponding collection function. Functions would
-        be named as ``f'{type}_log_collect'``.
+        be named as ``f'{type}_log_collect'``. In `DDPMLoss`, we only support
+        ``type=='quartile'``, but users may define their log collection
+        functions and use them in this way.
     ``prefix``: Control the prefix of output when print logs. If passed, it
         must start with ``'loss_'``. If not passed, ``'loss_'`` would be used.
     ``reduction``: Control the reduction method of the collected loss terms.
 
-    We implement ``quartile_log_collection`` in this module. Detailly, we
+    We implement ``quartile_log_collection`` in this module. In detail, we
     divide total timesteps into four parts and collect the loss in the
     corresponding timestep intervals.
 
-    To use those collection methods, users may passed ``log_cfgs`` as the
+    To use those collection methods, users may pass ``log_cfgs`` as the
     following example:
 
     .. code-block:: python
@@ -60,7 +84,7 @@ class DDPMLoss(nn.Module):
 
     Args:
         rescale_mode (str, optional): Mode of the loss rescale method.
-            Defaults to `''`.
+            Defaults to None.
         rescale_cfg (dict, optional): Config of the loss rescale method.
         log_cfgs (list[dict] | dict | optional): Configs to collect logs.
             Defaults to None.
@@ -306,7 +330,7 @@ class DDPMVLBLoss(DDPMLoss):
 
     Args:
         rescale_mode (str, optional): Mode of the loss rescale method.
-            Defaults to ''.
+            Defaults to None.
         rescale_cfg (dict, optional): Config of the loss rescale method.
         sampler (object): Weight sampler. Defaults to None.
         weight (torch.Tensor, optional): Weight used for rescale losses.
@@ -333,7 +357,7 @@ class DDPMVLBLoss(DDPMLoss):
         x='real_imgs', mean='mean_pred', logvar='logvar_pred')
 
     def __init__(self,
-                 rescale_mode='',
+                 rescale_mode=None,
                  rescale_cfg=None,
                  sampler=None,
                  weight=None,
@@ -399,7 +423,7 @@ class DDPMVLBLoss(DDPMLoss):
     def _forward_loss(self, outputs_dict):
         """Forward function for loss calculation.
         Args:
-            outputs_dict (dict):
+            outputs_dict (dict): Outputs of the model used to calculate losses.
 
         Returns:
             torch.Tensor: Calculated loss.
@@ -430,7 +454,7 @@ class DDPMMSELoss(DDPMLoss):
 
     Args:
         rescale_mode (str, optional): Mode of the loss rescale method.
-            Defaults to ''.
+            Defaults to None.
         rescale_cfg (dict, optional): Config of the loss rescale method.
         sampler (object): Weight sampler. Defaults to None.
         weight (torch.Tensor, optional): Weight used for rescale losses.
@@ -448,7 +472,7 @@ class DDPMMSELoss(DDPMLoss):
     _default_data_info = dict(pred='eps_t_pred', target='noise')
 
     def __init__(self,
-                 rescale_mode='',
+                 rescale_mode=None,
                  rescale_cfg=None,
                  sampler=None,
                  weight=None,
@@ -467,7 +491,7 @@ class DDPMMSELoss(DDPMLoss):
     def _forward_loss(self, outputs_dict):
         """Forward function for loss calculation.
         Args:
-            outputs_dict (dict):
+            outputs_dict (dict): Outputs of the model used to calculate losses.
 
         Returns:
             torch.Tensor: Calculated loss.
