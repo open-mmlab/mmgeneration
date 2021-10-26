@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 
 import mmcv
@@ -20,6 +21,8 @@ import yaml
 #    generated log table. (Related to convert_str_metric_value() function)
 # 4. The matric name should be mapped to the standard one. Please check
 #    ``metric_name_mapping`` to ensure the metric name in the keys of the dict.
+# 5. Pay attention to the format of numerical value. For instance, the
+#    precision value can be 0.69xx or 69.xx.
 #
 # --------------------------------------------------------------------------- #
 
@@ -36,6 +39,8 @@ metric_name_mapping = {
     'PR': 'PR',
     'PR50k': 'PR'
 }
+
+tolerance = 2.0
 
 
 def parse_args():
@@ -56,6 +61,16 @@ def read_metafile(filepath):
         data = yaml.safe_load(f)
 
     return data
+
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        pass
+
+    return False
 
 
 def read_table_from_log(filepath):
@@ -88,6 +103,9 @@ def read_table_from_log(filepath):
               ' information correctly.')
     elif len(table_info) > 3:
         print(f'Got more than 2 lines from the eval table in {filepath}')
+    else:
+        assert len(table_info[0]) == len(
+            table_info[1]), 'The eval table cannot be aligned'
 
     return table_info
 
@@ -112,6 +130,17 @@ def convert_str_metric_value(value):
         split = value.split('/')
 
         return [float(x.strip()) for x in split]
+    # Case: precision: 69.59999918937683, recall:40.200000643730164
+    elif ',' in value:
+        split = [x.strip() for x in value.split(',')]
+        res = []
+        for x in split:
+            if ':' in x:
+                num_str = x.split(':')[1].strip()
+                res.append(float(num_str))
+            elif is_number(x):
+                res.append(float(x))
+        return res
     else:
         try:
             res = float(value)
@@ -120,6 +149,30 @@ def convert_str_metric_value(value):
             print(f'Cannot convert str value {value} to float')
             print(f'Unexpected {err}, {type(err)}')
             raise err
+
+
+def compare_eval_orig_info(orig_info, eval_info):
+    flag = True
+    for k, v in eval_info.items():
+        orig_value = orig_info[k]
+        if isinstance(v, float):
+            if abs(v - orig_value) > tolerance:
+                print(v, orig_value)
+                flag = False
+                break
+        elif isinstance(v, list):
+            for tmp_v, temp_orig in zip(v, orig_value):
+                if abs(tmp_v - temp_orig) > tolerance:
+                    print(v, orig_value)
+                    flag = False
+                    break
+            if not flag:
+                break
+        else:
+            raise RuntimeError(f'Cannot parse compare eval_value: {v} and '
+                               f'orig_value: {orig_value}.')
+
+    return flag
 
 
 def check_info_from_metafile(meta_info):
@@ -144,8 +197,14 @@ def check_info_from_metafile(meta_info):
         return False
 
     metric_value_orig = {}
+    results_metric_orig = None
+    for info in results_orig:
+        if 'Metrics' in info:
+            results_metric_orig = info['Metrics']
+            break
+    assert results_metric_orig is not None, 'Cannot find Metrics in metafile.'
     # get the original metric value
-    for k, v in results_orig['Metrics']:
+    for k, v in results_metric_orig.items():
         if k in metric_name_mapping:
             metric_value_orig[
                 metric_name_mapping[k]] = convert_str_metric_value(v)
@@ -158,13 +217,14 @@ def check_info_from_metafile(meta_info):
     metric_value_eval = {}
     for i, name in enumerate(eval_info[0]):
         if name in metric_name_mapping:
-            metric_name_mapping[
-                metric_value_eval[name]] = convert_str_metric_value(
-                    eval_info[1])
+            metric_value_eval[
+                metric_name_mapping[name]] = convert_str_metric_value(
+                    eval_info[1][i])
     assert len(metric_value_eval
                ) > 0, f'Cannot get metric value in eval table: {eval_info}'
 
     # compare eval info and the original info from metafile
+    return compare_eval_orig_info(metric_value_orig, metric_value_eval)
 
 
 def get_log_files(args):
@@ -206,6 +266,13 @@ def main():
         else:
             meta_info['regress_status'] = 'Missing Eval Info'
 
+    mmcv.mkdir_or_exist(args.out)
+    with open(os.path.join(args.out, 'test_regression_report.json'), 'w') as f:
+        json.dump(data_dict, f)
+
+    print('-------------- Regression Report --------------')
+    print(data_dict)
+
 
 if __name__ == '__main__':
-    data = read_metafile('configs/styleganv2/metafile.yml')
+    main()
