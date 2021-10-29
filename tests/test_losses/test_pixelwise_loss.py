@@ -97,7 +97,8 @@ class TestGaussianKLDLoss:
         assert (loss == self.gt_loss).all()
 
         # test reduction --> batchmean
-        gaussian_kld_loss = GaussianKLDLoss(data_info=self.data_info)
+        gaussian_kld_loss = GaussianKLDLoss(
+            data_info=self.data_info, reduction='batchmean')
         loss = gaussian_kld_loss(self.output_dict)
         num_elements = self.tar_shape[1] * self.tar_shape[2] * \
             self.tar_shape[3]
@@ -119,7 +120,9 @@ class TestGaussianKLDLoss:
         # test weight --> tensor & batchmean
         weight = torch.randn(*self.tar_shape)
         gaussian_kld_loss = GaussianKLDLoss(
-            loss_weight=weight, data_info=self.data_info)
+            loss_weight=weight,
+            data_info=self.data_info,
+            reduction='batchmean')
         loss = gaussian_kld_loss(self.output_dict)
         assert torch.allclose(loss,
                               weight.sum([1, 2, 3]).mean() * self.gt_loss)
@@ -162,7 +165,7 @@ class TestDistLoss():
 
         # test reduction --> batchmean
         disc_gaussian_loss = DiscretizedGaussianLogLikelihoodLoss(
-            data_info=self.data_info)
+            data_info=self.data_info, reduction='batchmean')
         loss = disc_gaussian_loss(self.output_dict)
         num_elements = self.tar_shape[1] * self.tar_shape[2] * \
             self.tar_shape[3]
@@ -184,7 +187,9 @@ class TestDistLoss():
         # test weight --> tensor & batchmean
         weight = torch.randn(*self.tar_shape)
         disc_gaussian_loss = DiscretizedGaussianLogLikelihoodLoss(
-            loss_weight=weight, data_info=self.data_info)
+            loss_weight=weight,
+            data_info=self.data_info,
+            reduction='batchmean')
         loss = disc_gaussian_loss(self.output_dict)
         assert torch.allclose(loss,
                               weight.sum([1, 2, 3]).mean() * self.gt_loss)
