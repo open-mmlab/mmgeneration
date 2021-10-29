@@ -237,6 +237,11 @@ bash slurm_eval.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CONFIG_FILE} \
     --eval none
 ```
 
+We also provide [tools/utils/translation_eval.py](https://github.com/open-mmlab/mmgeneration/blob/master/tools/utils/translation_eval.py) for users to evaluate their translation models. You are supposed to set the `target-domain` of the output images and run the following command:
+```shell
+python tools/utils/translation_eval.py ${CONFIG_FILE} ${CKPT_FILE} --t ${target-domain}
+```
+
 Next, we will specify the details of different metrics one by one.
 
 ## **FID**
@@ -442,3 +447,14 @@ data = dict(
 ```
 
 We highly recommend that users should pre-calculate the inception pickle file in advance, which will reduce the evaluation cost significantly.
+
+We also provide `TranslationEvalHook` for users to evaluate translation models during training. The only difference  with `GenerativeEvalHook` is that you need to specify the target domain of the evaluated model. For example, to evaluate the model with `FID` metric, please add the following python codes in your config file:
+```python
+evaluation = dict(
+    type='TranslationEvalHook',
+    target_domain=target_domain,
+    interval=10000,
+    metrics=[
+        dict(type='FID', num_images=num_images, bgr2rgb=True)
+    ])
+```
