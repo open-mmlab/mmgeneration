@@ -97,7 +97,7 @@ class DDPMLoss(nn.Module):
     """
 
     def __init__(self,
-                 rescale_mode='',
+                 rescale_mode=None,
                  rescale_cfg=None,
                  log_cfgs=None,
                  weight=None,
