@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from abc import abstractmethod
 from copy import deepcopy
 from functools import partial
 
@@ -93,7 +94,7 @@ class DDPMLoss(nn.Module):
             Defaults to None.
         reduction (str, optional): Same as built-in losses of PyTorch.
             Defaults to 'mean'.
-        loss_name (str, optional): Name of the loss item. Defaults to `''`.
+        loss_name (str, optional): Name of the loss item. Defaults to None.
     """
 
     def __init__(self,
@@ -103,7 +104,7 @@ class DDPMLoss(nn.Module):
                  weight=None,
                  sampler=None,
                  reduction='mean',
-                 loss_name=''):
+                 loss_name=None):
         super().__init__()
 
         if reduction not in _reduction_modes:
@@ -159,10 +160,33 @@ class DDPMLoss(nn.Module):
 
     @staticmethod
     def constant_rescale(loss, timesteps, scale):
+        """Rescale losses at all timesteps with a constant factor.
+
+        Args:
+            loss (torch.Tensor): Losses to rescale.
+            timesteps (torch.Tensor): Timesteps of each loss items.
+            scale (int): Rescale factor.
+
+        Returns:
+            torch.Tensor: Rescaled losses.
+        """
+
         return loss * scale
 
     @staticmethod
     def timestep_weight_rescale(loss, timesteps, weight, scale=1):
+        """Rescale losses corresponding to timestep.
+
+        Args:
+            loss (torch.Tensor): Losses to rescale.
+            timesteps (torch.Tensor): Timesteps of each loss items.
+            weight (torch.Tensor): Weight corresponding to each timestep.
+            scale (int): Rescale factor.
+
+        Returns:
+            torch.Tensor: Rescaled losses.
+        """
+
         return loss * weight[timesteps] * scale
 
     @torch.no_grad()
@@ -202,10 +226,10 @@ class DDPMLoss(nn.Module):
         """Collect loss logs by quartile timesteps.
 
         Args:
-            loss (torch.Tensor): Loss value of each input. Should shape as
-                [bz, ].
-            timesteps (torch.Tensor): Timesteps corresponding to each losses.
-                Should shape as [bz, ].
+            loss (torch.Tensor): Loss value of each input. Each loss tensor
+                should be shape as [bz, ]
+            timesteps (torch.Tensor): Timesteps corresponding to each loss.
+                Each loss tensor should be shape as [bz, ].
             total_timesteps (int): Total timesteps of diffusion process.
             prefix_name (str): Prefix want to show in logs.
             reduction (str, optional): Specifies the reduction to apply to the
@@ -273,6 +297,7 @@ class DDPMLoss(nn.Module):
         loss_rescaled = self.rescale_fn(loss, timesteps)
         return reduce_loss(loss_rescaled, self.reduction)
 
+    @abstractmethod
     def _forward_loss(self, output_dict):
         """Forward function for loss calculation. This method should be
         implemented by each subclasses.
@@ -284,7 +309,8 @@ class DDPMLoss(nn.Module):
             torch.Tensor: Calculated loss.
         """
 
-        raise NotImplementedError
+        raise NotImplementedError(
+            '\'self._forward_loss\' must be implemented.')
 
     def loss_name(self):
         """Loss Name.
@@ -305,16 +331,16 @@ class DDPMLoss(nn.Module):
 class DDPMVLBLoss(DDPMLoss):
     """Variational lower-bound loss for DDPM-based models.
     In this loss, we calculate VLB of different timesteps with different
-    method. Detailly, ``DiscretizedGaussianLogLikelihoodLoss`` is used when
+    method. In detail, ``DiscretizedGaussianLogLikelihoodLoss`` is used at
     timesteps = 0 and ``GaussianKLDLoss`` at other timesteps.
     To control the data flow for loss calculation, users should define
     ``data_info`` and ``data_info_t_0`` for ``GaussianKLDLoss`` and
     ``DiscretizedGaussianLogLikelihoodLoss`` respectively. If not passed
     ``_default_data_info`` and ``_default_data_info_t_0`` would be used.
-    To be noted that, we only penalize variance in this loss term, and tensor
-    in output dict corresponding to mean would be detached.
+    To be noted that, we only penalize 'variance' in this loss term, and
+    tensors in output dict corresponding to 'mean' would be detached.
 
-    We additional support another log collection function called
+    Additionally, we support another log collection function called
     ``name_log_collection``. In this collection method, we would directly
     collect loss terms calculated by different methods.
     To use this collection methods, users may passed ``log_cfgs`` as the
@@ -395,10 +421,10 @@ class DDPMVLBLoss(DDPMLoss):
         DiscGaussianLogLikelihood).
 
         Args:
-            loss (torch.Tensor): Loss value of each input. Should shape as
-                [bz, ].
+            loss (torch.Tensor): Loss value of each input. Each loss tensor
+                should be in the shape of [bz, ].
             timesteps (torch.Tensor): Timesteps corresponding to each losses.
-                Should shape as [bz, ].
+                Each loss tensor should be in the shape of [bz, ].
             prefix_name (str): Prefix want to show in logs.
             reduction (str, optional): Specifies the reduction to apply to the
                 output losses. Defaults to `mean`.
@@ -430,7 +456,8 @@ class DDPMVLBLoss(DDPMLoss):
         """
         # use `zeros` instead of `zeros_like` to avoid get int tensor
         timesteps = outputs_dict['timesteps']
-        loss = torch.zeros(*timesteps.shape).to(timesteps.device)
+        loss = torch.zeros_like(timesteps).float()
+        # loss = torch.zeros(*timesteps.shape).to(timesteps.device)
         for select_fn, loss_fn in zip(self.loss_select_fn_list,
                                       self.loss_list):
             mask = select_fn(timesteps)

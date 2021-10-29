@@ -63,8 +63,8 @@ def gaussian_kld(mean_target, mean_pred, logvar_target, logvar_pred, base='e'):
             distribution.
         logvar_target (torch.Tensor): Log variance of the target (or the first)
             distribution
-        logvar_2 (torch.Tensor): Log variance of the predicted (or the second)
-            distribution.
+        logvar_pred (torch.Tensor): Log variance of the predicted (or the
+            second) distribution.
         base (str, optional): The log base of calculated KLD. Support ``'e'``
             and ``'2'``. Defaults to ``'e'``.
 
@@ -140,7 +140,7 @@ def discretized_gaussian_log_likelihood(x, mean, logvar, base='e'):
     target ones.
 
     Args:
-        x (torch.Tensor): Target `x_0` to be modeled.
+        x (torch.Tensor): Target `x_0` to be modeled. Range in [-1, 1].
         mean (torch.Tensor): Predicted mean of `x_0`.
         logvar (torch.Tensor): Predicted log variance of `x_0`.
         base (str, optional): The log base of calculated KLD. Support ``'e'``
@@ -447,7 +447,7 @@ class GaussianKLDLoss(nn.Module):
             iteration=curr_iter,
             batch_size=batch_size)
 
-    But in this loss, we may need to provide ``mean_pred``, ``mean_target``,
+    In this loss, we may need to provide ``mean_pred``, ``mean_target``,
     ``logvar_pred`` and ``logvar_target`` as input. Thus, an example of the
     ``data_info`` is:
 
@@ -466,8 +466,9 @@ class GaussianKLDLoss(nn.Module):
     Args:
         loss_weight (float, optional): Weight of this loss item.
             Defaults to ``1.``.
-        reduction (str, optional): Same as built-in losses of PyTorch.
-            Defaults to 'mean'.
+        reduction (str, optional): Same as built-in losses of PyTorch. Noted
+            that 'batchmean' mode given the correct KL divergence where losses
+            are averaged over batch dimension only. Defaults to 'mean'.
         avg_factor (float | None, optional): Average factor when computing the
             mean of losses. Defaults to ``None``.
         data_info (dict, optional): Dictionary contains the mapping between
@@ -491,7 +492,7 @@ class GaussianKLDLoss(nn.Module):
 
     def __init__(self,
                  loss_weight=1.0,
-                 reduction='batchmean',
+                 reduction='mean',
                  avg_factor=None,
                  data_info=None,
                  base='e',
@@ -598,9 +599,8 @@ class DiscretizedGaussianLogLikelihoodLoss(nn.Module):
             iteration=curr_iter,
             batch_size=batch_size)
 
-    But in this loss, we may need to provide ``mean``, ``logvar`` and
-    ``x``. Thus, an example of the
-    ``data_info`` is:
+    In this loss, we may need to provide ``mean``, ``logvar`` and ``x``. Thus,
+    an example of the ``data_info`` is:
 
     .. code-block:: python
         :linenos:
@@ -616,7 +616,7 @@ class DiscretizedGaussianLogLikelihoodLoss(nn.Module):
         loss_weight (float, optional): Weight of this loss item.
             Defaults to ``1.``.
         reduction (str, optional): Same as built-in losses of PyTorch.
-            Defaults to 'batchmean'.
+            Defaults to 'mean'.
         avg_factor (float | None, optional): Average factor when computing the
             mean of losses. Defaults to ``None``.
         data_info (dict, optional): Dictionary contains the mapping between
@@ -637,7 +637,7 @@ class DiscretizedGaussianLogLikelihoodLoss(nn.Module):
 
     def __init__(self,
                  loss_weight=1.0,
-                 reduction='batchmean',
+                 reduction='mean',
                  avg_factor=None,
                  data_info=None,
                  base='e',

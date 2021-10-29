@@ -9,8 +9,13 @@ def reduce_loss(loss, reduction):
 
     Args:
         loss (Tensor): Elementwise loss tensor.
-        reduction (str): Options are "none", "mean", "sum", "flatmean",
-            "batchmean".
+        reduction (str): Options are "none", "mean", "sum", "flatmean" and
+            "batchmean". 'none': no reduction will be applied. 'mean': the
+            output will be divided by the number of elements in the output.
+            'sum': the output will be summed. 'batchmean': the sum of the
+            output will be divided by batchsize. 'flatmean': each sample
+            will be divided by the number of element respectively and
+            output will shape as [bz, ].
 
     Return:
         Tensor: Reduced loss tensor.
