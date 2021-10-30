@@ -271,10 +271,6 @@ class GenerativeEvalHook(Hook):
         if rank == 0:
             mmcv.print_log(
                 f'Sample {max_num_images} fake images for evaluation', 'mmgen')
-        # batch_size = self.dataloader.batch_size
-
-        # rank, ws = get_dist_info()
-        # total_batch_size = batch_size * ws
 
         # define mmcv progress bar
         if rank == 0:
