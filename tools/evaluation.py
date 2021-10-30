@@ -4,7 +4,7 @@ import os
 import mmcv
 import torch
 from mmcv import Config, DictAction
-from mmcv.parallel import MMDataParallel
+from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
 from mmcv.runner import get_dist_info, init_dist, load_checkpoint
 
 from mmgen.apis import set_random_seed
@@ -14,9 +14,11 @@ from mmgen.datasets import build_dataloader, build_dataset
 from mmgen.models import build_model
 from mmgen.utils import get_root_logger
 
+_distributed_metrics = ['FID', 'IS']
+
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Evaluate a GAN model')
+    parser = argparse.ArgumentParser(description='Evaluate a Generation model')
     parser.add_argument('config', help='evaluation config file path')
     parser.add_argument('checkpoint', help='checkpoint file')
     parser.add_argument(
@@ -24,6 +26,18 @@ def parse_args():
         choices=['none', 'pytorch', 'slurm', 'mpi'],
         default='none',
         help='job launcher')
+    group_gpus = parser.add_mutually_exclusive_group()
+    group_gpus.add_argument(
+        '--gpus',
+        type=int,
+        help='number of gpus to use '
+        '(only applicable to non-distributed training)')
+    group_gpus.add_argument(
+        '--gpu-ids',
+        type=int,
+        nargs='+',
+        help='ids of gpus to use '
+        '(only applicable to non-distributed training)')
     parser.add_argument('--seed', type=int, default=2021, help='random seed')
     parser.add_argument(
         '--deterministic',
@@ -68,7 +82,11 @@ def parse_args():
         nargs='+',
         action=DictAction,
         help='Other customized kwargs for sampling function')
+    parser.add_argument('--local_rank', type=int, default=0)
     args = parser.parse_args()
+    if 'LOCAL_RANK' not in os.environ:
+        os.environ['LOCAL_RANK'] = str(args.local_rank)
+
     return args
 
 
@@ -81,14 +99,22 @@ def main():
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
 
+    if args.gpu_ids is not None:
+        cfg.gpu_ids = args.gpu_ids
+    else:
+        cfg.gpu_ids = range(1) if args.gpus is None else range(args.gpus)
+
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
         distributed = False
+        rank = 0
     else:
         distributed = True
         init_dist(args.launcher, **cfg.dist_params)
-
-    rank, _ = get_dist_info()
+        rank, world_size = get_dist_info()
+        cfg.gpu_ids = range(world_size)
+        assert args.online or world_size == 1, (
+            'We only support online mode for distrbuted evaluation.')
 
     dirname = os.path.dirname(args.checkpoint)
     ckpt = os.path.basename(args.checkpoint)
@@ -119,59 +145,64 @@ def main():
     mmcv.print_log(f'Sampling model: {args.sample_model}', 'mmgen')
 
     model.eval()
-    if not distributed:
-        _ = load_checkpoint(model, args.checkpoint, map_location='cpu')
-        model = MMDataParallel(model, device_ids=[0])
 
-        # build metrics
-        if args.eval:
-            if args.eval[0] == 'none':
-                # only sample images
-                metrics = []
-                assert args.num_samples is not None and args.num_samples > 0
-            else:
-                metrics = [
-                    build_metric(cfg.metrics[metric]) for metric in args.eval
-                ]
+    if args.eval:
+        if args.eval[0] == 'none':
+            # only sample images
+            metrics = []
+            assert args.num_samples is not None and args.num_samples > 0
         else:
             metrics = [
-                build_metric(cfg.metrics[metric]) for metric in cfg.metrics
+                build_metric(cfg.metrics[metric]) for metric in args.eval
             ]
+    else:
+        metrics = [build_metric(cfg.metrics[metric]) for metric in cfg.metrics]
 
-        basic_table_info = dict(
-            train_cfg=os.path.basename(cfg._filename),
-            ckpt=ckpt,
-            sample_model=args.sample_model)
+    # check metrics for dist evaluation
+    if distributed and metrics:
+        for metric in metrics:
+            assert metric.name in _distributed_metrics, (
+                f'We only support {_distributed_metrics} for multi gpu '
+                f'evaluation, but receive {args.eval}.')
 
-        if len(metrics) == 0:
-            basic_table_info['num_samples'] = args.num_samples
-            data_loader = None
+    _ = load_checkpoint(model, args.checkpoint, map_location='cpu')
+
+    basic_table_info = dict(
+        train_cfg=os.path.basename(cfg._filename),
+        ckpt=ckpt,
+        sample_model=args.sample_model)
+
+    if len(metrics) == 0:
+        basic_table_info['num_samples'] = args.num_samples
+        data_loader = None
+    else:
+        basic_table_info['num_samples'] = -1
+        # build the dataloader
+        if cfg.data.get('test', None) and cfg.data.test.get('imgs_root', None):
+            dataset = build_dataset(cfg.data.test)
+        elif cfg.data.get('val', None) and cfg.data.val.get('imgs_root', None):
+            dataset = build_dataset(cfg.data.val)
+        elif cfg.data.get('train', None):
+            # we assume that the train part should work well
+            dataset = build_dataset(cfg.data.train)
         else:
-            basic_table_info['num_samples'] = -1
-            # build the dataloader
-            if cfg.data.get('test', None) and cfg.data.test.get(
-                    'imgs_root', None):
-                dataset = build_dataset(cfg.data.test)
-            elif cfg.data.get('val', None) and cfg.data.val.get(
-                    'imgs_root', None):
-                dataset = build_dataset(cfg.data.val)
-            elif cfg.data.get('train', None):
-                # we assume that the train part should work well
-                dataset = build_dataset(cfg.data.train)
-            else:
-                raise RuntimeError('There is no valid dataset config to run, '
-                                   'please check your dataset configs.')
-            data_loader = build_dataloader(
-                dataset,
-                samples_per_gpu=args.batch_size,
-                workers_per_gpu=cfg.data.get('val_workers_per_gpu',
-                                             cfg.data.workers_per_gpu),
-                dist=distributed,
-                shuffle=True)
+            raise RuntimeError('There is no valid dataset config to run, '
+                               'please check your dataset configs.')
 
-        if args.sample_cfg is None:
-            args.sample_cfg = dict()
+        data_loader = build_dataloader(
+            dataset,
+            samples_per_gpu=args.batch_size,
+            workers_per_gpu=cfg.data.get('val_workers_per_gpu',
+                                         cfg.data.workers_per_gpu),
+            num_gpus=len(cfg.gpu_ids),
+            dist=distributed,
+            shuffle=True)
 
+    if args.sample_cfg is None:
+        args.sample_cfg = dict()
+
+    if not distributed:
+        model = MMDataParallel(model, device_ids=[0])
         # online mode will not save samples
         if args.online and len(metrics) > 0:
             single_gpu_online_evaluation(model, data_loader, metrics, logger,
@@ -182,7 +213,15 @@ def main():
                                   basic_table_info, args.batch_size,
                                   args.samples_path, **args.sample_cfg)
     else:
-        raise NotImplementedError("We hasn't implemented multi gpu eval yet.")
+        find_unused_parameters = cfg.get('find_unused_parameters', False)
+        model = MMDistributedDataParallel(
+            model.cuda(),
+            device_ids=[torch.cuda.current_device()],
+            broadcast_buffers=False,
+            find_unused_parameters=find_unused_parameters)
+        single_gpu_online_evaluation(model, data_loader, metrics, logger,
+                                     basic_table_info, args.batch_size,
+                                     **args.sample_cfg)
 
 
 if __name__ == '__main__':

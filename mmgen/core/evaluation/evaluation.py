@@ -6,6 +6,7 @@ from copy import deepcopy
 
 import mmcv
 import torch
+from mmcv.runner import get_dist_info
 from prettytable import PrettyTable
 from torchvision.utils import save_image
 
@@ -240,12 +241,20 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
     # receive images but receive a dict with corresponding probabilistic
     # parameter.
 
+    rank, ws = get_dist_info()
+
     special_metrics = []
     recon_metrics = []
     vanilla_metrics = []
     special_metric_name = ['PPL']
     recon_metric_name = ['GaussianKLD']
     for metric in metrics:
+        if ws > 1:
+            assert metric.name in [
+                'FID', 'IS'
+            ], ('We only support FID and IS for distributed evaluation '
+                f'currently, but receive {metric.name}')
+
         if metric.name in special_metric_name:
             special_metrics.append(metric)
         elif metric.name in recon_metric_name:
@@ -259,9 +268,10 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         metric.prepare()
         max_num_images = max(max_num_images,
                              metric.num_real_need - metric.num_real_feeded)
-    mmcv.print_log(f'Sample {max_num_images} real images for evaluation',
-                   'mmgen')
-    pbar = mmcv.ProgressBar(max_num_images)
+    if rank == 0:
+        mmcv.print_log(f'Sample {max_num_images} real images for evaluation',
+                       'mmgen')
+        pbar = mmcv.ProgressBar(max_num_images)
 
     # avoid `data_loader` is None
     data_loader = [] if data_loader is None else data_loader
@@ -297,20 +307,27 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
 
         if num_feed <= 0:
             break
-        pbar.update(num_feed)
+
+        if rank == 0:
+            pbar.update(num_feed)
+
+    if rank == 0:
+        # finish the pbar stdout
+        sys.stdout.write('\n')
 
     # define mmcv progress bar
     max_num_images = 0 if len(vanilla_metrics) == 0 else max(
         metric.num_fake_need for metric in vanilla_metrics)
-    mmcv.print_log(f'Sample {max_num_images} fake images for evaluation',
-                   'mmgen')
-    pbar = mmcv.ProgressBar(max_num_images)
+    if rank == 0:
+        mmcv.print_log(f'Sample {max_num_images} fake images for evaluation',
+                       'mmgen')
+        pbar = mmcv.ProgressBar(max_num_images)
     # sampling fake images and directly send them to metrics
-    for begin in range(0, max_num_images, batch_size):
-        end = min(begin + batch_size, max_num_images)
+    total_batch_size = batch_size * ws
+    for _ in range(0, max_num_images, total_batch_size):
         fakes = model(
             None,
-            num_batches=end - begin,
+            num_batches=batch_size,
             return_loss=False,
             sample_model=basic_table_info['sample_model'],
             **kwargs)
@@ -321,17 +338,19 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
                                'not % d' % fakes.shape[1])
         if fakes.shape[1] == 1:
             fakes = torch.cat([fakes] * 3, dim=1)
-        pbar.update(end - begin)
-        fakes = fakes[:end - begin]
 
         for metric in vanilla_metrics:
             # feed in fake images
-            _ = metric.feed(fakes, 'fakes')
+            metric.feed(fakes, 'fakes')
 
-    # finish the pbar stdout
-    sys.stdout.write('\n')
+        if rank == 0:
+            pbar.update(total_batch_size)
 
-    # feed special metric
+    if rank == 0:
+        # finish the pbar stdout
+        sys.stdout.write('\n')
+
+    # feed special metric, we do not consider distributed eval here
     for metric in special_metrics:
         metric.prepare()
         fakedata_iterator = iter(
@@ -350,10 +369,12 @@ def single_gpu_online_evaluation(model, data_loader, metrics, logger,
         # finish the pbar stdout
         sys.stdout.write('\n')
 
-    for metric in metrics:
-        metric.summary()
+    if rank == 0:
+        for metric in metrics:
+            metric.summary()
 
-    table_str = make_metrics_table(basic_table_info['train_cfg'],
-                                   basic_table_info['ckpt'],
-                                   basic_table_info['sample_model'], metrics)
-    logger.info('\n' + table_str)
+        table_str = make_metrics_table(basic_table_info['train_cfg'],
+                                       basic_table_info['ckpt'],
+                                       basic_table_info['sample_model'],
+                                       metrics)
+        logger.info('\n' + table_str)
