@@ -9,7 +9,7 @@ from mmcv.runner import load_checkpoint
 
 from mmgen.models.builder import MODULES, build_module
 from mmgen.utils import get_root_logger
-from .modules import EmbedSequential
+from .modules import EmbedSequential, TimeEmbedding
 
 
 @MODULES.register_module()
@@ -18,69 +18,73 @@ class DenoisingUnet(nn.Module):
     current timestep ``t``, and returns a ``output_dict`` corresponding to the
     passed ``output_cfg``.
 
-    ``output_cfg`` define the number of channels and the meaning of the output.
-    ``output_cfg`` support ``mean`` and ``var`` for keys, and
-    denotes how the the network output mean and variance required for denoising
-    process.
+    ``output_cfg`` defines the number of channels and the meaning of the
+    output. ``output_cfg`` mainly contains keys of ``mean`` and ``var``,
+    denoting how the network outputs mean and variance required for the
+    denoising process.
     For ``mean``:
-    1. ``dict(mean='EPS')``: Model would predict noise added in the
-        diffusion process. And the ``output_dict`` would contains a key named
+    1. ``dict(mean='EPS')``: Model will predict noise added in the
+        diffusion process, and the ``output_dict`` will contain a key named
         ``eps_t_pred``.
-    2. ``dict(mean='START_X')``: Model would direct the mean of the original
-        image `x_0`. And the ``output_dict`` would contains a key named
+    2. ``dict(mean='START_X')``: Model will direct predict the mean of the
+        original image `x_0`, and the ``output_dict`` will contain a key named
         ``x_0_pred``.
-    3. ``dict(mean='X_TM1_PRED')``: Model would predict the mean of diffused
-        image at `t-1` timestep. And the ``output_dict`` would contains a key
+    3. ``dict(mean='X_TM1_PRED')``: Model will predict the mean of diffused
+        image at `t-1` timestep, and the ``output_dict`` will contain a key
         named ``x_tm1_pred``.
 
     For ``var``:
     1. ``dict(var='FIXED_SMALL')`` or ``dict(var='FIXED_LARGE')``: Variance in
-        the denoising process is regarded as a fixed value. The output of
-        network would only have three channels.
-    2. ``dict(var='LEARNED')``: Model would predict `log_variance` in the
-        denoising process. And the ``output_dict`` would contains a key named
+        the denoising process is regarded as a fixed value. Therefore only
+        'mean' will be predicted, and the output channels will equal to the
+        input image (e.g., three channels for RGB image.)
+    2. ``dict(var='LEARNED')``: Model will predict `log_variance` in the
+        denoising process, and the ``output_dict`` will contain a key named
         ``log_var``.
-    3. ``dict(var='LEARNED_RANGE')``: Model would predict an interpolation
-        factor and the `log_variance` would be calculated as
-        `factor * upper_bound + (1-factor) * lower_bound`. And the
-        ``output_dict`` would contains a key named ``factor``.
+    3. ``dict(var='LEARNED_RANGE')``: Model will predict an interpolation
+        factor and the `log_variance` will be calculated as
+        `factor * upper_bound + (1-factor) * lower_bound`. The ``output_dict``
+        will contain a key named ``factor``.
 
-    If ``FIXED`` not in ``var``, the number of output channels would be
-    the double of input channels. Otherwise, the number of output channels
-    equals to the input channels.
+    If ``var`` is not ``FIXED_SMALL`` or ``FIXED_LARGE``, the number of output
+    channels will be the double of input channels, where the first half part
+    contains predicted mean values and the other part is the predicted
+    variance values. Otherwise, the number of output channels equals to the
+    input channels, only containing the predicted mean values.
 
     Args:
         image_size (int | list[int]): The size of image to denoise.
         in_channels (int, optional): The input channels of the input image.
             Defaults as ``3``.
         base_channels (int, optional): The basic channel number of the
-            generator. The other layers contains channels based on this number.
+            generator. The other layers contain channels based on this number.
             Defaults to ``128``.
         resblocks_per_downsample (int, optional): Number of ResBlock used
-            between two downsample operations. And number of ResBlock between
-            upsample operations would be the same value to keep symmetry.
+            between two downsample operations. The number of ResBlock between
+            upsample operations will be the same value to keep symmetry.
             Defaults to 3.
         num_timesteps (int, optional): The total timestep of the denoising
             process and the diffusion process. Defaults to ``1000``.
-        rescale_timesteps (bool, optional): Whether rescale the input timestep
-            in range of [0, 1000].  Defaults to ``True``.
+        use_rescale_timesteps (bool, optional): Whether rescale the input
+            timesteps in range of [0, 1000].  Defaults to ``True``.
         dropout (float, optional): The probability of dropout operation of
             each ResBlock. Pass ``0`` to do not use dropout. Defaults as 0.
         embedding_channels (int, optional): The output channels of time
             embedding layer and label embedding layer. If not passed (or
-            passed ``-1``), output channels of the embedding layers would set
+            passed ``-1``), output channels of the embedding layers will set
             as four times of ``base_channels``. Defaults to ``-1``.
         num_classes (int, optional): The number of conditional classes. If set
             to 0, this model will be degraded to an unconditional model.
             Defaults to 0.
         channels_cfg (list | dict[list], optional): Config for input channels
             of the intermedia blocks. If list is passed, each element of the
-            list means the input channels of current block is how many times
-            compared to the ``base_channels``. For block ``i``, the input and
-            output channels should be ``channels_cfg[i]`` and
-            ``channels_cfg[i+1]`` If dict is provided, the key of the dict
-            should be the output scale and corresponding value should be a list
-            to define channels.  Default: Please refer to
+            list indicates the scale factor for the input channels of the
+            current block with regard to the ``base_channels``. For block
+            ``i``, the input and output channels should be
+            ``channels_cfg[i] * base_channels`` and
+            ``channels_cfg[i+1] * base_channels`` If dict is provided, the key
+            of the dict should be the output scale and corresponding value
+            should be a list to define channels. Default: Please refer to
             ``_defualt_channels_cfg``.
         output_cfg (dict, optional): Config for output variables. Defaults to
             ``dict(mean='eps', var='learned_range')``.
@@ -89,11 +93,12 @@ class DenoisingUnet(nn.Module):
         act_cfg (dict, optional): The config for activation layers. Defaults
             to ``dict(type='SiLU', inplace=False)``.
         shortcut_kernel_size (int, optional): The kernel size for shortcut
-            conv in ResBlocks. The value of this argument would overload the
+            conv in ResBlocks. The value of this argument will overwrite the
             default value of `resblock_cfg`. Defaults to `3`.
         use_scale_shift_norm (bool, optional): Whether perform scale and shift
             after normalization operation. Defaults to True.
-        num_heads (int, optional): Number of attention heads. Defaults to 4.
+        num_heads (int, optional): The number of attention heads. Defaults to
+            4.
         resblock_cfg (dict, optional): Config for ResBlock. Defaults to
             ``dict(type='DenoisingResBlock')``.
         attention_cfg (dict, optional): Config for attention operation.
@@ -126,7 +131,7 @@ class DenoisingUnet(nn.Module):
                  base_channels=128,
                  resblocks_per_downsample=3,
                  num_timesteps=1000,
-                 rescale_timesteps=True,
+                 use_rescale_timesteps=True,
                  dropout=0,
                  embedding_channels=-1,
                  num_classes=0,
@@ -150,11 +155,11 @@ class DenoisingUnet(nn.Module):
 
         self.num_classes = num_classes
         self.num_timesteps = num_timesteps
-        self.rescale_timesteps = rescale_timesteps
+        self.rescale_timesteps = use_rescale_timesteps
 
         self.output_cfg = deepcopy(output_cfg)
-        self.mean_cfg = self.output_cfg.get('mean', 'eps')
-        self.var_cfg = self.output_cfg.get('var', 'learned_range')
+        self.mean_mode = self.output_cfg.get('mean', 'eps')
+        self.var_mode = self.output_cfg.get('var', 'learned_range')
 
         # double output_channels to output mean and var at same time
         out_channels = in_channels if self.var_cfg is None else 2 * in_channels
@@ -190,11 +195,9 @@ class DenoisingUnet(nn.Module):
 
         embedding_channels = base_channels * 4 \
             if embedding_channels == -1 else embedding_channels
-        self.time_embedding = build_module(
-            dict(type='TimeEmbedding'), {
-                'in_channels': base_channels,
-                'embedding_channels': embedding_channels
-            })
+        self.time_embedding = TimeEmbedding(
+            base_channels, embedding_channels=embedding_channels)
+
         if self.num_classes != 0:
             self.label_embedding = nn.Embedding(self.num_classes,
                                                 embedding_channels)
@@ -209,7 +212,7 @@ class DenoisingUnet(nn.Module):
         self.resblock_cfg.setdefault('shortcut_kernel_size',
                                      shortcut_kernel_size)
 
-        # factor to apply attention
+        # get scales of ResBlock to apply attention
         attention_scale = [image_size // int(res) for res in attention_res]
         self.attention_cfg = deepcopy(attention_cfg)
         self.attention_cfg.setdefault('num_heads', num_heads)
@@ -220,13 +223,15 @@ class DenoisingUnet(nn.Module):
         self.upsample_cfg = deepcopy(upsample_cfg)
         self.upsample_cfg.setdefault('with_conv', upsample_conv)
 
-        # init the factor
+        # init the channel scale factor
         scale = 1
         self.in_blocks = nn.ModuleList([
             EmbedSequential(
                 nn.Conv2d(in_channels, base_channels, 3, 1, padding=1))
         ])
         self.in_channels_list = [base_channels]
+
+        # construct the encoder part of Unet
         for level, factor in enumerate(self.channel_factor_list):
             in_channels_ = base_channels if level == 0 \
                 else base_channels * self.channel_factor_list[level - 1]
@@ -257,12 +262,14 @@ class DenoisingUnet(nn.Module):
                 self.in_channels_list.append(in_channels_)
                 scale *= 2
 
+        # construct the bottom part of Unet
         self.mid_blocks = EmbedSequential(
             build_module(self.resblock_cfg, {'in_channels': in_channels_}),
             build_module(self.attention_cfg, {'in_channels': in_channels_}),
             build_module(self.resblock_cfg, {'in_channels': in_channels_}),
         )
 
+        # construct the decoder part of Unet
         in_channels_list = deepcopy(self.in_channels_list)
         self.out_blocks = nn.ModuleList()
         for level, factor in enumerate(self.channel_factor_list[::-1]):

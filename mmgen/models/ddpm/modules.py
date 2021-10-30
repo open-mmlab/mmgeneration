@@ -191,7 +191,7 @@ class TimeEmbedding(nn.Module):
 @MODULES.register_module()
 class DenoisingResBlock(nn.Module):
     """Resblock for the denoising network. If `in_channels` not equals to
-    `out_channels`, a learnable shortcut with conv layers would be added.
+    `out_channels`, a learnable shortcut with conv layers will be added.
 
     Args:
         in_channels (int): Number of channels of the input feature map.
@@ -200,7 +200,7 @@ class DenoisingResBlock(nn.Module):
             `NormWithEmbedding` layer.
         dropout (float): Probability of the dropout layers.
         out_channels (int, optional): Number of output channels of the
-            ResBlock. If not defined, the output channels would equal to the
+            ResBlock. If not defined, the output channels will equal to the
             `in_channels`. Defaults to `None`.
         norm_cfg (dict, optional): The config for the normalization layers.
             Defaults too ``dict(type='GN', num_groups=32)``.
@@ -292,8 +292,8 @@ class DenoisingResBlock(nn.Module):
 @MODULES.register_module()
 class NormWithEmbedding(nn.Module):
     """Nornalization with embedding layer. If `use_scale_shift == True`,
-    embedding results would be chunked and used to re-shift and re-scale
-    normalization results. Otherwise, embedding results would directly add to
+    embedding results will be chunked and used to re-shift and re-scale
+    normalization results. Otherwise, embedding results will directly add to
     input of normalization layer.
 
     Args:
