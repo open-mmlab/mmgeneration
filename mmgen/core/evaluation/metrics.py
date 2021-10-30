@@ -392,17 +392,18 @@ class Metric(ABC):
             mode (str): Mark the batch as real or fake images. Value can be
                 'reals' or 'fakes',
         """
+        _, ws = get_dist_info()
         if mode == 'reals':
             if self.num_real_feeded == self.num_real_need:
                 return 0
 
             if isinstance(batch, dict):
-                batch_size = [v for v in batch.values()][0].shape[0]
+                batch_size = [v for v in batch.values()][0].shape[0] * ws
                 end = min(batch_size,
                           self.num_real_need - self.num_real_feeded)
                 batch_to_feed = {k: v[:end, ...] for k, v in batch.items()}
             else:
-                batch_size = batch.shape[0]
+                batch_size = batch.shape[0] * ws
                 end = min(batch_size,
                           self.num_real_need - self.num_real_feeded)
                 batch_to_feed = batch[:end, ...]
@@ -414,7 +415,7 @@ class Metric(ABC):
             if self.num_fake_feeded == self.num_fake_need:
                 return 0
 
-            batch_size = batch.shape[0]
+            batch_size = batch.shape[0] * ws
             end = min(batch_size, self.num_fake_need - self.num_fake_feeded)
             if isinstance(batch, dict):
                 batch_to_feed = {k: v[:end, ...] for k, v in batch.items()}

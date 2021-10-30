@@ -223,35 +223,58 @@ class GenerativeEvalHook(Hook):
 
         runner.model.eval()
 
-        # sample real images
-        max_num_images = max(metric.num_images for metric in self.metrics)
-        for metric in self.metrics:
-            if metric.num_real_feeded >= metric.num_real_need:
-                continue
-            mmcv.print_log(f'Feed reals to {metric.name} metric.', 'mmgen')
-            # feed in real images
-            for data in self.dataloader:
-                # key for unconditional GAN
-                if 'real_img' in data:
-                    reals = data['real_img']
-                # key for conditional GAN
-                elif 'img' in data:
-                    reals = data['img']
-                else:
-                    raise KeyError('Cannot found key for images in data_dict. '
-                                   'Only support `real_img` for unconditional '
-                                   'datasets and `img` for conditional '
-                                   'datasets.')
-                num_feed = metric.feed(reals, 'reals')
-                if num_feed <= 0:
-                    break
-
-        mmcv.print_log(f'Sample {max_num_images} fake images for evaluation',
-                       'mmgen')
         batch_size = self.dataloader.batch_size
-
         rank, ws = get_dist_info()
         total_batch_size = batch_size * ws
+
+        # sample real images
+        max_real_num_images = max(metric.num_images - metric.num_real_feeded
+                                  for metric in self.metrics)
+        # define mmcv progress bar
+        if rank == 0 and max_real_num_images > 0:
+            mmcv.print_log(
+                f'Sample {max_real_num_images} real images for evaluation',
+                'mmgen')
+            pbar = mmcv.ProgressBar(max_real_num_images)
+
+        for data in self.dataloader:
+            if 'real_img' in data:
+                reals = data['real_img']
+            # key for conditional GAN
+            elif 'img' in data:
+                reals = data['img']
+            else:
+                raise KeyError('Cannot found key for images in data_dict. '
+                               'Only support `real_img` for unconditional '
+                               'datasets and `img` for conditional '
+                               'datasets.')
+
+            if reals.shape[1] not in [1, 3]:
+                raise RuntimeError('real images should have one or three '
+                                   'channels in the first, '
+                                   'not % d' % reals.shape[1])
+            if reals.shape[1] == 1:
+                reals = reals.repeat(1, 3, 1, 1)
+
+            num_feed = 0
+            for metric in self.metrics:
+                num_feed_ = metric.feed(reals, 'reals')
+                num_feed = max(num_feed_, num_feed)
+
+            if num_feed <= 0:
+                break
+
+            if rank == 0:
+                pbar.update(num_feed)
+
+        max_num_images = max(metric.num_images for metric in self.metrics)
+        if rank == 0:
+            mmcv.print_log(
+                f'Sample {max_num_images} fake images for evaluation', 'mmgen')
+        # batch_size = self.dataloader.batch_size
+
+        # rank, ws = get_dist_info()
+        # total_batch_size = batch_size * ws
 
         # define mmcv progress bar
         if rank == 0:
