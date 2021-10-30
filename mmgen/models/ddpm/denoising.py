@@ -162,7 +162,8 @@ class DenoisingUnet(nn.Module):
         self.var_mode = self.output_cfg.get('var', 'learned_range')
 
         # double output_channels to output mean and var at same time
-        out_channels = in_channels if self.var_cfg is None else 2 * in_channels
+        out_channels = in_channels if self.var_mode is None \
+            else 2 * in_channels
         self.out_channels = out_channels
 
         # check type of image_size
@@ -347,27 +348,27 @@ class DenoisingUnet(nn.Module):
         outputs = self.out(h)
 
         output_dict = dict()
-        if 'FIXED' not in self.var_cfg.upper():
+        if 'FIXED' not in self.var_mode.upper():
             # split mean and learned from output
             mean, var = outputs.split(self.out_channels // 2, dim=1)
-            if self.var_cfg.upper() == 'LEARNED_RANGE':
+            if self.var_mode.upper() == 'LEARNED_RANGE':
                 # rescale [-1, 1] to [0, 1]
                 output_dict['factor'] = (var + 1) / 2
-            elif self.var_cfg.upper() == 'LEARNED':
+            elif self.var_mode.upper() == 'LEARNED':
                 output_dict['logvar'] = var
             else:
                 raise AttributeError(
                     'Only support \'FIXED\', \'LEARNED_RANGE\' '
                     'and \'LEARNED\' for variance output format. But receive '
-                    f'\'{self.var_cfg}\'.')
+                    f'\'{self.var_mode}\'.')
         else:
             mean = outputs
 
-        if self.mean_cfg.upper() == 'EPS':
+        if self.mean_mode.upper() == 'EPS':
             output_dict['eps_t_pred'] = mean
-        elif self.mean_cfg.upper() == 'START_X':
+        elif self.mean_mode.upper() == 'START_X':
             output_dict['x_0_pred'] = mean
-        elif self.mean_cfg.upper() == 'PREVIOUS_X':
+        elif self.mean_mode.upper() == 'PREVIOUS_X':
             output_dict['x_tm1_pred'] = mean
 
         if return_noise:
