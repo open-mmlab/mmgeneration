@@ -237,35 +237,36 @@ class GenerativeEvalHook(Hook):
                 'mmgen')
             pbar = mmcv.ProgressBar(max_real_num_images)
 
-        for data in self.dataloader:
-            if 'real_img' in data:
-                reals = data['real_img']
-            # key for conditional GAN
-            elif 'img' in data:
-                reals = data['img']
-            else:
-                raise KeyError('Cannot found key for images in data_dict. '
-                               'Only support `real_img` for unconditional '
-                               'datasets and `img` for conditional '
-                               'datasets.')
+        if max_real_num_images > 0:
+            for data in self.dataloader:
+                if 'real_img' in data:
+                    reals = data['real_img']
+                # key for conditional GAN
+                elif 'img' in data:
+                    reals = data['img']
+                else:
+                    raise KeyError('Cannot found key for images in data_dict. '
+                                   'Only support `real_img` for unconditional '
+                                   'datasets and `img` for conditional '
+                                   'datasets.')
 
-            if reals.shape[1] not in [1, 3]:
-                raise RuntimeError('real images should have one or three '
-                                   'channels in the first, '
-                                   'not % d' % reals.shape[1])
-            if reals.shape[1] == 1:
-                reals = reals.repeat(1, 3, 1, 1)
+                if reals.shape[1] not in [1, 3]:
+                    raise RuntimeError('real images should have one or three '
+                                       'channels in the first, '
+                                       'not % d' % reals.shape[1])
+                if reals.shape[1] == 1:
+                    reals = reals.repeat(1, 3, 1, 1)
 
-            num_feed = 0
-            for metric in self.metrics:
-                num_feed_ = metric.feed(reals, 'reals')
-                num_feed = max(num_feed_, num_feed)
+                num_feed = 0
+                for metric in self.metrics:
+                    num_feed_ = metric.feed(reals, 'reals')
+                    num_feed = max(num_feed_, num_feed)
 
-            if num_feed <= 0:
-                break
+                if num_feed <= 0:
+                    break
 
-            if rank == 0:
-                pbar.update(num_feed)
+                if rank == 0:
+                    pbar.update(num_feed)
 
         max_num_images = max(metric.num_images for metric in self.metrics)
         if rank == 0:
