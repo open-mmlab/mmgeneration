@@ -1,14 +1,14 @@
 Collections:
 - Metadata:
     Architecture:
-    - StyleGANv2
-  Name: StyleGANv2
+    - WGAN-GP
+  Name: WGAN-GP
   Paper:
   - https://arxiv.org/abs/1704.00028
   README: configs/wgan-gp/README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/wgan-gp/wgangp_GN_celeba-cropped_128_b64x1_160kiter.py
-  In Collection: StyleGANv2
+  In Collection: WGAN-GP
   Metadata:
     Training Data: CELEBA
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--wgan-gp--wgangp_GN_celeba-cropped_128_b64x1_160kiter
@@ -23,7 +23,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/wgangp/wgangp_GN_celeba-cropped_128_b64x1_160k_20210408_170611-f8a99336.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/wgan-gp/wgangp_GN_GP-50_lsun-bedroom_128_b64x1_160kiter.py
-  In Collection: StyleGANv2
+  In Collection: WGAN-GP
   Metadata:
     Training Data: LSUN
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--wgan-gp--wgangp_GN_GP-50_lsun-bedroom_128_b64x1_160kiter
