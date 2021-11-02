@@ -8,8 +8,7 @@ from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
 from mmcv.runner import get_dist_info, init_dist, load_checkpoint
 
 from mmgen.apis import set_random_seed
-from mmgen.core import (build_metric, single_gpu_evaluation,
-                        single_gpu_online_evaluation)
+from mmgen.core import build_metric, offline_evaluation, online_evaluation
 from mmgen.datasets import build_dataloader, build_dataset
 from mmgen.models import build_model
 from mmgen.utils import get_root_logger
@@ -203,15 +202,6 @@ def main():
 
     if not distributed:
         model = MMDataParallel(model, device_ids=[0])
-        # online mode will not save samples
-        if args.online and len(metrics) > 0:
-            single_gpu_online_evaluation(model, data_loader, metrics, logger,
-                                         basic_table_info, args.batch_size,
-                                         **args.sample_cfg)
-        else:
-            single_gpu_evaluation(model, data_loader, metrics, logger,
-                                  basic_table_info, args.batch_size,
-                                  args.samples_path, **args.sample_cfg)
     else:
         find_unused_parameters = cfg.get('find_unused_parameters', False)
         model = MMDistributedDataParallel(
@@ -219,9 +209,15 @@ def main():
             device_ids=[torch.cuda.current_device()],
             broadcast_buffers=False,
             find_unused_parameters=find_unused_parameters)
-        single_gpu_online_evaluation(model, data_loader, metrics, logger,
-                                     basic_table_info, args.batch_size,
-                                     **args.sample_cfg)
+
+    # online mode will not save samples
+    if args.online and len(metrics) > 0:
+        online_evaluation(model, data_loader, metrics, logger,
+                          basic_table_info, args.batch_size, **args.sample_cfg)
+    else:
+        offline_evaluation(model, data_loader, metrics, logger,
+                           basic_table_info, args.batch_size,
+                           args.samples_path, **args.sample_cfg)
 
 
 if __name__ == '__main__':
