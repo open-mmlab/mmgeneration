@@ -78,6 +78,7 @@ class MultiHeadAttention(nn.Module):
         _, self.norm = build_norm_layer(norm_cfg, in_channels)
         self.qkv = nn.Conv1d(in_channels, in_channels * 3, 1)
         self.proj = nn.Conv1d(in_channels, in_channels, 1)
+        self.init_weights()
 
     @staticmethod
     def QKVAttention(qkv):
@@ -262,6 +263,7 @@ class DenoisingResBlock(nn.Module):
                 out_channels,
                 shortcut_kernel_size,
                 padding=shortcut_padding)
+        self.init_weights()
 
     def forward_shortcut(self, x):
         if self.learnable_shortcut:

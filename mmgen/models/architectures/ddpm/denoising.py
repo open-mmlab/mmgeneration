@@ -99,6 +99,10 @@ class DenoisingUnet(nn.Module):
             after normalization operation. Defaults to True.
         num_heads (int, optional): The number of attention heads. Defaults to
             4.
+        time_embedding_mode (str, optional): Embedding method of
+            ``time_embedding``. Defaults to 'sin'.
+        time_embedding_cfg (dict, optional): Config for ``time_embedding``.
+            Defaults to None.
         resblock_cfg (dict, optional): Config for ResBlock. Defaults to
             ``dict(type='DenoisingResBlock')``.
         attention_cfg (dict, optional): Config for attention operation.
@@ -142,6 +146,8 @@ class DenoisingUnet(nn.Module):
                  shortcut_kernel_size=1,
                  use_scale_shift_norm=False,
                  num_heads=4,
+                 time_embedding_mode='sin',
+                 time_embedding_cfg=None,
                  resblock_cfg=dict(type='DenoisingResBlock'),
                  attention_cfg=dict(type='MultiHeadAttention'),
                  downsample_conv=True,
@@ -155,7 +161,7 @@ class DenoisingUnet(nn.Module):
 
         self.num_classes = num_classes
         self.num_timesteps = num_timesteps
-        self.rescale_timesteps = use_rescale_timesteps
+        self.use_rescale_timesteps = use_rescale_timesteps
 
         self.output_cfg = deepcopy(output_cfg)
         self.mean_mode = self.output_cfg.get('mean', 'eps')
@@ -179,25 +185,28 @@ class DenoisingUnet(nn.Module):
             image_size = image_size[0]
         self.image_size = image_size
 
-        channels_cfg_ = deepcopy(self._default_channels_cfg)
-        if channels_cfg is not None:
-            channels_cfg_ = channels_cfg_.update(channels_cfg)
-        if isinstance(channels_cfg_, dict):
-            if image_size not in channels_cfg_:
+        channels_cfg = deepcopy(self._default_channels_cfg) \
+            if channels_cfg is None else deepcopy(channels_cfg)
+        if isinstance(channels_cfg, dict):
+            if image_size not in channels_cfg:
                 raise KeyError(f'`image_size={image_size} is not found in '
-                               '`channel_cfg`, only support configs for '
-                               f'{[chn for chn in channels_cfg_.keys()]}')
-            self.channel_factor_list = channels_cfg_[image_size]
-        elif isinstance(channels_cfg_, list):
-            self.channel_factor_list = channels_cfg_
+                               '`channels_cfg`, only support configs for '
+                               f'{[chn for chn in channels_cfg.keys()]}')
+            self.channel_factor_list = channels_cfg[image_size]
+        elif isinstance(channels_cfg, list):
+            self.channel_factor_list = channels_cfg
         else:
-            raise ValueError('Only support list or dict for `channel_cfg`, '
-                             f'receive {type(channels_cfg_)}')
+            raise ValueError('Only support list or dict for `channels_cfg`, '
+                             f'receive {type(channels_cfg)}')
 
         embedding_channels = base_channels * 4 \
             if embedding_channels == -1 else embedding_channels
         self.time_embedding = TimeEmbedding(
-            base_channels, embedding_channels=embedding_channels)
+            base_channels,
+            embedding_channels=embedding_channels,
+            embedding_mode=time_embedding_mode,
+            embedding_cfg=time_embedding_cfg,
+            act_cfg=act_cfg)
 
         if self.num_classes != 0:
             self.label_embedding = nn.Embedding(self.num_classes,
@@ -325,7 +334,7 @@ class DenoisingUnet(nn.Module):
             torch.Tensor | dict: If not ``return_noise``
         """
 
-        if self.rescale_timesteps:
+        if self.use_rescale_timesteps:
             t = t.float() * (1000.0 / self.num_timesteps)
         embedding = self.time_embedding(t)
 
@@ -370,6 +379,10 @@ class DenoisingUnet(nn.Module):
             output_dict['x_0_pred'] = mean
         elif self.mean_mode.upper() == 'PREVIOUS_X':
             output_dict['x_tm1_pred'] = mean
+        else:
+            raise AttributeError(
+                'Only support \'EPS\', \'START_X\' and \'PREVIOUS_X\' for '
+                f'mean output format. But receive \'{self.mean_mode}\'.')
 
         if return_noise:
             output_dict['x_t'] = x_t

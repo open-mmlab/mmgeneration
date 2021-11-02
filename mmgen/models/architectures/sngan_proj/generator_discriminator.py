@@ -103,7 +103,7 @@ class SNGANGenerator(nn.Module):
     """
 
     # default channel factors
-    _defualt_channels_cfg = {
+    _default_channels_cfg = {
         32: [1, 1, 1],
         64: [16, 8, 4, 2],
         128: [16, 16, 8, 4, 2]
@@ -155,7 +155,7 @@ class SNGANGenerator(nn.Module):
         self.blocks_cfg.setdefault('norm_eps', norm_eps)
         self.blocks_cfg.setdefault('sn_eps', sn_eps)
 
-        channels_cfg = deepcopy(self._defualt_channels_cfg) \
+        channels_cfg = deepcopy(self._default_channels_cfg) \
             if channels_cfg is None else deepcopy(channels_cfg)
         if isinstance(channels_cfg, dict):
             if output_scale not in channels_cfg:
