@@ -118,9 +118,9 @@ def single_gpu_evaluation(model,
     # select key to fetch fake images
     target_domain = basic_table_info['target_domain']
     source_domain = basic_table_info['source_domain']
-    # if no images, `num_exist` should be zero
+    # if no images, `num_needed` should be zero
     data_loader_iter = iter(data_loader)
-    for begin in range(num_exist, num_needed, batch_size):
+    for begin in range(0, num_needed, batch_size):
         end = min(begin + batch_size, max_num_images)
         # for translation model, we feed them images from dataloader
         data_batch = next(data_loader_iter)

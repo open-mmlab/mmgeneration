@@ -408,11 +408,10 @@ class Metric(ABC):
                           self.num_real_need - self.num_real_feeded)
                 batch_to_feed = batch[:end, ...]
 
-            #
-            total_end = min(batch * ws,
-                            self.num_real_need - self.num_real_feeded)
+            global_end = min(batch_size * ws,
+                             self.num_real_need - self.num_real_feeded)
             self.feed_op(batch_to_feed, mode)
-            self.num_real_feeded += total_end
+            self.num_real_feeded += global_end
             return end
 
         elif mode == 'fakes':
@@ -426,10 +425,10 @@ class Metric(ABC):
             else:
                 batch_to_feed = batch[:end, ...]
 
-            total_end = min(batch * ws,
-                            self.num_real_need - self.num_real_feeded)
+            global_end = min(batch_size * ws,
+                             self.num_fake_need - self.num_fake_feeded)
             self.feed_op(batch_to_feed, mode)
-            self.num_fake_feeded += total_end
+            self.num_fake_feeded += global_end
             return end
         else:
             raise ValueError(
