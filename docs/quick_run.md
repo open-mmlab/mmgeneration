@@ -221,7 +221,7 @@ bash eval.sh ${CONFIG_FILE} ${CKPT_FILE} --batch-size 10 --online
 If you are in slurm environment, please switch to the [tools/slurm_eval.sh](https://github.com/open-mmlab/mmgeneration/tree/master/tools/slurm_eval.sh) by using the following commands:
 
 ```shell
-bash slurm_eval.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CONFIG_FILE} \
+bash slurm_eval.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE} \
     --batch-size 10
     --online
 ```
@@ -233,7 +233,7 @@ As you can see, we have provided two modes for evaluating your models, i.e., `on
 bash eval.sh ${CONFIG_FILE} ${CKPT_FILE} --eval none
 
 # for slurm
-bash slurm_eval.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CONFIG_FILE} \
+bash slurm_eval.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE} \
     --eval none
 ```
 
@@ -241,6 +241,25 @@ We also provide [tools/utils/translation_eval.py](https://github.com/open-mmlab/
 ```shell
 python tools/utils/translation_eval.py ${CONFIG_FILE} ${CKPT_FILE} --t ${target-domain}
 ```
+
+To be noted that, in current version of MMGeneration, we support multi GPUs for [FID](#fid) and [IS](#is) evaluation and image saving. You can use the following command to use this feature:
+```shell
+# online evaluation
+bash dist_eval.sh ${CONFIG_FILE} ${CKPT_FILE} ${GPUS_NUMBER} --batch-size 10 --online
+# online evaluation with slurm
+bash slurm_eval_multi_gpu.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE} --batch-size 10 --online
+
+# offline evaluation
+bash dist_eval.sh${CONFIG_FILE} ${CKPT_FILE} ${GPUS_NUMBER}
+# offline evaluation with slurm
+bash slurm_eval_multi_gpu.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE}
+
+# image saving
+bash dist_eval.sh${CONFIG_FILE} ${CKPT_FILE} ${GPUS_NUMBER} --eval none --samples-path ${SAMPLES_PATH}
+# image saving with slurm
+bash slurm_eval_multi_gpu.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE} --eval none --samples-path ${SAMPLES_PATH}
+```
+In the subsequent version, multi GPUs evaluation for more metrics will be supported.
 
 Next, we will specify the details of different metrics one by one.
 
