@@ -122,7 +122,7 @@ def offline_evaluation(model,
         max_num_images = max(metric.num_images for metric in metrics)
     num_needed = max(max_num_images - num_exist, 0)
 
-    if num_needed > 0:
+    if num_needed > 0 and rank == 0:
         mmcv.print_log(f'Sample {num_needed} fake images for evaluation',
                        'mmgen')
         # define mmcv progress bar
@@ -139,7 +139,8 @@ def offline_evaluation(model,
             sample_model=basic_table_info['sample_model'],
             **kwargs)
         global_end = min(begin + total_batch_size, max_num_images)
-        pbar.update(global_end - begin)
+        if rank == 0:
+            pbar.update(global_end - begin)
 
         # gather generated images
         if ws > 1:
@@ -158,7 +159,7 @@ def offline_evaluation(model,
                                'not %d' % fakes.size(1))
 
         if rank == 0:
-            for i in range(end - begin):
+            for i in range(global_end - begin):
                 images = fakes[i:i + 1]
                 images = ((images + 1) / 2)
                 images = images.clamp_(0, 1)
