@@ -2,6 +2,7 @@
 from copy import deepcopy
 from functools import partial
 
+import mmcv
 import numpy as np
 import torch
 import torch.nn as nn
@@ -41,6 +42,9 @@ class SiLU(nn.Module):
 
     def __init__(self, inplace=False):
         super().__init__()
+        if torch.version <= '1.5.0' and inplace:
+            mmcv.print_log(f'Inplace version of \'SiLU\' is not supported for '
+                           f'torch <= 1.5.0, found \'{torch.version}\'.')
         self.inplace = inplace
 
     def forward(self, x):
@@ -51,6 +55,9 @@ class SiLU(nn.Module):
         Returns:
             torch.Tensor: Tensor after activation.
         """
+
+        if torch.version <= '1.5.0':
+            return x * torch.sigmoid(x)
 
         return F.silu(x, inplace=self.inplace)
 
