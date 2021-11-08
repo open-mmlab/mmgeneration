@@ -42,9 +42,9 @@ class SiLU(nn.Module):
 
     def __init__(self, inplace=False):
         super().__init__()
-        if torch.__version__ <= '1.5.0' and inplace:
+        if torch.__version__ < '1.6.0' and inplace:
             mmcv.print_log('Inplace version of \'SiLU\' is not supported for '
-                           f'torch <= 1.5.0, found \'{torch.version}\'.')
+                           f'torch < 1.6.0, found \'{torch.version}\'.')
         self.inplace = inplace
 
     def forward(self, x):
@@ -56,7 +56,7 @@ class SiLU(nn.Module):
             torch.Tensor: Tensor after activation.
         """
 
-        if torch.__version__ <= '1.5.0':
+        if torch.__version__ < '1.6.0':
             return x * torch.sigmoid(x)
 
         return F.silu(x, inplace=self.inplace)
