@@ -163,7 +163,7 @@ def offline_evaluation(model,
                 images = fakes[i:i + 1]
                 images = ((images + 1) / 2)
                 images = images.clamp_(0, 1)
-                image_name = str(begin + i) + '.png'
+                image_name = str(num_exist + begin + i) + '.png'
                 save_image(images, os.path.join(samples_path, image_name))
 
     if num_needed > 0 and rank == 0:
