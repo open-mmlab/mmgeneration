@@ -11,7 +11,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: FACADES
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_facades_b1x1_80k
+  Name: cyclegan--cyclegan_lsgan_resnet_in_facades_b1x1_80k.py
   Results:
   - Dataset: FACADES
     Metrics:
@@ -25,7 +25,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: FACADES
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_facades_b1x1_80k
+  Name: cyclegan--cyclegan_lsgan_id0_resnet_in_facades_b1x1_80k.py
   Results:
   - Dataset: FACADES
     Metrics:
@@ -39,7 +39,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: SUMMER2WINTER
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_summer2winter_b1x1_250k
+  Name: cyclegan--cyclegan_lsgan_resnet_in_summer2winter_b1x1_250k.py
   Results:
   - Dataset: SUMMER2WINTER
     Metrics:
@@ -53,7 +53,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: SUMMER2WINTER
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_summer2winter_b1x1_250k
+  Name: cyclegan--cyclegan_lsgan_id0_resnet_in_summer2winter_b1x1_250k.py
   Results:
   - Dataset: SUMMER2WINTER
     Metrics:
@@ -67,7 +67,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_winter2summer_b1x1_250k
+  Name: cyclegan--cyclegan_lsgan_resnet_in_winter2summer_b1x1_250k.py
   Results:
   - Dataset: Others
     Metrics:
@@ -81,7 +81,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_winter2summer_b1x1_250k
+  Name: cyclegan--cyclegan_lsgan_id0_resnet_in_winter2summer_b1x1_250k.py
   Results:
   - Dataset: Others
     Metrics:
@@ -95,7 +95,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: HORSE2ZEBRA
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_horse2zebra_b1x1_270k
+  Name: cyclegan--cyclegan_lsgan_resnet_in_horse2zebra_b1x1_270k.py
   Results:
   - Dataset: HORSE2ZEBRA
     Metrics:
@@ -109,7 +109,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: HORSE2ZEBRA
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_horse2zebra_b1x1_270k
+  Name: cyclegan--cyclegan_lsgan_id0_resnet_in_horse2zebra_b1x1_270k.py
   Results:
   - Dataset: HORSE2ZEBRA
     Metrics:
@@ -123,7 +123,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_resnet_in_zebra2horse_b1x1_270k
+  Name: cyclegan--cyclegan_lsgan_resnet_in_zebra2horse_b1x1_270k.py
   Results:
   - Dataset: Others
     Metrics:
@@ -137,7 +137,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--cyclegan--cyclegan_lsgan_id0_resnet_in_zebra2horse_b1x1_270k
+  Name: cyclegan--cyclegan_lsgan_id0_resnet_in_zebra2horse_b1x1_270k.py
   Results:
   - Dataset: Others
     Metrics:

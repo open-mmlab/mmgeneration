@@ -11,7 +11,7 @@ Models:
   In Collection: WGAN-GP
   Metadata:
     Training Data: CELEBA
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--wgan-gp--wgangp_GN_celeba-cropped_128_b64x1_160kiter
+  Name: wgan-gp--wgangp_GN_celeba-cropped_128_b64x1_160kiter.py
   Results:
   - Dataset: CELEBA
     Metrics:
@@ -26,7 +26,7 @@ Models:
   In Collection: WGAN-GP
   Metadata:
     Training Data: LSUN
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--wgan-gp--wgangp_GN_GP-50_lsun-bedroom_128_b64x1_160kiter
+  Name: wgan-gp--wgangp_GN_GP-50_lsun-bedroom_128_b64x1_160kiter.py
   Results:
   - Dataset: LSUN
     Metrics:

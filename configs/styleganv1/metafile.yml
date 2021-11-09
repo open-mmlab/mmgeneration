@@ -11,7 +11,7 @@ Models:
   In Collection: StyleGANv1
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv1--styleganv1_ffhq_256_g8_25Mimg
+  Name: styleganv1--styleganv1_ffhq_256_g8_25Mimg.py
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -23,7 +23,7 @@ Models:
   In Collection: StyleGANv1
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv1--styleganv1_ffhq_1024_g8_25Mimg
+  Name: styleganv1--styleganv1_ffhq_1024_g8_25Mimg.py
   Results:
   - Dataset: FFHQ
     Metrics:

@@ -11,7 +11,7 @@ Models:
   In Collection: DCGAN
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--dcgan--dcgan_mnist-64_b128x1_Glr4e-4_Dlr1e-4_5k
+  Name: dcgan--dcgan_mnist-64_b128x1_Glr4e-4_Dlr1e-4_5k.py
   Results:
   - Dataset: Others
     Metrics:
@@ -25,7 +25,7 @@ Models:
   In Collection: DCGAN
   Metadata:
     Training Data: CELEBA
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--dcgan--dcgan_celeba-cropped_64_b128x1_300k
+  Name: dcgan--dcgan_celeba-cropped_64_b128x1_300k.py
   Results:
   - Dataset: CELEBA
     Metrics:
@@ -39,7 +39,7 @@ Models:
   In Collection: DCGAN
   Metadata:
     Training Data: LSUN
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--dcgan--dcgan_lsun-bedroom_64x64_b128x1_5e
+  Name: dcgan--dcgan_lsun-bedroom_64x64_b128x1_5e.py
   Results:
   - Dataset: LSUN
     Metrics:

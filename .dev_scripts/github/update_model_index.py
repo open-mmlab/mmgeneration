@@ -181,9 +181,8 @@ def parse_md(md_file, task):
                             left = line[checkpoint_idx].index('ckpt](') + 6
                         right = line[checkpoint_idx].index(')', left)
                         checkpoint = line[checkpoint_idx][left:right]
-
-                    model_name = osp.splitext(config)[0].replace(
-                        'configs/', '', 1).replace('/', '--')
+                    model_name = re.findall(r'.*configs/(.*)', config)[0]
+                    model_name = model_name.replace('/', '--')
 
                     # find dataset in config file
                     dataset = 'Others'
