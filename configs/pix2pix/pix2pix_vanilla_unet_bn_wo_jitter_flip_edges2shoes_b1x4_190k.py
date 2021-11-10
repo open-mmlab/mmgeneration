@@ -1,9 +1,8 @@
 _base_ = [
-    '../_base_/models/pix2pix_vanilla_unet_bn.py',
-    '../_base_/datasets/paired_imgs_256x256_crop.py',
-    '../_base_/default_runtime.py'
+    '../_base_/models/pix2pix/pix2pix_vanilla_unet_bn.py',
+    '../_base_/datasets/paired_imgs_256x256.py', '../_base_/default_runtime.py'
 ]
-source_domain = 'mask'
+source_domain = 'edges'
 target_domain = 'photo'
 # model settings
 model = dict(
@@ -14,8 +13,8 @@ model = dict(
         data_info=dict(
             pred=f'fake_{target_domain}', target=f'real_{target_domain}')))
 # dataset settings
-domain_a = target_domain
-domain_b = source_domain
+domain_a = source_domain
+domain_b = target_domain
 img_norm_cfg = dict(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 train_pipeline = [
     dict(
@@ -76,11 +75,11 @@ test_pipeline = [
         meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
 ]
 
-dataroot = 'data/paired/facades'
+dataroot = 'data/paired/edges2shoes'
 data = dict(
     train=dict(dataroot=dataroot, pipeline=train_pipeline),
-    val=dict(dataroot=dataroot, pipeline=test_pipeline),
-    test=dict(dataroot=dataroot, pipeline=test_pipeline))
+    val=dict(dataroot=dataroot, pipeline=test_pipeline, testdir='val'),
+    test=dict(dataroot=dataroot, pipeline=test_pipeline, testdir='val'))
 
 # optimizer
 optimizer = dict(
@@ -103,11 +102,11 @@ runner = None
 use_ddp_wrapper = True
 
 # runtime settings
-total_iters = 80000
+total_iters = 190000
 workflow = [('train', 1)]
-exp_name = 'pix2pix_facades'
+exp_name = 'pix2pix_edges2shoes_wo_jitter_flip'
 work_dir = f'./work_dirs/experiments/{exp_name}'
-num_images = 106
+num_images = 200
 metrics = dict(
     FID=dict(type='FID', num_images=num_images, image_shape=(3, 256, 256)),
     IS=dict(

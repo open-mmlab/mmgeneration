@@ -49,3 +49,21 @@
 - Fix failing to build docs #64
 - Revise the logic of `num_classes` in basic conditional gan #69
 - Support dynamic eval internal in eval hook #73
+
+
+## v0.4.0 (03/11/2021)
+
+#### Highlights
+- Add more experiments for conditional GANs: SNGAN, SAGAN, and BigGAN
+- Refact Translation Model (#88, #126, #127, #145)
+
+#### New Features
+
+- Use PyTorch Sphinx theme #123
+- Support torchserve for unconditional models #131
+
+#### Fix bugs and Improvements
+
+- Add CI for python3.9 #110
+- Add support for PyTorch1.9 #115
+- Add pre-commit hook for spell checking #135

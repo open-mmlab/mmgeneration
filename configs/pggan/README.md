@@ -2,6 +2,9 @@
 
 ## Introduction
 <!-- [ALGORITHM] -->
+
+<details>
+<summary align="right"><a href="https://arxiv.org/abs/1710.10196">PGGAN (arXiv'2017)</a></summary>
 ```latex
 @article{karras2017progressive,
   title={Progressive growing of gans for improved quality, stability, and variation},
@@ -16,7 +19,9 @@
   <br/>
   <img src="https://user-images.githubusercontent.com/12726765/114009864-1df45400-9896-11eb-9d25-da9eabfe02ce.png" width="800"/>
 </div>
+</details>
 
+## Results and models
 
 |     Models      |    Details     | MS-SSIM |     SWD(xx,xx,xx,xx/avg)     |                                                        Config                                                         |                                                    Download                                                    |
 | :-------------: | :------------: | :-----: | :--------------------------: | :-------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------: |

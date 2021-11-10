@@ -2,6 +2,9 @@
 
 ## Introduction
 <!-- [ALGORITHM] -->
+
+<details>
+<summary align="right"><a href="https://openaccess.thecvf.com/content_CVPR_2020/html/Karras_Analyzing_and_Improving_the_Image_Quality_of_StyleGAN_CVPR_2020_paper.html">StyleGANv2 (CVPR'2020)</a></summary>
 ```latex
 @inproceedings{karras2020analyzing,
   title={Analyzing and improving the image quality of stylegan},
@@ -11,8 +14,9 @@
   year={2020},
   url={https://openaccess.thecvf.com/content_CVPR_2020/html/Karras_Analyzing_and_Improving_the_Image_Quality_of_StyleGAN_CVPR_2020_paper.html},
 }
-
 ```
+</details>
+
 ## Results and Models
 <div align="center">
   <b> Results (compressed) from StyleGAN2 config-f trained by MMGeneration</b>

@@ -3,6 +3,9 @@
 ## Introduction
 <!-- [ALGORITHM] -->
 
+<details>
+<summary align="right"><a href="https://arxiv.org/abs/1511.06434">DCGAN (arXiv'2015)</a></summary>
+
 ```latex
 @article{radford2015unsupervised,
   title={Unsupervised representation learning with deep convolutional generative adversarial networks},
@@ -12,6 +15,7 @@
   url={https://arxiv.org/abs/1511.06434},
 }
 ```
+</details>
 
 ## Results and models
 

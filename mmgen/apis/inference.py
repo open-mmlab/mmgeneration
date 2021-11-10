@@ -181,7 +181,7 @@ def sample_conditional_model(model,
     return results
 
 
-def sample_img2img_model(model, image_path, target_domain, **kwargs):
+def sample_img2img_model(model, image_path, target_domain=None, **kwargs):
     """Sampling from translation models.
 
     Args:
