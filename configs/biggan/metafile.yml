@@ -23,11 +23,11 @@ Models:
       Total Iters: 500000.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32x32_b25x2_500k_20210728_110906-08b61a44.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/masterconfigs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py
   In Collection: BigGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--masterbiggan--biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k
+  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--biggan--biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -39,11 +39,11 @@ Models:
       Total Iters: 1500000.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_best_fid_iter_1232000_20211111_122548-5315b13d.pth?versionId=CAEQHhiBgIDi1ti16BciIDIzMDlmNzE1MzU1NTQ1YWFiMmJlMDVmOGM1MDM3ZmQ5
-- Config: https://github.com/open-mmlab/mmgeneration/blob/masterconfigs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py
   In Collection: BigGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--masterbiggan--biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k
+  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--biggan--biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k
   Results:
   - Dataset: IMAGENET
     Metrics:
