@@ -8,9 +8,7 @@ _base_ = [
 data = dict(samples_per_gpu=32, workers_per_gpu=8)
 
 model = dict(
-    generator=dict(sn_style='biggan'),
-    discriminator=dict(sn_style='biggan'))
-
+    generator=dict(sn_style='biggan'), discriminator=dict(sn_style='biggan'))
 
 # adjust running config
 lr_config = None

@@ -13,8 +13,8 @@ from torch.nn.utils import spectral_norm
 from mmgen.models.builder import MODULES, build_module
 from mmgen.utils import get_root_logger
 from ..common import get_module_device
-from .modules import SelfAttentionBlock, SNConvModule
 from .biggan_snmodule import SNEmbedding, SNLinear
+from .modules import SelfAttentionBlock, SNConvModule
 
 
 @MODULES.register_module()
@@ -165,8 +165,10 @@ class BigGANDeepGenerator(nn.Module):
             if sn_style == 'torch':
                 self.noise2feat = spectral_norm(self.noise2feat, eps=sn_eps)
             elif sn_style == 'biggan':
-                self.noise2feat = SNLinear(self.noise_size,
-                self.arch['in_channels'][0] * (self.input_scale**2), eps=sn_eps)
+                self.noise2feat = SNLinear(
+                    self.noise_size,
+                    self.arch['in_channels'][0] * (self.input_scale**2),
+                    eps=sn_eps)
             else:
                 NotImplementedError(f'{sn_style} style SN is not supported')
 
@@ -220,7 +222,8 @@ class BigGANDeepGenerator(nn.Module):
                     SelfAttentionBlock(
                         out_ch,
                         with_spectral_norm=with_spectral_norm,
-                        sn_eps=sn_eps, sn_style=sn_style))
+                        sn_eps=sn_eps,
+                        sn_style=sn_style))
 
         self.output_layer = SNConvModule(
             self.arch['out_channels'][-1],
@@ -576,7 +579,8 @@ class BigGANDeepDiscriminator(nn.Module):
                     SelfAttentionBlock(
                         out_ch,
                         with_spectral_norm=with_spectral_norm,
-                        sn_eps=sn_eps, sn_style=sn_style))
+                        sn_eps=sn_eps,
+                        sn_style=sn_style))
 
         self.activate = build_activation_layer(act_cfg)
 
@@ -585,10 +589,12 @@ class BigGANDeepDiscriminator(nn.Module):
             if sn_style == 'torch':
                 self.decision = spectral_norm(self.decision, eps=sn_eps)
             elif sn_style == 'biggan':
-                self.decision = SNLinear(self.arch['out_channels'][-1], out_channels, eps=sn_eps)
+                self.decision = SNLinear(
+                    self.arch['out_channels'][-1], out_channels, eps=sn_eps)
             else:
-                raise NotImplementedError(f'{sn_style} style SN is not supported yet')
-            
+                raise NotImplementedError(
+                    f'{sn_style} style SN is not supported yet')
+
         if self.num_classes > 0:
             self.proj_y = nn.Embedding(self.num_classes,
                                        self.arch['out_channels'][-1])
@@ -596,10 +602,13 @@ class BigGANDeepDiscriminator(nn.Module):
                 if sn_style == 'torch':
                     self.proj_y = spectral_norm(self.proj_y, eps=sn_eps)
                 elif sn_style == 'biggan':
-                    self.proj_y = SNEmbedding(self.num_classes,
-                                       self.arch['out_channels'][-1], eps=sn_eps)
+                    self.proj_y = SNEmbedding(
+                        self.num_classes,
+                        self.arch['out_channels'][-1],
+                        eps=sn_eps)
                 else:
-                    raise NotImplementedError(f'{sn_style} style SN is not supported yet')
+                    raise NotImplementedError(
+                        f'{sn_style} style SN is not supported yet')
 
         self.init_weights(pretrained=pretrained, init_type=init_type)
 

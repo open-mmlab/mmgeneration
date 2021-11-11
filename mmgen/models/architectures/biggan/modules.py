@@ -14,33 +14,6 @@ from torch.nn.utils import spectral_norm
 from mmgen.models.builder import MODULES
 from .biggan_snmodule import SNConv2d, SNLinear
 
-# class SNConvModule(ConvModule):
-#     """Spectral Normalization ConvModule.
-
-#     In this module, we inherit default ``mmcv.cnn.ConvModule`` and adopt
-#     spectral normalization. The spectral normalization is proposed in:
-#     Spectral Normalization for Generative Adversarial Networks.
-
-#     Args:
-#         with_spectral_norm (bool, optional): Whether to use Spectral
-#             Normalization. Defaults to False.
-#         spectral_norm_cfg (dict, optional): Config for Spectral Normalization.
-#             Defaults to None.
-#     """
-
-#     def __init__(self,
-#                  *args,
-#                  with_spectral_norm=False,
-#                  spectral_norm_cfg=None,
-#                  **kwargs):
-#         super().__init__(*args, with_spectral_norm=False, **kwargs)
-#         self.with_spectral_norm = with_spectral_norm
-#         self.spectral_norm_cfg = deepcopy(
-#             spectral_norm_cfg) if spectral_norm_cfg else dict()
-
-#         if self.with_spectral_norm:
-#             self.conv = spectral_norm(self.conv, **self.spectral_norm_cfg)
-
 
 class SNConvModule(ConvModule):
     """Spectral Normalization ConvModule.
@@ -83,7 +56,9 @@ class SNConvModule(ConvModule):
                 self.conv = SNConv2d(
                     *args, **self.snconv_kwargs, eps=self.sn_eps)
             else:
-                raise NotImplementedError('sn style')
+                raise NotImplementedError(
+                    f'{self.sn_style} style spectral Norm is not supported yet'
+                )
 
 
 @MODULES.register_module()

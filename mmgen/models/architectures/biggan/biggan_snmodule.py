@@ -16,29 +16,19 @@ def gram_schmidt(x, ys):
     return x
 
 
-# Apply num_itrs steps of the power method to estimate top N singular values.
 def power_iteration(W, u_, update=True, eps=1e-12):
-    # Lists holding singular vectors and values
     us, vs, svs = [], [], []
     for i, u in enumerate(u_):
-        # Run one step of the power iteration
         with torch.no_grad():
             v = torch.matmul(u, W)
-            # Run Gram-Schmidt to subtract components of all other singular vectors
             v = F.normalize(gram_schmidt(v, vs), eps=eps)
-            # Add to the list
             vs += [v]
-            # Update the other singular vector
             u = torch.matmul(v, W.t())
-            # Run Gram-Schmidt to subtract components of all other singular vectors
             u = F.normalize(gram_schmidt(u, us), eps=eps)
-            # Add to the list
             us += [u]
             if update:
                 u_[i][:] = u
-        # Compute this singular value and add it to the list
         svs += [torch.squeeze(torch.matmul(torch.matmul(v, W.t()), u.t()))]
-        # svs += [torch.sum(F.linear(u, W.transpose(0, 1)) * v)]
     return svs, us, vs
 
 
@@ -77,7 +67,6 @@ class SN(object):
         return [getattr(self, 'u%d' % i) for i in range(self.num_svs)]
 
     # Singular values;
-    # note that these buffers are just for logging and are not used in training.
     @property
     def sv(self):
         return [getattr(self, 'sv%d' % i) for i in range(self.num_svs)]
@@ -93,8 +82,7 @@ class SN(object):
                 W_mat, self.u, update=self.training, eps=self.eps)
         # Update the svs
         if self.training:
-            with torch.no_grad(
-            ):  # Make sure to do this in a no_grad() context or you'll get memory leaks!
+            with torch.no_grad():
                 for i, sv in enumerate(svs):
                     self.sv[i][:] = sv
         return self.weight / svs[0]
