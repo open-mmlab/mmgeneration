@@ -15,6 +15,7 @@ class UniformTimeStepSampler:
 
     def __init__(self, num_timesteps):
         self.num_timesteps = num_timesteps
+        self.prob = [1 / self.num_timesteps for _ in range(self.num_timesteps)]
 
     def sample(self, batch_size):
         """Sample timesteps.
@@ -24,9 +25,12 @@ class UniformTimeStepSampler:
         Returns:
             torch.Tensor: Sampled timesteps.
         """
-        p = [1 / self.num_timesteps for _ in range(self.num_timesteps)]
+        # use numpy to make sure our implementation is consistent with the
+        # official ones.
         return torch.from_numpy(
-            np.random.choice(self.num_timesteps, size=(batch_size, ), p=p))
+            np.random.choice(
+                self.num_timesteps, size=(batch_size, ), p=self.prob))
 
     def __call__(self, batch_size):
+        """Return sampled results."""
         return self.sample(batch_size)
