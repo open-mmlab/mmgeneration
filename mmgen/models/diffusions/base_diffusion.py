@@ -16,18 +16,26 @@ from .utils import _get_label_batch, _get_noise_batch, var_to_tensor
 
 @MODELS.register_module()
 class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
-    """BasicGaussianDiffusion Module.
+    """Basic module for gaussian Diffusion Denoising Probabilistic Models A
+    diffusion probabilistic model (which we will call a 'diffusion model' for
+    brevity) is a parameterized Markov chain trained using variational
+    inference to produce samples matching the data after finite time.
+
+    Ref:
+    The design of this module implements DDPM and improve-DDPM according to
+    "Denoising Diffusion Probabilistic Models" (2020) and "Improved Denoising
+    Diffusion Probabilistic Models" (2021).
 
     Args:
         denoising (dict): Config for denoising model.
-        ddpm_loss (dict): Config for DDPM.
+        ddpm_loss (dict): Config for losses of DDPM.
         betas_cfg (dict): Config for betas in diffusion process.
-        num_timesteps (int, optional): Number of timesteps of the diffusion
+        num_timesteps (int, optional): The number of timesteps of the diffusion
             process. Defaults to 1000.
         num_classes (int | None, optional): The number of conditional classes.
             Defaults to None.
         sample_method (string, optional): Sample method for the denoising
-            process. Defaults to 'DDPM'.
+            process. Support 'DDPM' and 'DDIM'. Defaults to 'DDPM'.
         timesteps_sampler (string, optional): How to sample timesteps in
             training process. Defaults to `UniformTimeStepSampler`.
         train_cfg (dict | None, optional): Config for training schedule.
@@ -48,7 +56,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                  test_cfg=None):
         super().__init__()
         self.fp16_enable = False
-        # build denoising in this function
+        # build denoising module in this function
         self.num_classes = num_classes
         self.num_timesteps = num_timesteps
         self.sample_method = sample_method
@@ -59,11 +67,11 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                 num_classes=num_classes, num_timesteps=num_timesteps))
 
         # get output-related configs from denoising
-        self.denoising_var = self.denoising.var_mode
-        self.denoising_mean = self.denoising.mean_mode
+        self.denoising_var_mode = self.denoising.var_mode
+        self.denoising_mean_mode = self.denoising.mean_mode
         # output_channels in denoising may be double, therefore we
         # get number of channels from config
-        image_channels = self._denoising_cfg.get('in_channels')
+        image_channels = self._denoising_cfg['in_channels']
         # image_size should be the attribute of denoising network
         image_size = self.denoising.image_size
 
@@ -123,6 +131,8 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
 
         # whether to use exponential moving average for testing
         self.use_ema = self.test_cfg.get('use_ema', False)
+        if self.use_ema:
+            self.denoising_ema = deepcopy(self.denoising)
         # TODO: finish ema part --> what should we do here?
 
     def _get_loss(self, outputs_dict):
@@ -195,8 +205,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
 
 
         Args:
-            optimizer (dict): Dict contains optimizer for generator and
-                discriminator.
+            optimizer (dict): Dict contains optimizer for denoising network.
             running_status (dict | None, optional): Contains necessary basic
                 information for training, e.g., iteration number. Defaults to
                 None.
@@ -271,16 +280,22 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         """Reconstruction step at corresponding `timestep`.
 
         ``sample_from_noise`` focus on generate samples start from **random
-        (or given) noise**. Therefore, we design this function to release a
-        reconstruction with respect to the given images.
+        (or given) noise**. Therefore, we design this function to realize a
+        reconstruction process for the given images.
 
         If `timestep` is None, automatically perform reconstruction at all
         timesteps.
 
         Args:
             data_batch (dict): Input data from dataloader.
-            noise (torch.Tensor | callable)
-            timestep (int | list | torch.Tensor | callable): Target
+            noise (torch.Tensor | callable | None): Noise used in diffusion
+                process. You can directly give a batch of noise through a
+                ``torch.Tensor`` or offer a callable function to sample a
+                batch of noise data. Otherwise, the ``None`` indicates to use
+                the default noise sampler. Defaults to None.
+            label (torch.Tensor | None , optional): The conditional label of
+                the input image. Defaults to None.
+            timestep (int | list | torch.Tensor | callable | None): Target
                 timestep to perform reconstruction.
         """
         # 0. prepare for timestep, noise and label
@@ -366,7 +381,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             num_batches (int, optional):  The number of batch size.
                 Defaults to 0.
             sample_model (str, optional): The model to sample. If ``ema/orig``
-                is passed, this method would try to sample from ema (if
+                is passed, this method will try to sample from ema (if
                 ``self.use_ema == True``) and orig model. Defaults to
                 'ema/orig'.
             label (torch.Tensor | None , optional): The conditional label.
@@ -432,27 +447,29 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                 batch of noise through a ``torch.Tensor`` or offer a callable
                 function to sample a batch of noise data. Otherwise, the
                 ``None`` indicates to use the default noise sampler.
-            num_batches (int, optional):
-            label (torch.Tensor, optional):
+            num_batches (int, optional): The number of batch size.
+                Defaults to 0.
+            label (torch.Tensor | None , optional): The conditional label.
+                Defaults to None.
             save_intermedia (bool, optional): Whether to save denoising result
-                of intermedia timesteps. If set as True, would return a list
-                contains denoising results of each timestep. Otherwise, only
-                the final denoising result would be returned. Defaults to
-                False.
+                of intermedia timesteps. If set as True, will return a dict
+                which key and value are denoising timestep and denoising
+                result. Otherwise, only the final denoising result will be
+                returned. Defaults to False.
             timesteps_noise (torch.Tensor, optional): Noise term used in each
-                denoising timesteps. If passed, the input noise would shape as
+                denoising timestep. If given, the input noise will be shaped to
                 [num_timesteps, b, c, h, w]. If set as None, noise of each
-                denoising timestep would be randomly sampled. Default as None.
+                denoising timestep will be randomly sampled. Default as None.
         Returns:
-            torch.Tensor | list[torch.Tensor]: If ``save_intermedia``, a list
-                contains denoising results of each timestep would be returned.
-                Otherwise, only the final denoising result would be returned.
+            torch.Tensor | dict: If ``save_intermedia``, a dict contains
+                denoising results of each timestep will be returned.
+                Otherwise, only the final denoising result will be returned.
         """
         device = get_module_device(self)
         x_t = self.get_noise(noise, num_batches=num_batches).to(device)
         if save_intermedia:
             # save input
-            intermedia = [x_t.clone()]
+            intermedia = {self.num_timesteps: x_t.clone()}
 
         # use timesteps noise if defined
         if timesteps_noise is not None:
@@ -470,7 +487,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             x_t = self.denoising_step(
                 model, x_t, batched_t, noise=step_noise, label=label, **kwargs)
             if save_intermedia:
-                intermedia.append(x_t.clone())
+                intermedia[int(t[0, 0, 0, 0])] = x_t.clone()
         if save_intermedia:
             return intermedia
         return x_t
@@ -530,7 +547,6 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
 
         Returns:
             np.ndarray: Betas used in diffusion process.
-
         """
         scale = 1000 / diffusion_timesteps
         beta_0 = scale * beta_0
@@ -553,7 +569,6 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
 
         Returns:
             np.ndarray: Betas used in diffusion process.
-
         """
 
         def f(t, T, s):
@@ -604,7 +619,12 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         logvar = var_to_tensor(self.log_one_minus_alphas_bar, t, tar_shape)
         return mean, logvar
 
-    def q_posterior_mean_variance(self, x_0, x_t, t, var=True, logvar=False):
+    def q_posterior_mean_variance(self,
+                                  x_0,
+                                  x_t,
+                                  t,
+                                  need_var=True,
+                                  logvar=False):
         r"""Get mean and variance of diffusion posterior
             `q(x_{t-1} | x_t, x_0)`.
 
@@ -612,18 +632,18 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             x_0 (torch.tensor): The original image before diffusion, shape as
                 [bz, ch, H, W].
             t (torch.tensor): Target timestep, shape as [bz, ].
-            var (bool, optional): If set as ``True``, would return a dict
-                contains ``var``. Otherwise, only mean would be returned,
-                ``logvar`` would be ignored. Defaults to True.
+            need_var (bool, optional): If set as ``True``, this function will
+                return a dict contains ``var``. Otherwise, only mean will be
+                returned, ``logvar`` will be ignored. Defaults to True.
             logvar (bool, optional): If set as ``True``, the returned dict
-                would additional contain ``logvar``. This argument would be
+                will additionally contain ``logvar``. This argument will be
                 considered only if ``var == True``. Defaults to False.
 
         Returns:
-            torch.Tensor | dict: If ``var``, would return a dict contains
-                ``mean`` and ``var``. Otherwise, only mean would be returned.
+            torch.Tensor | dict: If ``var``, will return a dict contains
+                ``mean`` and ``var``. Otherwise, only mean will be returned.
                 If ``var`` and ``logvar`` set at as True simultaneously, the
-                returned dict would additional contain ``logvar``.
+                returned dict will additional contain ``logvar``.
         """
 
         tar_shape = x_0.shape
@@ -631,7 +651,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         tilde_mu_t_coef2 = var_to_tensor(self.tilde_mu_t_coef2, t, tar_shape)
         posterior_mean = tilde_mu_t_coef1 * x_0 + tilde_mu_t_coef2 * x_t
         # do not need variance, just return mean
-        if not var:
+        if not need_var:
             return posterior_mean
         posterior_var = var_to_tensor(self.tilde_betas_t, t, tar_shape)
         out_dict = dict(
@@ -659,45 +679,46 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             clip_denoised (bool, optional): Whether cliped sample results into
                 [-1, 1]. Defaults to True.
             denoised_fn (callable, optional): If not None, a function which
-                applies to the predicted ``x_0`` prediction before it is used
-                to sample. Applies before ``clip_denoised``. Defaults to None.
+                applies to the predicted ``x_0`` before it is passed to the
+                following sampling procedure. Noted that this function will be
+                applies before ``clip_denoised``. Defaults to None.
 
         Returns:
             dict: A dict contains ``var_pred``, ``logvar_pred``, ``mean_pred``
                 and ``x_0_pred``.
         """
-        tar_shape = x_t.shape
+        target_shape = x_t.shape
         # prepare for var and logvar
-        if self.denoising_var.upper() == 'LEARNED':
+        if self.denoising_var_mode.upper() == 'LEARNED':
             # TODO: maybe change to LEARNED_LOG_VAR
             logvar_pred = denoising_output['logvar']
             varpred = torch.exp(logvar_pred)
 
-        elif self.denoising_var.upper() == 'LEARNED_RANGE':
+        elif self.denoising_var_mode.upper() == 'LEARNED_RANGE':
             # TODO: maybe change to LEARNED_FACTOR ?
             var_factor = denoising_output['factor']
             lower_bound_logvar = var_to_tensor(self.log_tilde_betas_t_clipped,
-                                               t, tar_shape)
+                                               t, target_shape)
             upper_bound_logvar = var_to_tensor(
-                np.log(self.betas), t, tar_shape)
+                np.log(self.betas), t, target_shape)
             logvar_pred = var_factor * upper_bound_logvar + (
                 1 - var_factor) * lower_bound_logvar
             varpred = torch.exp(logvar_pred)
 
-        elif self.denoising_var.upper() == 'FIXED_LARGE':
+        elif self.denoising_var_mode.upper() == 'FIXED_LARGE':
             # use betas as var
             varpred = var_to_tensor(
-                np.append(self.tilde_betas_t[1], self.betas), t, tar_shape)
+                np.append(self.tilde_betas_t[1], self.betas), t, target_shape)
             logvar_pred = torch.log(varpred)
 
-        elif self.denoising_var.upper() == 'FIXED_SMALL':
+        elif self.denoising_var_mode.upper() == 'FIXED_SMALL':
             # use posterior (tilde_betas)  as var
-            varpred = var_to_tensor(self.tilde_betas_t, t, tar_shape)
+            varpred = var_to_tensor(self.tilde_betas_t, t, target_shape)
             logvar_pred = var_to_tensor(self.log_tilde_betas_t_clipped, t,
-                                        tar_shape)
+                                        target_shape)
         else:
             raise AttributeError('Unknown denoising var output type '
-                                 f'[{self.denoising_var}].')
+                                 f'[{self.denoising_var_mode}].')
 
         def process_x_0(x):
             if denoised_fn is not None and callable(denoised_fn):
@@ -705,7 +726,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             return x.clamp(-1, 1) if clip_denoised else x
 
         # prepare for mean and x_0
-        if self.denoising_mean.upper() == 'EPS':
+        if self.denoising_mean_mode.upper() == 'EPS':
             eps_pred = denoising_output['eps_t_pred']
             # We can get x_{t-1} with eps in two following approaches:
             # 1. eps --(Eq 15)--> \hat{x_0} --(Eq 7)--> \tilde_mu --> x_{t-1}
@@ -723,19 +744,19 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             # mu_theta = coef1 * (x_t - coef2 * eps)
             x_0_pred = process_x_0(self.pred_x_0_from_eps(eps_pred, x_t, t))
             mean_pred = self.q_posterior_mean_variance(
-                x_0_pred, x_t, t, var=False)
-        elif self.denoising_mean.upper() == 'START_X':
+                x_0_pred, x_t, t, need_var=False)
+        elif self.denoising_mean_mode.upper() == 'START_X':
             x_0_pred = process_x_0(denoising_output['x_0_pred'])
             mean_pred = self.q_posterior_mean_variance(
-                x_0_pred, x_t, t, var=False)
-        elif self.denoising_mean.upper() == 'PREVIOUS_X':
+                x_0_pred, x_t, t, need_var=False)
+        elif self.denoising_mean_mode.upper() == 'PREVIOUS_X':
             # TODO: maybe we should call this PREVIOUS_X_MEAN or MU_THETA
             # because this actually predict \mu_{\theta}
             mean_pred = denoising_output['x_tm1_pred']
             x_0_pred = process_x_0(self.pred_x_0_from_x_tm1(mean_pred, x_t, t))
         else:
             raise AttributeError('Unknown denoising mean output type '
-                                 f'[{self.denoising_mean}].')
+                                 f'[{self.denoising_mean_mode}].')
 
         return dict(
             var_pred=varpred,
@@ -768,7 +789,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                 batch of label through a ``torch.Tensor`` or offer a callable
                 function to sample a batch of label data. Otherwise, the
                 ``None`` indicates to use the default label sampler.
-            clip_denoised (bool, optional): Whether cliped sample results into
+            clip_denoised (bool, optional): Whether to clip sample results into
                 [-1, 1]. Defaults to False.
             denoised_fn (callable, optional): If not None, a function which
                 applies to the predicted ``x_0`` prediction before it is used
@@ -781,9 +802,9 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
 
         Return:
             torch.Tensor | dict: If not ``return_noise``, only the denoising
-                image would be returned. Otherwise, the dict contains
+                image will be returned. Otherwise, the dict contains
                 ``fake_image``, ``noise_batch`` and outputs from denoising
-                model and ``p_mean_variance`` would be returned.
+                model and ``p_mean_variance`` will be returned.
         """
         # init model_kwargs as dict if not passed
         if model_kwargs is None:

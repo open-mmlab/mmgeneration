@@ -38,7 +38,7 @@ def _get_noise_batch(noise,
         num_timesteps (int, optional): Total timestpes of the diffusion and
             denoising process. Defaults to 0.
         num_batches (int, optional): The number of batch size. Defaults to 0.
-        timesteps_noise (bool, optional): If True, returned noise would shape
+        timesteps_noise (bool, optional): If True, returned noise will shape
             as [n, bz, c, h, w], otherwise shape as [bz, c, h, w].
             Defaults to False.
         device (str, optional): If not ``None``, move the generated noise to
@@ -144,7 +144,7 @@ def _get_label_batch(label,
         num_timesteps (int, optional): Total timestpes of the diffusion and
             denoising process. Defaults to 0.
         num_batches (int, optional): The number of batch size. Defaults to 0.
-        timesteps_noise (bool, optional): If True, returned noise would shape
+        timesteps_noise (bool, optional): If True, returned noise will shape
             as [n, bz, c, h, w], otherwise shape as [bz, c, h, w].
             Defaults to False.
     Returns:
@@ -214,14 +214,14 @@ def _get_label_batch(label,
     return label_batch
 
 
-def var_to_tensor(var, index, tar_shape=None):
+def var_to_tensor(var, index, target_shape=None):
     """Function used to extract variables by given index, and convert into
     tensor as given shape.
     Args:
         var (np.array): Variables to be extracted.
         index (torch.Tensor): Target index to extract.
-        tar_shape (torch.Size, optional): If given, the indexed variable
-            would expand to the given shape. Defaults to None.
+        target_shape (torch.Size, optional): If given, the indexed variable
+            will expand to the given shape. Defaults to None.
 
     Returns:
         torch.Tensor: Converted variable.
@@ -231,6 +231,6 @@ def var_to_tensor(var, index, tar_shape=None):
     if torch.cuda.is_available():
         var_indexed = var_indexed.cuda()
 
-    while len(var_indexed.shape) < len(tar_shape):
+    while len(var_indexed.shape) < len(target_shape):
         var_indexed = var_indexed[..., None]
     return var_indexed
