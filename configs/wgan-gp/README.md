@@ -4,7 +4,7 @@
 <!-- [ALGORITHM] -->
 
 <details>
-<summary align="right"><a href="https://arxiv.org/abs/1704.00028">StyleGANv2 (WGAN-GP'2017)</a></summary>
+<summary align="right"><a href="https://arxiv.org/abs/1704.00028">WGAN-GP (arXiv'2017)</a></summary>
 
 ```latex
 @article{gulrajani2017improved,
