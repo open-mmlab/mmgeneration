@@ -5,6 +5,7 @@
 
 <details>
 <summary align="right"><a href="https://proceedings.mlr.press/v97/zhang19d.html">SAGAN (ICML'2019)</a></summary>
+
 ```latex
 @inproceedings{zhang2019self,
   title={Self-attention generative adversarial networks},
@@ -16,14 +17,14 @@
   url={https://proceedings.mlr.press/v97/zhang19d.html},
 }
 ```
+
+</details>
+
 <div align="center">
   <b> Results from our SAGAN trained in CIFAR10</b>
   <br/>
   <img src="https://user-images.githubusercontent.com/28132635/127619657-67f2e62d-52e4-43d2-931f-6d0e6e019813.png" width="400"/>
 </div>
-
-</details>
-
 
 ## Results and models
 
