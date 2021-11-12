@@ -203,20 +203,20 @@ def offline_evaluation(model,
             if reals.shape[1] == 1:
                 reals = torch.cat([reals] * 3, dim=1)
             num_left = metric.feed(reals, 'reals')
-            if rank == 0:
-                pbar.update(reals.shape[0] * ws)
             if num_left <= 0:
                 break
+            if rank == 0:
+                pbar.update(reals.shape[0] * ws)
         # feed in fake images
         for data in fake_dataloader:
             fakes = data['real_img']
             if fakes.shape[1] == 1:
                 fakes = torch.cat([fakes] * 3, dim=1)
             num_left = metric.feed(fakes, 'fakes')
-            if rank == 0:
-                pbar.update(fakes.shape[0] * ws)
             if num_left <= 0:
                 break
+            if rank == 0:
+                pbar.update(fakes.shape[0] * ws)
         if rank == 0:
             # only call summary at main device
             metric.summary()
