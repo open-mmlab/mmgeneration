@@ -65,8 +65,8 @@ def gaussian_kld(mean_target, mean_pred, logvar_target, logvar_pred, base='e'):
             distribution
         logvar_pred (torch.Tensor): Log variance of the predicted (or the
             second) distribution.
-        base (str, optional): The log base of calculated KLD. Support ``'e'``
-            and ``'2'``. Defaults to ``'e'``.
+        base (str, optional): The log base of calculated KLD. We support
+            ``'e'`` (for ln) and ``'2'`` (for log_2). Defaults to ``'e'``.
 
     Returns:
         torch.Tensor: KLD between two given distribution.

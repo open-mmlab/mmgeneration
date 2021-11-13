@@ -57,15 +57,51 @@ class DDPMLoss(nn.Module):
 
     For loss log collection, we support users to pass a list of (or single)
     config by ``log_cfgs`` argument to define how they want to collect loss
-    terms and show them in the log. Each log configs must contain ``type``
-    keyword, and may contain ``prefix`` and ``reduction`` keywords.
+    terms and show them in the log. Each log collection returns a dict which
+    key and value are the name and value of collected loss terms. And the dict
+    will be merged into  ``log_vars`` after the loss used for parameter
+    optimization is calculated. The log updating process for the class which
+    uses ddpm_loss can be referred to the following pseudo-code:
+
+    .. code-block:: python
+        :linenos:
+
+        # 1. loss dict for parameter optimization
+        losses_dict = {}
+
+        # 2. calculate losses
+        for loss_fn in self.ddpm_loss:
+            losses_dict[loss_fn.loss_name()] = loss_fn(outputs_dict)
+
+        # 3. init log_vars
+        log_vars = OrderedDict()
+
+        # 4. update log_vars with loss terms used for parameter optimization
+        for loss_name, loss_value in losses_dict.items():
+            log_vars[loss_name] = loss_value.mean()
+
+        # 5. sum all loss terms used for backward
+        loss = sum(_value for _key, _value in log_vars.items()
+                   if 'loss' in _key)
+
+        # 6. update log_var with log collection functions
+        for loss_fn in self.ddpm_loss:
+            if hasattr(loss_fn, 'log_vars'):
+                log_vars.update(loss_fn.log_vars)
+
+    Each log configs must contain ``type`` keyword, and may contain ``prefix``
+    and ``reduction`` keywords.
 
     ``type``: Use to get the corresponding collection function. Functions would
         be named as ``f'{type}_log_collect'``. In `DDPMLoss`, we only support
         ``type=='quartile'``, but users may define their log collection
         functions and use them in this way.
-    ``prefix``: Control the prefix of output when print logs. If passed, it
-        must start with ``'loss_'``. If not passed, ``'loss_'`` would be used.
+    ``prefix``: This keyword is set for avoiding the name of displayed loss
+        terms being too long. The name of each loss term will set as
+        ``'{prefix}_{log_coll_fn_spec_name}'``, where
+        ``{log_coll_fn_spec_name}`` is name specific to the log collection
+        function. If passed, it must start with ``'loss_'``. If not passed,
+        ``'loss_'`` would be used.
     ``reduction``: Control the reduction method of the collected loss terms.
 
     We implement ``quartile_log_collection`` in this module. In detail, we
