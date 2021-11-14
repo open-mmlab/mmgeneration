@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from collections import defaultdict
 from copy import deepcopy
 from functools import partial
 from typing import OrderedDict
@@ -107,7 +108,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
 
         self._parse_train_cfg()
         if test_cfg is not None:
-            self._parser_test_cfg()
+            self._parse_test_cfg()
 
         self.prepare_diffusion_vars()
 
@@ -305,16 +306,20 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
 
         if timesteps is None:
             # default to performing the whole reconstruction process
-            timesteps = torch.Tensor([t for t in range(self.num_timesteps)
-                                      ]).repeat([num_batches, 1])
+            timesteps = torch.LongTensor([
+                t for t in range(self.num_timesteps)
+            ]).view(self.num_timesteps, 1)
+            timesteps = timesteps.repeat([1, num_batches])
         if isinstance(timesteps, (int, list)):
-            timesteps = torch.Tensor(timesteps)
+            timesteps = torch.LongTensor(timesteps)
         elif callable(timesteps):
             timestep_generator = timesteps
             timesteps = timestep_generator(num_batches)
         else:
             assert isinstance(timesteps, torch.Tensor), (
                 'we only support int list tensor or a callable function')
+        if timesteps.ndim == 1:
+            timesteps = timesteps.unsqueeze(0)
         timesteps = timesteps.to(get_module_device(self))
 
         if noise is not None:
@@ -338,32 +343,62 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         else:
             label_batches = None
 
-        # 1. get diffusion results and parameters
-        diffusion_batches = self.q_sample(real_imgs, timesteps, noise_batches)
-        # 2. get denoising results.
-        denoising_batches = self.denoising_step(
-            self.denoising,
-            diffusion_batches,
-            timesteps,
-            label=label_batches,
-            return_noise=True,
-            clip_denoised=not self.training)
-        # 3. get ground truth by q_posterior
-        target_batches = self.q_posterior_mean_variance(
-            real_imgs, diffusion_batches, timesteps, logvar=True)
-
-        if return_noise:
-            # return t and target_noise for calculate loss terms or metrics
-            output_dict = dict(
-                timesteps=timesteps,
-                noise=noise_batches,
+        output_dict = defaultdict(list)
+        # loop all timesteps
+        for timestep in timesteps:
+            # 1. get diffusion results and parameters
+            diffusion_batches = self.q_sample(real_imgs, timestep,
+                                              noise_batches)
+            # 2. get denoising results.
+            denoising_batches = self.denoising_step(
+                self.denoising,
+                diffusion_batches,
+                timestep,
                 label=label_batches,
-                diffusion_batches=diffusion_batches)
-            output_dict.update(denoising_batches)
-            output_dict.update(target_batches)
-            return output_dict
+                return_noise=return_noise,
+                clip_denoised=not self.training)
+            # 3. get ground truth by q_posterior
+            target_batches = self.q_posterior_mean_variance(
+                real_imgs, diffusion_batches, timestep, logvar=True)
+            if return_noise:
+                output_dict_ = dict(
+                    timesteps=timestep,
+                    noise=noise_batches,
+                    diffusion_batches=diffusion_batches)
+                if self.num_classes > 0:
+                    output_dict_['label'] = label_batches
+                output_dict_.update(denoising_batches)
+                output_dict_.update(target_batches)
+            else:
+                output_dict_['fake_imgs'] = denoising_batches
+            # update output of `timestep` to output_dict
+            for k, v in output_dict_.items():
+                if k in output_dict:
+                    output_dict[k].append(v)
+                else:
+                    output_dict[k] = [v]
 
-        return denoising_batches
+        # 4. concentrate list to tensor
+        for k, v in output_dict.items():
+            output_dict[k] = torch.cat(v, dim=0)
+
+        # 5. return results
+        if return_noise:
+            return output_dict
+        return output_dict['fake_imgs']
+
+        # if return_noise:
+        #     # return t and target_noise for calculate loss terms or metrics
+        #     output_dict = dict(
+        #         timesteps=timesteps,
+        #         noise=noise_batches,
+        #         label=label_batches,
+        #         diffusion_batches=diffusion_batches)
+        #     output_dict.update(denoising_batches)
+        #     output_dict.update(target_batches)
+        #     return output_dict
+
+        # return denoising_batches
 
     def sample_from_noise(self,
                           noise,
@@ -487,7 +522,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             x_t = self.denoising_step(
                 model, x_t, batched_t, noise=step_noise, label=label, **kwargs)
             if save_intermedia:
-                intermedia[int(t[0, 0, 0, 0])] = x_t.clone()
+                intermedia[int(t)] = x_t.clone()
         if save_intermedia:
             return intermedia
         return x_t
@@ -594,12 +629,13 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         Returns:
             torch.tensor: Diffused image `x_t`.
         """
+        device = get_module_device(self)
         num_batches = x_0.shape[0]
         tar_shape = x_0.shape
-        # noise = self._get_noise_batch(noise, num_batches, noise_size)
         noise = self.get_noise(noise, num_batches=num_batches)
-        mean = var_to_tensor(self.sqrt_alphas_bar, t, tar_shape)
-        std = var_to_tensor(self.sqrt_one_minus_alphas_bar, t, tar_shape)
+        mean = var_to_tensor(self.sqrt_alphas_bar, t, tar_shape, device)
+        std = var_to_tensor(self.sqrt_one_minus_alphas_bar, t, tar_shape,
+                            device)
 
         return x_0 * mean + noise * std
 
@@ -614,9 +650,11 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         Returns:
             Tuple(torch.tensor): Tuple contains mean and log variance.
         """
+        device = get_module_device(self)
         tar_shape = x_0.shape
-        mean = var_to_tensor(self.sqrt_alphas_bar, t, tar_shape) * x_0
-        logvar = var_to_tensor(self.log_one_minus_alphas_bar, t, tar_shape)
+        mean = var_to_tensor(self.sqrt_alphas_bar, t, tar_shape, device) * x_0
+        logvar = var_to_tensor(self.log_one_minus_alphas_bar, t, tar_shape,
+                               device)
         return mean, logvar
 
     def q_posterior_mean_variance(self,
@@ -645,20 +683,22 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                 If ``var`` and ``logvar`` set at as True simultaneously, the
                 returned dict will additional contain ``logvar``.
         """
-
+        device = get_module_device(self)
         tar_shape = x_0.shape
-        tilde_mu_t_coef1 = var_to_tensor(self.tilde_mu_t_coef1, t, tar_shape)
-        tilde_mu_t_coef2 = var_to_tensor(self.tilde_mu_t_coef2, t, tar_shape)
+        tilde_mu_t_coef1 = var_to_tensor(self.tilde_mu_t_coef1, t, tar_shape,
+                                         device)
+        tilde_mu_t_coef2 = var_to_tensor(self.tilde_mu_t_coef2, t, tar_shape,
+                                         device)
         posterior_mean = tilde_mu_t_coef1 * x_0 + tilde_mu_t_coef2 * x_t
         # do not need variance, just return mean
         if not need_var:
             return posterior_mean
-        posterior_var = var_to_tensor(self.tilde_betas_t, t, tar_shape)
+        posterior_var = var_to_tensor(self.tilde_betas_t, t, tar_shape, device)
         out_dict = dict(
             mean_posterior=posterior_mean, var_posterior=posterior_var)
         if logvar:
             posterior_logvar = var_to_tensor(self.log_tilde_betas_t_clipped, t,
-                                             tar_shape)
+                                             tar_shape, device)
             out_dict['logvar_posterior'] = posterior_logvar
         return out_dict
 
@@ -688,6 +728,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                 and ``x_0_pred``.
         """
         target_shape = x_t.shape
+        device = get_module_device(self)
         # prepare for var and logvar
         if self.denoising_var_mode.upper() == 'LEARNED':
             # TODO: maybe change to LEARNED_LOG_VAR
@@ -698,9 +739,9 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             # TODO: maybe change to LEARNED_FACTOR ?
             var_factor = denoising_output['factor']
             lower_bound_logvar = var_to_tensor(self.log_tilde_betas_t_clipped,
-                                               t, target_shape)
+                                               t, target_shape, device)
             upper_bound_logvar = var_to_tensor(
-                np.log(self.betas), t, target_shape)
+                np.log(self.betas), t, target_shape, device)
             logvar_pred = var_factor * upper_bound_logvar + (
                 1 - var_factor) * lower_bound_logvar
             varpred = torch.exp(logvar_pred)
@@ -708,14 +749,16 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         elif self.denoising_var_mode.upper() == 'FIXED_LARGE':
             # use betas as var
             varpred = var_to_tensor(
-                np.append(self.tilde_betas_t[1], self.betas), t, target_shape)
+                np.append(self.tilde_betas_t[1], self.betas), t, target_shape,
+                device)
             logvar_pred = torch.log(varpred)
 
         elif self.denoising_var_mode.upper() == 'FIXED_SMALL':
             # use posterior (tilde_betas)  as var
-            varpred = var_to_tensor(self.tilde_betas_t, t, target_shape)
+            varpred = var_to_tensor(self.tilde_betas_t, t, target_shape,
+                                    device)
             logvar_pred = var_to_tensor(self.log_tilde_betas_t_clipped, t,
-                                        target_shape)
+                                        target_shape, device)
         else:
             raise AttributeError('Unknown denoising var output type '
                                  f'[{self.denoising_var_mode}].')
@@ -758,11 +801,21 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             raise AttributeError('Unknown denoising mean output type '
                                  f'[{self.denoising_mean_mode}].')
 
-        return dict(
+        output_dict = dict(
             var_pred=varpred,
             logvar_pred=logvar_pred,
             mean_pred=mean_pred,
             x_0_pred=x_0_pred)
+        # avoid return duplicate variables
+        return {
+            k: output_dict[k]
+            for k in output_dict.keys() if k not in denoising_output
+        }
+        # return dict(
+        #     var_pred=varpred,
+        #     logvar_pred=logvar_pred,
+        #     mean_pred=mean_pred,
+        #     x_0_pred=x_0_pred)
 
     def denoising_step(self,
                        model,
@@ -853,9 +906,11 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         Returns:
             torch.tensor: Predicted ``x_0``.
         """
+        device = get_module_device(self)
         tar_shape = x_t.shape
-        coef1 = var_to_tensor(self.sqrt_recip_alplas_bar, t, tar_shape)
-        coef2 = var_to_tensor(self.sqrt_recipm1_alphas_bar, t, tar_shape)
+        coef1 = var_to_tensor(self.sqrt_recip_alplas_bar, t, tar_shape, device)
+        coef2 = var_to_tensor(self.sqrt_recipm1_alphas_bar, t, tar_shape,
+                              device)
         return x_t * coef1 - eps * coef2
 
     def pred_x_0_from_x_tm1(self, x_tm1, x_t, t):
@@ -876,13 +931,14 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             torch.Tensor: Predicted `x_0`.
 
         """
+        device = get_module_device(self)
         tar_shape = x_t.shape
-        coef1 = var_to_tensor(self.tilde_mu_t_coef1, t, tar_shape)
-        coef2 = var_to_tensor(self.tilde_mu_t_coef2, t, tar_shape)
+        coef1 = var_to_tensor(self.tilde_mu_t_coef1, t, tar_shape, device)
+        coef2 = var_to_tensor(self.tilde_mu_t_coef2, t, tar_shape, device)
         x_0 = (x_tm1 - coef2 * x_t) / coef1
         return x_0
 
-    def forward_train(self):
+    def forward_train(self, data, **kwargs):
         """Deprecated forward function in training."""
         raise NotImplementedError(
             'In MMGeneration, we do NOT recommend users to call'

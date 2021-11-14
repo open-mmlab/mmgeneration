@@ -214,7 +214,7 @@ def _get_label_batch(label,
     return label_batch
 
 
-def var_to_tensor(var, index, target_shape=None):
+def var_to_tensor(var, index, target_shape=None, device=None):
     """Function used to extract variables by given index, and convert into
     tensor as given shape.
     Args:
@@ -222,14 +222,17 @@ def var_to_tensor(var, index, target_shape=None):
         index (torch.Tensor): Target index to extract.
         target_shape (torch.Size, optional): If given, the indexed variable
             will expand to the given shape. Defaults to None.
+        device (str): If given, the indexed variable will move to the target
+            device. Otherwise, indexed variable will on cpu. Defaults to None.
 
     Returns:
         torch.Tensor: Converted variable.
     """
     # we must move var to cuda for it's ndarray in current design
     var_indexed = torch.from_numpy(var)[index].float()
-    if torch.cuda.is_available():
-        var_indexed = var_indexed.cuda()
+
+    if device is not None:
+        var_indexed = var_indexed.to(device)
 
     while len(var_indexed.shape) < len(target_shape):
         var_indexed = var_indexed[..., None]
