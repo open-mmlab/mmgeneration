@@ -76,6 +76,12 @@ class BigGANGenResBlock(nn.Module):
             Defaults to dict(type='nearest', scale_factor=2).
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
+        sn_style (str, optional): The style of spectral normalization. 
+            If set to `biggan`, implementation by 
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be followed.
+            If set to `torch`, implementation by `PyTorch` will be followed.
+            Defaults to `torch`.
         with_spectral_norm (bool, optional): Whether to use spectral
             normalization in this block. Defaults to True.
         input_is_label (bool, optional): Whether the input of BNs' linear layer
@@ -190,6 +196,12 @@ class BigGANConditionBN(nn.Module):
             Defaults to 1e-5.
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
+        sn_style (str, optional): The style of spectral normalization. 
+            If set to `biggan`, implementation by 
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be followed.
+            If set to `torch`, implementation by `PyTorch` will be followed.
+            Defaults to `torch`.
         momentum (float, optional): The value used for the running_mean and
             running_var computation. Defaults to 0.1.
         input_is_label (bool, optional): Whether the input of BNs' linear layer
@@ -286,6 +298,13 @@ class SelfAttentionBlock(nn.Module):
             normalization. Defaults to True.
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
+        sn_style (str, optional): The style of spectral normalization. 
+            If set to `biggan`, implementation by 
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be followed.
+            If set to `torch`, implementation by `PyTorch` will be followed.
+            Defaults to `torch`.
+        
     """
 
     def __init__(self,
@@ -372,6 +391,12 @@ class BigGANDiscResBlock(nn.Module):
             dict(type='ReLU', inplace=False).
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
+        sn_style (str, optional): The style of spectral normalization. 
+            If set to `biggan`, implementation by 
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be followed.
+            If set to `torch`, implementation by `PyTorch` will be followed.
+            Defaults to `torch`.
         with_downsample (bool, optional): Whether to use downsampling in this
             block. Defaults to True.
         with_spectral_norm (bool, optional): Whether to use spectral
@@ -485,6 +510,12 @@ class BigGANDeepGenResBlock(nn.Module):
             Defaults to dict(type='nearest', scale_factor=2).
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
+        sn_style (str, optional): The style of spectral normalization. 
+            If set to `biggan`, implementation by 
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be followed.
+            If set to `torch`, implementation by `PyTorch` will be followed.
+            Defaults to `torch`.
         bn_eps (float, optional): Epsilon value for batch normalization.
             Defaults to 1e-5.
         with_spectral_norm (bool, optional): Whether to use spectral
@@ -651,6 +682,12 @@ class BigGANDeepDiscResBlock(nn.Module):
             dict(type='ReLU', inplace=False).
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
+        sn_style (str, optional): The style of spectral normalization. 
+            If set to `biggan`, implementation by 
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be followed.
+            If set to `torch`, implementation by `PyTorch` will be followed.
+            Defaults to `torch`.
         with_downsample (bool, optional): Whether to use downsampling in this
             block. Defaults to True.
         with_spectral_norm (bool, optional): Whether to use spectral
