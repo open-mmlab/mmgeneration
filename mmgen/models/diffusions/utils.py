@@ -55,10 +55,12 @@ def _get_noise_batch(noise,
                 assert num_batches > 0 and num_timesteps > 0
                 if noise.shape[0] == num_timesteps:
                     noise_batch = noise.view(num_timesteps, 1, *image_shape)
-                    noise_batch = noise_batch.expand(-1, num_batches, -1, -1)
+                    noise_batch = noise_batch.expand(-1, num_batches, -1, -1,
+                                                     -1)
                 elif noise.shape[0] == num_batches:
                     noise_batch = noise.view(1, num_batches, *image_shape)
-                    noise_batch = noise_batch.expand(num_timesteps, -1, -1, -1)
+                    noise_batch = noise_batch.expand(num_timesteps, -1, -1, -1,
+                                                     -1)
                 elif noise.shape[0] == num_timesteps * num_batches:
                     noise_batch = noise.view(num_timesteps, -1, *image_shape)
                 else:
@@ -127,7 +129,7 @@ def _get_label_batch(label,
                 --> return label
         2. timesteps_noise == False
             2.1 dimension of label is 0 --> view to [1, ]
-            2.2 dimension of noise is 2 --> do nothing
+            2.2 dimension of noise is 1 --> do nothing
     If passed label is a callable function or None
         1. timesteps_noise == True
             --> generate label shape as [n, bz, ]
@@ -198,9 +200,9 @@ def _get_label_batch(label,
         label_generator = label
         if timesteps_noise:
             assert num_timesteps > 0
-            label_batch = label_generator((num_batches))
-        else:
             label_batch = label_generator((num_timesteps, num_batches))
+        else:
+            label_batch = label_generator((num_batches, ))
     # otherwise, we will adopt default label sampler.
     else:
         assert num_batches > 0
@@ -209,7 +211,7 @@ def _get_label_batch(label,
             label_batch = torch.randint(0, num_classes,
                                         (num_timesteps, num_batches))
         else:
-            label_batch = torch.randn(0, num_classes, (num_batches, ))
+            label_batch = torch.randint(0, num_classes, (num_batches, ))
 
     return label_batch
 
