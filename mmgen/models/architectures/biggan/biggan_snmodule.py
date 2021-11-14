@@ -1,22 +1,62 @@
-"""Layers This file contains various layers for the BigGAN models."""
+# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+'''
+    Ref: Function in this file is borrowed from https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py # noqa
+'''
 
-# Projection of x onto y
 def proj(x, y):
+    """Calculate Projection of x onto y.
+
+    Args:
+        x (torch.Tensor): Projection vector x.
+        y (torch.Tensor): Direction vector y.
+
+    Returns:
+        torch.Tensor: Projection of x onto y.
+    """
     return torch.mm(y, x.t()) * y / torch.mm(y, y.t())
 
 
-# Orthogonalize x wrt list of vectors ys
+
 def gram_schmidt(x, ys):
+    """Orthogonalize x wrt list of vectors ys.
+
+    Args:
+        x (torch.Tensor): Vector to be added into the 
+            orthogonal vectors.
+        ys (list[torch.Tensor]): A set of orthogonal 
+            vectors.
+
+    Returns:
+        torch.Tensor: Result of Gram–Schmidt 
+            orthogonalization.
+    """
     for y in ys:
         x = x - proj(x, y)
     return x
 
 
 def power_iteration(W, u_, update=True, eps=1e-12):
+    """Power iteration method for calculating spectral norm.
+
+    Args:
+        W (torch.Tensor): Module weight.
+        u_ (list[torch.Tensor]): list of first left singular 
+            vector. The length of list equals to the simulation 
+            times.
+        update (bool, optional): Whether update left singular 
+            vector. Defaults to True.
+        eps (float, optional): Vector Normalization epsilon.
+            Defaults to 1e-12.
+
+    Returns:
+        tuple[list[tensor.Tensor]]: Tuple consist of three lists
+            which contain singular values, left singular 
+            vector and right singular vector respectively.  
+    """
     us, vs, svs = [], [], []
     for i, u in enumerate(u_):
         with torch.no_grad():
@@ -31,15 +71,6 @@ def power_iteration(W, u_, update=True, eps=1e-12):
         svs += [torch.squeeze(torch.matmul(torch.matmul(v, W.t()), u.t()))]
     return svs, us, vs
 
-
-# Convenience passthrough function
-class identity(nn.Module):
-
-    def forward(self, input):
-        return input
-
-
-# Spectral normalization base class
 class SN(object):
 
     def __init__(self,
@@ -48,13 +79,21 @@ class SN(object):
                  num_outputs,
                  transpose=False,
                  eps=1e-12):
-        # Number of power iterations per step
+        """Spectral normalization base class.
+
+        Args:
+            num_svs (int): Number of singular values.
+            num_itrs (int): Number of power iterations per step.
+            num_outputs (int): Number of output channels.
+            transpose (bool, optional): If set to `True`, weight 
+                matrix will be transposed before power iteration.
+                Defaults to False.
+            eps (float, optional): Vector Normalization epsilon for
+                avoiding divide by zero. Defaults to 1e-12.
+        """
         self.num_itrs = num_itrs
-        # Number of singular values
         self.num_svs = num_svs
-        # Transposed?
         self.transpose = transpose
-        # Epsilon value for avoiding divide-by-0
         self.eps = eps
         # Register a singular vector for each sv
         for i in range(self.num_svs):
@@ -88,7 +127,6 @@ class SN(object):
         return self.weight / svs[0]
 
 
-# 2D Conv layer with spectral norm
 class SNConv2d(nn.Conv2d, SN):
 
     def __init__(self,
@@ -103,6 +141,26 @@ class SNConv2d(nn.Conv2d, SN):
                  num_svs=1,
                  num_itrs=1,
                  eps=1e-12):
+        """ 2D Conv layer with spectral norm.
+
+        Args:
+            in_channels (int): Number of channels in the input feature map.
+            out_channels (int): Number of channels produced by the convolution.
+            kernel_size (int): Size of the convolving kernel.
+            stride (int, optional): Stride of the convolution.. Defaults to 1.
+            padding (int, optional): Zero-padding added to both sides of
+                the input. Defaults to 0.
+            dilation (int, optional): Spacing between kernel elements. 
+                Defaults to 1.
+            groups (int, optional): Number of blocked connections from input 
+                channels to output channels. Defaults to 1.
+            bias (bool, optional): Whether to use bias parameter. 
+                Defaults to True.
+            num_svs (int): Number of singular values.
+            num_itrs (int): Number of power iterations per step.
+            eps (float, optional): Vector Normalization epsilon for
+                avoiding divide by zero. Defaults to 1e-12.
+        """
         nn.Conv2d.__init__(self, in_channels, out_channels, kernel_size,
                            stride, padding, dilation, groups, bias)
         SN.__init__(self, num_svs, num_itrs, out_channels, eps=eps)
@@ -112,7 +170,6 @@ class SNConv2d(nn.Conv2d, SN):
                         self.dilation, self.groups)
 
 
-# Linear layer with spectral norm
 class SNLinear(nn.Linear, SN):
 
     def __init__(self,
@@ -122,6 +179,18 @@ class SNLinear(nn.Linear, SN):
                  num_svs=1,
                  num_itrs=1,
                  eps=1e-12):
+        """ Linear layer with spectral norm.
+
+        Args:
+            in_features (int): Number of channels in the input feature.
+            out_features (int): Number of channels in the out feature.
+            bias (bool, optional):  Whether to use bias parameter. 
+                Defaults to True.
+            num_svs (int): Number of singular values.
+            num_itrs (int): Number of power iterations per step.
+            eps (float, optional): Vector Normalization epsilon for
+                avoiding divide by zero. Defaults to 1e-12.
+        """
         nn.Linear.__init__(self, in_features, out_features, bias)
         SN.__init__(self, num_svs, num_itrs, out_features, eps=eps)
 
@@ -129,7 +198,7 @@ class SNLinear(nn.Linear, SN):
         return F.linear(x, self.W_(), self.bias)
 
 
-# Embedding layer with spectral norm
+
 # We use num_embeddings as the dim instead of embedding_dim here
 # for convenience sake
 class SNEmbedding(nn.Embedding, SN):
@@ -146,6 +215,35 @@ class SNEmbedding(nn.Embedding, SN):
                  num_svs=1,
                  num_itrs=1,
                  eps=1e-12):
+        """ Embedding layer with spectral norm
+
+        Args:
+            num_embeddings (int): Size of the dictionary of embeddings.
+            embedding_dim (int): The size of each embedding vector.
+            padding_idx (int, optional):  If specified, the entries at 
+                padding_idx do not contribute to the gradient; therefore,
+                the embedding vector at padding_idx is not updated during
+                training, i.e. it remains as a fixed “pad”. For a newly 
+                constructed Embedding, the embedding vector at padding_idx
+                will default to all zeros, but can be updated to another value
+                to be used as the padding vector. Defaults to None.
+            max_norm (float, optional): If given, each embedding vector with 
+                norm larger than max_norm is renormalized to have norm 
+                max_norm. Defaults to None.
+            norm_type (int, optional):  The p of the p-norm to compute for 
+                the max_norm option. Default 2.
+            scale_grad_by_freq (bool, optional): If given, this will scale
+                gradients by the inverse of frequency of the words in the 
+                mini-batch. Default False.
+            sparse (bool, optional):  If True, gradient w.r.t. weight matrix 
+                will be a sparse tensor. See Notes for more details regarding 
+                sparse gradients. Defaults to False.
+            _weight (torch.Tensor, optional): Initial Weight. Defaults to None.
+            num_svs (int): Number of singular values.
+            num_itrs (int): Number of power iterations per step.
+            eps (float, optional): Vector Normalization epsilon for
+                avoiding divide by zero. Defaults to 1e-12.
+        """
         nn.Embedding.__init__(self, num_embeddings, embedding_dim, padding_idx,
                               max_norm, norm_type, scale_grad_by_freq, sparse,
                               _weight)
