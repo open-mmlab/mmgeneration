@@ -76,8 +76,8 @@ class BigGANGenResBlock(nn.Module):
             Defaults to dict(type='nearest', scale_factor=2).
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
-        sn_style (str, optional): The style of spectral normalization. 
-            If set to `biggan`, implementation by 
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `biggan`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be followed.
             If set to `torch`, implementation by `PyTorch` will be followed.
@@ -196,8 +196,8 @@ class BigGANConditionBN(nn.Module):
             Defaults to 1e-5.
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
-        sn_style (str, optional): The style of spectral normalization. 
-            If set to `biggan`, implementation by 
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `biggan`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be followed.
             If set to `torch`, implementation by `PyTorch` will be followed.
@@ -298,13 +298,12 @@ class SelfAttentionBlock(nn.Module):
             normalization. Defaults to True.
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
-        sn_style (str, optional): The style of spectral normalization. 
-            If set to `biggan`, implementation by 
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `biggan`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be followed.
             If set to `torch`, implementation by `PyTorch` will be followed.
             Defaults to `torch`.
-        
     """
 
     def __init__(self,
@@ -391,8 +390,8 @@ class BigGANDiscResBlock(nn.Module):
             dict(type='ReLU', inplace=False).
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
-        sn_style (str, optional): The style of spectral normalization. 
-            If set to `biggan`, implementation by 
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `biggan`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be followed.
             If set to `torch`, implementation by `PyTorch` will be followed.
@@ -510,8 +509,8 @@ class BigGANDeepGenResBlock(nn.Module):
             Defaults to dict(type='nearest', scale_factor=2).
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
-        sn_style (str, optional): The style of spectral normalization. 
-            If set to `biggan`, implementation by 
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `biggan`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be followed.
             If set to `torch`, implementation by `PyTorch` will be followed.
@@ -682,8 +681,8 @@ class BigGANDeepDiscResBlock(nn.Module):
             dict(type='ReLU', inplace=False).
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
-        sn_style (str, optional): The style of spectral normalization. 
-            If set to `biggan`, implementation by 
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `biggan`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be followed.
             If set to `torch`, implementation by `PyTorch` will be followed.
