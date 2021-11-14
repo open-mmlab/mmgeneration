@@ -5,6 +5,7 @@
 
 <details>
 <summary align="right"><a href="https://openreview.net/forum?id=B1QRgziT-">SNGAN (ICLR'2018)</a></summary>
+
 ```latex
 @inproceedings{miyato2018spectral,
   title={Spectral Normalization for Generative Adversarial Networks},
@@ -14,6 +15,9 @@
   url={https://openreview.net/forum?id=B1QRgziT-},
 }
 ```
+
+</details>
+
 <div align="center">
   <b> Results from our SNGAN-PROJ trained in CIFAR10 and ImageNet</b>
   <br/>

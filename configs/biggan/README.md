@@ -4,16 +4,18 @@
 
 <details>
 <summary align="right"><a href="https://openreview.net/forum?id=B1xsqj09Fm">BigGAN (ICLR'2019)</a></summary>
+
 ```latex
 @inproceedings{
-brock2018large,
-title={Large Scale {GAN} Training for High Fidelity Natural Image Synthesis},
-author={Andrew Brock and Jeff Donahue and Karen Simonyan},
-booktitle={International Conference on Learning Representations},
-year={2019},
-url={https://openreview.net/forum?id=B1xsqj09Fm},
+    brock2018large,
+    title={Large Scale {GAN} Training for High Fidelity Natural Image Synthesis},
+    author={Andrew Brock and Jeff Donahue and Karen Simonyan},
+    booktitle={International Conference on Learning Representations},
+    year={2019},
+    url={https://openreview.net/forum?id=B1xsqj09Fm},
 }
 ```
+
 </details>
 
 The `BigGAN/BigGAN-Deep` is a conditional generation model that can generate both high-resolution and high-quality images by scaling up the batch size and the number of model parameters.
