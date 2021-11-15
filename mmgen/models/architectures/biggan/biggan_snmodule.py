@@ -76,16 +76,17 @@ def power_iteration(W, u_, update=True, eps=1e-12):
 class SN(object):
     """Spectral normalization base class.
 
-        Args:
-            num_svs (int): Number of singular values.
-            num_itrs (int): Number of power iterations per step.
-            num_outputs (int): Number of output channels.
-            transpose (bool, optional): If set to `True`, weight
-                matrix will be transposed before power iteration.
-                Defaults to False.
-            eps (float, optional): Vector Normalization epsilon for
-                avoiding divide by zero. Defaults to 1e-12.
+    Args:
+        num_svs (int): Number of singular values.
+        num_itrs (int): Number of power iterations per step.
+        num_outputs (int): Number of output channels.
+        transpose (bool, optional): If set to `True`, weight
+            matrix will be transposed before power iteration.
+            Defaults to False.
+        eps (float, optional): Vector Normalization epsilon for
+            avoiding divide by zero. Defaults to 1e-12.
     """
+
     def __init__(self,
                  num_svs,
                  num_itrs,
@@ -103,16 +104,16 @@ class SN(object):
 
     @property
     def u(self):
-        '''Get left singular vectors.'''
+        """Get left singular vectors."""
         return [getattr(self, 'u%d' % i) for i in range(self.num_svs)]
 
     @property
     def sv(self):
-        '''Get singular values.'''
+        """Get singular values."""
         return [getattr(self, 'sv%d' % i) for i in range(self.num_svs)]
 
     def W_(self):
-        '''Compute the spectrally-normalized weight.'''
+        """Compute the spectrally-normalized weight."""
         W_mat = self.weight.view(self.weight.size(0), -1)
         if self.transpose:
             W_mat = W_mat.t()
@@ -131,24 +132,25 @@ class SN(object):
 class SNConv2d(nn.Conv2d, SN):
     """2D Conv layer with spectral norm.
 
-        Args:
-            in_channels (int): Number of channels in the input feature map.
-            out_channels (int): Number of channels produced by the convolution.
-            kernel_size (int): Size of the convolving kernel.
-            stride (int, optional): Stride of the convolution.. Defaults to 1.
-            padding (int, optional): Zero-padding added to both sides of
-                the input. Defaults to 0.
-            dilation (int, optional): Spacing between kernel elements.
-                Defaults to 1.
-            groups (int, optional): Number of blocked connections from input
-                channels to output channels. Defaults to 1.
-            bias (bool, optional): Whether to use bias parameter.
-                Defaults to True.
-            num_svs (int): Number of singular values.
-            num_itrs (int): Number of power iterations per step.
-            eps (float, optional): Vector Normalization epsilon for
-                avoiding divide by zero. Defaults to 1e-12.
-        """
+    Args:
+        in_channels (int): Number of channels in the input feature map.
+        out_channels (int): Number of channels produced by the convolution.
+        kernel_size (int): Size of the convolving kernel.
+        stride (int, optional): Stride of the convolution.. Defaults to 1.
+        padding (int, optional): Zero-padding added to both sides of
+            the input. Defaults to 0.
+        dilation (int, optional): Spacing between kernel elements.
+            Defaults to 1.
+        groups (int, optional): Number of blocked connections from input
+            channels to output channels. Defaults to 1.
+        bias (bool, optional): Whether to use bias parameter.
+            Defaults to True.
+        num_svs (int): Number of singular values.
+        num_itrs (int): Number of power iterations per step.
+        eps (float, optional): Vector Normalization epsilon for
+            avoiding divide by zero. Defaults to 1e-12.
+    """
+
     def __init__(self,
                  in_channels,
                  out_channels,
@@ -166,7 +168,7 @@ class SNConv2d(nn.Conv2d, SN):
         SN.__init__(self, num_svs, num_itrs, out_channels, eps=eps)
 
     def forward(self, x):
-        '''Forward function.'''
+        """Forward function."""
         return F.conv2d(x, self.W_(), self.bias, self.stride, self.padding,
                         self.dilation, self.groups)
 
@@ -184,6 +186,7 @@ class SNLinear(nn.Linear, SN):
         eps (float, optional): Vector Normalization epsilon for
             avoiding divide by zero. Defaults to 1e-12.
     """
+
     def __init__(self,
                  in_features,
                  out_features,
@@ -195,7 +198,7 @@ class SNLinear(nn.Linear, SN):
         SN.__init__(self, num_svs, num_itrs, out_features, eps=eps)
 
     def forward(self, x):
-        '''Forward function.'''
+        """Forward function."""
         return F.linear(x, self.W_(), self.bias)
 
 
@@ -231,6 +234,7 @@ class SNEmbedding(nn.Embedding, SN):
         eps (float, optional): Vector Normalization epsilon for
             avoiding divide by zero. Defaults to 1e-12.
     """
+
     def __init__(self,
                  num_embeddings,
                  embedding_dim,
@@ -249,5 +253,5 @@ class SNEmbedding(nn.Embedding, SN):
         SN.__init__(self, num_svs, num_itrs, num_embeddings, eps=eps)
 
     def forward(self, x):
-        '''Forward function.'''
+        """Forward function."""
         return F.embedding(x, self.W_())

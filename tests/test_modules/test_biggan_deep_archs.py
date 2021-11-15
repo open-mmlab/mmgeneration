@@ -62,7 +62,7 @@ class TestBigGANDeepGenResBlock:
         module = build_module(cfg)
         out = module(self.x, self.y)
         assert out.shape == (2, 16, 16, 16)
-        
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_biggan_deep_gen_res_block_cuda(self):
         # test default setting
@@ -91,6 +91,7 @@ class TestBigGANDeepGenResBlock:
         module = build_module(cfg).cuda()
         out = module(self.x.cuda(), self.y.cuda())
         assert out.shape == (2, 16, 16, 16)
+
 
 class TestBigGANDeepDiscResBlock:
 
@@ -134,7 +135,7 @@ class TestBigGANDeepDiscResBlock:
         module = build_module(cfg)
         out = module(self.x)
         assert out.shape == (2, 64, 8, 8)
-        
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_biggan_deep_disc_res_block_cuda(self):
         # test default setting
@@ -163,6 +164,7 @@ class TestBigGANDeepDiscResBlock:
         module = build_module(cfg).cuda()
         out = module(self.x.cuda())
         assert out.shape == (2, 64, 8, 8)
+
 
 class TestBigGANDeepGenerator(object):
 
@@ -260,7 +262,7 @@ class TestBigGANDeepGenerator(object):
         g = build_module(cfg)
         res = g(None, None, num_batches=3)
         assert res.shape == (3, 3, 128, 128)
-        
+
         # test ajbrock-sn
         cfg = deepcopy(self.default_config)
         cfg.update(dict(sn_style='biggan'))
@@ -360,6 +362,7 @@ class TestBigGANDeepGenerator(object):
         res = g(None, None, num_batches=3)
         assert res.shape == (3, 3, 128, 128)
 
+
 class TestBigGANDeepDiscriminator(object):
 
     @classmethod
@@ -413,7 +416,7 @@ class TestBigGANDeepDiscriminator(object):
         d = build_module(cfg)
         y = d(self.x, self.label)
         assert y.shape == (2, 1)
-        
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_biggan_deep_discriminator_cuda(self):
         # test default settings
