@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 # yapf:disable
 '''
-    Ref: Functions in this file is borrowed from https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py # noqa
+    Ref: Functions in this file are borrowed from https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py # noqa
 '''
 # yapf:enable
 
@@ -24,17 +24,15 @@ def proj(x, y):
 
 
 def gram_schmidt(x, ys):
-    """Orthogonalize x wrt list of vectors ys.
+    """Orthogonalize x w.r.t list of vectors ys.
 
     Args:
         x (torch.Tensor): Vector to be added into the
             orthogonal vectors.
-        ys (list[torch.Tensor]): A set of orthogonal
-            vectors.
+        ys (list[torch.Tensor]): A set of orthogonal vectors.
 
     Returns:
-        torch.Tensor: Result of Gram–Schmidt
-            orthogonalization.
+        torch.Tensor: Result of Gram–Schmidt orthogonalization.
     """
     for y in ys:
         x = x - proj(x, y)

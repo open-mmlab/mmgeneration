@@ -79,8 +79,8 @@ class BigGANGenResBlock(nn.Module):
         sn_style (str, optional): The style of spectral normalization.
             If set to `biggan`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
-            will be followed.
-            If set to `torch`, implementation by `PyTorch` will be followed.
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
             Defaults to `torch`.
         with_spectral_norm (bool, optional): Whether to use spectral
             normalization in this block. Defaults to True.
@@ -199,8 +199,8 @@ class BigGANConditionBN(nn.Module):
         sn_style (str, optional): The style of spectral normalization.
             If set to `biggan`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
-            will be followed.
-            If set to `torch`, implementation by `PyTorch` will be followed.
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
             Defaults to `torch`.
         momentum (float, optional): The value used for the running_mean and
             running_var computation. Defaults to 0.1.
@@ -301,8 +301,8 @@ class SelfAttentionBlock(nn.Module):
         sn_style (str, optional): The style of spectral normalization.
             If set to `biggan`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
-            will be followed.
-            If set to `torch`, implementation by `PyTorch` will be followed.
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
             Defaults to `torch`.
     """
 
@@ -393,8 +393,8 @@ class BigGANDiscResBlock(nn.Module):
         sn_style (str, optional): The style of spectral normalization.
             If set to `biggan`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
-            will be followed.
-            If set to `torch`, implementation by `PyTorch` will be followed.
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
             Defaults to `torch`.
         with_downsample (bool, optional): Whether to use downsampling in this
             block. Defaults to True.
@@ -512,8 +512,8 @@ class BigGANDeepGenResBlock(nn.Module):
         sn_style (str, optional): The style of spectral normalization.
             If set to `biggan`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
-            will be followed.
-            If set to `torch`, implementation by `PyTorch` will be followed.
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
             Defaults to `torch`.
         bn_eps (float, optional): Epsilon value for batch normalization.
             Defaults to 1e-5.
@@ -684,8 +684,8 @@ class BigGANDeepDiscResBlock(nn.Module):
         sn_style (str, optional): The style of spectral normalization.
             If set to `biggan`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
-            will be followed.
-            If set to `torch`, implementation by `PyTorch` will be followed.
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
             Defaults to `torch`.
         with_downsample (bool, optional): Whether to use downsampling in this
             block. Defaults to True.
