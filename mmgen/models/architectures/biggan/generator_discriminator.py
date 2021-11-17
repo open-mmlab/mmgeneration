@@ -166,7 +166,7 @@ class BigGANGenerator(nn.Module):
         if with_spectral_norm:
             if sn_style == 'torch':
                 self.noise2feat = spectral_norm(self.noise2feat, eps=sn_eps)
-            elif sn_style == 'biggan':
+            elif sn_style == 'ajbrock':
                 self.noise2feat = SNLinear(
                     self.noise_size // self.num_slots,
                     self.arch['in_channels'][0] * (self.input_scale**2),
@@ -567,7 +567,7 @@ class BigGANDiscriminator(nn.Module):
         if with_spectral_norm:
             if sn_style == 'torch':
                 self.decision = spectral_norm(self.decision, eps=sn_eps)
-            elif sn_style == 'biggan':
+            elif sn_style == 'ajbrock':
                 self.decision = SNLinear(
                     self.arch['out_channels'][-1], out_channels, eps=sn_eps)
             else:
@@ -579,7 +579,7 @@ class BigGANDiscriminator(nn.Module):
             if with_spectral_norm:
                 if sn_style == 'torch':
                     self.proj_y = spectral_norm(self.proj_y, eps=sn_eps)
-                elif sn_style == 'biggan':
+                elif sn_style == 'ajbrock':
                     self.proj_y = SNEmbedding(
                         self.num_classes,
                         self.arch['out_channels'][-1],

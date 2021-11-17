@@ -45,7 +45,7 @@ class SNConvModule(ConvModule):
         if self.with_spectral_norm:
             if self.sn_style == 'torch':
                 self.conv = spectral_norm(self.conv, eps=self.sn_eps)
-            elif self.sn_style == 'biggan':
+            elif self.sn_style == 'ajbrock':
                 self.snconv_kwargs = deepcopy(kwargs) if kwargs else dict()
                 if 'act_cfg' in self.snconv_kwargs.keys():
                     self.snconv_kwargs.pop('act_cfg')
@@ -240,7 +240,7 @@ class BigGANConditionBN(nn.Module):
                     if sn_style == 'torch':
                         self.gain = spectral_norm(self.gain, eps=sn_eps)
                         self.bias = spectral_norm(self.bias, eps=sn_eps)
-                    elif sn_style == 'biggan':
+                    elif sn_style == 'ajbrock':
                         self.gain = SNLinear(
                             linear_input_channels,
                             num_features,
