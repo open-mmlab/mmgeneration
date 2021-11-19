@@ -11,7 +11,7 @@ Models:
   In Collection: Singan
   Metadata:
     Training Data: Others
-  Name: singan--singan_balloons.py
+  Name: singan_balloons
   Results:
   - Dataset: Others
     Metrics:
@@ -22,7 +22,7 @@ Models:
   In Collection: Singan
   Metadata:
     Training Data: Others
-  Name: singan--singan_fish.py
+  Name: singan_fish
   Results:
   - Dataset: Others
     Metrics:
@@ -33,7 +33,7 @@ Models:
   In Collection: Singan
   Metadata:
     Training Data: Others
-  Name: singan--singan_bohemian.py
+  Name: singan_bohemian
   Results:
   - Dataset: Others
     Metrics:

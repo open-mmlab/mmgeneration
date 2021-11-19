@@ -11,7 +11,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: FACADES
-  Name: cyclegan--cyclegan_lsgan_resnet_in_facades_b1x1_80k.py
+  Name: cyclegan_facades
   Results:
   - Dataset: FACADES
     Metrics:
@@ -25,7 +25,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: FACADES
-  Name: cyclegan--cyclegan_lsgan_id0_resnet_in_facades_b1x1_80k.py
+  Name: cyclegan_id0
   Results:
   - Dataset: FACADES
     Metrics:
@@ -39,7 +39,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: SUMMER2WINTER
-  Name: cyclegan--cyclegan_lsgan_resnet_in_summer2winter_b1x1_250k.py
+  Name: cyclegan_summer2winter
   Results:
   - Dataset: SUMMER2WINTER
     Metrics:
@@ -53,7 +53,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: SUMMER2WINTER
-  Name: cyclegan--cyclegan_lsgan_id0_resnet_in_summer2winter_b1x1_250k.py
+  Name: cyclegan_250k
   Results:
   - Dataset: SUMMER2WINTER
     Metrics:
@@ -67,7 +67,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: Others
-  Name: cyclegan--cyclegan_lsgan_resnet_in_winter2summer_b1x1_250k.py
+  Name: cyclegan_lsgan_resnet_in_winter2summer_b1x1_250k
   Results:
   - Dataset: Others
     Metrics:
@@ -81,7 +81,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: Others
-  Name: cyclegan--cyclegan_lsgan_id0_resnet_in_winter2summer_b1x1_250k.py
+  Name: cyclegan_lsgan_id0_resnet_in_winter2summer_b1x1_250k
   Results:
   - Dataset: Others
     Metrics:
@@ -95,7 +95,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: HORSE2ZEBRA
-  Name: cyclegan--cyclegan_lsgan_resnet_in_horse2zebra_b1x1_270k.py
+  Name: cyclegan_horse2zebra
   Results:
   - Dataset: HORSE2ZEBRA
     Metrics:
@@ -109,7 +109,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: HORSE2ZEBRA
-  Name: cyclegan--cyclegan_lsgan_id0_resnet_in_horse2zebra_b1x1_270k.py
+  Name: cyclegan_270k
   Results:
   - Dataset: HORSE2ZEBRA
     Metrics:
@@ -123,7 +123,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: Others
-  Name: cyclegan--cyclegan_lsgan_resnet_in_zebra2horse_b1x1_270k.py
+  Name: cyclegan_lsgan_resnet_in_zebra2horse_b1x1_270k
   Results:
   - Dataset: Others
     Metrics:
@@ -137,7 +137,7 @@ Models:
   In Collection: CycleGAN
   Metadata:
     Training Data: Others
-  Name: cyclegan--cyclegan_lsgan_id0_resnet_in_zebra2horse_b1x1_270k.py
+  Name: cyclegan_lsgan_id0_resnet_in_zebra2horse_b1x1_270k
   Results:
   - Dataset: Others
     Metrics:
