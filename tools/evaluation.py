@@ -54,6 +54,7 @@ def parse_args():
         '--sample-model',
         type=str,
         default='ema',
+        choices=['ema', 'orig'],
         help='use which mode (ema/orig) in sampling')
     parser.add_argument(
         '--eval',
