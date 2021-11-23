@@ -71,7 +71,7 @@ def power_iteration(weight, u_list, update=True, eps=1e-12):
     return svs, us, vs
 
 
-class SpectralNorm(nn.Module):
+class SpectralNorm(object):
     """Spectral normalization base class.
 
     Args:
@@ -91,7 +91,6 @@ class SpectralNorm(nn.Module):
                  num_outputs,
                  transpose=False,
                  eps=1e-12):
-        super().__init__()
         self.num_itrs = num_itrs
         self.num_svs = num_svs
         self.transpose = transpose
