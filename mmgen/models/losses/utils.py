@@ -9,13 +9,22 @@ def reduce_loss(loss, reduction):
 
     Args:
         loss (Tensor): Elementwise loss tensor.
-        reduction (str): Options are "none", "mean", "sum" and "batchmean".
+        reduction (str): Options are "none", "mean", "sum", "flatmean" and
+            "batchmean". 'none': no reduction will be applied. 'mean': the
+            output will be divided by the number of elements in the output.
+            'sum': the output will be summed. 'batchmean': the sum of the
+            output will be divided by batchsize. 'flatmean': each sample
+            will be divided by the number of element respectively and
+            output will shape as [bz, ].
 
     Return:
         Tensor: Reduced loss tensor.
     """
     if reduction == 'batchmean':
         return loss.sum() / loss.shape[0]
+
+    if reduction == 'flatmean':
+        return loss.mean(dim=list(range(1, loss.ndim)))
 
     reduction_enum = F._Reduction.get_enum(reduction)
     # none: 0, elementwise_mean:1, sum: 2
