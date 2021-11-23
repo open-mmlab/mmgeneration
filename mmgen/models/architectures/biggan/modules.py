@@ -81,7 +81,7 @@ class BigGANGenResBlock(nn.Module):
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be adopted.
             If set to `torch`, implementation by `PyTorch` will be adopted.
-            Defaults to `torch`.
+            Defaults to `ajbrock`.
         with_spectral_norm (bool, optional): Whether to use spectral
             normalization in this block. Defaults to True.
         input_is_label (bool, optional): Whether the input of BNs' linear layer
@@ -97,7 +97,7 @@ class BigGANGenResBlock(nn.Module):
                  act_cfg=dict(type='ReLU'),
                  upsample_cfg=dict(type='nearest', scale_factor=2),
                  sn_eps=1e-6,
-                 sn_style='torch',
+                 sn_style='ajbrock',
                  with_spectral_norm=True,
                  input_is_label=False,
                  auto_sync_bn=True):
@@ -201,7 +201,7 @@ class BigGANConditionBN(nn.Module):
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be adopted.
             If set to `torch`, implementation by `PyTorch` will be adopted.
-            Defaults to `torch`.
+            Defaults to `ajbrock`.
         momentum (float, optional): The value used for the running_mean and
             running_var computation. Defaults to 0.1.
         input_is_label (bool, optional): Whether the input of BNs' linear layer
@@ -217,7 +217,7 @@ class BigGANConditionBN(nn.Module):
                  linear_input_channels,
                  bn_eps=1e-5,
                  sn_eps=1e-6,
-                 sn_style='torch',
+                 sn_style='ajbrock',
                  momentum=0.1,
                  input_is_label=False,
                  with_spectral_norm=True,
@@ -303,14 +303,14 @@ class SelfAttentionBlock(nn.Module):
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be adopted.
             If set to `torch`, implementation by `PyTorch` will be adopted.
-            Defaults to `torch`.
+            Defaults to `ajbrock`.
     """
 
     def __init__(self,
                  in_channels,
                  with_spectral_norm=True,
                  sn_eps=1e-6,
-                 sn_style='torch'):
+                 sn_style='ajbrock'):
         super(SelfAttentionBlock, self).__init__()
 
         self.in_channels = in_channels
@@ -395,7 +395,7 @@ class BigGANDiscResBlock(nn.Module):
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be adopted.
             If set to `torch`, implementation by `PyTorch` will be adopted.
-            Defaults to `torch`.
+            Defaults to `ajbrock`.
         with_downsample (bool, optional): Whether to use downsampling in this
             block. Defaults to True.
         with_spectral_norm (bool, optional): Whether to use spectral
@@ -409,7 +409,7 @@ class BigGANDiscResBlock(nn.Module):
                  out_channels,
                  act_cfg=dict(type='ReLU', inplace=False),
                  sn_eps=1e-6,
-                 sn_style='torch',
+                 sn_style='ajbrock',
                  with_downsample=True,
                  with_spectral_norm=True,
                  is_head_block=False):
@@ -514,7 +514,7 @@ class BigGANDeepGenResBlock(nn.Module):
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be adopted.
             If set to `torch`, implementation by `PyTorch` will be adopted.
-            Defaults to `torch`.
+            Defaults to `ajbrock`.
         bn_eps (float, optional): Epsilon value for batch normalization.
             Defaults to 1e-5.
         with_spectral_norm (bool, optional): Whether to use spectral
@@ -534,7 +534,7 @@ class BigGANDeepGenResBlock(nn.Module):
                  act_cfg=dict(type='ReLU'),
                  upsample_cfg=dict(type='nearest', scale_factor=2),
                  sn_eps=1e-6,
-                 sn_style='torch',
+                 sn_style='ajbrock',
                  bn_eps=1e-5,
                  with_spectral_norm=True,
                  input_is_label=False,
@@ -686,7 +686,7 @@ class BigGANDeepDiscResBlock(nn.Module):
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be adopted.
             If set to `torch`, implementation by `PyTorch` will be adopted.
-            Defaults to `torch`.
+            Defaults to `ajbrock`.
         with_downsample (bool, optional): Whether to use downsampling in this
             block. Defaults to True.
         with_spectral_norm (bool, optional): Whether to use spectral
@@ -699,7 +699,7 @@ class BigGANDeepDiscResBlock(nn.Module):
                  channel_ratio=4,
                  act_cfg=dict(type='ReLU', inplace=False),
                  sn_eps=1e-6,
-                 sn_style='torch',
+                 sn_style='ajbrock',
                  with_downsample=True,
                  with_spectral_norm=True):
         super().__init__()

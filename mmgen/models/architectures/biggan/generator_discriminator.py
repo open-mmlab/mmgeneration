@@ -70,7 +70,7 @@ class BigGANGenerator(nn.Module):
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be adopted.
             If set to `torch`, implementation by `PyTorch` will be adopted.
-            Defaults to `torch`.
+            Defaults to `ajbrock`.
         init_type (str, optional): The name of an initialization method:
             ortho | N02 | xavier. Defaults to 'ortho'.
         split_noise (bool, optional): Whether to split input noise vector.
@@ -109,7 +109,7 @@ class BigGANGenerator(nn.Module):
                  with_shared_embedding=True,
                  shared_dim=128,
                  sn_eps=1e-6,
-                 sn_style='torch',
+                 sn_style='ajbrock',
                  init_type='ortho',
                  split_noise=True,
                  act_cfg=dict(type='ReLU'),
@@ -495,7 +495,7 @@ class BigGANDiscriminator(nn.Module):
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be adopted.
             If set to `torch`, implementation by `PyTorch` will be adopted.
-            Defaults to `torch`.
+            Defaults to `ajbrock`.
         init_type (str, optional): The name of an initialization method:
             ortho | N02 | xavier. Defaults to 'ortho'.
         act_cfg (dict, optional): Config for the activation layer.
@@ -519,7 +519,7 @@ class BigGANDiscriminator(nn.Module):
                  out_channels=1,
                  base_channels=96,
                  sn_eps=1e-6,
-                 sn_style='torch',
+                 sn_style='ajbrock',
                  init_type='ortho',
                  act_cfg=dict(type='ReLU'),
                  with_spectral_norm=True,

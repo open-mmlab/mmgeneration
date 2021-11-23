@@ -39,12 +39,12 @@ def gram_schmidt(x, ys):
     return x
 
 
-def power_iteration(W, u_, update=True, eps=1e-12):
+def power_iteration(weight, u_list, update=True, eps=1e-12):
     """Power iteration method for calculating spectral norm.
 
     Args:
-        W (torch.Tensor): Module weight.
-        u_ (list[torch.Tensor]): list of left singular vector.
+        weight (torch.Tensor): Module weight.
+        u_list (list[torch.Tensor]): list of left singular vector.
             The length of list equals to the simulation times.
         update (bool, optional): Whether update left singular
             vector. Defaults to True.
@@ -57,21 +57,21 @@ def power_iteration(W, u_, update=True, eps=1e-12):
             vector and right singular vector respectively.
     """
     us, vs, svs = [], [], []
-    for i, u in enumerate(u_):
+    for i, u in enumerate(u_list):
         with torch.no_grad():
-            v = torch.matmul(u, W)
+            v = torch.matmul(u, weight)
             v = F.normalize(gram_schmidt(v, vs), eps=eps)
             vs += [v]
-            u = torch.matmul(v, W.t())
+            u = torch.matmul(v, weight.t())
             u = F.normalize(gram_schmidt(u, us), eps=eps)
             us += [u]
             if update:
-                u_[i][:] = u
-        svs += [torch.squeeze(torch.matmul(torch.matmul(v, W.t()), u.t()))]
+                u_list[i][:] = u
+        svs += [torch.squeeze(torch.matmul(torch.matmul(v, weight.t()), u.t()))]
     return svs, us, vs
 
 
-class SN(object):
+class SpectralNorm(nn.Module):
     """Spectral normalization base class.
 
     Args:
@@ -91,6 +91,7 @@ class SN(object):
                  num_outputs,
                  transpose=False,
                  eps=1e-12):
+        super().__init__()
         self.num_itrs = num_itrs
         self.num_svs = num_svs
         self.transpose = transpose
@@ -110,7 +111,7 @@ class SN(object):
         """Get singular values."""
         return [getattr(self, 'sv%d' % i) for i in range(self.num_svs)]
 
-    def W_(self):
+    def sn_weight(self):
         """Compute the spectrally-normalized weight."""
         W_mat = self.weight.view(self.weight.size(0), -1)
         if self.transpose:
@@ -127,7 +128,7 @@ class SN(object):
         return self.weight / svs[0]
 
 
-class SNConv2d(nn.Conv2d, SN):
+class SNConv2d(nn.Conv2d, SpectralNorm):
     """2D Conv layer with spectral norm.
 
     Args:
@@ -163,15 +164,15 @@ class SNConv2d(nn.Conv2d, SN):
                  eps=1e-12):
         nn.Conv2d.__init__(self, in_channels, out_channels, kernel_size,
                            stride, padding, dilation, groups, bias)
-        SN.__init__(self, num_svs, num_itrs, out_channels, eps=eps)
+        SpectralNorm.__init__(self, num_svs, num_itrs, out_channels, eps=eps)
 
     def forward(self, x):
         """Forward function."""
-        return F.conv2d(x, self.W_(), self.bias, self.stride, self.padding,
+        return F.conv2d(x, self.sn_weight(), self.bias, self.stride, self.padding,
                         self.dilation, self.groups)
 
 
-class SNLinear(nn.Linear, SN):
+class SNLinear(nn.Linear, SpectralNorm):
     """Linear layer with spectral norm.
 
     Args:
@@ -193,16 +194,16 @@ class SNLinear(nn.Linear, SN):
                  num_itrs=1,
                  eps=1e-12):
         nn.Linear.__init__(self, in_features, out_features, bias)
-        SN.__init__(self, num_svs, num_itrs, out_features, eps=eps)
+        SpectralNorm.__init__(self, num_svs, num_itrs, out_features, eps=eps)
 
     def forward(self, x):
         """Forward function."""
-        return F.linear(x, self.W_(), self.bias)
+        return F.linear(x, self.sn_weight(), self.bias)
 
 
 # We use num_embeddings as the dim instead of embedding_dim here
 # for convenience sake
-class SNEmbedding(nn.Embedding, SN):
+class SNEmbedding(nn.Embedding, SpectralNorm):
     """Embedding layer with spectral norm.
 
     Args:
@@ -248,8 +249,8 @@ class SNEmbedding(nn.Embedding, SN):
         nn.Embedding.__init__(self, num_embeddings, embedding_dim, padding_idx,
                               max_norm, norm_type, scale_grad_by_freq, sparse,
                               _weight)
-        SN.__init__(self, num_svs, num_itrs, num_embeddings, eps=eps)
+        SpectralNorm.__init__(self, num_svs, num_itrs, num_embeddings, eps=eps)
 
     def forward(self, x):
         """Forward function."""
-        return F.embedding(x, self.W_())
+        return F.embedding(x, self.sn_weight())

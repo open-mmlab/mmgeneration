@@ -7,9 +7,6 @@ _base_ = [
 # you must set `samples_per_gpu`
 data = dict(samples_per_gpu=32, workers_per_gpu=8)
 
-model = dict(
-    generator=dict(sn_style='ajbrock'), discriminator=dict(sn_style='ajbrock'))
-
 # adjust running config
 lr_config = None
 checkpoint_config = dict(interval=5000, by_epoch=False, max_keep_ckpts=10)

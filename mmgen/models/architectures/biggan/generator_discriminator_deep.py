@@ -72,6 +72,12 @@ class BigGANDeepGenerator(nn.Module):
             Defaults to 128.
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `biggan`, implementation by
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
+            Defaults to `ajbrock`.
         init_type (str, optional): The name of an initialization method:
             ortho | N02 | xavier. Defaults to 'ortho'.
         concat_noise (bool, optional): Whether to concat input noise vector
@@ -111,7 +117,7 @@ class BigGANDeepGenerator(nn.Module):
                  with_shared_embedding=True,
                  shared_dim=128,
                  sn_eps=1e-6,
-                 sn_style='torch',
+                 sn_style='ajbrock',
                  init_type='ortho',
                  concat_noise=True,
                  act_cfg=dict(type='ReLU', inplace=False),
@@ -505,6 +511,12 @@ class BigGANDeepDiscriminator(nn.Module):
             each level of architecture. Defaults to 2.
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `biggan`, implementation by
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
+            Defaults to `ajbrock`.
         init_type (str, optional): The name of an initialization method:
             ortho | N02 | xavier. Defaults to 'ortho'.
         act_cfg (dict, optional): Config for the activation layer.
@@ -529,7 +541,7 @@ class BigGANDeepDiscriminator(nn.Module):
                  base_channels=96,
                  block_depth=2,
                  sn_eps=1e-6,
-                 sn_style='torch',
+                 sn_style='ajbrock',
                  init_type='ortho',
                  act_cfg=dict(type='ReLU', inplace=False),
                  with_spectral_norm=True,
