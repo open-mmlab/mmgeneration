@@ -140,6 +140,7 @@ If you find this project useful in your research, please consider cite:
 ## Projects in OpenMMLab
 
 - [MMCV](https://github.com/open-mmlab/mmcv): OpenMMLab foundational library for computer vision.
+- [MIM](https://github.com/open-mmlab/mim): MIM Installs OpenMMLab Packages.
 - [MMClassification](https://github.com/open-mmlab/mmclassification): OpenMMLab image classification toolbox and benchmark.
 - [MMDetection](https://github.com/open-mmlab/mmdetection): OpenMMLab detection toolbox and benchmark.
 - [MMDetection3D](https://github.com/open-mmlab/mmdetection3d): OpenMMLab's next-generation platform for general 3D object detection.
@@ -150,3 +151,4 @@ If you find this project useful in your research, please consider cite:
 - [MMEditing](https://github.com/open-mmlab/mmediting): OpenMMLab image and video editing toolbox.
 - [MMOCR](https://github.com/open-mmlab/mmocr): A Comprehensive Toolbox for Text Detection, Recognition and Understanding.
 - [MMGeneration](https://github.com/open-mmlab/mmgeneration): OpenMMLab's next-generation toolbox for generative models.
+- [MMFlow](https://github.com/open-mmlab/mmflow): OpenMMLab optical flow toolbox and benchmark.
