@@ -67,7 +67,9 @@ def power_iteration(weight, u_list, update=True, eps=1e-12):
             us += [u]
             if update:
                 u_list[i][:] = u
-        svs += [torch.squeeze(torch.matmul(torch.matmul(v, weight.t()), u.t()))]
+        svs += [
+            torch.squeeze(torch.matmul(torch.matmul(v, weight.t()), u.t()))
+        ]
     return svs, us, vs
 
 
@@ -167,8 +169,8 @@ class SNConv2d(nn.Conv2d, SpectralNorm):
 
     def forward(self, x):
         """Forward function."""
-        return F.conv2d(x, self.sn_weight(), self.bias, self.stride, self.padding,
-                        self.dilation, self.groups)
+        return F.conv2d(x, self.sn_weight(), self.bias, self.stride,
+                        self.padding, self.dilation, self.groups)
 
 
 class SNLinear(nn.Linear, SpectralNorm):

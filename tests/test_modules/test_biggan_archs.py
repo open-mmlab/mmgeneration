@@ -12,7 +12,7 @@ from mmgen.models.architectures.biggan import (BigGANConditionBN,
                                                BigGANGenerator,
                                                BigGANGenResBlock,
                                                SelfAttentionBlock)
-from mmgen.models.architectures.biggan.biggan_snmodule import SpectralNorm
+
 # yapf:enable
 
 
@@ -546,5 +546,3 @@ class TestBigGANDiscriminator(object):
         d = build_module(cfg).cuda()
         y = d(self.x.cuda(), self.label.cuda())
         assert y.shape == (2, 1)
-
-    
