@@ -173,7 +173,7 @@ class BigGANDeepGenerator(nn.Module):
             elif sn_style == 'ajbrock':
                 self.noise2feat = SNLinear(
                     self.noise_size +
-                    self.shared_dim if self.concat_noise else 0,
+                    (self.shared_dim if self.concat_noise else 0),
                     self.arch['in_channels'][0] * (self.input_scale**2),
                     eps=sn_eps)
             else:
