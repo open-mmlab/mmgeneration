@@ -11,7 +11,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_ffhq
+  Name: stylegan2_c2
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -26,7 +26,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_c2
+  Name: stylegan2_ffhq
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -41,7 +41,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_config-c
+  Name: mspie-stylegan2_c2
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -116,7 +116,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_c2
+  Name: mspie-stylegan2_config-h
   Results:
   - Dataset: FFHQ
     Metrics:
