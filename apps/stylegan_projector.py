@@ -19,6 +19,7 @@ from torch import optim
 from torchvision import transforms
 from torchvision.utils import save_image
 from tqdm import tqdm
+from collections import OrderedDict
 
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
@@ -264,7 +265,7 @@ def main():
 
     mmcv.mkdir_or_exist(args.results_path)
     # save projection results
-    result_file = {}
+    result_file = OrderedDict()
     for i, input_name in enumerate(args.files):
         noise_single = []
         for noise in noises:

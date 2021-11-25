@@ -51,6 +51,9 @@ def parse_args():
         default='lerp',
         help='mode to sample from endpoints\'s interpolation.')
     parser.add_argument(
+        '--proj-latent', type=str, default=None, 
+        help='Projection file of Images. Produced by stylegan_projector.py.')
+    parser.add_argument(
         '--endpoint', type=int, default=2, help='The number of endpoints.')
     parser.add_argument(
         '--batch-size',
@@ -65,7 +68,7 @@ def parse_args():
     parser.add_argument(
         '--space',
         choices=['z', 'w'],
-        default='z',
+        default='w',
         help='Interpolation space.')
     parser.add_argument(
         '--sample-cfg',
@@ -191,25 +194,44 @@ def main():
 
     if not args.use_cpu:
         generator = generator.cuda()
+        
+    # if given proj_latent, reset args.endpoint
+    if args.proj_latent is not None:
+        mmcv.print_log(f'Load projected latent: {args.proj_latent}', 'mmgen')
+        proj_file = torch.load(args.proj_latent)
+        proj_n = len(proj_file)
+        setattr(args, 'endpoint', proj_n)
+        assert args.space == 'w', 'Projected latent are w or w-plus latent.'
+        noise_batch = []
+        for img_path in proj_file:
+            noise_batch.append(proj_file[img_path]['latent'].unsqueeze(0))
+        noise_batch = torch.cat(noise_batch, dim=0).cuda()
+        if args.use_cpu:
+            noise_batch = noise_batch.to('cpu')
+        
     if args.show_mode == 'sequence':
         assert args.endpoint >= 2
     else:
-        assert args.endpoint >= 2 and args.endpoint % 2 == 0
+        assert args.endpoint >= 2 and args.endpoint % 2 == 0, 'We need paired images in group mode, so keep endpoint an even number'
 
     kwargs = dict(max_batch_size=args.batch_size)
     if args.sample_cfg is None:
         args.sample_cfg = dict()
     kwargs.update(args.sample_cfg)
+    # remind users to fixed injected noise
+    if kwargs.get('randomize_noise', 'True'):
+        mmcv.print_log("Hint: For Style-Based GAN, you can add `--sample-cfg randomize_noise=False` to fix injected noises")
 
     # get noises corresponding to each endpoint
-    noise_batch = batch_inference(
-        generator,
-        None,
-        num_batches=args.endpoint,
-        dict_key='noise_batch' if args.space == 'z' else 'latent',
-        return_noise=True,
-        **kwargs)
-
+    if not args.proj_latent:
+        noise_batch = batch_inference(
+            generator,
+            None,
+            num_batches=args.endpoint,
+            dict_key='noise_batch' if args.space == 'z' else 'latent',
+            return_noise=True,
+            **kwargs)
+    
     if args.space == 'w':
         kwargs['truncation_latent'] = generator.get_mean_latent()
         kwargs['input_is_latent'] = True
