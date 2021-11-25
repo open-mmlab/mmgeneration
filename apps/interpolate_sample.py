@@ -51,7 +51,9 @@ def parse_args():
         default='lerp',
         help='mode to sample from endpoints\'s interpolation.')
     parser.add_argument(
-        '--proj-latent', type=str, default=None, 
+        '--proj-latent',
+        type=str,
+        default=None,
         help='Projection file of Images. Produced by stylegan_projector.py.')
     parser.add_argument(
         '--endpoint', type=int, default=2, help='The number of endpoints.')
@@ -194,7 +196,7 @@ def main():
 
     if not args.use_cpu:
         generator = generator.cuda()
-        
+
     # if given proj_latent, reset args.endpoint
     if args.proj_latent is not None:
         mmcv.print_log(f'Load projected latent: {args.proj_latent}', 'mmgen')
@@ -208,11 +210,13 @@ def main():
         noise_batch = torch.cat(noise_batch, dim=0).cuda()
         if args.use_cpu:
             noise_batch = noise_batch.to('cpu')
-        
+
     if args.show_mode == 'sequence':
         assert args.endpoint >= 2
     else:
-        assert args.endpoint >= 2 and args.endpoint % 2 == 0, 'We need paired images in group mode, so keep endpoint an even number'
+        assert args.endpoint >= 2 and args.endpoint % 2 == 0,\
+            '''We need paired images in group mode,
+            so keep endpoint an even number'''
 
     kwargs = dict(max_batch_size=args.batch_size)
     if args.sample_cfg is None:
@@ -220,7 +224,10 @@ def main():
     kwargs.update(args.sample_cfg)
     # remind users to fixed injected noise
     if kwargs.get('randomize_noise', 'True'):
-        mmcv.print_log("Hint: For Style-Based GAN, you can add `--sample-cfg randomize_noise=False` to fix injected noises")
+        mmcv.print_log(
+            '''Hint: For Style-Based GAN, you can add
+            `--sample-cfg randomize_noise=False` to fix injected noises''',
+            'mmgen')
 
     # get noises corresponding to each endpoint
     if not args.proj_latent:
@@ -231,7 +238,7 @@ def main():
             dict_key='noise_batch' if args.space == 'z' else 'latent',
             return_noise=True,
             **kwargs)
-    
+
     if args.space == 'w':
         kwargs['truncation_latent'] = generator.get_mean_latent()
         kwargs['input_is_latent'] = True

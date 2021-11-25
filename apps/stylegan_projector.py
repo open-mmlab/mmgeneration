@@ -7,6 +7,7 @@ r"""
 import argparse
 import os
 import sys
+from collections import OrderedDict
 
 import mmcv
 import numpy as np
@@ -19,7 +20,6 @@ from torch import optim
 from torchvision import transforms
 from torchvision.utils import save_image
 from tqdm import tqdm
-from collections import OrderedDict
 
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
