@@ -1,14 +1,13 @@
 Collections:
 - Metadata:
-    Architecture:
-    - StyleGANv1
-  Name: StyleGANv1
+    Architecture: []
+  Name: README
   Paper:
   - https://openaccess.thecvf.com/content_CVPR_2019/html/Karras_A_Style-Based_Generator_Architecture_for_Generative_Adversarial_Networks_CVPR_2019_paper.html
   README: configs/styleganv1/README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv1/styleganv1_ffhq_256_g8_25Mimg.py
-  In Collection: StyleGANv1
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv1--styleganv1_ffhq_256_g8_25Mimg
@@ -20,7 +19,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/styleganv1/styleganv1_ffhq_256_g8_25Mimg_20210407_161748-0094da86.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv1/styleganv1_ffhq_1024_g8_25Mimg.py
-  In Collection: StyleGANv1
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv1--styleganv1_ffhq_1024_g8_25Mimg

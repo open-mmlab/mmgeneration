@@ -1,14 +1,13 @@
 Collections:
 - Metadata:
-    Architecture:
-    - StyleGANv2
-  Name: StyleGANv2
+    Architecture: []
+  Name: README
   Paper:
   - https://openaccess.thecvf.com/content_CVPR_2020/html/Karras_Analyzing_and_Improving_the_Image_Quality_of_StyleGAN_CVPR_2020_paper.html
   README: configs/styleganv2/README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_1024_b4x8
@@ -21,7 +20,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-ffhq-config-f-official_20210327_171224-bce9310c.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_lsun-car_384x512_b4x8.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: LSUN
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_lsun-car_384x512_b4x8
@@ -34,7 +33,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-car-config-f-official_20210327_172340-8cfe053c.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_lsun-horse_256_b4x8_800k.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: LSUN
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_lsun-horse_256_b4x8_800k
@@ -47,7 +46,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-horse-config-f-official_20210327_173203-ef3e69ca.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_lsun-church_256_b4x8_800k.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: LSUN
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_lsun-church_256_b4x8_800k
@@ -60,7 +59,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_lsun-cat_256_b4x8_800k.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: LSUN
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_lsun-cat_256_b4x8_800k
@@ -73,7 +72,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-cat-config-f-official_20210327_172444-15bc485b.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_256_b4x8_800k
@@ -86,7 +85,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_ffhq_256_b4x8_20210407_160709-7890ae1f.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_1024_b4x8
@@ -99,7 +98,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_ffhq_1024_b4x8_20210407_150045-618c9024.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_lsun-car_384x512_b4x8.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: LSUN
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_lsun-car_384x512_b4x8
@@ -112,7 +111,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_lsun-car_384x512_b4x8_1800k_20210424_160929-fc9072ca.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_256_b4x8_800k
@@ -125,7 +124,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_ffhq_256_b4x8_20210407_160709-7890ae1f.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_fp16_partial-GD_PL-no-scaler_ffhq_256_b4x8_800k.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_fp16_partial-GD_PL-no-scaler_ffhq_256_b4x8_800k
@@ -138,7 +137,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_fp16_partial-GD_PL-no-scaler_ffhq_256_b4x8_800k_20210508_114854-dacbe4c9.pth?versionId=CAEQKxiBgIDNhrOoyhciIGM1OTIwZmFiYWM4MzQyNzE4YzlkYjYxMTNhZjU1ZGFj
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_fp16-globalG-partialD_PL-R1-no-scaler_ffhq_256_b4x8_800k.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_fp16-globalG-partialD_PL-R1-no-scaler_ffhq_256_b4x8_800k
@@ -151,7 +150,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_fp16-globalG-partialD_PL-R1-no-scaler_ffhq_256_b4x8_800k_20210508_114930-ef8270d4.pth?versionId=CAEQKxiBgIDOhrOoyhciIDM4ZTQxYzkxZTE4ZjQ2ZjM4ZmU3YzlhOWNkYWI1OWQ1
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_apex_fp16_PL-R1-no-scaler_ffhq_256_b4x8_800k.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_apex_fp16_PL-R1-no-scaler_ffhq_256_b4x8_800k
@@ -164,7 +163,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_apex_fp16_PL-R1-no-scaler_ffhq_256_b4x8_800k_20210508_114701-c2bb8afd.pth?versionId=CAEQKxiBgMDQhrOoyhciIGE0ZGJkOWM2MTNjMzQ3Mjk4Y2NmMWMyNTViOTNiZTNh
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_1024_b4x8
@@ -177,7 +176,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-ffhq-config-f-official_20210327_171224-bce9310c.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_1024_b4x8
@@ -190,7 +189,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_ffhq_1024_b4x8_20210407_150045-618c9024.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_1024_b4x8
@@ -203,7 +202,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-ffhq-config-f-official_20210327_171224-bce9310c.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py
-  In Collection: StyleGANv2
+  In Collection: README
   Metadata:
     Training Data: FFHQ
   Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_1024_b4x8
