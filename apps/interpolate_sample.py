@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 
+import imageio
 import mmcv
 import numpy as np
 import torch
@@ -26,6 +27,10 @@ def parse_args():
     parser.add_argument('checkpoint', help='checkpoint file')
     parser.add_argument(
         '--use-cpu',
+        action='store_true',
+        help='whether to use cpu device for sampling')
+    parser.add_argument(
+        '--export-video',
         action='store_true',
         help='whether to use cpu device for sampling')
     parser.add_argument('--seed', type=int, default=2021, help='random seed')
@@ -138,6 +143,69 @@ def batch_inference(generator,
         outputs.append(output.to('cpu'))
     outputs = torch.cat(outputs, dim=0)
     return outputs
+
+
+def layout_grid(video_out,
+                all_img,
+                grid_w=1,
+                grid_h=1,
+                float_to_uint8=True,
+                chw_to_hwc=True,
+                to_numpy=True):
+    r"""Arrange images into video frames.
+
+        Ref: https://github.com/NVlabs/stylegan3/blob/a5a69f58294509598714d1e88c9646c3d7c6ec94/gen_video.py#L28 # noqa
+
+    Args:
+        video_out (Writer): Video writer.
+        all_img (torch.Tensor): All images to be displayed in video.
+        grid_w (int, optional): Column number in a frame. Defaults to 1.
+        grid_h (int, optional): Row number in a frame. Defaults to 1.
+        float_to_uint8 (bool, optional): Change torch value from `float` to `uint8`. Defaults to True.
+        chw_to_hwc (bool, optional): Change channel order from `chw` to `hwc`. Defaults to True.
+        to_numpy (bool, optional): Change image format from `torch.Tensor` to `np.array`. Defaults to True.
+
+    Returns:
+        Writer: Video writer.
+    """
+    batch_size, channels, img_h, img_w = all_img.shape
+    assert batch_size % (grid_w * grid_h) == 0
+    images_per_frame = grid_w * grid_h
+    n_frames = batch_size // images_per_frame
+    all_img = all_img.reshape(images_per_frame, n_frames, channels, img_h,
+                              img_w).permute(1, 0, 2, 3, 4).reshape(
+                                  n_frames, images_per_frame, channels, img_h,
+                                  img_w)
+    for i in range(0, n_frames):
+        img = all_img[i]
+        if float_to_uint8:
+            img = (img * 255.).clamp(0, 255).to(torch.uint8)
+        img = img.reshape(grid_h, grid_w, channels, img_h, img_w)
+        img = img.permute(2, 0, 3, 1, 4)
+        img = img.reshape(channels, grid_h * img_h, grid_w * img_w)
+        if chw_to_hwc:
+            img = img.permute(1, 2, 0)
+        if to_numpy:
+            img = img.cpu().numpy()
+        video_out.append_data(img)
+    return video_out
+
+
+def crack_integer(integer):
+    """Cracking an integer into the product of two nearest integers.
+
+    Args:
+        integer (int): An positive integer.
+
+    Returns:
+        tuple: Two integers.
+    """
+    start = int(np.sqrt(integer))
+    factor = integer / start
+    while int(factor) != factor:
+        start += 1
+        factor = integer / start
+    return int(factor), start
 
 
 @torch.no_grad()
@@ -262,16 +330,42 @@ def main():
     # save image
     mmcv.mkdir_or_exist(args.samples_path)
     if args.show_mode == 'sequence':
-        for i in range(results.shape[0]):
-            image = results[i:i + 1]
-            save_image(
-                image,
-                os.path.join(args.samples_path, '{:0>5d}'.format(i) + '.png'))
+        if args.export_video:
+            # render video.
+            video_out = imageio.get_writer(
+                os.path.join(args.samples_path, 'lerp.mp4'),
+                mode='I',
+                fps=60,
+                codec='libx264',
+                bitrate='12M')
+            video_out = layout_grid(video_out, results)
+            video_out.close()
+        else:
+            for i in range(results.shape[0]):
+                image = results[i:i + 1]
+                save_image(
+                    image,
+                    os.path.join(args.samples_path,
+                                 '{:0>5d}'.format(i) + '.png'))
     else:
-        save_image(
-            results,
-            os.path.join(args.samples_path, 'group.png'),
-            nrow=args.interval)
+        if args.export_video:
+            # render video.
+            video_out = imageio.get_writer(
+                os.path.join(args.samples_path, 'lerp.mp4'),
+                mode='I',
+                fps=60,
+                codec='libx264',
+                bitrate='12M')
+            n_pair = args.endpoint // 2
+            grid_w, grid_h = crack_integer(n_pair)
+            video_out = layout_grid(
+                video_out, results, grid_h=grid_h, grid_w=grid_w)
+            video_out.close()
+        else:
+            save_image(
+                results,
+                os.path.join(args.samples_path, 'group.png'),
+                nrow=args.interval)
 
 
 if __name__ == '__main__':
