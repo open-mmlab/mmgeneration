@@ -11,7 +11,7 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: CIFAR
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
+  Name: sngan_woReLUinplace
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -30,7 +30,7 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: CIFAR
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
+  Name: sngan_woReLUinplace
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -49,7 +49,7 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: CIFAR
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
+  Name: sngan_32
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -68,7 +68,7 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: CIFAR
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
+  Name: sngan_32
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -87,7 +87,7 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_128_woReLUinplace_Glr-2e-4_Dlr-5e-5_ndisc5_imagenet1k_b128x2
+  Name: sngan_Glr-2e-4
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -106,7 +106,7 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_128_woReLUinplace_Glr-2e-4_Dlr-5e-5_ndisc5_imagenet1k_b128x2
+  Name: sngan_Glr-2e-4
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -125,7 +125,7 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_128_wReLUinplace_Glr-2e-4_Dlr-5e-5_ndisc5_imagenet1k_b128x2
+  Name: sngan_128
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -144,7 +144,7 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_128_wReLUinplace_Glr-2e-4_Dlr-5e-5_ndisc5_imagenet1k_b128x2
+  Name: sngan_128
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -163,7 +163,7 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--sngan_proj_32x32
+  Name: sngan_proj_32x32
   Results:
   - Dataset: Others
     Metrics:
@@ -182,7 +182,7 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--sngan_proj_128x128
+  Name: sngan_proj_128x128
   Results:
   - Dataset: Others
     Metrics:

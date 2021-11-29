@@ -11,7 +11,7 @@ Models:
   In Collection: Pix2Pix
   Metadata:
     Training Data: FACADES
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--pix2pix--pix2pix_vanilla_unet_bn_facades_b1x1_80k
+  Name: pix2pix_facades
   Results:
   - Dataset: FACADES
     Metrics:
@@ -25,7 +25,7 @@ Models:
   In Collection: Pix2Pix
   Metadata:
     Training Data: MAPS
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--pix2pix--pix2pix_vanilla_unet_bn_aerial2maps_b1x1_220k
+  Name: pix2pix_aerial2maps
   Results:
   - Dataset: MAPS
     Metrics:
@@ -39,7 +39,7 @@ Models:
   In Collection: Pix2Pix
   Metadata:
     Training Data: MAPS
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--pix2pix--pix2pix_vanilla_unet_bn_maps2aerial_b1x1_220k
+  Name: pix2pix_maps2aerial
   Results:
   - Dataset: MAPS
     Metrics:
@@ -53,7 +53,7 @@ Models:
   In Collection: Pix2Pix
   Metadata:
     Training Data: EDGES2SHOES
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--pix2pix--pix2pix_vanilla_unet_bn_wo_jitter_flip_edges2shoes_b1x4_190k
+  Name: pix2pix_wo
   Results:
   - Dataset: EDGES2SHOES
     Metrics:
