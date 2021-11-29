@@ -10,7 +10,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: CELEBA
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--pggan--pggan_celeba-cropped_128_g8_12Mimgs
+  Name: pggan_celeba-cropped
   Results:
   - Dataset: CELEBA
     Metrics:
@@ -24,7 +24,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: LSUN
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--pggan--pggan_lsun-bedroom_128_g8_12Mimgs
+  Name: pggan_lsun-bedroom
   Results:
   - Dataset: LSUN
     Metrics:
@@ -38,7 +38,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: CELEBA
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--pggan--pggan_celeba-hq_1024_g8_12Mimg
+  Name: pggan_celeba-hq
   Results:
   - Dataset: CELEBA
     Metrics:

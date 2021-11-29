@@ -10,7 +10,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--singan--singan_balloons
+  Name: singan_balloons
   Results:
   - Dataset: Others
     Metrics:
@@ -21,7 +21,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--singan--singan_fish
+  Name: singan_fish
   Results:
   - Dataset: Others
     Metrics:
@@ -32,7 +32,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--singan--singan_bohemian
+  Name: singan_bohemian
   Results:
   - Dataset: Others
     Metrics:

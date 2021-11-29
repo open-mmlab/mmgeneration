@@ -10,7 +10,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: CELEBA
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--lsgan--lsgan_dcgan-archi_lr-1e-3_celeba-cropped_64_b128x1_12m
+  Name: lsgan_lr-1e-3
   Results:
   - Dataset: CELEBA
     Metrics:
@@ -25,7 +25,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: LSUN
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--lsgan--lsgan_dcgan-archi_lr-1e-4_lsun-bedroom_64_b128x1_12m
+  Name: lsgan_dcgan-archi
   Results:
   - Dataset: LSUN
     Metrics:
@@ -40,7 +40,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: CELEBA
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--lsgan--lsgan_dcgan-archi_lr-1e-4_celeba-cropped_128_b64x1_10m
+  Name: lsgan_lr-1e-4
   Results:
   - Dataset: CELEBA
     Metrics:
@@ -55,7 +55,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: LSUN
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--lsgan--lsgan_lsgan-archi_lr-1e-4_lsun-bedroom_128_b64x1_10m
+  Name: lsgan_lsgan-archi
   Results:
   - Dataset: LSUN
     Metrics:

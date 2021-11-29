@@ -10,7 +10,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--stylegan2_c2_ffhq_256_b3x8_1100k
+  Name: stylegan2_c2
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -25,7 +25,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--stylegan2_c2_ffhq_512_b3x8_1100k
+  Name: stylegan2_ffhq
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -40,7 +40,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-c_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_c2
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -55,7 +55,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-d_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-d
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -70,7 +70,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-e_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-e
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -85,7 +85,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-f_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-f
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -100,7 +100,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c1_config-g_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_c1
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -115,7 +115,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-h_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-h
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -130,7 +130,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-i_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-i
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -145,7 +145,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-j_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-j
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -160,7 +160,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-k_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -175,7 +175,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-f_ffhq_256-896_b3x8_1100k
+  Name: mspie-stylegan2_ffhq
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -190,7 +190,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c1_config-f_ffhq_256-1024_b2x8_1600k
+  Name: mspie-stylegan2_256-1024
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -205,7 +205,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_interp-pad_balloons
+  Name: singan_interp-pad
   Results:
   - Dataset: Others
     Metrics:
@@ -216,7 +216,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_interp-pad_disc-nobn_balloons
+  Name: singan_balloons
   Results:
   - Dataset: Others
     Metrics:
@@ -227,7 +227,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_interp-pad_disc-nobn_fish
+  Name: singan_disc-nobn
   Results:
   - Dataset: Others
     Metrics:
@@ -238,7 +238,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_csg_fish
+  Name: singan_csg
   Results:
   - Dataset: Others
     Metrics:
@@ -249,7 +249,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_csg_bohemian
+  Name: singan_bohemian
   Results:
   - Dataset: Others
     Metrics:
@@ -260,7 +260,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_spe-dim4_fish
+  Name: singan_spe-dim4
   Results:
   - Dataset: Others
     Metrics:
@@ -271,7 +271,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_spe-dim4_bohemian
+  Name: singan
   Results:
   - Dataset: Others
     Metrics:
@@ -282,7 +282,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_spe-dim8_bohemian
+  Name: singan_spe-dim8
   Results:
   - Dataset: Others
     Metrics:

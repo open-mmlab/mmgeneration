@@ -10,7 +10,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv1--styleganv1_ffhq_256_g8_25Mimg
+  Name: styleganv1_256
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -22,7 +22,7 @@ Models:
   In Collection: README
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv1--styleganv1_ffhq_1024_g8_25Mimg
+  Name: styleganv1_1024
   Results:
   - Dataset: FFHQ
     Metrics:
