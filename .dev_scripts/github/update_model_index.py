@@ -16,7 +16,7 @@ from functools import reduce
 
 import mmcv
 
-MMEditing_ROOT = osp.dirname(osp.dirname(osp.dirname(__file__)))
+MMGeneration_ROOT = osp.dirname(osp.dirname(osp.dirname(__file__)))
 
 all_training_data = [
     'cifar', 'ffhq', 'celeba', 'imagenet', 'lsun', 'reds', 'ffhq', 'cat',
@@ -69,9 +69,13 @@ def collate_metrics(keys):
     used_metrics = dict()
     for idx, key in enumerate(keys):
         if key in [
-                'Model', 'Download', 'Config', 'Original Download link', 'Data'
+                'Model', 'Models', 'Download', 'Config',
+                'Original Download link', 'Data', 'Dataset'
         ]:
             continue
+        # process metric such as Best FID and Best IS
+        if '(Iter)' in key:
+            key = key.split('(')[0].strip()
         used_metrics[key] = idx
     return used_metrics
 
@@ -161,7 +165,7 @@ def parse_md(md_file, task):
     collection = dict(
         Name=collection_name,
         Metadata={'Architecture': []},
-        README=osp.relpath(md_file, MMEditing_ROOT),
+        README=osp.relpath(md_file, MMGeneration_ROOT),
         Paper=[])
     models = []
     with open(md_file, 'r') as md:
@@ -252,9 +256,13 @@ def parse_md(md_file, task):
                     for key in used_metrics:
                         metrics_data = line[used_metrics[key]]
                         metrics_data = metrics_data.replace('*', '')
+                        if '(' in metrics_data and ')' in metrics_data:
+                            metrics_data = metrics_data.split('(')[0].strip()
                         try:
                             metrics[key] = float(metrics_data)
                         except ValueError:
+                            # import ipdb
+                            # ipdb.set_trace()
                             metrics[key] = metrics_data.strip()
 
                     model = {
@@ -297,15 +305,15 @@ def update_model_index():
     Returns:
         Bool: If the updated model-index.yml is different from the original.
     """
-    configs_dir = osp.join(MMEditing_ROOT, 'configs')
+    configs_dir = osp.join(MMGeneration_ROOT, 'configs')
     yml_files = glob.glob(osp.join(configs_dir, '**', '*.yml'), recursive=True)
     yml_files.sort()
 
     model_index = {
         'Import':
-        [osp.relpath(yml_file, MMEditing_ROOT) for yml_file in yml_files]
+        [osp.relpath(yml_file, MMGeneration_ROOT) for yml_file in yml_files]
     }
-    model_index_file = osp.join(MMEditing_ROOT, 'model-index.yml')
+    model_index_file = osp.join(MMGeneration_ROOT, 'model-index.yml')
     is_different = dump_yaml_and_check_difference(model_index,
                                                   model_index_file)
 
@@ -314,7 +322,7 @@ def update_model_index():
 
 if __name__ == '__main__':
     if len(sys.argv) <= 1:
-        configs_root = osp.join(MMEditing_ROOT, 'configs')
+        configs_root = osp.join(MMGeneration_ROOT, 'configs')
         file_list = glob.glob(
             osp.join(configs_root, '**', '*README.md'), recursive=True)
         file_list.sort()
@@ -327,7 +335,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     # get task name of each method
-    task_dict = get_task_dict(osp.join(MMEditing_ROOT, 'README.md'))
+    task_dict = get_task_dict(osp.join(MMGeneration_ROOT, 'README.md'))
 
     file_modified = False
     for fn in file_list:

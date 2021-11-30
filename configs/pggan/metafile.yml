@@ -17,7 +17,6 @@ Models:
     Metrics:
       Details: celeba-cropped
       MS-SSIM: 0.3023
-      Models: pggan_128x128
       SWD(xx,xx,xx,xx/avg): 3.42, 4.04, 4.78, 20.38/8.15
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pggan/pggan_celeba-cropped_128_g8_20210408_181931-85a2e72c.pth
@@ -31,7 +30,6 @@ Models:
     Metrics:
       Details: lsun-bedroom
       MS-SSIM: 0.0602
-      Models: pggan_128x128
       SWD(xx,xx,xx,xx/avg): 3.5, 2.96, 2.76, 9.65/4.72
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pggan/pggan_lsun-bedroom_128x128_g8_20210408_182033-5e59f45d.pth
@@ -45,7 +43,6 @@ Models:
     Metrics:
       Details: celeba-hq
       MS-SSIM: 0.3379
-      Models: pggan_1024x1024
       SWD(xx,xx,xx,xx/avg): 8.93, 3.98, 3.07, 2.64/4.655
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pggan/pggan_celeba-hq_1024_g8_20210408_181911-f1ef51c3.pth

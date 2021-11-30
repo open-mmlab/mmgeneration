@@ -16,7 +16,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 5.56
-      Models: stylegan2_c2_256_baseline
       P&R10k: 75.92/51.24
       Reference in Paper: Tab.5 config-a
       Scales: 256.0
@@ -31,7 +30,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 4.91
-      Models: stylegan2_c2_512_baseline
       P&R10k: 75.65/54.58
       Reference in Paper: Tab.5 config-b
       Scales: 512.0
@@ -46,7 +44,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 3.35
-      Models: ms-pie_stylegan2_c2_config-c
       P&R10k: 73.84/55.77
       Reference in Paper: Tab.5 config-c
       Scales: 256, 384, 512
@@ -61,7 +58,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 3.5
-      Models: ms-pie_stylegan2_c2_config-d
       P&R10k: 73.28/56.16
       Reference in Paper: Tab.5 config-d
       Scales: 256, 384, 512
@@ -76,7 +72,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 3.15
-      Models: ms-pie_stylegan2_c2_config-e
       P&R10k: 74.13/56.88
       Reference in Paper: Tab.5 config-e
       Scales: 256, 384, 512
@@ -91,7 +86,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 2.93
-      Models: ms-pie_stylegan2_c2_config-f
       P&R10k: 73.51/57.32
       Reference in Paper: Tab.5 config-f
       Scales: 256, 384, 512
@@ -106,7 +100,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 3.4
-      Models: ms-pie_stylegan2_c1_config-g
       P&R10k: 73.05/56.45
       Reference in Paper: Tab.5 config-g
       Scales: 256, 384, 512
@@ -121,7 +114,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 4.01
-      Models: ms-pie_stylegan2_c2_config-h
       P&R10k: 72.81/54.35
       Reference in Paper: Tab.5 config-h
       Scales: 256, 384, 512
@@ -136,7 +128,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 3.76
-      Models: ms-pie_stylegan2_c2_config-i
       P&R10k: 73.26/54.71
       Reference in Paper: Tab.5 config-i
       Scales: 256, 384, 512
@@ -151,7 +142,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 4.23
-      Models: ms-pie_stylegan2_c2_config-j
       P&R10k: 73.11/54.63
       Reference in Paper: Tab.5 config-j
       Scales: 256, 384, 512
@@ -166,7 +156,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 4.17
-      Models: ms-pie_stylegan2_c2_config-k
       P&R10k: 73.05/51.07
       Reference in Paper: Tab.5 config-k
       Scales: 256, 384, 512
@@ -181,7 +170,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 4.1
-      Models: ms-pie_stylegan2_c2_config-f
       P&R10k: 72.21/50.29
       Reference in Paper: higher-resolution
       Scales: 256, 512, 896
@@ -196,7 +184,6 @@ Models:
   - Dataset: FFHQ
     Metrics:
       FID50k: 6.24
-      Models: ms-pie_stylegan2_c1_config-f
       P&R10k: 71.79/49.92
       Reference in Paper: higher-resolution
       Scales: 256, 512, 1024
