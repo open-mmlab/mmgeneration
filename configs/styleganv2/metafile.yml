@@ -11,7 +11,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_1024_b4x8
+  Name: stylegan2_ffhq
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -24,7 +24,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: LSUN
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_lsun-car_384x512_b4x8
+  Name: stylegan2_lsun-car
   Results:
   - Dataset: LSUN
     Metrics:
@@ -37,7 +37,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: LSUN
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_lsun-horse_256_b4x8_800k
+  Name: stylegan2_lsun-horse
   Results:
   - Dataset: LSUN
     Metrics:
@@ -50,7 +50,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: LSUN
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_lsun-church_256_b4x8_800k
+  Name: stylegan2_lsun-church
   Results:
   - Dataset: LSUN
     Metrics:
@@ -63,7 +63,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: LSUN
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_lsun-cat_256_b4x8_800k
+  Name: stylegan2_lsun-cat
   Results:
   - Dataset: LSUN
     Metrics:
@@ -76,7 +76,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_256_b4x8_800k
+  Name: stylegan2_256
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -89,7 +89,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_1024_b4x8
+  Name: stylegan2_ffhq
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -102,7 +102,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: LSUN
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_lsun-car_384x512_b4x8
+  Name: stylegan2_lsun-car
   Results:
   - Dataset: LSUN
     Metrics:
@@ -115,7 +115,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_256_b4x8_800k
+  Name: stylegan2_256
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -128,7 +128,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_fp16_partial-GD_PL-no-scaler_ffhq_256_b4x8_800k
+  Name: stylegan2_partial-GD
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -141,7 +141,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_fp16-globalG-partialD_PL-R1-no-scaler_ffhq_256_b4x8_800k
+  Name: stylegan2_fp16-globalG-partialD
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -154,7 +154,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_apex_fp16_PL-R1-no-scaler_ffhq_256_b4x8_800k
+  Name: stylegan2_PL-R1-no-scaler
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -167,7 +167,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_1024_b4x8
+  Name: stylegan2_ffhq
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -180,7 +180,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_1024_b4x8
+  Name: stylegan2_ffhq
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -193,7 +193,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_1024_b4x8
+  Name: stylegan2_ffhq
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -206,7 +206,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--styleganv2--stylegan2_c2_ffhq_1024_b4x8
+  Name: stylegan2_ffhq
   Results:
   - Dataset: FFHQ
     Metrics:

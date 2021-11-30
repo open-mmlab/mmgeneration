@@ -1,9 +1,18 @@
 # Positional Encoding as Spatial Inductive Bias in GANs (CVPR'2021)
 
-## Introduction
+## Abstract
+
+SinGAN shows impressive capability in learning internal patch distribution despite its limited effective receptive field. We are interested in knowing how such a translation-invariant convolutional generator could capture the global structure with just a spatially i.i.d. input. In this work, taking SinGAN and StyleGAN2 as examples, we show that such capability, to a large extent, is brought by the implicit positional encoding when using zero padding in the generators. Such positional encoding is indispensable for generating images with high fidelity. The same phenomenon is observed in other generative architectures such as DCGAN and PGGAN. We further show that zero padding leads to an unbalanced spatial bias with a vague relation between locations. To offer a better spatial inductive bias, we investigate alternative positional encodings and analyze their effects. Based on a more flexible positional encoding explicitly, we propose a new multi-scale training strategy and demonstrate its effectiveness in the state-of-the-art unconditional generator StyleGAN2. Besides, the explicit spatial inductive bias substantially improve SinGAN for more versatile image manipulation.
+
+<!-- [IMAGE] -->
+<div align=center>
+<img src="https://user-images.githubusercontent.com/28132635/143053767-c6a503b2-87ff-434a-a439-d9fb0e98d804.JPG"/>
+</div>
+
+## Citation
+
 <!-- [ALGORITHM] -->
 
-<details>
 <summary align="right"><a href="https://openaccess.thecvf.com/content/CVPR2021/html/Xu_Positional_Encoding_As_Spatial_Inductive_Bias_in_GANs_CVPR_2021_paper.html">Positional Encoding in GANs (arXiv'2020)</a></summary>
 
 ```latex
@@ -15,7 +24,6 @@
   url={https://openaccess.thecvf.com/content/CVPR2021/html/Xu_Positional_Encoding_As_Spatial_Inductive_Bias_in_GANs_CVPR_2021_paper.html},
 }
 ```
-</details>
 
 ## Results and models for MS-PIE
 

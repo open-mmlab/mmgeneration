@@ -40,15 +40,15 @@ jobs:
           - torch: 1.5.1+cu101
             torch_version: torch1.5.1
             torchvision: 0.6.1+cu101
-            mmcv_link: "torch1.5.1"
+            mmcv: 1.5.0
           - torch: 1.7.0+cu101
             torch_version: torch1.7.0
             torchvision: 0.8.1+cu101
-            mmcv_link: "torch1.7.0"
+            mmcv: 1.7.0
           - torch: 1.8.0+cu101
             torch_version: torch1.8.0
             torchvision: 0.9.0+cu101
-            mmcv_link: "torch1.8.0"
+            mmcv: 1.8.0
 
     steps:
       - uses: actions/checkout@v2
@@ -71,7 +71,7 @@ jobs:
       - name: Install mmgen dependencies
         run: |
           python -V
-          python -m pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu101/${{matrix.mmcv_link}}/index.html
+          python -m pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu101/torch${{matrix.mmcv}}/index.html
           python -m pip install -r requirements.txt
           python -c 'import mmcv; print(mmcv.__version__)'
       - name: Build and install
@@ -107,7 +107,7 @@ jobs:
           - torch: 1.9.0+cu102
             torch_version: torch1.9.0
             torchvision: 0.10.0+cu102
-            mmcv_link: "torch1.9.0"
+            mmcv: 1.9.0
 
     steps:
       - uses: actions/checkout@v2
@@ -128,7 +128,7 @@ jobs:
       - name: Install mmgen dependencies
         run: |
           python -V
-          python -m pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu102/${{matrix.mmcv_link}}/index.html
+          python -m pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu102/torch${{matrix.mmcv}}/index.html
           python -m pip install -r requirements.txt
           python -c 'import mmcv; print(mmcv.__version__)'
       - name: Build and install

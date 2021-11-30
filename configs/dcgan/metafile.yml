@@ -11,7 +11,7 @@ Models:
   In Collection: DCGAN
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--dcgan--dcgan_mnist-64_b128x1_Glr4e-4_Dlr1e-4_5k
+  Name: dcgan_mnist-64
   Results:
   - Dataset: Others
     Metrics:
@@ -20,12 +20,12 @@ Models:
       Models: DCGAN 64x64
       SWD: 21.16, 4.4, 8.41/11.32
     Task: Unconditional GANs
-  Weights: https://download.openmmlab.com//mmgen/dcgan/dcgan_mnist-64_b128x1_Glr4e-4_Dlr1e-4_5k_20210512_163926-207a1eaf.pth?versionId=CAEQKxiBgMDTnYH_yhciIGY2MjAwMzBjZjZiZjQzODJhZWRhOTFiNjU4MzdhMWY2
+  Weights: https://download.openmmlab.com//mmgen/dcgan/dcgan_mnist-64_b128x1_Glr4e-4_Dlr1e-4_5k_20210512_163926-207a1eaf.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/dcgan/dcgan_celeba-cropped_64_b128x1_300k.py
   In Collection: DCGAN
   Metadata:
     Training Data: CELEBA
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--dcgan--dcgan_celeba-cropped_64_b128x1_300k
+  Name: dcgan_celeba-cropped
   Results:
   - Dataset: CELEBA
     Metrics:
@@ -39,7 +39,7 @@ Models:
   In Collection: DCGAN
   Metadata:
     Training Data: LSUN
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--dcgan--dcgan_lsun-bedroom_64x64_b128x1_5e
+  Name: dcgan_lsun-bedroom
   Results:
   - Dataset: LSUN
     Metrics:
