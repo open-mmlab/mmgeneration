@@ -11,7 +11,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: CIFAR
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
+  Name: sagan_woReLUinplace
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -31,7 +31,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: CIFAR
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
+  Name: sagan_woReLUinplace
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -51,7 +51,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: CIFAR
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
+  Name: sagan_32
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -71,7 +71,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: CIFAR
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
+  Name: sagan_32
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -91,7 +91,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_128_woReLUinplace_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b64x4
+  Name: sagan_128
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -111,7 +111,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_128_woReLUinplace_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b64x4
+  Name: sagan_128
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -131,7 +131,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_128_woReLUinplace_noaug_bigGAN_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8
+  Name: sagan_noaug
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -151,7 +151,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sagan--sagan_128_woReLUinplace_noaug_bigGAN_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8
+  Name: sagan_noaug
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -171,7 +171,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--sagan_32x32
+  Name: sagan_32x32
   Results:
   - Dataset: Others
     Metrics:
@@ -190,7 +190,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--sagan_128x128
+  Name: sagan_128x128
   Results:
   - Dataset: Others
     Metrics:

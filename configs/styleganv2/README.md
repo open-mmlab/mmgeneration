@@ -1,9 +1,18 @@
 # Analyzing and Improving the Image Quality of Stylegan (CVPR'2020)
 
-## Introduction
+## Abstract
+
+The style-based GAN architecture (StyleGAN) yields state-of-the-art results in data-driven unconditional generative image modeling. We expose and analyze several of its characteristic artifacts, and propose changes in both model architecture and training methods to address them. In particular, we redesign the generator normalization, revisit progressive growing, and regularize the generator to encourage good conditioning in the mapping from latent codes to images. In addition to improving image quality, this path length regularizer yields the additional benefit that the generator becomes significantly easier to invert. This makes it possible to reliably attribute a generated image to a particular network. We furthermore visualize how well the generator utilizes its output resolution, and identify a capacity problem, motivating us to train larger models for additional quality improvements. Overall, our improved model redefines the state of the art in unconditional image modeling, both in terms of existing distribution quality metrics as well as perceived image quality.
+
+<!-- [IMAGE] -->
+<div align=center>
+<img src="https://user-images.githubusercontent.com/28132635/143055738-58b15493-ab87-436d-94fd-c4c19e4a0225.JPG"/>
+</div>
+
+## Citation
+
 <!-- [ALGORITHM] -->
 
-<details>
 <summary align="right"><a href="https://openaccess.thecvf.com/content_CVPR_2020/html/Karras_Analyzing_and_Improving_the_Image_Quality_of_StyleGAN_CVPR_2020_paper.html">StyleGANv2 (CVPR'2020)</a></summary>
 
 ```latex
@@ -17,9 +26,8 @@
 }
 ```
 
-</details>
-
 ## Results and Models
+
 <div align="center">
   <b> Results (compressed) from StyleGAN2 config-f trained by MMGeneration</b>
   <br/>

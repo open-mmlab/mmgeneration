@@ -1,9 +1,19 @@
 # Spectral Normalization for Generative Adversarial Networks
 
-## Introduction
+## Abstract
+
+One of the challenges in the study of generative adversarial networks is the instability of its training. In this paper, we propose a novel weight normalization technique called spectral normalization to stabilize the training of the discriminator. Our new normalization technique is computationally light and easy to incorporate into existing implementations. We tested the efficacy of spectral normalization on CIFAR10, STL-10, and ILSVRC2012 dataset, and we experimentally confirmed that spectrally normalized GANs (SN-GANs) is capable of generating images of better or equal quality relative to the previous training stabilization techniques.
+
+<!-- [IMAGE] -->
+
+<div align=center>
+<img src="https://user-images.githubusercontent.com/28132635/143154496-6a03def4-4507-4d80-a948-89a5b747d916.png"/>
+</div>
+
+## Citation
+
 <!-- [ALGORITHM] -->
 
-<details>
 <summary align="right"><a href="https://openreview.net/forum?id=B1QRgziT-">SNGAN (ICLR'2018)</a></summary>
 
 ```latex
@@ -16,7 +26,7 @@
 }
 ```
 
-</details>
+## Results and models
 
 <div align="center">
   <b> Results from our SNGAN-PROJ trained in CIFAR10 and ImageNet</b>

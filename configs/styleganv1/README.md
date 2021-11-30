@@ -1,9 +1,18 @@
 # A Style-Based Generator Architecture for Generative Adversarial Networks (CVPR'2019)
 
-## Introduction
+## Abstract
+
+We propose an alternative generator architecture for generative adversarial networks, borrowing from style transfer literature. The new architecture leads to an automatically learned, unsupervised separation of high-level attributes (e.g., pose and identity when trained on human faces) and stochastic variation in the generated images (e.g., freckles, hair), and it enables intuitive, scale-specific control of the synthesis. The new generator improves the state-of-the-art in terms of traditional distribution quality metrics, leads to demonstrably better interpolation properties, and also better disentangles the latent factors of variation. To quantify interpolation quality and disentanglement, we propose two new, automated methods that are applicable to any generator architecture. Finally, we introduce a new, highly varied and high-quality dataset of human faces.
+
+<!-- [IMAGE] -->
+<div align=center>
+<img src="https://user-images.githubusercontent.com/28132635/143055313-f4988870-2963-4a2f-916e-0de0e04eb474.JPG"/>
+</div>
+
+## Citation
+
 <!-- [ALGORITHM] -->
 
-<details>
 <summary align="right"><a href="https://openaccess.thecvf.com/content_CVPR_2019/html/Karras_A_Style-Based_Generator_Architecture_for_Generative_Adversarial_Networks_CVPR_2019_paper.html">StyleGANv1 (CVPR'2019)</a></summary>
 
 ```latex
@@ -16,8 +25,6 @@
   url={https://openaccess.thecvf.com/content_CVPR_2019/html/Karras_A_Style-Based_Generator_Architecture_for_Generative_Adversarial_Networks_CVPR_2019_paper.html},
 }
 ```
-
-</details>
 
 ## Results and Models
 
