@@ -43,7 +43,7 @@ We have finished training `BigGAN` in `Cifar10` (32x32) and are aligning trainin
   <img src="https://user-images.githubusercontent.com/22982797/127615534-6278ce1b-5cff-4189-83c6-9ecc8de08dfc.png" width="800"/>
 </div>
 
-Evaluation of our trained BIgGAN.
+Evaluation of our trained BigGAN.
 |     Models     |  Dataset   | Best FID (Iter) | Best IS (Iter) |                                                          Config                                                          |                                                                                                                        Download                                                                                                                         |
 |:--------------:|:----------:|:---------------:|:--------------:|:------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
 |  BigGAN 32x32  |  CIFAR10   |  9.78(390000)   |  8.70(390000)  |    [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_cifar10_32x32_b25x2_500k.py)    |               [model](https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32x32_b25x2_500k_20210728_110906-08b61a44.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32_b25x2_500k_20210706_171051.log.json)               |
