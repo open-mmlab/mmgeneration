@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument(
         '--export-video',
         action='store_true',
-        help='whether to use cpu device for sampling')
+        help='If true, export video rather than images')
     parser.add_argument('--seed', type=int, default=2021, help='random seed')
     parser.add_argument(
         '--deterministic',
@@ -59,7 +59,10 @@ def parse_args():
         '--proj-latent',
         type=str,
         default=None,
-        help='Projection file of Images. Produced by stylegan_projector.py.')
+        help='Projection image files produced by stylegan_projector.py.\
+            If this argument is given, then the projected latent will \
+            be used as the input noise, rather than randomly sampling \
+                from a normal distribution.')
     parser.add_argument(
         '--endpoint', type=int, default=2, help='The number of endpoints.')
     parser.add_argument(
