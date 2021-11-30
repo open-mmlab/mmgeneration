@@ -34,12 +34,12 @@ Models:
       Dataset: ImageNet1k
       Models: BigGAN 128x128
     Task: Conditional GANs
-  Weights: https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1449000_20210906_141519-f9128faf.pth?versionId=CAEQMhiBgIDn.ILn3RciIDFiMTZhZjIxYzA2MjQxMTJiMDQzZjQyNWQ5YTVkY2Jl
+  Weights: https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1449000_20210906_141519-f9128faf.pth
 - Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan_128x128_cvt_BigGAN-PyTorch_rgb.py
   In Collection: BigGAN
   Metadata:
     Training Data: Others
-  Name: biggan_128x128_cvt_BigGAN-PyTorch_rgb
+  Name: biggan_cvt
   Results:
   - Dataset: Others
     Metrics:
@@ -53,7 +53,7 @@ Models:
   In Collection: BigGAN
   Metadata:
     Training Data: Others
-  Name: biggan-deep_128x128_cvt_hugging-face_rgb
+  Name: biggan-deep_128x128
   Results:
   - Dataset: Others
     Metrics:
@@ -67,7 +67,7 @@ Models:
   In Collection: BigGAN
   Metadata:
     Training Data: Others
-  Name: biggan-deep_256x256_cvt_hugging-face_rgb
+  Name: biggan-deep_256x256
   Results:
   - Dataset: Others
     Metrics:
@@ -81,7 +81,7 @@ Models:
   In Collection: BigGAN
   Metadata:
     Training Data: Others
-  Name: biggan-deep_512x512_cvt_hugging-face_rgb
+  Name: biggan-deep_512x512
   Results:
   - Dataset: Others
     Metrics:

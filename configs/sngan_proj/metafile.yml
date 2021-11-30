@@ -163,7 +163,7 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: Others
-  Name: sngan_proj_32x32
+  Name: sngan_32x32
   Results:
   - Dataset: Others
     Metrics:
@@ -182,7 +182,7 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: Others
-  Name: sngan_proj_128x128
+  Name: sngan_128x128
   Results:
   - Dataset: Others
     Metrics:

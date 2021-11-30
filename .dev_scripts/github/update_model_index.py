@@ -115,7 +115,13 @@ def generate_unique_name(md_file):
     Returns:
         dict: dict of unique name for each config file.
     """
-    files = os.listdir(osp.dirname(md_file))
+    # add configs from _base_/models/MODEL_NAME
+    md_root = md_file.split('/')[:2]
+    model_name = md_file.split('/')[1]
+    base_path = osp.join(*md_root, '..', '_base_', 'models', model_name)
+    base_files = os.listdir(base_path) if osp.exists(base_path) else []
+
+    files = os.listdir(osp.dirname(md_file)) + base_files
     config_files = [f[:-3] for f in files if f[-3:] == '.py']
     config_files.sort()
     config_files.sort(key=lambda x: len(x))
@@ -163,7 +169,8 @@ def parse_md(md_file, task):
         i = 0
         while i < len(lines):
             # parse reference
-            if lines[i][:2] == '<!':
+            if lines[i][:2] == '<!' and ('ALGORITHM' in lines[i]
+                                         or 'BACKBONE' in lines[i]):
                 j = i + 1
                 while len(lines[j]) < 8 or lines[j][:8] != '<summary':
                     j += 1

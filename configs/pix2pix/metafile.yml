@@ -20,7 +20,7 @@ Models:
       IS: 1.62
       Models: Ours
     Task: Image2Image Translation
-  Weights: https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_1x1_80k_facades_20210902_170442-c0958d50.pth?versionId=CAEQMhiBgICb8fTj3RciIGU2NmViM2QyYzJkODQ0MDBhYTFhMGE2YzNmMTA0ODk3
+  Weights: https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_1x1_80k_facades_20210902_170442-c0958d50.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/pix2pix/pix2pix_vanilla_unet_bn_aerial2maps_b1x1_220k.py
   In Collection: Pix2Pix
   Metadata:
@@ -34,7 +34,7 @@ Models:
       IS: 3.137
       Models: Ours
     Task: Image2Image Translation
-  Weights: https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_a2b_1x1_219200_maps_convert-bgr_20210902_170729-59a31517.pth?versionId=CAEQMhiBgICH9vTj3RciIDdiNGRmYTNlZjhlMjQ0ODc4OTJiOGEzMjY0YTJlZmQ5
+  Weights: https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_a2b_1x1_219200_maps_convert-bgr_20210902_170729-59a31517.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/pix2pix/pix2pix_vanilla_unet_bn_maps2aerial_b1x1_220k.py
   In Collection: Pix2Pix
   Metadata:
@@ -48,7 +48,7 @@ Models:
       IS: 3.31
       Models: Ours
     Task: Image2Image Translation
-  Weights: https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_b2a_1x1_219200_maps_convert-bgr_20210902_170814-6d2eac4a.pth?versionId=CAEQMhiBgMC08PTj3RciIGE4ODVkZWU0MTYyMTQ0MWJhZjE0YThmY2M2NDJmZjNi
+  Weights: https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_b2a_1x1_219200_maps_convert-bgr_20210902_170814-6d2eac4a.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_edges2shoes_b1x4_190k.py
   In Collection: Pix2Pix
   Metadata:
@@ -62,4 +62,4 @@ Models:
       IS: 2.815
       Models: Ours
     Task: Image2Image Translation
-  Weights: https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes_convert-bgr_20210902_170902-0c828552.pth?versionId=CAEQMhiBgIC57vTj3RciIGZlNmQ4ZDJhN2E1MDQ5ZmJiOWJmYTY5MDg1ZTc0N2Vi
+  Weights: https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes_convert-bgr_20210902_170902-0c828552.pth
