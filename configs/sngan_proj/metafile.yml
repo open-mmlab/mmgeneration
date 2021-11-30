@@ -1,13 +1,14 @@
 Collections:
 - Metadata:
-    Architecture: []
-  Name: README
+    Architecture:
+    - SNGAN
+  Name: SNGAN
   Paper:
   - https://openreview.net/forum?id=B1QRgziT-
   README: configs/sngan_proj/README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sngan_proj/sngan_proj_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1.py
-  In Collection: README
+  In Collection: SNGAN
   Metadata:
     Training Data: CIFAR
   Name: sngan_woReLUinplace
@@ -26,7 +27,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_cifar10_32_lr-2e-4_b64x1_woReLUinplace_is-iter400000_20210709_163823-902ce1ae.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sngan_proj/sngan_proj_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1.py
-  In Collection: README
+  In Collection: SNGAN
   Metadata:
     Training Data: CIFAR
   Name: sngan_woReLUinplace
@@ -45,7 +46,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_cifar10_32_lr-2e-4_b64x1_woReLUinplace_fid-iter490000_20210709_163329-ba0862a0.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sngan_proj/sngan_proj_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1.py
-  In Collection: README
+  In Collection: SNGAN
   Metadata:
     Training Data: CIFAR
   Name: sngan_32
@@ -64,7 +65,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_cifar10_32_lr-2e-4_b64x1_wReLUinplace_is-iter490000_20210709_202230-cd863c74.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sngan_proj/sngan_proj_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1.py
-  In Collection: README
+  In Collection: SNGAN
   Metadata:
     Training Data: CIFAR
   Name: sngan_32
@@ -83,7 +84,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_cifar10_32_lr-2e-4-b64x1_wReLUinplace_fid-iter490000_20210709_203038-191b2648.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sngan_proj/sngan_proj_128_woReLUinplace_Glr-2e-4_Dlr-5e-5_ndisc5_imagenet1k_b128x2.py
-  In Collection: README
+  In Collection: SNGAN
   Metadata:
     Training Data: IMAGENET
   Name: sngan_Glr-2e-4
@@ -102,7 +103,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_imagenet1k_128_Glr2e-4_Dlr5e-5_ndisc5_b128x2_woReLUinplace_is-iter952000_20210730_132027-9c884a21.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sngan_proj/sngan_proj_128_woReLUinplace_Glr-2e-4_Dlr-5e-5_ndisc5_imagenet1k_b128x2.py
-  In Collection: README
+  In Collection: SNGAN
   Metadata:
     Training Data: IMAGENET
   Name: sngan_Glr-2e-4
@@ -121,7 +122,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_imagenet1k_128_Glr2e-4_Dlr5e-5_ndisc5_b128x2_woReLUinplace_fid-iter988000_20210730_131424-061bf803.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sngan_proj/sngan_proj_128_wReLUinplace_Glr-2e-4_Dlr-5e-5_ndisc5_imagenet1k_b128x2.py
-  In Collection: README
+  In Collection: SNGAN
   Metadata:
     Training Data: IMAGENET
   Name: sngan_128
@@ -140,7 +141,7 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_imagenet1k_128_Glr2e-4_Dlr5e-5_ndisc5_b128x2_wReLUinplace_is-iter944000_20210730_132714-ca0ccd07.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sngan_proj/sngan_proj_128_wReLUinplace_Glr-2e-4_Dlr-5e-5_ndisc5_imagenet1k_b128x2.py
-  In Collection: README
+  In Collection: SNGAN
   Metadata:
     Training Data: IMAGENET
   Name: sngan_128
@@ -159,10 +160,10 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_imagenet1k_128_Glr2e-4_Dlr5e-5_ndisc5_b128x2_wReLUinplace_fid-iter988000_20210730_132401-9a682411.pth
 - Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/sngan_proj_32x32.py
-  In Collection: README
+  In Collection: SNGAN
   Metadata:
     Training Data: Others
-  Name: sngan_proj_32x32
+  Name: sngan_32x32
   Results:
   - Dataset: Others
     Metrics:
@@ -178,10 +179,10 @@ Models:
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sngan_proj/sngan_cifar10_convert-studio-rgb_20210709_111346-2979202d.pth
 - Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/sngan_proj_128x128.py
-  In Collection: README
+  In Collection: SNGAN
   Metadata:
     Training Data: Others
-  Name: sngan_proj_128x128
+  Name: sngan_128x128
   Results:
   - Dataset: Others
     Metrics:

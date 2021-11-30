@@ -1,13 +1,14 @@
 Collections:
 - Metadata:
-    Architecture: []
-  Name: README
+    Architecture:
+    - Positional Encoding in GANs
+  Name: Positional Encoding in GANs
   Paper:
   - https://openaccess.thecvf.com/content/CVPR2021/html/Xu_Positional_Encoding_As_Spatial_Inductive_Bias_in_GANs_CVPR_2021_paper.html
   README: configs/positional_encoding_in_gans/README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/stylegan2_c2_ffhq_256_b3x8_1100k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: stylegan2_c2
@@ -22,7 +23,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/stylegan2_c2_config-a_ffhq_256x256_b3x8_1100k_20210406_145127-71d9634b.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/stylegan2_c2_ffhq_512_b3x8_1100k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: stylegan2_ffhq
@@ -37,7 +38,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/stylegan2_c2_config-b_ffhq_512x512_b3x8_1100k_20210406_145142-e85e5cf4.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-c_ffhq_256-512_b3x8_1100k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: mspie-stylegan2_c2
@@ -52,7 +53,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-c_ffhq_256-512_b3x8_1100k_20210406_144824-9f43b07d.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-d_ffhq_256-512_b3x8_1100k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: mspie-stylegan2_config-d
@@ -67,7 +68,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-d_ffhq_256-512_b3x8_1100k_20210406_144840-dbefacf6.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-e_ffhq_256-512_b3x8_1100k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: mspie-stylegan2_config-e
@@ -82,7 +83,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-e_ffhq_256-512_b3x8_1100k_20210406_144906-98d5a42a.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-f_ffhq_256-512_b3x8_1100k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: mspie-stylegan2_config-f
@@ -97,7 +98,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-f_ffhq_256-512_b3x8_1100k_20210406_144927-4f4d5391.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c1_config-g_ffhq_256-512_b3x8_1100k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: mspie-stylegan2_c1
@@ -112,7 +113,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c1_config-g_ffhq_256-512_b3x8_1100k_20210406_144758-2df61752.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-h_ffhq_256-512_b3x8_1100k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: mspie-stylegan2_config-h
@@ -127,7 +128,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-h_ffhq_256-512_b3x8_1100k_20210406_145006-84cf3f48.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-i_ffhq_256-512_b3x8_1100k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: mspie-stylegan2_config-i
@@ -142,7 +143,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-i_ffhq_256-512_b3x8_1100k_20210406_145023-c2b0accf.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-j_ffhq_256-512_b3x8_1100k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: mspie-stylegan2_config-j
@@ -157,7 +158,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-j_ffhq_256-512_b3x8_1100k_20210406_145044-c407481b.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-k_ffhq_256-512_b3x8_1100k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: mspie-stylegan2_config-k
@@ -172,7 +173,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-k_ffhq_256-512_b3x8_1100k_20210406_145105-6d8cc39f.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-f_ffhq_256-896_b3x8_1100k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: mspie-stylegan2_ffhq
@@ -187,7 +188,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-f_ffhq_256-896_b3x8_1100k_20210406_144943-6c18ad5d.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/mspie-stylegan2_c1_config-f_ffhq_256-1024_b2x8_1600k.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
   Name: mspie-stylegan2_256-1024
@@ -202,7 +203,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c1_config-f_ffhq_256-1024_b2x8_1600k_20210406_144716-81cbdc96.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_interp-pad_balloons.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
   Name: singan_interp-pad
@@ -213,7 +214,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_interp-pad_balloons_20210406_180014-96f51555.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_interp-pad_disc-nobn_balloons.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
   Name: singan_balloons
@@ -224,7 +225,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_interp-pad_disc-nobn_balloons_20210406_180059-7d63e65d.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_interp-pad_disc-nobn_fish.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
   Name: singan_disc-nobn
@@ -235,7 +236,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_interp-pad_disc-nobn_fis_20210406_175720-9428517a.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_csg_fish.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
   Name: singan_csg
@@ -246,7 +247,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_csg_fis_20210406_175532-f0ec7b61.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_csg_bohemian.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
   Name: singan_bohemian
@@ -257,7 +258,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_csg_bohemian_20210407_195455-5ed56db2.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_spe-dim4_fish.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
   Name: singan_spe-dim4
@@ -268,7 +269,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_spe-dim4_fish_20210406_175933-f483a7e3.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_spe-dim4_bohemian.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
   Name: singan
@@ -279,7 +280,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/singan_spe-dim4_bohemian_20210406_175820-6e484a35.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_spe-dim8_bohemian.py
-  In Collection: README
+  In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
   Name: singan_spe-dim8

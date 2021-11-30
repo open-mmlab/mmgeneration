@@ -1,13 +1,14 @@
 Collections:
 - Metadata:
-    Architecture: []
-  Name: README
+    Architecture:
+    - PGGAN
+  Name: PGGAN
   Paper:
   - https://arxiv.org/abs/1710.10196
   README: configs/pggan/README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/pggan/pggan_celeba-cropped_128_g8_12Mimgs.py
-  In Collection: README
+  In Collection: PGGAN
   Metadata:
     Training Data: CELEBA
   Name: pggan_celeba-cropped
@@ -21,7 +22,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pggan/pggan_celeba-cropped_128_g8_20210408_181931-85a2e72c.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/pggan/pggan_lsun-bedroom_128_g8_12Mimgs.py
-  In Collection: README
+  In Collection: PGGAN
   Metadata:
     Training Data: LSUN
   Name: pggan_lsun-bedroom
@@ -35,7 +36,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pggan/pggan_lsun-bedroom_128x128_g8_20210408_182033-5e59f45d.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/pggan/pggan_celeba-hq_1024_g8_12Mimg.py
-  In Collection: README
+  In Collection: PGGAN
   Metadata:
     Training Data: CELEBA
   Name: pggan_celeba-hq

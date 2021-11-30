@@ -1,13 +1,14 @@
 Collections:
 - Metadata:
-    Architecture: []
-  Name: README
+    Architecture:
+    - GGAN
+  Name: GGAN
   Paper:
   - https://arxiv.org/abs/1705.02894
   README: configs/ggan/README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/ggan/ggan_celeba-cropped_dcgan-archi_lr-1e-3_64_b128x1_12m.py
-  In Collection: README
+  In Collection: GGAN
   Metadata:
     Training Data: CELEBA
   Name: ggan_celeba-cropped
@@ -22,7 +23,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/ggan/ggan_celeba-cropped_dcgan-archi_lr-1e-3_64_b128x1_12m.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/ggan/ggan_celeba-cropped_dcgan-archi_lr-1e-4_128_b64x1_10m.py
-  In Collection: README
+  In Collection: GGAN
   Metadata:
     Training Data: CELEBA
   Name: ggan_dcgan-archi
@@ -37,7 +38,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/ggan/ggan_celeba-cropped_dcgan-archi_lr-1e-4_128_b64x1_10m_20210430_143027-516423dc.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/ggan/ggan_lsun-bedroom_lsgan_archi_lr-1e-4_64_b128x1_20m.py
-  In Collection: README
+  In Collection: GGAN
   Metadata:
     Training Data: LSUN
   Name: ggan_lsun-bedroom
