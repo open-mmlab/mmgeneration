@@ -15,44 +15,24 @@ Models:
   Results:
   - Dataset: CIFAR
     Metrics:
+      Best FID (Iter): 9.78(390000)
+      Best IS (Iter): 8.70(390000)
       Dataset: CIFAR10
-      FID: 9.78
-      IS: 8.7
-      Iter: 390000.0
       Models: BigGAN 32x32
-      Total Iters: 500000.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32x32_b25x2_500k_20210728_110906-08b61a44.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_imagenet1k_128x128_b32x8_1500k.py
   In Collection: BigGAN
   Metadata:
     Training Data: IMAGENET
-  Name: biggan_imagenet1k
+  Name: biggan_imagenet1k_128x128_b32x8_1500k
   Results:
   - Dataset: IMAGENET
     Metrics:
+      Best FID (Iter): 10.02(1449000)
+      Best IS (Iter): 86.8(1449000)
       Dataset: ImageNet1k
-      FID: 8.69
-      IS: 101.15
-      Iter: 1232000.0
-      Models: BigGAN 128x128 Best FID
-      Total Iters: 1500000.0
-    Task: Conditional GANs
-  Weights: https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_best_fid_iter_1232000_20211111_122548-5315b13d.pth?versionId=CAEQHhiBgIDi1ti16BciIDIzMDlmNzE1MzU1NTQ1YWFiMmJlMDVmOGM1MDM3ZmQ5
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py
-  In Collection: BigGAN
-  Metadata:
-    Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--biggan--biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k
-  Results:
-  - Dataset: IMAGENET
-    Metrics:
-      Dataset: ImageNet1k
-      FID: 13.51
-      IS: 129.07
-      Iter: 1328000.0
-      Models: BigGAN 128x128 Best IS
-      Total Iters: 1500000.0
+      Models: BigGAN 128x128
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1449000_20210906_141519-f9128faf.pth
 - Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan_128x128_cvt_BigGAN-PyTorch_rgb.py
