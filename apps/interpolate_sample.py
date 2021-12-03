@@ -59,10 +59,11 @@ def parse_args():
         '--proj-latent',
         type=str,
         default=None,
-        help='Projection image files produced by stylegan_projector.py.\
-            If this argument is given, then the projected latent will \
-            be used as the input noise, rather than randomly sampling \
-                from a normal distribution.')
+        help=
+        'Projection image files produced by stylegan_projector.py. If this \
+        argument is given, then the projected latent will be used as the \
+        input noise.'
+    )
     parser.add_argument(
         '--endpoint', type=int, default=2, help='The number of endpoints.')
     parser.add_argument(
