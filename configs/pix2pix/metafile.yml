@@ -15,10 +15,8 @@ Models:
   Results:
   - Dataset: FACADES
     Metrics:
-      Dataset: facades
       FID: 124.9773
       IS: 1.62
-      Models: Ours
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_1x1_80k_facades_20210902_170442-c0958d50.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/pix2pix/pix2pix_vanilla_unet_bn_aerial2maps_b1x1_220k.py
@@ -29,10 +27,8 @@ Models:
   Results:
   - Dataset: MAPS
     Metrics:
-      Dataset: aerial2maps
       FID: 122.5856
       IS: 3.137
-      Models: Ours
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_a2b_1x1_219200_maps_convert-bgr_20210902_170729-59a31517.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/pix2pix/pix2pix_vanilla_unet_bn_maps2aerial_b1x1_220k.py
@@ -43,10 +39,8 @@ Models:
   Results:
   - Dataset: MAPS
     Metrics:
-      Dataset: maps2aerial
       FID: 88.4635
       IS: 3.31
-      Models: Ours
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_b2a_1x1_219200_maps_convert-bgr_20210902_170814-6d2eac4a.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_edges2shoes_b1x4_190k.py
@@ -57,9 +51,7 @@ Models:
   Results:
   - Dataset: EDGES2SHOES
     Metrics:
-      Dataset: edges2shoes
       FID: 84.375
       IS: 2.815
-      Models: Ours
     Task: Image2Image Translation
   Weights: https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes_convert-bgr_20210902_170902-0c828552.pth
