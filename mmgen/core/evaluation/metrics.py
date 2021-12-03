@@ -949,7 +949,8 @@ class PR(Metric):
 
         precision = self._result_dict['precision']
         recall = self._result_dict['recall']
-        self._result_str = f'precision: {precision}, recall:{recall}'
+        self._result_str = (f'precision: {precision * 100.}, '
+                            f'recall:{recall * 100.}')
         return self._result_dict
 
     def extract_features(self, images):
