@@ -7,6 +7,7 @@ r"""
 import argparse
 import os
 import sys
+from collections import OrderedDict
 
 import mmcv
 import numpy as np
@@ -264,7 +265,7 @@ def main():
 
     mmcv.mkdir_or_exist(args.results_path)
     # save projection results
-    result_file = {}
+    result_file = OrderedDict()
     for i, input_name in enumerate(args.files):
         noise_single = []
         for noise in noises:
