@@ -107,6 +107,8 @@ These methods have been carefully studied and supported in our frameworks:
 
 </details>
 
+## Related-Applications
+- ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
 ## License
 
