@@ -109,6 +109,8 @@ v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changel
 
 </details>
 
+## 相关应用
+- ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
 ## 开源许可证
 
