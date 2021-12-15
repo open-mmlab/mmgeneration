@@ -96,8 +96,8 @@ html_theme_options = {
             'url': 'https://github.com/open-mmlab/mmgeneration',
         },
     ],
-     'menu_lang':
-     'en'
+    'menu_lang':
+    'en'
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
