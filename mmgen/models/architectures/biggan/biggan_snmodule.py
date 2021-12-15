@@ -38,6 +38,7 @@ def gram_schmidt(x, ys):
         x = x - proj(x, y)
     return x
 
+
 @torch.no_grad()
 def power_iteration(weight, u_list, update=True, eps=1e-12):
     """Power iteration method for calculating spectral norm.
@@ -249,7 +250,8 @@ class SNEmbedding(nn.Embedding, SpectralNorm):
         nn.Embedding.__init__(self, num_embeddings, embedding_dim, padding_idx,
                               max_norm, norm_type, scale_grad_by_freq, sparse,
                               _weight)
-        SpectralNorm.__init__(self, num_svs, num_iters, num_embeddings, eps=eps)
+        SpectralNorm.__init__(
+            self, num_svs, num_iters, num_embeddings, eps=eps)
 
     def forward(self, x):
         """Forward function."""
