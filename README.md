@@ -61,7 +61,7 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 * Mixed-precision training (FP16) for StyleGAN2 has been supported. Please check [the comparison](configs/styleganv2/README.md) between different implementations.
 ## Changelog
 
-v0.3.0 was released on 02/08/2021. Please refer to [changelog.md](docs/changelog.md) for details and release history.
+v0.4.0 was released on 03/11/2021. Please refer to [changelog.md](docs/changelog.md) for details and release history.
 
 ## ModelZoo
 
@@ -107,6 +107,8 @@ These methods have been carefully studied and supported in our frameworks:
 
 </details>
 
+## Related-Applications
+- ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
 ## License
 
@@ -153,3 +155,4 @@ If you find this project useful in your research, please consider cite:
 - [MMGeneration](https://github.com/open-mmlab/mmgeneration): OpenMMLab's next-generation toolbox for generative models.
 - [MMFlow](https://github.com/open-mmlab/mmflow): OpenMMLab optical flow toolbox and benchmark.
 - [MMFewShot](https://github.com/open-mmlab/mmfewshot): OpenMMLab FewShot Learning Toolbox and Benchmark.
+- [MMHuman3D](https://github.com/open-mmlab/mmhuman3d): OpenMMLab Human Pose and Shape Estimation Toolbox and Benchmark.

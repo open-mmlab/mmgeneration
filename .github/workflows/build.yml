@@ -1,27 +1,25 @@
 name: build
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
+      - 'README_zh-CN.md'
+      - 'docs/**'
+      - 'docs_zh-CN/**'
+
+  pull_request:
+    paths-ignore:
+      - 'README.md'
+      - 'README_zh-CN.md'
+      - 'docs/**'
+      - 'docs_zh-CN/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  lint:
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.7
-      - name: Install pre-commit hook
-        run: |
-          pip install pre-commit
-          pre-commit install
-      - name: Linting
-        run: pre-commit run --all-files
-      - name: Check docstring coverage
-        run: |
-          pip install interrogate
-          interrogate -v --ignore-init-method --ignore-module --ignore-nested-functions --ignore-regex "__repr__" --fail-under 80 mmgen
-
   build_cuda101:
     runs-on: ubuntu-18.04
     container:
@@ -58,7 +56,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install system dependencies
         run: |
-          apt-get update && apt-get install -y ffmpeg libsm6 libxext6 git ninja-build libglib2.0-0 libsm6 libxrender-dev libxext6 python${{matrix.python-version}}-dev
+          apt-get update && apt-get install -y ffmpeg libsm6 libxext6 git ninja-build libglib2.0-0 libsm6 libxrender-dev libcurl4-openssl-dev libxext6 python${{matrix.python-version}}-dev
           apt-get clean
           rm -rf /var/lib/apt/lists/*
       - name: Upgrade pip
@@ -142,8 +140,8 @@ jobs:
           coverage xml
           coverage report -m
       - name: Upload coverage to Codecov
-        if: ${{matrix.torch == '1.7.0+cu101' && matrix.python-version == '3.7'}}
-        uses: codecov/codecov-action@v1.0.10
+        if: ${{matrix.torch == '1.9.0+cu102' && matrix.python-version == '3.7'}}
+        uses: codecov/codecov-action@v2
         with:
           file: ./coverage.xml
           flags: unittests

@@ -15,10 +15,8 @@ Models:
   Results:
   - Dataset: CELEBA
     Metrics:
-      Dataset: CelebA-Cropped
       Details: GN
       MS-SSIM: 0.2601
-      Models: WGAN-GP 128
       SWD: 5.87, 9.76, 9.43, 18.84/10.97
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/wgangp/wgangp_GN_celeba-cropped_128_b64x1_160k_20210408_170611-f8a99336.pth
@@ -30,10 +28,8 @@ Models:
   Results:
   - Dataset: LSUN
     Metrics:
-      Dataset: LSUN-Bedroom
       Details: GN, GP-lambda = 50
       MS-SSIM: 0.059
-      Models: WGAN-GP 128
       SWD: 11.7, 7.87, 9.82, 25.36/13.69
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/wgangp/wgangp_GN_GP-50_lsun-bedroom_128_b64x1_130k_20210408_170509-56f2a37c.pth
