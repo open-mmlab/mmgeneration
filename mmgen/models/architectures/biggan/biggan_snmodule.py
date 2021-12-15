@@ -38,7 +38,7 @@ def gram_schmidt(x, ys):
         x = x - proj(x, y)
     return x
 
-
+@torch.no_grad()
 def power_iteration(weight, u_list, update=True, eps=1e-12):
     """Power iteration method for calculating spectral norm.
 
@@ -58,15 +58,14 @@ def power_iteration(weight, u_list, update=True, eps=1e-12):
     """
     us, vs, svs = [], [], []
     for i, u in enumerate(u_list):
-        with torch.no_grad():
-            v = torch.matmul(u, weight)
-            v = F.normalize(gram_schmidt(v, vs), eps=eps)
-            vs += [v]
-            u = torch.matmul(v, weight.t())
-            u = F.normalize(gram_schmidt(u, us), eps=eps)
-            us += [u]
-            if update:
-                u_list[i][:] = u
+        v = torch.matmul(u, weight)
+        v = F.normalize(gram_schmidt(v, vs), eps=eps)
+        vs += [v]
+        u = torch.matmul(v, weight.t())
+        u = F.normalize(gram_schmidt(u, us), eps=eps)
+        us += [u]
+        if update:
+            u_list[i][:] = u
         svs += [
             torch.squeeze(torch.matmul(torch.matmul(v, weight.t()), u.t()))
         ]
@@ -78,7 +77,7 @@ class SpectralNorm(object):
 
     Args:
         num_svs (int): Number of singular values.
-        num_itrs (int): Number of power iterations per step.
+        num_iters (int): Number of power iterations per step.
         num_outputs (int): Number of output channels.
         transpose (bool, optional): If set to `True`, weight
             matrix will be transposed before power iteration.
@@ -89,11 +88,11 @@ class SpectralNorm(object):
 
     def __init__(self,
                  num_svs,
-                 num_itrs,
+                 num_iters,
                  num_outputs,
                  transpose=False,
                  eps=1e-12):
-        self.num_itrs = num_itrs
+        self.num_iters = num_iters
         self.num_svs = num_svs
         self.transpose = transpose
         self.eps = eps
@@ -117,8 +116,8 @@ class SpectralNorm(object):
         W_mat = self.weight.view(self.weight.size(0), -1)
         if self.transpose:
             W_mat = W_mat.t()
-        # Apply num_itrs power iterations
-        for _ in range(self.num_itrs):
+        # Apply num_iters power iterations
+        for _ in range(self.num_iters):
             svs, us, vs = power_iteration(
                 W_mat, self.u, update=self.training, eps=self.eps)
         # Update the svs
@@ -126,7 +125,7 @@ class SpectralNorm(object):
             with torch.no_grad():
                 for i, sv in enumerate(svs):
                     self.sv[i][:] = sv
-        return self.weight / svs[0]
+        return self.weight / svs[-1]
 
 
 class SNConv2d(nn.Conv2d, SpectralNorm):
@@ -146,7 +145,7 @@ class SNConv2d(nn.Conv2d, SpectralNorm):
         bias (bool, optional): Whether to use bias parameter.
             Defaults to True.
         num_svs (int): Number of singular values.
-        num_itrs (int): Number of power iterations per step.
+        num_iters (int): Number of power iterations per step.
         eps (float, optional): Vector Normalization epsilon for
             avoiding divide by zero. Defaults to 1e-12.
     """
@@ -161,11 +160,11 @@ class SNConv2d(nn.Conv2d, SpectralNorm):
                  groups=1,
                  bias=True,
                  num_svs=1,
-                 num_itrs=1,
+                 num_iters=1,
                  eps=1e-12):
         nn.Conv2d.__init__(self, in_channels, out_channels, kernel_size,
                            stride, padding, dilation, groups, bias)
-        SpectralNorm.__init__(self, num_svs, num_itrs, out_channels, eps=eps)
+        SpectralNorm.__init__(self, num_svs, num_iters, out_channels, eps=eps)
 
     def forward(self, x):
         """Forward function."""
@@ -182,7 +181,7 @@ class SNLinear(nn.Linear, SpectralNorm):
         bias (bool, optional):  Whether to use bias parameter.
             Defaults to True.
         num_svs (int): Number of singular values.
-        num_itrs (int): Number of power iterations per step.
+        num_iters (int): Number of power iterations per step.
         eps (float, optional): Vector Normalization epsilon for
             avoiding divide by zero. Defaults to 1e-12.
     """
@@ -192,10 +191,10 @@ class SNLinear(nn.Linear, SpectralNorm):
                  out_features,
                  bias=True,
                  num_svs=1,
-                 num_itrs=1,
+                 num_iters=1,
                  eps=1e-12):
         nn.Linear.__init__(self, in_features, out_features, bias)
-        SpectralNorm.__init__(self, num_svs, num_itrs, out_features, eps=eps)
+        SpectralNorm.__init__(self, num_svs, num_iters, out_features, eps=eps)
 
     def forward(self, x):
         """Forward function."""
@@ -230,7 +229,7 @@ class SNEmbedding(nn.Embedding, SpectralNorm):
             sparse gradients. Defaults to False.
         _weight (torch.Tensor, optional): Initial Weight. Defaults to None.
         num_svs (int): Number of singular values.
-        num_itrs (int): Number of power iterations per step.
+        num_iters (int): Number of power iterations per step.
         eps (float, optional): Vector Normalization epsilon for
             avoiding divide by zero. Defaults to 1e-12.
     """
@@ -245,12 +244,12 @@ class SNEmbedding(nn.Embedding, SpectralNorm):
                  sparse=False,
                  _weight=None,
                  num_svs=1,
-                 num_itrs=1,
+                 num_iters=1,
                  eps=1e-12):
         nn.Embedding.__init__(self, num_embeddings, embedding_dim, padding_idx,
                               max_norm, norm_type, scale_grad_by_freq, sparse,
                               _weight)
-        SpectralNorm.__init__(self, num_svs, num_itrs, num_embeddings, eps=eps)
+        SpectralNorm.__init__(self, num_svs, num_iters, num_embeddings, eps=eps)
 
     def forward(self, x):
         """Forward function."""

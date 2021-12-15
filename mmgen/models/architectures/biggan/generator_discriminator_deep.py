@@ -73,7 +73,7 @@ class BigGANDeepGenerator(nn.Module):
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
         sn_style (str, optional): The style of spectral normalization.
-            If set to `biggan`, implementation by
+            If set to `ajbrock`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be adopted.
             If set to `torch`, implementation by `PyTorch` will be adopted.
@@ -512,7 +512,7 @@ class BigGANDeepDiscriminator(nn.Module):
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
         sn_style (str, optional): The style of spectral normalization.
-            If set to `biggan`, implementation by
+            If set to `ajbrock`, implementation by
             ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
             will be adopted.
             If set to `torch`, implementation by `PyTorch` will be adopted.
