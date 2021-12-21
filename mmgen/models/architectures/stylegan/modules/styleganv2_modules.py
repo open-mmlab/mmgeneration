@@ -248,19 +248,21 @@ class ModulatedConv2d(nn.Module):
             Defaults to 1e-8.
     """
 
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 kernel_size,
-                 style_channels,
-                 demodulate=True,
-                 upsample=False,
-                 downsample=False,
-                 blur_kernel=[1, 3, 3, 1],
-                 equalized_lr_cfg=dict(mode='fan_in', lr_mul=1., gain=1.),
-                 style_mod_cfg=dict(bias_init=1.),
-                 style_bias=0.,
-                 eps=1e-8):
+    def __init__(
+            self,
+            in_channels,
+            out_channels,
+            kernel_size,
+            style_channels,
+            demodulate=True,
+            upsample=False,
+            downsample=False,
+            blur_kernel=[1, 3, 3, 1],
+            equalized_lr_cfg=dict(mode='fan_in', lr_mul=1., gain=1.),
+            style_mod_cfg=dict(bias_init=1.),
+            style_bias=0.,
+            padding=None,  # self define padding
+            eps=1e-8):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -309,14 +311,13 @@ class ModulatedConv2d(nn.Module):
         if equalized_lr_cfg is not None:
             equalized_lr(self, **equalized_lr_cfg)
 
-        self.padding = kernel_size // 2
+        self.padding = padding if padding else (kernel_size // 2)
 
     def forward(self, x, style):
         n, c, h, w = x.shape
         # process style code
         style = self.style_modulation(style).view(n, 1, c, 1,
                                                   1) + self.style_bias
-
         # combine weight and style
         weight = self.weight * style
         if self.demodulate:
@@ -343,7 +344,8 @@ class ModulatedConv2d(nn.Module):
             x = F.conv2d(x, weight, stride=2, padding=0, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
         else:
-            x = x.view(1, n * c, h, w)
+            x = x.reshape(1, n * c, h, w)
+            # x = x.view(1, n * c, h, w)
             x = F.conv2d(x, weight, stride=1, padding=self.padding, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
 
