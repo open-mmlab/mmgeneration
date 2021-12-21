@@ -36,7 +36,17 @@ def extract_inception_features(dataloader,
     feature_list = []
     curr_iter = 1
     for data in dataloader:
-        img = data['real_img']
+        # a dirty walkround to support multiple datasets (mainly for the
+        # unconditional dataset and conditional dataset). In our
+        # implementation, unconditioanl dataset will return real images with
+        # the key "real_img". However, the conditional dataset contains a key
+        # "img" denoting the real images.
+        if 'real_img' in data:
+            # Mainly for the unconditional dataset in our MMGeneration
+            img = data['real_img']
+        else:
+            # Mainly for conditional dataset in MMClassification
+            img = data['img']
         pbar.update()
 
         # the inception network is not wrapped with module wrapper.
@@ -82,7 +92,7 @@ def _hox_downsample(img):
 
 
 def _f_special_gauss(size, sigma):
-    r"""Return a circularly symmetric gaussian kernel.
+    r"""Return a circular symmetric gaussian kernel.
 
     Ref: https://github.com/tkarras/progressive_growing_of_gans/blob/master/metrics/ms_ssim.py  # noqa
 
@@ -140,7 +150,7 @@ def gaussian_pyramid(original, n_pyramids, gaussian_k):
 
 
 def laplacian_pyramid(original, n_pyramids, gaussian_k):
-    """Calculate laplacian pyramid.
+    """Calculate Laplacian pyramid.
 
     Ref: https://github.com/koshian2/swd-pytorch/blob/master/swd.py
 

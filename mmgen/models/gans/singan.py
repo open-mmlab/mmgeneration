@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import pickle
 from copy import deepcopy
 from functools import partial
@@ -20,14 +21,14 @@ from ..common import set_requires_grad
 class SinGAN(BaseGAN):
     """SinGAN.
 
-    This model implement the singal image generative adversarial model proposed
+    This model implement the single image generative adversarial model proposed
     in: Singan: Learning a Generative Model from a Single Natural Image,
     ICCV'19.
 
     Notes for training:
 
     - This model should be trained with our dataset ``SinGANDataset``.
-    - In training, the ``total_iters`` arguments is realted to the number of
+    - In training, the ``total_iters`` arguments is related to the number of
       scales in the image pyramid and ``iters_per_scale`` in the ``train_cfg``.
       You should set it carefully in the training config file.
 

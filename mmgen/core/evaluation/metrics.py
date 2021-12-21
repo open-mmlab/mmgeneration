@@ -1,6 +1,9 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import os
 import pickle
 from abc import ABC, abstractmethod
+from copy import deepcopy
+from functools import partial
 
 import mmcv
 import numpy as np
@@ -16,11 +19,117 @@ from torchvision.models.inception import inception_v3
 from mmgen.models.architectures import InceptionV3
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.architectures.lpips import PerceptualLoss
+from mmgen.models.losses import gaussian_kld
+from mmgen.utils import MMGEN_CACHE_DIR
+from mmgen.utils.io_utils import download_from_url
 from ..registry import METRICS
 from .metric_utils import (_f_special_gauss, _hox_downsample,
                            compute_pr_distances, finalize_descriptors,
                            get_descriptors_for_minibatch, get_gaussian_kernel,
                            laplacian_pyramid, slerp)
+
+TERO_INCEPTION_URL = 'https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt'  # noqa
+
+
+def load_inception(inception_args, metric):
+    """Load Inception Model from given ``inception_args`` and ``metric``. This
+    function would try to load Inception under the guidance of 'type' given in
+    `inception_args`, if not given, we would try best to load Tero's ones. In
+    detailly, we would first try to load the model from disk with the given
+    'inception_path', and then try to download the checkpoint from
+    'inception_url'. If both method are failed, pytorch version of Inception
+    would be loaded.
+
+    Args:
+        inception_args (dict): Keyword args for inception net.
+        metric (string): Metric to use the Inception. This argument would
+            influence the pytorch's Inception loading.
+    Returns:
+        model (torch.nn.Module): Loaded Inception model.
+        style (string): The version of the loaded Inception.
+    """
+
+    if not isinstance(inception_args, dict):
+        raise TypeError('Receive invalid \'inception_args\': '
+                        f'\'{inception_args}\'')
+
+    _inception_args = deepcopy(inception_args)
+    inceptoin_type = _inception_args.pop('type', None)
+
+    if torch.__version__ < '1.6.0':
+        mmcv.print_log(
+            'Current Pytorch Version not support script module, load '
+            'Inception Model from torch model zoo. If you want to use '
+            'Tero\' script model, please update your Pytorch higher '
+            f'than \'1.6\' (now is {torch.__version__})', 'mmgen')
+        return _load_inception_torch(_inception_args, metric), 'pytorch'
+
+    # load pytorch version is specific
+    if inceptoin_type != 'StyleGAN':
+        return _load_inception_torch(_inception_args, metric), 'pytorch'
+
+    # try to load Tero's version
+    path = _inception_args.get('inception_path', TERO_INCEPTION_URL)
+
+    # try to parse `path` as web url and download
+    if 'http' not in path:
+        model = _load_inception_from_path(path)
+        if isinstance(model, torch.nn.Module):
+            return model, 'StyleGAN'
+
+    # try to parse `path` as path on disk
+    model = _load_inception_from_url(path)
+    if isinstance(model, torch.nn.Module):
+        return model, 'StyleGAN'
+
+    raise RuntimeError('Cannot Load Inception Model, please check the input '
+                       f'`inception_args`: {inception_args}')
+
+
+def _load_inception_from_path(inception_path):
+    mmcv.print_log(
+        'Try to load Tero\'s Inception Model from '
+        f'\'{inception_path}\'.', 'mmgen')
+    try:
+        model = torch.jit.load(inception_path)
+        mmcv.print_log('Load Tero\'s Inception Model successfully.', 'mmgen')
+    except Exception as e:
+        model = None
+        mmcv.print_log(
+            'Load Tero\'s Inception Model failed. '
+            f'\'{e}\' occurs.', 'mmgen')
+    return model
+
+
+def _load_inception_from_url(inception_url):
+    inception_url = inception_url if inception_url else TERO_INCEPTION_URL
+    mmcv.print_log(f'Try to download Inception Model from {inception_url}...',
+                   'mmgen')
+    try:
+        path = download_from_url(inception_url, dest_dir=MMGEN_CACHE_DIR)
+        mmcv.print_log('Download Finished.')
+        return _load_inception_from_path(path)
+    except Exception as e:
+        mmcv.print_log(f'Download Failed. {e} occurs.')
+        return None
+
+
+def _load_inception_torch(inception_args, metric):
+    assert metric in ['FID', 'IS']
+    if metric == 'FID':
+        inception_model = InceptionV3([3], **inception_args)
+    elif metric == 'IS':
+        inception_model = inception_v3(pretrained=True, transform_input=False)
+        mmcv.print_log(
+            'Load Inception V3 Network from Pytorch Model Zoo '
+            'for IS calculation. The results can only used '
+            'for monitoring purposes. To get more accuracy IS, '
+            'please use Tero\'s Inception V3 checkpoints '
+            'and use Bicubic Interpolation with Pillow backend '
+            'for image resizing. More details may refer to '
+            'https://github.com/open-mmlab/mmgeneration/blob/master/docs/quick_run.md#is.',  # noqa
+            'mmgen')
+    return inception_model
 
 
 def _ssim_for_multi_scale(img1,
@@ -198,7 +307,7 @@ def sliced_wasserstein(distribution_a,
                        distribution_b,
                        dir_repeats=4,
                        dirs_per_repeat=128):
-    r"""sliced wasserstein distance of two sets of patches.
+    r"""sliced Wasserstein distance of two sets of patches.
 
     Ref: https://github.com/tkarras/progressive_growing_of_gans/blob/master/metrics/ms_ssim.py  # noqa
 
@@ -210,7 +319,7 @@ def sliced_wasserstein(distribution_a,
             Default to 128.
 
     Returns:
-        float: sliced wasserstein distance.
+        float: sliced Wasserstein distance.
     """
     if torch.cuda.is_available():
         distribution_b = distribution_b.cuda()
@@ -254,8 +363,8 @@ class Metric(ABC):
         self.image_shape = image_shape
         self.num_real_need = num_images
         self.num_fake_need = num_images
-        self.num_real_feeded = 0  # record of the feeded real images
-        self.num_fake_feeded = 0  # record of the feeded fake images
+        self.num_real_feeded = 0  # record of the fed real images
+        self.num_fake_feeded = 0  # record of the fed fake images
         self._result_str = None  # string of metric result
 
     @property
@@ -276,19 +385,33 @@ class Metric(ABC):
         operation in 'feed_op' function.
 
         Args:
-            batch (Tensor): Images feeded into metric object with order "NCHW"
-                and range [-1, 1].
+            batch (Tensor | dict): Images or dict to be fed into
+                metric object. If ``Tensor`` is passed, the order of ``Tensor``
+                should be "NCHW". If ``dict`` is passed, each term in the
+                ``dict`` are ``Tensor`` with order "NCHW".
             mode (str): Mark the batch as real or fake images. Value can be
                 'reals' or 'fakes',
         """
+        _, ws = get_dist_info()
         if mode == 'reals':
             if self.num_real_feeded == self.num_real_need:
                 return 0
 
-            batch_size = batch.shape[0]
-            end = min(batch_size, self.num_real_need - self.num_real_feeded)
-            self.feed_op(batch[:end, :, :, :], mode)
-            self.num_real_feeded += end
+            if isinstance(batch, dict):
+                batch_size = [v for v in batch.values()][0].shape[0]
+                end = min(batch_size,
+                          self.num_real_need - self.num_real_feeded)
+                batch_to_feed = {k: v[:end, ...] for k, v in batch.items()}
+            else:
+                batch_size = batch.shape[0]
+                end = min(batch_size,
+                          self.num_real_need - self.num_real_feeded)
+                batch_to_feed = batch[:end, ...]
+
+            global_end = min(batch_size * ws,
+                             self.num_real_need - self.num_real_feeded)
+            self.feed_op(batch_to_feed, mode)
+            self.num_real_feeded += global_end
             return end
 
         elif mode == 'fakes':
@@ -297,13 +420,20 @@ class Metric(ABC):
 
             batch_size = batch.shape[0]
             end = min(batch_size, self.num_fake_need - self.num_fake_feeded)
-            self.feed_op(batch[:end, :, :, :], mode)
-            self.num_fake_feeded += end
+            if isinstance(batch, dict):
+                batch_to_feed = {k: v[:end, ...] for k, v in batch.items()}
+            else:
+                batch_to_feed = batch[:end, ...]
+
+            global_end = min(batch_size * ws,
+                             self.num_fake_need - self.num_fake_feeded)
+            self.feed_op(batch_to_feed, mode)
+            self.num_fake_feeded += global_end
             return end
         else:
             raise ValueError(
-                f"The expected mode should be set to 'reals' or 'fakes,\
-                but got '{mode}'")
+                'The expected mode should be set to \'reals\' or \'fakes\','
+                f'but got \'{mode}\'')
 
     def check(self):
         """Check the numbers of image."""
@@ -361,21 +491,15 @@ class FID(Metric):
         self.bgr2rgb = bgr2rgb
         self.device = 'cpu'
 
-        # define inception network as official StyleGAN
-        if inception_args.get('type', None) == 'StyleGAN':
-            self.inception_net = torch.jit.load(
-                inception_args['inception_path'])
-            self.inception_style = 'StyleGAN'
-        else:
-            self.inception_style = 'PyTorch'
-            # define inception net with default PyTorch style
-            self.inception_net = InceptionV3([3], **inception_args)
+        self.inception_net, self.inception_style = load_inception(
+            inception_args, 'FID')
+
         if torch.cuda.is_available():
             self.inception_net = self.inception_net.cuda()
             self.device = 'cuda'
         self.inception_net.eval()
 
-        mmcv.print_log(f'Adopt Inception in {self.inception_style} style',
+        mmcv.print_log(f'FID: Adopt Inception in {self.inception_style} style',
                        'mmgen')
 
     def prepare(self):
@@ -410,12 +534,12 @@ class FID(Metric):
         else:
             feat = self.inception_net(batch)[0].view(batch.shape[0], -1)
 
-            # gather all of images if using distributed training
-            if dist.is_initialized():
-                ws = dist.get_world_size()
-                placeholder = [torch.zeros_like(feat) for _ in range(ws)]
-                dist.all_gather(placeholder, feat)
-                feat = torch.cat(placeholder, dim=0)
+        # gather all of images if using distributed training
+        if dist.is_initialized():
+            ws = dist.get_world_size()
+            placeholder = [torch.zeros_like(feat) for _ in range(ws)]
+            dist.all_gather(placeholder, feat)
+            feat = torch.cat(placeholder, dim=0)
 
         # in distributed training, we only collect features at rank-0.
         if (dist.is_initialized()
@@ -572,11 +696,11 @@ class MS_SSIM(Metric):
 class SWD(Metric):
     """SWD (Sliced Wasserstein distance) metric. We calculate the SWD of two
     sets of images in the following way. In every 'feed', we obtain the
-    laplacian pyramids of every images and extract patches from the laplacian
+    Laplacian pyramids of every images and extract patches from the Laplacian
     pyramids as descriptors. In 'summary', we normalize these descriptors along
     channel, and reshape them so that we can use these descriptors to represent
     the distribution of real/fake images. And we can calculate the sliced
-    wasserstein distance of the real and fake descriptors as the SWD of the
+    Wasserstein distance of the real and fake descriptors as the SWD of the
     real and fake images.
 
     Ref: https://github.com/tkarras/progressive_growing_of_gans/blob/master/metrics/sliced_wasserstein.py # noqa
@@ -619,6 +743,7 @@ class SWD(Metric):
         if mode == 'reals':
             real_pyramid = laplacian_pyramid(minibatch, self.n_pyramids - 1,
                                              self.gaussian_k)
+            # lod: layer_of_descriptors
             for lod, level in enumerate(real_pyramid):
                 desc = get_descriptors_for_minibatch(level, self.nhood_size,
                                                      self.nhoods_per_image)
@@ -843,7 +968,7 @@ class PR(Metric):
 class IS(Metric):
     """IS (Inception Score) metric.
 
-    The images are splitted into groups, and the inception score is calculated
+    The images are split into groups, and the inception score is calculated
     on each group of images, then the mean and standard deviation of the score
     is reported. The calculation of the inception score on a group of images
     involves first using the inception v3 model to calculate the conditional
@@ -855,36 +980,101 @@ class IS(Metric):
     then summed over all images and averaged over all classes and the exponent
     of the result is calculated to give the final score.
 
-    Ref: https://github.com/sbarratt/inception-score-pytorch/blob/master/inception_score.py # noqa
+    Ref: https://github.com/sbarratt/inception-score-pytorch/blob/master/inception_score.py  # noqa
+
+    Note that we highly recommend that users should download the Inception V3
+    script module from the following address. Then, the `inception_pkl` can
+    be set with user's local path. If not given, we will use the Inception V3
+    from pytorch model zoo. However, this may bring significant different in
+    the final results.
+
+    Tero's Inception V3: https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt  # noqa
 
     Args:
         num_images (int): The number of evaluated generated samples.
         image_shape (tuple, optional): Image shape in order "CHW". Defaults to
             None.
+        bgr2rgb (bool, optional): If True, reformat the BGR image to RGB
+            format. In default, our model generate images in the BGR order.
+            Thus, we use `True` as the default behavior. Please switch to
+            `False`, if the input is in the `RGB` order. Defaults to True.
         resize (bool, optional): Whether resize image to 299x299. Defaults to
             True.
         splits (int, optional): The number of groups. Defaults to 10.
+        use_pil_resize (bool, optional): Whether use Bicubic interpolation with
+            Pillow's backend. If set as True, the evaluation process may be a
+            little bit slow, but achieve a more accurate IS result. Defaults
+            to False.
+        inception_args (dict, optional): Keyword args for inception net.
+            Defaults to ``dict(type='StyleGAN', inception_path=INCEPTION_URL)``.
     """
     name = 'IS'
 
     def __init__(self,
                  num_images,
                  image_shape=None,
-                 bgr2rgb=False,
+                 bgr2rgb=True,
                  resize=True,
-                 splits=10):
+                 splits=10,
+                 use_pil_resize=True,
+                 inception_args=dict(
+                     type='StyleGAN', inception_path=TERO_INCEPTION_URL)):
         super().__init__(num_images, image_shape)
+        mmcv.print_log('Loading Inception V3 for IS...', 'mmgen')
+
+        model, style = load_inception(inception_args, 'IS')
+
+        self.inception_model = model
+        self.use_tero_script = style == 'StyleGAN'
+
         self.num_real_feeded = self.num_images
         self.resize = resize
         self.splits = splits
         self.bgr2rgb = bgr2rgb
-        self.inception_model = inception_v3(
-            pretrained=True, transform_input=False)
+        self.use_pil_resize = use_pil_resize
+        self._pil_resize_warned = False
+
         self.device = 'cpu'
         if torch.cuda.is_available():
             self.inception_model = self.inception_model.cuda()
             self.device = 'cuda'
         self.inception_model.eval()
+
+    def pil_resize(self, x):
+        """Apply Bicubic interpolation with Pillow backend. Before and after
+        interpolation operation, we have to perform a type conversion between
+        torch.tensor and PIL.Image, and these operations make resize process a
+        bit slow.
+
+        Args:
+            x (Tensor): Input tensor, should have four dimension and
+                        range in [-1, 1].
+
+        Returns:
+            torch.FloatTensor: Resized tensor.
+        """
+        if not self._pil_resize_warned:
+            mmcv.print_log(
+                '`use_pil_resize` is set as True, apply Bicubic '
+                'interpolation with Pillow backend. We perform '
+                'type conversion between torch.tensor and '
+                'PIL.Image in this function and make this process '
+                'a little bit slow.', 'mmgen')
+            self._pil_resize_warned = True
+
+        from PIL import Image
+        if x.ndim != 4:
+            raise ValueError('Input images should have 4 dimensions, '
+                             'here receive input with {} '
+                             'dimensions.'.format(x.ndim))
+
+        x = (x.clone() * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+        x_np = [x_.permute(1, 2, 0).detach().cpu().numpy() for x_ in x]
+        x_pil = [Image.fromarray(x_).resize((299, 299)) for x_ in x_np]
+        x_ten = torch.cat(
+            [torch.FloatTensor(np.array(x_)[None, ...]) for x_ in x_pil])
+        x_ten = (x_ten / 127.5 - 1).to(torch.float)
+        return x_ten.permute(0, 3, 1, 2)
 
     def get_pred(self, x):
         """Get prediction from inception model.
@@ -895,10 +1085,12 @@ class IS(Metric):
         Returns:
             np.array: Inception score.
         """
-        if self.resize:
-            x = F.interpolate(x, size=(299, 299), mode='bilinear')
-        x = self.inception_model(x)
-        return F.softmax(x).data.cpu().numpy()
+        if self.use_tero_script:
+            x = self.inception_model(x, no_output_bias=True)
+        else:
+            # specify the dimension to avoid warning
+            x = F.softmax(self.inception_model(x), dim=1)
+        return x
 
     def prepare(self):
         """Prepare for evaluating models with this metric."""
@@ -912,13 +1104,35 @@ class IS(Metric):
             batch (Tensor): Input tensor.
             mode (str): The mode of current data batch. 'reals' or 'fakes'.
         """
-        batch = batch.to(self.device)
-        if self.bgr2rgb:
-            batch = batch[:, [2, 1, 0], ...]
         if mode == 'reals':
             pass
         elif mode == 'fakes':
-            self.preds.append(self.get_pred(batch))
+            if self.bgr2rgb:
+                batch = batch[:, [2, 1, 0], ...]
+            if self.resize:
+                if self.use_pil_resize:
+                    batch = self.pil_resize(batch)
+                else:
+                    batch = F.interpolate(
+                        batch, size=(299, 299), mode='bilinear')
+            if self.use_tero_script:
+                batch = (batch * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+
+            batch = batch.to(self.device)
+
+            # get prediction
+            pred = self.get_pred(batch)
+
+            if dist.is_initialized():
+                ws = dist.get_world_size()
+                placeholder = [torch.zeros_like(pred) for _ in range(ws)]
+                dist.all_gather(placeholder, pred)
+                pred = torch.cat(placeholder, dim=0)
+
+            # in distributed training, we only collect features at rank-0.
+            if (dist.is_initialized()
+                    and dist.get_rank() == 0) or not dist.is_initialized():
+                self.preds.append(pred.cpu().numpy())
         else:
             raise ValueError(f'{mode} is not a implemented feed mode.')
 
@@ -926,12 +1140,16 @@ class IS(Metric):
     def summary(self):
         """Summarize the results.
 
+        TODO: support `master_only`
+
         Returns:
             dict | list: Summarized results.
         """
-        self.check()
         split_scores = []
         self.preds = np.concatenate(self.preds, axis=0)
+        # check for the size
+        assert self.preds.shape[0] >= self.num_images
+        self.preds = self.preds[:self.num_images]
         for k in range(self.splits):
             part = self.preds[k * (self.num_images // self.splits):(k + 1) *
                               (self.num_images // self.splits), :]
@@ -943,8 +1161,25 @@ class IS(Metric):
             split_scores.append(np.exp(np.mean(scores)))
 
         mean, std = np.mean(split_scores), np.std(split_scores)
+        # results for print/table
         self._result_str = f'mean: {mean:.3f}, std: {std:.3f}'
+        # results for log_buffer
+        self._result_dict = {'is': mean, 'is_std': std}
         return mean, std
+
+    def clear_fake_data(self):
+        """Clear fake data."""
+        self.preds = []
+        self.num_fake_feeded = 0
+
+    def clear(self, clear_reals=False):
+        """Clear data buffers.
+
+        Args:
+            clear_reals (bool, optional): Whether to clear real data.
+                Defaults to False.
+        """
+        self.clear_fake_data()
 
 
 @METRICS.register_module()
@@ -1132,3 +1367,114 @@ class PPLSampler:
 
         self.idx += 1
         return image
+
+
+@METRICS.register_module()
+class GaussianKLD(Metric):
+    r"""Gaussian KLD (Kullback-Leibler divergence) metric. We calculate the
+    KLD between two gaussian distribution via `mean` and `log_variance`.
+    The passed batch should be a dict instance and contain ``mean_pred``,
+    ``mean_target``, ``logvar_pred``, ``logvar_target``.
+    When call ``feed`` operation, only ``reals`` mode is needed,
+
+    The calculation of KLD can be formulated as:
+
+    .. math::
+        :nowrap:
+
+        \begin{align}
+        KLD(p||q) &= -\int{p(x)\log{q(x)} dx} + \int{p(x)\log{p(x)} dx} \\
+            &= \frac{1}{2}\log{(2\pi \sigma_2^2)} +
+            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\sigma_2^2} -
+            \frac{1}{2}(1 + \log{2\pi \sigma_1^2}) \\
+            &= \log{\frac{\sigma_2}{\sigma_1}} +
+            \frac{\sigma_1^2 + (\mu_1 - \mu_2)^2}{2\sigma_2^2} - \frac{1}{2}
+        \end{align}
+
+    where `p` and `q` denote target and predicted distribution respectively.
+
+    Args:
+        num_images (int): The number of samples to be tested.
+        base (str, optional): The log base of calculated KLD. Support
+            ``'e'`` and ``'2'``. Defaults to ``'e'``.
+        reduction (string, optional): Specifies the reduction to apply to the
+            output. Support ``'batchmean'``, ``'sum'`` and ``'mean'``. If
+            ``reduction == 'batchmean'``, the sum of the output will be divided
+            by batchsize. If ``reduction == 'sum'``, the output will be summed.
+            If ``reduction == 'mean'``, the output will be divided by the
+            number of elements in the output. Defaults to ``'batchmean'``.
+
+    """
+    name = 'GaussianKLD'
+
+    def __init__(self, num_images, base='e', reduction='batchmean'):
+        super().__init__(num_images, image_shape=None)
+        assert reduction in [
+            'sum', 'batchmean', 'mean'
+        ], ('We only support reduction for \'batchmean\', \'sum\' '
+            'and \'mean\'')
+        assert base in ['e',
+                        '2'], ('We only support log_base for \'e\' and \'2\'')
+        self.reduction = reduction
+        self.num_fake_feeded = self.num_images
+        self.cal_kld = partial(
+            gaussian_kld, weight=1, reduction='none', base=base)
+
+    def prepare(self):
+        """Prepare for evaluating models with this metric."""
+        self.kld = []
+        self.num_real_feeded = 0
+
+    @torch.no_grad()
+    def feed_op(self, batch, mode):
+        """Feed data to the metric.
+
+        Args:
+            batch (Tensor): Input tensor.
+            mode (str): The mode of current data batch. 'reals' or 'fakes'.
+        """
+        if mode == 'fakes':
+            return
+        assert isinstance(batch, dict), ('To calculate GaussianKLD loss, a '
+                                         'dict contains probabilistic '
+                                         'parameters is required.')
+        # check required keys
+        require_keys = [
+            'mean_pred', 'mean_target', 'logvar_pred', 'logvar_target'
+        ]
+        if any([k not in batch for k in require_keys]):
+            raise KeyError(f'The input dict must require {require_keys} at '
+                           'the same time. But keys in the given dict are '
+                           f'{batch.keys()}. Some of the requirements are '
+                           'missing.')
+        kld = self.cal_kld(batch['mean_target'], batch['mean_pred'],
+                           batch['logvar_target'], batch['logvar_pred'])
+        if dist.is_initialized():
+            ws = dist.get_world_size()
+            placeholder = [torch.zeros_like(kld) for _ in range(ws)]
+            dist.all_gather(placeholder, kld)
+            kld = torch.cat(placeholder, dim=0)
+
+        # in distributed training, we only collect features at rank-0.
+        if (dist.is_initialized()
+                and dist.get_rank() == 0) or not dist.is_initialized():
+            self.kld.append(kld.cpu())
+
+    @torch.no_grad()
+    def summary(self):
+        """Summarize the results.
+
+        Returns:
+            dict | list: Summarized results.
+        """
+        kld = torch.cat(self.kld, dim=0)
+        assert kld.shape[0] >= self.num_images
+        kld_np = kld.numpy()
+        if self.reduction == 'sum':
+            kld_result = np.sum(kld_np)
+        elif self.reduction == 'mean':
+            kld_result = np.mean(kld_np)
+        else:
+            kld_result = np.sum(kld_np) / kld_np.shape[0]
+        self._result_str = (f'{kld_result:.4f}')
+        return kld_result

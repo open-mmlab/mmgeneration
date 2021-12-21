@@ -4,7 +4,7 @@
 - Python 3.6+
 - PyTorch 1.5+
 - CUDA 9.2+ (If you build PyTorch from source, CUDA 9.0 is also compatible)
-- GCC 5+
+- GCC 5.4+
 - [MMCV (MMCV-FULL)](https://mmcv.readthedocs.io/en/latest/#installation)
 
 The compatible MMGeneration and MMCV versions are as below. Please install the correct version of MMCV to avoid installation issues.
@@ -54,7 +54,7 @@ If mmcv and mmcv-full are both installed, there will be `ModuleNotFoundError`.
 3. Install mmcv-full, we recommend you to install the pre-build package as below.
 
     ```shell
-    pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/{cu_version}/{torch_version}/index.html
+    pip install mmcv-full={mmcv_version} -f https://download.openmmlab.com/mmcv/dist/{cu_version}/{torch_version}/index.html
     ```
 
     Please replace `{cu_version}` and `{torch_version}` in the url to your desired one. For example, to install the latest `mmcv-full` with `CUDA 11` and `PyTorch 1.7.0`, use the following command:
@@ -95,15 +95,12 @@ If mmcv and mmcv-full are both installed, there will be `ModuleNotFoundError`.
 
 Note:
 
-a. Following the above instructions, MMGeneration is installed on `dev` mode
-, any local modifications made to the code will take effect without the need to reinstall it.
+a. Following the above instructions, MMGeneration is installed on `dev` mode,
+any local modifications made to the code will take effect without the need to reinstall it.
 
 b. If you would like to use `opencv-python-headless` instead of `opencv
 -python`,
 you can install it before installing MMCV.
-
-c. Some dependencies are optional. Simply running `pip install -v -e .` will
- only install the minimum runtime requirements. To use optional dependencies like `albumentations` and `imagecorruptions` either install them manually with `pip install -r requirements/optional.txt` or specify desired extras when calling `pip` (e.g. `pip install -v -e .[optional]`). Valid keys for the extras field are: `all`, `tests`, `build`, and `optional`.
 
 ### Install with CPU only
 
@@ -149,7 +146,7 @@ from mmgen.apis import init_model, sample_uncoditional_model
 
 config_file = 'configs/styleganv2/stylegan2_c2_lsun-church_256_b4x8_800k.py'
 # you can download this checkpoint in advance and use a local file path.
-checkpoint_file = 'http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth'
+checkpoint_file = 'https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth'
 device = 'cuda:0'
 # init a generatvie
 model = init_model(config_file, checkpoint_file, device=device)

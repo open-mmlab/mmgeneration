@@ -58,9 +58,11 @@ MMGeneration 是一个基于 PyTorch 和[MMCV](https://github.com/open-mmlab/mmc
 ## 亮点
 
 * **Positional Encoding as Spatial Inductive Bias in GANs (CVPR2021)** 已在 `MMGeneration` 中发布.  [\[配置文件\]](configs/positional_encoding_in_gans/README.md), [\[项目主页\]](https://nbei.github.io/gan-pos-encoding.html)
+* 我们已经支持训练目前主流的 Conditional GANs 模型，更多的方法和预训练权重马上就会发布，敬请期待。
+* 混合精度训练已经在 `StyleGAN2` 中进行了初步支持，请到[这里](configs/styleganv2/README.md)查看各种实现方式的详细比较。
 ## 更新日志
 
-v0.1.0 在 20/04/2021 发布。 关于细节和发布历史，请参考 [changelog.md](docs/changelog.md)。
+v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changelog.md](docs/changelog.md)。
 
 ## 模型库
 
@@ -72,10 +74,23 @@ v0.1.0 在 20/04/2021 发布。 关于细节和发布历史，请参考 [changel
 
 - ✅ [DCGAN](configs/dcgan/README.md) (ICLR'2016)
 - ✅ [WGAN-GP](configs/wgan-gp/README.md) (NIPS'2017)
+- ✅ [LSGAN](configs/lsgan/README.md) (ICCV'2017)
+- ✅ [GGAN](configs/ggan/README.md) (Axiv'2017)
 - ✅ [PGGAN](configs/pggan/README.md) (ICLR'2018)
 - ✅ [StyleGANV1](configs/styleganv1/README.md) (CVPR'2019)
 - ✅ [StyleGANV2](configs/styleganv2/README.md) (CVPR'2020)
 - ✅ [Positional Encoding in GANs](configs/positional_encoding_in_gans/README.md) (CVPR'2021)
+
+</details>
+
+<details open>
+<summary>Conditional GANs (点击折叠)</summary>
+
+- ✅ [SNGAN](configs/sngan_proj/README.md) (ICLR'2018)
+- ✅ [Projection GAN](configs/sngan_proj/README.md) (ICLR'2018)
+- ✅ [SAGAN](configs/sagan/README.md) (ICML'2019)
+- ✅ [BIGGAN/BIGGAN-DEEP](configs/biggan/README.md) (ICLR'2019)
+
 
 </details>
 
@@ -88,12 +103,14 @@ v0.1.0 在 20/04/2021 发布。 关于细节和发布历史，请参考 [changel
 </details>
 
 <details open>
-<summary>Internal Learing (点击折叠)</summary>
+<summary>Internal Learning (点击折叠)</summary>
 
 - ✅ [SinGAN](configs/dcgan/README.md) (ICCV'2019)
 
 </details>
 
+## 相关应用
+- ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
 ## 开源许可证
 
@@ -127,6 +144,7 @@ v0.1.0 在 20/04/2021 发布。 关于细节和发布历史，请参考 [changel
 ## OpenMMLab 的其他项目
 
 - [MMCV](https://github.com/open-mmlab/mmcv): OpenMMLab 计算机视觉基础库
+- [MIM](https://github.com/open-mmlab/mim): MIM 是 OpenMMLab 项目、算法、模型的统一入口
 - [MMClassification](https://github.com/open-mmlab/mmclassification): OpenMMLab 图像分类工具箱与测试基准
 - [MMDetection](https://github.com/open-mmlab/mmdetection): OpenMMLab 检测工具箱与测试基准
 - [MMDetection3D](https://github.com/open-mmlab/mmdetection3d): OpenMMLab 新一代通用3D目标检测平台
@@ -135,4 +153,27 @@ v0.1.0 在 20/04/2021 发布。 关于细节和发布历史，请参考 [changel
 - [MMTracking](https://github.com/open-mmlab/mmtracking): OpenMMLab 一体化视频目标感知平台
 - [MMPose](https://github.com/open-mmlab/mmpose): OpenMMLab 姿态估计工具箱与测试基准
 - [MMEditing](https://github.com/open-mmlab/mmediting): OpenMMLab 图像视频编辑工具箱
-- [MMOCR](https://github.com/open-mmlab/mmocr): OpenMMLab 全流程文字检测识别理解工具包.
+- [MMOCR](https://github.com/open-mmlab/mmocr): OpenMMLab 全流程文字检测识别理解工具包
+- [MMGeneration](https://github.com/open-mmlab/mmgeneration): OpenMMLab 新一代生成模型工具箱
+- [MMFlow](https://github.com/open-mmlab/mmflow): OpenMMLab 光流估计工具箱与测试基准
+- [MMFewShot](https://github.com/open-mmlab/mmfewshot): OpenMMLab 少样本学习工具箱与测试基准
+- [MMHuman3D](https://github.com/open-mmlab/mmhuman3d): OpenMMLab 人体参数化模型工具箱与测试基准
+
+## 欢迎加入 OpenMMLab 社区
+
+扫描下方的二维码可关注 OpenMMLab 团队的 [知乎官方账号](https://www.zhihu.com/people/openmmlab)，加入 OpenMMLab 团队的 [官方交流 QQ 群](https://jq.qq.com/?_wv=1027&k=aCvMxdr3)
+
+<div align="center">
+<img src="https://user-images.githubusercontent.com/22982797/115827101-66874200-a43e-11eb-9abf-831094c27ef4.JPG" height="400" />  <img src="https://user-images.githubusercontent.com/22982797/115827162-7c950280-a43e-11eb-8270-2f2ce7e79f93.JPG" height="400" />
+</div>
+
+我们会在 OpenMMLab 社区为大家
+
+- 📢 分享 AI 框架的前沿核心技术
+- 💻 解读 PyTorch 常用模块源码
+- 📰 发布 OpenMMLab 的相关新闻
+- 🚀 介绍 OpenMMLab 开发的前沿算法
+- 🏃 获取更高效的问题答疑和意见反馈
+- 🔥 提供与各行各业开发者充分交流的平台
+
+干货满满 📘，等你来撩 💗，OpenMMLab 社区期待您的加入 👬

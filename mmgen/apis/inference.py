@@ -1,10 +1,12 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import torch
 from mmcv.parallel import collate, scatter
 from mmcv.runner import load_checkpoint
+from mmcv.utils import is_list_of
 
 from mmgen.datasets.pipelines import Compose
-from mmgen.models import CycleGAN, Pix2Pix, build_model
+from mmgen.models import BaseTranslationModel, build_model
 
 
 def init_model(config, checkpoint=None, device='cuda:0', cfg_options=None):
@@ -65,7 +67,7 @@ def sample_uncoditional_model(model,
     """
     # set eval mode
     model.eval()
-    # constrcut sampling list for batches
+    # construct sampling list for batches
     n_repeat = num_samples // num_batches
     batches_list = [num_batches] * n_repeat
 
@@ -84,44 +86,144 @@ def sample_uncoditional_model(model,
     return results
 
 
-_supported_img2img_model = (Pix2Pix, CycleGAN)
+@torch.no_grad()
+def sample_conditional_model(model,
+                             num_samples=16,
+                             num_batches=4,
+                             sample_model='ema',
+                             label=None,
+                             **kwargs):
+    """Sampling from conditional models.
+
+    Args:
+        model (nn.Module): Conditional models in MMGeneration.
+        num_samples (int, optional): The total number of samples.
+            Defaults to 16.
+        num_batches (int, optional): The number of batch size for inference.
+            Defaults to 4.
+        sample_model (str, optional): Which model you want to use. ['ema',
+            'orig']. Defaults to 'ema'.
+        label (int | torch.Tensor | list[int], optional): Labels used to
+            generate images. Default to None.,
+
+    Returns:
+        Tensor: Generated image tensor.
+    """
+    # set eval mode
+    model.eval()
+    # construct sampling list for batches
+    n_repeat = num_samples // num_batches
+    batches_list = [num_batches] * n_repeat
+
+    # check and convert the input labels
+    if isinstance(label, int):
+        label = torch.LongTensor([label] * num_samples)
+    elif isinstance(label, torch.Tensor):
+        label = label.type(torch.int64)
+        if label.numel() == 1:
+            # repeat single tensor
+            # call view(-1) to avoid nested tensor like [[[1]]]
+            label = label.view(-1).repeat(num_samples)
+        else:
+            # flatten multi tensors
+            label = label.view(-1)
+    elif isinstance(label, list):
+        if is_list_of(label, int):
+            label = torch.LongTensor(label)
+            # `nargs='+'` parse single integer as list
+            if label.numel() == 1:
+                # repeat single tensor
+                label = label.repeat(num_samples)
+        else:
+            raise TypeError('Only support `int` for label list elements, '
+                            f'but receive {type(label[0])}')
+    elif label is None:
+        pass
+    else:
+        raise TypeError('Only support `int`, `torch.Tensor`, `list[int]` or '
+                        f'None as label, but receive {type(label)}.')
+
+    # check the length of the (converted) label
+    if label is not None and label.size(0) != num_samples:
+        raise ValueError('Number of elements in the label list should be ONE '
+                         'or the length of `num_samples`. Requires '
+                         f'{num_samples}, but receive {label.size(0)}.')
+
+    # make label list
+    label_list = []
+    for n in range(n_repeat):
+        if label is None:
+            label_list.append(None)
+        else:
+            label_list.append(label[n * num_batches:(n + 1) * num_batches])
+
+    if num_samples % num_batches > 0:
+        batches_list.append(num_samples % num_batches)
+        if label is None:
+            label_list.append(None)
+        else:
+            label_list.append(label[(n + 1) * num_batches:])
+
+    res_list = []
+
+    # inference
+    for batches, labels in zip(batches_list, label_list):
+        res = model.sample_from_noise(
+            None,
+            num_batches=batches,
+            label=labels,
+            sample_model=sample_model,
+            **kwargs)
+        res_list.append(res.cpu())
+
+    results = torch.cat(res_list, dim=0)
+
+    return results
 
 
-def sample_img2img_model(model, image_path, **kwargs):
+def sample_img2img_model(model, image_path, target_domain=None, **kwargs):
     """Sampling from translation models.
 
     Args:
         model (nn.Module): The loaded model.
         image_path (str): File path of input image.
-        img_unpaired (str, optional): File path of the unpaired image.
-            If not None, perform unpaired image generation. Default: None.
+        style (str): Target style of output image.
     Returns:
         Tensor: Translated image tensor.
     """
-    assert isinstance(model, _supported_img2img_model)
+    assert isinstance(model, BaseTranslationModel)
+
+    # get source domain and target domain
+    if target_domain is None:
+        target_domain = model._default_domain
+    source_domain = model.get_other_domains(target_domain)[0]
+
     cfg = model._cfg
     device = next(model.parameters()).device  # model device
     # build the data pipeline
     test_pipeline = Compose(cfg.test_pipeline)
+
     # prepare data
-    if isinstance(model, Pix2Pix):
-        data = dict(pair_path=image_path)
-    else:
-        data = dict(img_a_path=image_path, img_b_path=image_path)
+    data = dict()
+    # dirty code to deal with test data pipeline
+    data['pair_path'] = image_path
+    data[f'img_{source_domain}_path'] = image_path
+    data[f'img_{target_domain}_path'] = image_path
+
     data = test_pipeline(data)
     if device.type == 'cpu':
         data = collate([data], samples_per_gpu=1)
         data['meta'] = []
     else:
         data = scatter(collate([data], samples_per_gpu=1), [device])[0]
+
+    source_image = data[f'img_{source_domain}']
     # forward the model
     with torch.no_grad():
-        results = model(test_mode=True, **data, **kwargs)
-    if isinstance(model, Pix2Pix):
-        output = results['fake_b']
-    else:
-        if model.test_direction == 'a2b':
-            output = results['fake_b']
-        else:
-            output = results['fake_a']
+        results = model(
+            source_image,
+            test_mode=True,
+            target_domain=target_domain,
+            **kwargs)
+    output = results['target']
     return output

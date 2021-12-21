@@ -57,9 +57,11 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 ## Highlight
 
 * **Positional Encoding as Spatial Inductive Bias in GANs (CVPR2021)** has been released in `MMGeneration`.  [\[Config\]](configs/positional_encoding_in_gans/README.md), [\[Project Page\]](https://nbei.github.io/gan-pos-encoding.html)
+* Conditional GANs have been supported in our toolkit. More methods and pre-trained weights will come soon.
+* Mixed-precision training (FP16) for StyleGAN2 has been supported. Please check [the comparison](configs/styleganv2/README.md) between different implementations.
 ## Changelog
 
-v0.1.0 was released in 20/04/2021. Please refer to [changelog.md](docs/changelog.md) for details and release history.
+v0.4.0 was released on 03/11/2021. Please refer to [changelog.md](docs/changelog.md) for details and release history.
 
 ## ModelZoo
 
@@ -71,10 +73,22 @@ These methods have been carefully studied and supported in our frameworks:
 
 - ✅ [DCGAN](configs/dcgan/README.md) (ICLR'2016)
 - ✅ [WGAN-GP](configs/wgan-gp/README.md) (NIPS'2017)
+- ✅ [LSGAN](configs/lsgan/README.md) (ICCV'2017)
+- ✅ [GGAN](configs/ggan/README.md) (Axiv'2017)
 - ✅ [PGGAN](configs/pggan/README.md) (ICLR'2018)
 - ✅ [StyleGANV1](configs/styleganv1/README.md) (CVPR'2019)
 - ✅ [StyleGANV2](configs/styleganv2/README.md) (CVPR'2020)
 - ✅ [Positional Encoding in GANs](configs/positional_encoding_in_gans/README.md) (CVPR'2021)
+
+</details>
+
+<details open>
+<summary>Conditional GANs (click to collapse)</summary>
+
+- ✅ [SNGAN](configs/sngan_proj/README.md) (ICLR'2018)
+- ✅ [Projection GAN](configs/sngan_proj/README.md) (ICLR'2018)
+- ✅ [SAGAN](configs/sagan/README.md) (ICML'2019)
+- ✅ [BIGGAN/BIGGAN-DEEP](configs/biggan/README.md) (ICLR'2019)
 
 </details>
 
@@ -87,12 +101,14 @@ These methods have been carefully studied and supported in our frameworks:
 </details>
 
 <details open>
-<summary>Internal Learing (click to collapse)</summary>
+<summary>Internal Learning (click to collapse)</summary>
 
 - ✅ [SinGAN](configs/singan/README.md) (ICCV'2019)
 
 </details>
 
+## Related-Applications
+- ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
 ## License
 
@@ -126,6 +142,7 @@ If you find this project useful in your research, please consider cite:
 ## Projects in OpenMMLab
 
 - [MMCV](https://github.com/open-mmlab/mmcv): OpenMMLab foundational library for computer vision.
+- [MIM](https://github.com/open-mmlab/mim): MIM Installs OpenMMLab Packages.
 - [MMClassification](https://github.com/open-mmlab/mmclassification): OpenMMLab image classification toolbox and benchmark.
 - [MMDetection](https://github.com/open-mmlab/mmdetection): OpenMMLab detection toolbox and benchmark.
 - [MMDetection3D](https://github.com/open-mmlab/mmdetection3d): OpenMMLab's next-generation platform for general 3D object detection.
@@ -135,4 +152,7 @@ If you find this project useful in your research, please consider cite:
 - [MMPose](https://github.com/open-mmlab/mmpose): OpenMMLab pose estimation toolbox and benchmark.
 - [MMEditing](https://github.com/open-mmlab/mmediting): OpenMMLab image and video editing toolbox.
 - [MMOCR](https://github.com/open-mmlab/mmocr): A Comprehensive Toolbox for Text Detection, Recognition and Understanding.
-- [MMGeneration](https://github.com/open-mmlab/mmgeneration): A powerful toolkit for generative models.
+- [MMGeneration](https://github.com/open-mmlab/mmgeneration): OpenMMLab's next-generation toolbox for generative models.
+- [MMFlow](https://github.com/open-mmlab/mmflow): OpenMMLab optical flow toolbox and benchmark.
+- [MMFewShot](https://github.com/open-mmlab/mmfewshot): OpenMMLab FewShot Learning Toolbox and Benchmark.
+- [MMHuman3D](https://github.com/open-mmlab/mmhuman3d): OpenMMLab Human Pose and Shape Estimation Toolbox and Benchmark.

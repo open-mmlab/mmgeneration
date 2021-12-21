@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/singan.py', '../_base_/datasets/singan.py',
+    '../_base_/models/singan/singan.py', '../_base_/datasets/singan.py',
     '../_base_/default_runtime.py'
 ]
 
@@ -26,7 +26,7 @@ checkpoint_config = dict(by_epoch=False, interval=2000, max_keep_ckpts=3)
 
 custom_hooks = [
     dict(
-        type='VisualizationHook',
+        type='MMGenVisualizationHook',
         output_dir='visual',
         interval=500,
         bgr2rgb=True,

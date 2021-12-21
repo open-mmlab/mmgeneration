@@ -1,5 +1,5 @@
-import math
-
+# Copyright (c) OpenMMLab. All rights reserved.
+import numpy as np
 import torch
 import torch.autograd as autograd
 import torch.distributed as dist
@@ -15,7 +15,9 @@ def gen_path_regularizer(generator,
                          decay=0.01,
                          weight=1.,
                          pl_batch_size=None,
-                         sync_mean_buffer=False):
+                         sync_mean_buffer=False,
+                         loss_scaler=None,
+                         use_apex_amp=False):
     """Generator Path Regularization.
 
     Path regularization is proposed in StyelGAN2, which can help the improve
@@ -36,7 +38,7 @@ def gen_path_regularizer(generator,
         weight (float, optional): Weight of this loss item. Defaults to ``1.``.
         pl_batch_size (int | None, optional): The batch size in calculating
             generator path. Once this argument is set, the ``num_batches`` will
-            be overrided with this argument and won't be affectted by
+            be overridden with this argument and won't be affectted by
             ``pl_batch_shrink``. Defaults to None.
         sync_mean_buffer (bool, optional): Whether to sync mean path length
             across all of GPUs. Defaults to False.
@@ -57,16 +59,49 @@ def gen_path_regularizer(generator,
     output_dict = generator(None, num_batches=num_batches, return_latents=True)
     fake_img, latents = output_dict['fake_img'], output_dict['latent']
 
-    noise = torch.randn_like(fake_img) / math.sqrt(
+    noise = torch.randn_like(fake_img) / np.sqrt(
         fake_img.shape[2] * fake_img.shape[3])
 
-    grad = autograd.grad(
-        outputs=(fake_img * noise).sum(),
-        inputs=latents,
-        grad_outputs=torch.ones(()).to(fake_img),
-        create_graph=True,
-        retain_graph=True,
-        only_inputs=True)[0]
+    if loss_scaler:
+        loss = loss_scaler.scale((fake_img * noise).sum())[0]
+        grad = autograd.grad(
+            outputs=loss,
+            inputs=latents,
+            grad_outputs=torch.ones(()).to(loss),
+            create_graph=True,
+            retain_graph=True,
+            only_inputs=True)[0]
+
+        # unsacle the grad
+        inv_scale = 1. / loss_scaler.get_scale()
+        grad = grad * inv_scale
+    elif use_apex_amp:
+        from apex.amp._amp_state import _amp_state
+
+        # by default, we use loss_scalers[0] for discriminator and
+        # loss_scalers[1] for generator
+        _loss_scaler = _amp_state.loss_scalers[1]
+        loss = _loss_scaler.loss_scale() * ((fake_img * noise).sum()).float()
+
+        grad = autograd.grad(
+            outputs=loss,
+            inputs=latents,
+            grad_outputs=torch.ones(()).to(loss),
+            create_graph=True,
+            retain_graph=True,
+            only_inputs=True)[0]
+
+        # unsacle the grad
+        inv_scale = 1. / _loss_scaler.loss_scale()
+        grad = grad * inv_scale
+    else:
+        grad = autograd.grad(
+            outputs=(fake_img * noise).sum(),
+            inputs=latents,
+            grad_outputs=torch.ones(()).to(fake_img),
+            create_graph=True,
+            retain_graph=True,
+            only_inputs=True)[0]
 
     path_lengths = torch.sqrt(grad.pow(2).sum(2).mean(1))
     # update mean path
@@ -134,7 +169,7 @@ class GeneratorPathRegularizer(nn.Module):
             Defaults to 0.01.
         pl_batch_size (int | None, optional): The batch size in calculating
             generator path. Once this argument is set, the ``num_batches`` will
-            be overrided with this argument and won't be affectted by
+            be overridden with this argument and won't be affectted by
             ``pl_batch_shrink``. Defaults to None.
         sync_mean_buffer (bool, optional): Whether to sync mean path length
             across all of GPUs. Defaults to False.
@@ -157,6 +192,7 @@ class GeneratorPathRegularizer(nn.Module):
                  sync_mean_buffer=False,
                  interval=1,
                  data_info=None,
+                 use_apex_amp=False,
                  loss_name='loss_path_regular'):
         super().__init__()
         self.loss_weight = loss_weight
@@ -166,6 +202,7 @@ class GeneratorPathRegularizer(nn.Module):
         self.sync_mean_buffer = sync_mean_buffer
         self.interval = interval
         self.data_info = data_info
+        self.use_apex_amp = use_apex_amp
         self._loss_name = loss_name
 
         self.register_buffer('mean_path_length', torch.tensor(0.))
@@ -217,6 +254,7 @@ class GeneratorPathRegularizer(nn.Module):
                     mean_path_length=self.mean_path_length,
                     pl_batch_shrink=self.pl_batch_shrink,
                     decay=self.decay,
+                    use_apex_amp=self.use_apex_amp,
                     pl_batch_size=self.pl_batch_size,
                     sync_mean_buffer=self.sync_mean_buffer))
             path_penalty, self.mean_path_length, _ = gen_path_regularizer(

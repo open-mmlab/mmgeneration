@@ -1,5 +1,7 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import numpy as np
+from mmcls.datasets import PIPELINES as CLS_PIPELINE
 
 from ..builder import PIPELINES
 
@@ -103,6 +105,9 @@ class Resize:
         interpolation (str): Algorithm used for interpolation:
             "nearest" | "bilinear" | "bicubic" | "area" | "lanczos".
             Default: "bilinear".
+        backend (str | None): The image resize backend type. Options are `cv2`,
+            `pillow`, `None`. If backend is None, the global imread_backend
+            specified by ``mmcv.use_backend()`` will be used. Default: None.
     """
 
     def __init__(self,
@@ -111,7 +116,8 @@ class Resize:
                  keep_ratio=False,
                  size_factor=None,
                  max_size=None,
-                 interpolation='bilinear'):
+                 interpolation='bilinear',
+                 backend=None):
         assert keys, 'Keys should not be empty.'
         if size_factor:
             assert scale is None, ('When size_factor is used, scale should ',
@@ -141,6 +147,7 @@ class Resize:
         self.max_size = max_size
         self.keep_ratio = keep_ratio
         self.interpolation = interpolation
+        self.backend = backend
 
     def _resize(self, img):
         if self.keep_ratio:
@@ -148,13 +155,15 @@ class Resize:
                 img,
                 self.scale,
                 return_scale=True,
-                interpolation=self.interpolation)
+                interpolation=self.interpolation,
+                backend=self.backend)
         else:
             img, w_scale, h_scale = mmcv.imresize(
                 img,
                 self.scale,
                 return_scale=True,
-                interpolation=self.interpolation)
+                interpolation=self.interpolation,
+                backend=self.backend)
             self.scale_factor = np.array((w_scale, h_scale), dtype=np.float32)
         return img
 
@@ -248,4 +257,161 @@ class NumpyPad:
         repr_str += (
             f'(keys={self.keys}, padding={self.padding}, kwargs={self.kwargs})'
         )
+        return repr_str
+
+
+@CLS_PIPELINE.register_module()
+@PIPELINES.register_module()
+class RandomImgNoise:
+    """Add random noise with specific distribution and range to the input
+    image.
+
+    Args:
+        keys (list[str]): The images to be added random noise.
+        lower_bound (float, optional): The lower bound of the noise.
+            Default to ``0.``.
+        upper_bound (float, optional): The upper bound of the noise.
+            Default to ``1 / 128.``.
+        distribution (str, optional): The probability distribution of the
+            noise. Default to 'uniform'.
+    """
+
+    def __init__(self,
+                 keys,
+                 lower_bound=0,
+                 upper_bound=1 / 128.,
+                 distribution='uniform'):
+        assert keys, 'Keys should not be empty.'
+
+        self.keys = keys
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+
+        if distribution not in ['uniform', 'normal']:
+            raise KeyError('Only support \'uniform\' distribution and '
+                           '\'normal\' distribution, receive '
+                           f'{distribution}.')
+        self.distribution = distribution
+
+    def __call__(self, results):
+        """Call function.
+
+        Args:
+            results (dict): A dict containing the necessary information and
+                data for augmentation.
+
+        Returns:
+            dict: A dict containing the processed data and information.
+        """
+        if self.distribution == 'uniform':
+            dist_fn = np.random.rand
+        else:  # self.distribution == 'normal
+            dist_fn = np.random.randn
+
+        for key in self.keys:
+            img_size = results[key].shape
+            noise = dist_fn(*img_size)
+            scale = noise.max() - noise.min()
+            noise = noise - noise.min()
+            noise = noise / scale * (self.upper_bound - self.lower_bound)
+            noise = noise + self.lower_bound
+            results[key] += noise
+
+        return results
+
+    def __repr__(self):
+        repr_str = self.__class__.__name__
+        repr_str += (f'(keys={self.keys}, lower_bound={self.lower_bound}, '
+                     f'upper_bound={self.upper_bound})')
+        return repr_str
+
+
+@CLS_PIPELINE.register_module()
+@PIPELINES.register_module()
+class RandomCropLongEdge:
+    """Random crop the given image by the long edge.
+
+    Args:
+        keys (list[str]): The images to be cropped.
+    """
+
+    def __init__(self, keys):
+        assert keys, 'Keys should not be empty.'
+        self.keys = keys
+
+    def __call__(self, results):
+        """Call function.
+
+        Args:
+            results (dict): A dict containing the necessary information and
+                data for augmentation.
+
+        Returns:
+            dict: A dict containing the processed data and information.
+        """
+
+        for key in self.keys:
+            img = results[key]
+            img_height, img_width = img.shape[:2]
+            crop_size = min(img_height, img_width)
+            y1 = 0 if img_height == crop_size else \
+                np.random.randint(0, img_height - crop_size)
+            x1 = 0 if img_width == crop_size else \
+                np.random.randint(0, img_width - crop_size)
+            y2, x2 = y1 + crop_size - 1, x1 + crop_size - 1
+
+            img = mmcv.imcrop(img, bboxes=np.array([x1, y1, x2, y2]))
+            results[key] = img
+
+        return results
+
+    def __repr__(self):
+        repr_str = self.__class__.__name__
+        repr_str += (f'(keys={self.keys})')
+        return repr_str
+
+
+@CLS_PIPELINE.register_module()
+@PIPELINES.register_module()
+class CenterCropLongEdge:
+    """Center crop the given image by the long edge.
+
+    Args:
+        keys (list[str]): The images to be cropped.
+    """
+
+    def __init__(self, keys):
+        assert keys, 'Keys should not be empty.'
+        self.keys = keys
+
+    def __call__(self, results):
+        """Call function.
+
+        Args:
+            results (dict): A dict containing the necessary information and
+                data for augmentation.
+
+        Returns:
+            dict: A dict containing the processed data and information.
+        """
+
+        for key in self.keys:
+            img = results[key]
+            img_height, img_width = img.shape[:2]
+            crop_size = min(img_height, img_width)
+            y1 = 0 if img_height == crop_size else \
+                int(round(img_height - crop_size) / 2)
+            x1 = 0 if img_width == crop_size else \
+                int(round(img_width - crop_size) / 2)
+            y2 = y1 + crop_size - 1
+            x2 = x1 + crop_size - 1
+
+            img = mmcv.imcrop(img, bboxes=np.array([x1, y1, x2, y2]))
+            results[key] = img
+
+        return results
+
+    def __repr__(self):
+        repr_str = self.__class__.__name__
+        repr_str += (f'(keys={self.keys})')
         return repr_str

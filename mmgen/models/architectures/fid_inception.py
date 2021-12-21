@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 """Inception networks used in calculating FID and Inception metrics.
 
 This code is modified from:
@@ -10,7 +11,8 @@ import torch.nn.functional as F
 from torch.utils.model_zoo import load_url
 from torchvision import models
 
-# Inception weights ported to Pytorch from
+# Inception weights ported to PyTorch from
+# https://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz
 FID_WEIGHTS_URL = 'https://github.com/mseitzer/pytorch-fid/releases/download/fid_weights/pt_inception-2015-12-05-6726825d.pth'  # noqa: E501
 
 
@@ -194,7 +196,7 @@ class FIDInceptionA(models.inception.InceptionA):
             x (torch.Tensor): Input tensor of shape BxCxHxW.
 
         Returns:
-            torch.Tensor: Feature Maps of x outputed by this block.
+            torch.Tensor: Feature Maps of x outputted by this block.
         """
         branch1x1 = self.branch1x1(x)
 
@@ -228,7 +230,7 @@ class FIDInceptionC(models.inception.InceptionC):
             x (torch.Tensor): Input tensor of shape BxCxHxW.
 
         Returns:
-            torch.Tensor: Feature Maps of x outputed by this block.
+            torch.Tensor: Feature Maps of x outputted by this block.
         """
         branch1x1 = self.branch1x1(x)
 
@@ -265,7 +267,7 @@ class FIDInceptionE_1(models.inception.InceptionE):
             x (torch.Tensor): Input tensor of shape BxCxHxW.
 
         Returns:
-            torch.Tensor: Feature Maps of x outputed by this block.
+            torch.Tensor: Feature Maps of x outputted by this block.
         """
         branch1x1 = self.branch1x1(x)
 
@@ -307,7 +309,7 @@ class FIDInceptionE_2(models.inception.InceptionE):
             x (torch.Tensor): Input tensor of shape BxCxHxW.
 
         Returns:
-            torch.Tensor: Feature Maps of x outputed by this block.
+            torch.Tensor: Feature Maps of x outputted by this block.
         """
         branch1x1 = self.branch1x1(x)
 

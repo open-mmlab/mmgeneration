@@ -1,5 +1,5 @@
-import math
-
+# Copyright (c) OpenMMLab. All rights reserved.
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -68,9 +68,9 @@ class SinusoidalPositionalEmbedding(nn.Module):
         # there is a little difference from the original paper.
         half_dim = embedding_dim // 2
         if not div_half_dim:
-            emb = math.log(10000) / (half_dim - 1)
+            emb = np.log(10000) / (half_dim - 1)
         else:
-            emb = math.log(1e4) / half_dim
+            emb = np.log(1e4) / half_dim
         # compute exp(-log10000 / d * i)
         emb = torch.exp(torch.arange(half_dim, dtype=torch.float) * -emb)
         emb = torch.arange(

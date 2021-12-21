@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 
@@ -7,6 +8,7 @@ import torch.nn as nn
 
 
 class BaseGAN(nn.Module, metaclass=ABCMeta):
+    """BaseGAN Module."""
 
     def __init__(self):
         super().__init__()
@@ -84,7 +86,6 @@ class BaseGAN(nn.Module, metaclass=ABCMeta):
                 if loss_ is None:
                     continue
 
-                # mmcv.print_log(f'get loss for {loss_module.name()}')
                 # the `loss_name()` function return name as 'loss_xxx'
                 if loss_module.loss_name() in losses_dict:
                     losses_dict[loss_module.loss_name(
@@ -222,7 +223,7 @@ class BaseGAN(nn.Module, metaclass=ABCMeta):
 
         Args:
             losses (dict): Raw output of the network, which usually contain
-                losses and other necessary infomation.
+                losses and other necessary information.
 
         Returns:
             tuple[Tensor, dict]: (loss, log_vars), loss is the loss tensor \

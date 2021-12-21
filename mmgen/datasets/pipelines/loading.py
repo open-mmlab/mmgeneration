@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import numpy as np
 from mmcv.fileio import FileClient
@@ -15,6 +16,10 @@ class LoadImageFromFile:
         flag (str): Loading flag for images. Default: 'color'.
         channel_order (str): Order of channel, candidates are 'bgr' and 'rgb'.
             Default: 'bgr'.
+        backend (str | None): The image decoding backend type. Options are
+            `cv2`, `pillow`, `turbojpeg`, `None`. If backend is None, the
+            global imread_backend specified by ``mmcv.use_backend()`` will be
+            used. Default: None.
         save_original_img (bool): If True, maintain a copy of the image in
             ``results`` dict with name of ``f'ori_{key}'``. Default: False.
         kwargs (dict): Args for file client.
@@ -25,6 +30,7 @@ class LoadImageFromFile:
                  key='gt',
                  flag='color',
                  channel_order='bgr',
+                 backend=None,
                  save_original_img=False,
                  **kwargs):
         self.io_backend = io_backend
@@ -32,6 +38,7 @@ class LoadImageFromFile:
         self.flag = flag
         self.save_original_img = save_original_img
         self.channel_order = channel_order
+        self.backend = backend
         self.kwargs = kwargs
         self.file_client = None
 
@@ -50,7 +57,10 @@ class LoadImageFromFile:
         filepath = str(results[f'{self.key}_path'])
         img_bytes = self.file_client.get(filepath)
         img = mmcv.imfrombytes(
-            img_bytes, flag=self.flag, channel_order=self.channel_order)  # HWC
+            img_bytes,
+            flag=self.flag,
+            channel_order=self.channel_order,
+            backend=self.backend)  # HWC
 
         results[self.key] = img
         results[f'{self.key}_path'] = filepath
@@ -78,13 +88,18 @@ class LoadPairedImageFromFile(LoadImageFromFile):
     it into two images with the same shape in different domains.
 
     Required key is "pair_path". Added or modified keys are "pair",
-    "pair_ori_shape", "ori_pair", "img_a", "img_b", "img_a_path",
-    "img_b_path", "img_a_ori_shape", "img_b_ori_shape", "ori_img_a" and
-    "ori_img_b".
+    "pair_ori_shape", "ori_pair", "img_{domain_a}", "img_{domain_b}",
+    "img_{domain_a}_path", "img_{domain_b}_path", "img_{domain_a}_ori_shape",
+    "img_{domain_b}_ori_shape", "ori_img_{domain_a}" and
+    "ori_img_{domain_b}".
 
     Args:
         io_backend (str): io backend where images are store. Default: 'disk'.
         key (str): Keys in results to find corresponding path. Default: 'gt'.
+        domain_a (str, optional): One of the paired image domain.
+            Defaults to None.
+        domain_b (str, optional): The other image domain.
+            Defaults to None.
         flag (str): Loading flag for images. Default: 'color'.
         channel_order (str): Order of channel, candidates are 'bgr' and 'rgb'.
             Default: 'bgr'.
@@ -92,6 +107,29 @@ class LoadPairedImageFromFile(LoadImageFromFile):
             `results` dict with name of `f'ori_{key}'`. Default: False.
         kwargs (dict): Args for file client.
     """
+
+    def __init__(self,
+                 io_backend='disk',
+                 key='pair',
+                 domain_a=None,
+                 domain_b=None,
+                 flag='color',
+                 channel_order='bgr',
+                 backend=None,
+                 save_original_img=False,
+                 **kwargs):
+        super().__init__(
+            io_backend,
+            key=key,
+            flag=flag,
+            channel_order=channel_order,
+            backend=backend,
+            save_original_img=save_original_img,
+            **kwargs)
+        assert isinstance(domain_a, str)
+        assert isinstance(domain_b, str)
+        self.domain_a = domain_a
+        self.domain_b = domain_b
 
     def __call__(self, results):
         """Call function.
@@ -126,14 +164,14 @@ class LoadPairedImageFromFile(LoadImageFromFile):
         img_a = img[:, :new_w, :]
         img_b = img[:, new_w:, :]
 
-        results['img_a'] = img_a
-        results['img_b'] = img_b
-        results['img_a_path'] = filepath
-        results['img_b_path'] = filepath
-        results['img_a_ori_shape'] = img_a.shape
-        results['img_b_ori_shape'] = img_b.shape
+        results[f'img_{self.domain_a}'] = img_a
+        results[f'img_{self.domain_b}'] = img_b
+        results[f'img_{self.domain_a}_path'] = filepath
+        results[f'img_{self.domain_b}_path'] = filepath
+        results[f'img_{self.domain_a}_ori_shape'] = img_a.shape
+        results[f'img_{self.domain_b}_ori_shape'] = img_b.shape
         if self.save_original_img:
-            results['ori_img_a'] = img_a.copy()
-            results['ori_img_b'] = img_b.copy()
+            results[f'ori_img_{self.domain_a}'] = img_a.copy()
+            results[f'ori_img_{self.domain_b}'] = img_b.copy()
 
         return results

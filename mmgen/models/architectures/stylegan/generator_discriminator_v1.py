@@ -1,7 +1,8 @@
-import math
+# Copyright (c) OpenMMLab. All rights reserved.
 import random
 
 import mmcv
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -90,7 +91,7 @@ class StyleGANv1Generator(nn.Module):
         }
 
         # generator backbone (8x8 --> higher resolutions)
-        self.log_size = int(math.log2(self.out_size))
+        self.log_size = int(np.log2(self.out_size))
 
         self.convs = nn.ModuleList()
         self.to_rgbs = nn.ModuleList()
@@ -332,7 +333,7 @@ class StyleGANv1Generator(nn.Module):
             latent = torch.cat([latent, latent2], 1)
 
         curr_log_size = self.log_size if curr_scale < 0 else int(
-            math.log2(curr_scale))
+            np.log2(curr_scale))
         step = curr_log_size - 2
 
         _index = 0
@@ -408,7 +409,7 @@ class StyleGAN1Discriminator(nn.Module):
             1024: 16,
         }
 
-        log_size = int(math.log2(in_size))
+        log_size = int(np.log2(in_size))
         self.log_size = log_size
         in_channels = channels[in_size]
 
@@ -495,7 +496,7 @@ class StyleGAN1Discriminator(nn.Module):
             torch.Tensor: Predict score for the input image.
         """
         curr_log_size = self.log_size if curr_scale < 0 else int(
-            math.log2(curr_scale))
+            np.log2(curr_scale))
         step = curr_log_size - 2
         for i in range(step, -1, -1):
             index = self.n_layer - i - 1

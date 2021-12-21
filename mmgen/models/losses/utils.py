@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import functools
 
 import torch.nn.functional as F
@@ -8,11 +9,23 @@ def reduce_loss(loss, reduction):
 
     Args:
         loss (Tensor): Elementwise loss tensor.
-        reduction (str): Options are "none", "mean" and "sum".
+        reduction (str): Options are "none", "mean", "sum", "flatmean" and
+            "batchmean". 'none': no reduction will be applied. 'mean': the
+            output will be divided by the number of elements in the output.
+            'sum': the output will be summed. 'batchmean': the sum of the
+            output will be divided by batchsize. 'flatmean': each sample
+            will be divided by the number of element respectively and
+            output will shape as [bz, ].
 
     Return:
         Tensor: Reduced loss tensor.
     """
+    if reduction == 'batchmean':
+        return loss.sum() / loss.shape[0]
+
+    if reduction == 'flatmean':
+        return loss.mean(dim=list(range(1, loss.ndim)))
+
     reduction_enum = F._Reduction.get_enum(reduction)
     # none: 0, elementwise_mean:1, sum: 2
     if reduction_enum == 0:
@@ -34,7 +47,7 @@ def weight_reduce_loss(loss, weight=None, reduction='mean', avg_factor=None):
         loss (Tensor): Element-wise loss.
         weight (Tensor): Element-wise weights.
         reduction (str): Same as built-in losses of PyTorch.
-        avg_factor (float): Avarage factor when computing the mean of losses.
+        avg_factor (float): Average factor when computing the mean of losses.
 
     Returns:
         Tensor: Processed loss values.

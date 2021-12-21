@@ -1,4 +1,4 @@
-# Tutorial 5: DDP Training in MMGeneration
+# Tutorial 6: DDP Training in MMGeneration
 
 In this section, we will discuss the `DDP` (Distributed Data-Parallel) training for generative models, especially for GANs.
 
@@ -10,20 +10,20 @@ In this section, we will discuss the `DDP` (Distributed Data-Parallel) training 
 |         MMDDP/PyTorch DDP          |          True          |    Error    |    Error     |
 |            DDP Wrapper             |         False          | **No Bugs** |    Error     |
 |            DDP Wrapper             |          True          | **No Bugs** | **No Bugs**  |
-| MMDDP/PyTorch DDP + Dyanmic Runner |          True          | **No Bugs** | **No Bugs**  |
+| MMDDP/PyTorch DDP + Dynamic Runner |          True          | **No Bugs** | **No Bugs**  |
 
 In this table, we summarize the ways of DDP training for GANs. [`MMDDP/PyTorch DDP`](https://github.com/open-mmlab/mmcv/blob/master/mmcv/parallel/distributed.py) denotes directly wrapping the GAN model (containing the generator, discriminator, and loss modules) with `MMDistributedDataPrarallel`. However, in such a way, we cannot train the GAN models with the adversarial training schedule. The main reason is that we always need to backward the losses for partial models (only for discriminator or generator) in `train_step` function.
 
 Another way to use DDP is adopting the [DDP Wrapper](https://github.com/open-mmlab/mmgeneration/tree/master/mmgen/core/ddp_wrapper.py) to wrap each component in the GAN model with `MMDDP`, which is widely used in current literature, e.g., `MMEditing` and [StyleGAN2-ADA-PyTorch](https://github.com/NVlabs/stylegan2-ada-pytorch). In this way, there is an important argument, `find_unused_parameters`. As shown in the table, users must set `True` in this argument for training dynamic architectures, like PGGAN and StyleGANv1. However, once set `True` in `find_unused_parameters`, the model will rebuild the bucket for synchronizing gradients and information after each forward process. This step will help the backward procedure to track which tensors are needed in the current computation graph.
 
-In `MMGeneration`, we design another way for users to adopt `DDP` training, i.e., `MMDDP/PyTorch DDP + Dyanmic Runner`. Before specifying the details of this new design, we first clarify why users should switch to it. In spite of achieving training in dynamic GANs with `DDP Wrapper`, we still spot some inconvenience and disadvantages:
+In `MMGeneration`, we design another way for users to adopt `DDP` training, i.e., `MMDDP/PyTorch DDP + Dynamic Runner`. Before specifying the details of this new design, we first clarify why users should switch to it. In spite of achieving training in dynamic GANs with `DDP Wrapper`, we still spot some inconvenience and disadvantages:
 
-- `DDP Wrapper` prevent users from calling the function or obtaining the attribute of the component in GANs, e.g., generator and discriminator. After adopting `DDP Wrapper`, if we want to call the function in `gernerator`, we have to use `generator.module.xxx()`.
-- `DDP Wrapper` will cause redundant bucket rebuilding. The true reason for avoiding ddp error by adopting `DDP Wrapper` is that each component in the GAN model will rebuild the bucket for backward right after calling their `forward` function. However, as known in GAN literature, there are many cases that we need not to build a bucket for backward, e.g., building the bucket for the generator when updating discriminators.
+- `DDP Wrapper` prevents users from calling the function or obtaining the attribute of the component in GANs, e.g., generator and discriminator. After adopting `DDP Wrapper`, if we want to call the function in `generator`, we have to use `generator.module.xxx()`.
+- `DDP Wrapper` will cause redundant bucket rebuilding. The true reason for avoiding ddp error by adopting `DDP Wrapper` is that each component in the GAN model will rebuild the bucket for backward right after calling their `forward` function. However, as known in GAN literature, there are many cases that we need not build a bucket for backward, e.g., building the bucket for the generator when updating discriminators.
 
 To solve these points, we try to find a way to directly adopt `MMDDP` and support dynamic GAN training. In `MMGeneration`, `DynamicIterBasedRunner` helps us to achieve this. Importantly, only `<10` line modification will solve the problem.
 
-## MMDDP/PyTorch DDP + Dyanmic Runner
+## MMDDP/PyTorch DDP + Dynamic Runner
 
 The key point of adopting DDP in static/dynamic GAN training is to construct (or check) the bucket used for backward before backward (discriminator backward and generator backward). Since the parameters that need gradients in these two backward are from different parts of the GAN model. Thus, our solution is just explicitly rebuilding the bucket right before each backward procedure.
 
@@ -56,7 +56,7 @@ loss_disc.backward()
 ```
 That is, users should add reducer preparation in between the loss calculation and loss backward.
 
-In our `MMGeneration`, this feature is adoptted as the default way to train DDP model. In configs, users should only add the following configuration to use dyanmic ddp runner:
+In our `MMGeneration`, this feature is adoptted as the default way to train DDP model. In configs, users should only add the following configuration to use dynamic ddp runner:
 
 ```python
 # use dynamic runner
@@ -77,7 +77,7 @@ Of course, we still support using the `DDP Wrapper` to train your GANs. If you w
 ```python
 # use ddp wrapper for faster training
 use_ddp_wrapper = True
-find_unused_parameters = True  # True for dyanmic model, False for static model
+find_unused_parameters = True  # True for dynamic model, False for static model
 
 runner = dict(
     type='DynamicIterBasedRunner',

@@ -1,0 +1,3 @@
+include mmgen/model-index.yml
+recursive-include mmgen/configs *.py *.yml
+recursive-include mmgen/tools *.sh *.py

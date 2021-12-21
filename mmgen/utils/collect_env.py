@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
 import subprocess
 import sys
@@ -22,7 +23,12 @@ def collect_env():
     env_info['CUDA available'] = cuda_available
 
     if cuda_available:
-        from mmcv.utils.parrots_wrapper import CUDA_HOME
+        if mmcv.__version__ < '1.3.11':
+            from mmcv.utils.parrots_wrapper import CUDA_HOME
+        else:
+            from mmcv.utils.parrots_wrapper import _get_cuda_home
+            CUDA_HOME = _get_cuda_home()
+
         env_info['CUDA_HOME'] = CUDA_HOME
 
         if CUDA_HOME is not None and osp.isdir(CUDA_HOME):

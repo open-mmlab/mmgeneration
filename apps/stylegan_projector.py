@@ -5,10 +5,12 @@ r"""
     Ref: https://github.com/rosinality/stylegan2-pytorch/blob/master/projector.py # noqa
 """
 import argparse
-import math
 import os
+import sys
+from collections import OrderedDict
 
 import mmcv
+import numpy as np
 import torch
 import torch.nn.functional as F
 from mmcv import Config
@@ -19,9 +21,14 @@ from torchvision import transforms
 from torchvision.utils import save_image
 from tqdm import tqdm
 
-from mmgen.apis import set_random_seed
-from mmgen.models import build_model
-from mmgen.models.architectures.lpips import PerceptualLoss
+# yapf: disable
+sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
+
+from mmgen.apis import set_random_seed # isort:skip  # noqa
+from mmgen.models import build_model # isort:skip  # noqa
+from mmgen.models.architectures.lpips import PerceptualLoss # isort:skip  # noqa
+
+# yapf: enable
 
 
 def parse_args():
@@ -124,7 +131,7 @@ def noise_normalize_(noises):
 
 def get_lr(t, initial_lr, rampdown=0.25, rampup=0.05):
     lr_ramp = min(1, (1 - t) / rampdown)
-    lr_ramp = 0.5 - 0.5 * math.cos(lr_ramp * math.pi)
+    lr_ramp = 0.5 - 0.5 * np.cos(lr_ramp * np.pi)
     lr_ramp = lr_ramp * min(1, t / rampup)
     return initial_lr * lr_ramp
 
@@ -258,7 +265,7 @@ def main():
 
     mmcv.mkdir_or_exist(args.results_path)
     # save projection results
-    result_file = {}
+    result_file = OrderedDict()
     for i, input_name in enumerate(args.files):
         noise_single = []
         for noise in noises:

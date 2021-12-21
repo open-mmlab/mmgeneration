@@ -1,6 +1,7 @@
 _base_ = [
     '../_base_/datasets/lsun-car_pad_512.py',
-    '../_base_/models/stylegan2_base.py', '../_base_/default_runtime.py'
+    '../_base_/models/stylegan/stylegan2_base.py',
+    '../_base_/default_runtime.py'
 ]
 
 model = dict(generator=dict(out_size=512), discriminator=dict(in_size=512))
@@ -31,7 +32,8 @@ lr_config = None
 total_iters = 1800002
 
 metrics = dict(
-    fid50k=dict(type='FID', num_images=50000, bgr2rgb=True),
+    fid50k=dict(
+        type='FID', num_images=50000, inception_pkl=None, bgr2rgb=True),
     pr50k3=dict(type='PR', num_images=50000, k=3),
     ppl_wend=dict(type='PPL', space='W', sampling='end', num_images=50000))
 

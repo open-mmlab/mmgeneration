@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from .generator_discriminator_v1 import (StyleGAN1Discriminator,
                                          StyleGANv1Generator)
 from .generator_discriminator_v2 import (StyleGAN2Discriminator,

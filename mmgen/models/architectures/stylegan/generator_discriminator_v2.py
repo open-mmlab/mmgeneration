@@ -1,11 +1,13 @@
-import math
+# Copyright (c) OpenMMLab. All rights reserved.
 import random
 
 import mmcv
+import numpy as np
 import torch
 import torch.nn as nn
 from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
 
+from mmgen.core.runners.fp16_utils import auto_fp16
 from mmgen.models.architectures import PixelNorm
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.builder import MODULES
@@ -28,11 +30,11 @@ class StyleGANv2Generator(nn.Module):
     ``pretrained`` argument. We have already offered official weights as
     follows:
 
-    - stylegan2-ffhq-config-f: http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-ffhq-config-f-official_20210327_171224-bce9310c.pth  # noqa
-    - stylegan2-horse-config-f: http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-horse-config-f-official_20210327_173203-ef3e69ca.pth  # noqa
-    - stylegan2-car-config-f: http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-car-config-f-official_20210327_172340-8cfe053c.pth  # noqa
-    - stylegan2-cat-config-f: http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-cat-config-f-official_20210327_172444-15bc485b.pth  # noqa
-    - stylegan2-church-config-f: http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth  # noqa
+    - stylegan2-ffhq-config-f: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-ffhq-config-f-official_20210327_171224-bce9310c.pth  # noqa
+    - stylegan2-horse-config-f: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-horse-config-f-official_20210327_173203-ef3e69ca.pth  # noqa
+    - stylegan2-car-config-f: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-car-config-f-official_20210327_172340-8cfe053c.pth  # noqa
+    - stylegan2-cat-config-f: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-cat-config-f-official_20210327_172444-15bc485b.pth  # noqa
+    - stylegan2-church-config-f: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth  # noqa
 
     If you want to load the ema model, you can just use following codes:
 
@@ -69,7 +71,15 @@ class StyleGANv2Generator(nn.Module):
         eval_style_mode (str, optional): The evaluation mode of style mixing.
             Defaults to 'single'.
         mix_prob (float, optional): Mixing probability. The value should be
-            in range of [0, 1]. Defaults to 0.9.
+            in range of [0, 1]. Defaults to ``0.9``.
+        num_fp16_scales (int, optional): The number of resolutions to use auto
+            fp16 training. Different from ``fp16_enabled``, this argument
+            allows users to adopt FP16 training only in several blocks.
+            This behaviour is much more similar to the official implementation
+            by Tero. Defaults to 0.
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. If this flag is `True`, the whole module will be wrapped
+            with ``auto_fp16``. Defaults to False.
         pretrained (dict | None, optional): Information for pretained models.
             The necessary key is 'ckpt_path'. Besides, you can also provide
             'prefix' to load the generator part from the whole state dict.
@@ -86,6 +96,8 @@ class StyleGANv2Generator(nn.Module):
                  default_style_mode='mix',
                  eval_style_mode='single',
                  mix_prob=0.9,
+                 num_fp16_scales=0,
+                 fp16_enabled=False,
                  pretrained=None):
         super().__init__()
         self.out_size = out_size
@@ -97,6 +109,8 @@ class StyleGANv2Generator(nn.Module):
         self.default_style_mode = default_style_mode
         self.eval_style_mode = eval_style_mode
         self.mix_prob = mix_prob
+        self.num_fp16_scales = num_fp16_scales
+        self.fp16_enabled = fp16_enabled
 
         # define style mapping layers
         mapping_layers = [PixelNorm()]
@@ -133,10 +147,13 @@ class StyleGANv2Generator(nn.Module):
             style_channels=style_channels,
             blur_kernel=blur_kernel)
         self.to_rgb1 = ModulatedToRGB(
-            self.channels[4], style_channels, upsample=False)
+            self.channels[4],
+            style_channels,
+            upsample=False,
+            fp16_enabled=fp16_enabled)
 
         # generator backbone (8x8 --> higher resolutions)
-        self.log_size = int(math.log2(self.out_size))
+        self.log_size = int(np.log2(self.out_size))
 
         self.convs = nn.ModuleList()
         self.upsamples = nn.ModuleList()
@@ -147,6 +164,11 @@ class StyleGANv2Generator(nn.Module):
         for i in range(3, self.log_size + 1):
             out_channels_ = self.channels[2**i]
 
+            # If `fp16_enabled` is True, all of layers will be run in auto
+            # FP16. In the case of `num_fp16_sacles` > 0, only partial
+            # layers will be run in fp16.
+            _use_fp16 = (self.log_size - i) < num_fp16_scales or fp16_enabled
+
             self.convs.append(
                 ModulatedStyleConv(
                     in_channels_,
@@ -154,7 +176,8 @@ class StyleGANv2Generator(nn.Module):
                     3,
                     style_channels,
                     upsample=True,
-                    blur_kernel=blur_kernel))
+                    blur_kernel=blur_kernel,
+                    fp16_enabled=_use_fp16))
             self.convs.append(
                 ModulatedStyleConv(
                     out_channels_,
@@ -162,9 +185,14 @@ class StyleGANv2Generator(nn.Module):
                     3,
                     style_channels,
                     upsample=False,
-                    blur_kernel=blur_kernel))
+                    blur_kernel=blur_kernel,
+                    fp16_enabled=_use_fp16))
             self.to_rgbs.append(
-                ModulatedToRGB(out_channels_, style_channels, upsample=True))
+                ModulatedToRGB(
+                    out_channels_,
+                    style_channels,
+                    upsample=True,
+                    fp16_enabled=_use_fp16))  # set to global fp16
 
             in_channels_ = out_channels_
 
@@ -177,6 +205,7 @@ class StyleGANv2Generator(nn.Module):
             shape = [1, 1, 2**res, 2**res]
             self.register_buffer(f'injected_noise_{layer_idx}',
                                  torch.randn(*shape))
+
         if pretrained is not None:
             self._load_pretrained_model(**pretrained)
 
@@ -250,6 +279,7 @@ class StyleGANv2Generator(nn.Module):
             truncation_latent=truncation_latent,
             style_channels=self.style_channels)
 
+    @auto_fp16()
     def forward(self,
                 styles,
                 num_batches=-1,
@@ -400,10 +430,11 @@ class StyleGANv2Generator(nn.Module):
             out = up_conv(out, latent[:, _index], noise=noise1)
             out = conv(out, latent[:, _index + 1], noise=noise2)
             skip = to_rgb(out, latent[:, _index + 2], skip)
-
             _index += 2
 
-        img = skip
+        # make sure the output image is torch.float32 to avoid RunTime Error
+        # in other modules
+        img = skip.to(torch.float32)
 
         if return_latents or return_noise:
             output_dict = dict(
@@ -428,21 +459,21 @@ class StyleGAN2Discriminator(nn.Module):
     ``pretrained`` argument. We have already offered official weights as
     follows:
 
-    - stylegan2-ffhq-config-f: http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-ffhq-config-f-official_20210327_171224-bce9310c.pth  # noqa
-    - stylegan2-horse-config-f: http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-horse-config-f-official_20210327_173203-ef3e69ca.pth  # noqa
-    - stylegan2-car-config-f: http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-car-config-f-official_20210327_172340-8cfe053c.pth  # noqa
-    - stylegan2-cat-config-f: http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-cat-config-f-official_20210327_172444-15bc485b.pth  # noqa
-    - stylegan2-church-config-f: http://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth  # noqa
+    - stylegan2-ffhq-config-f: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-ffhq-config-f-official_20210327_171224-bce9310c.pth  # noqa
+    - stylegan2-horse-config-f: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-horse-config-f-official_20210327_173203-ef3e69ca.pth  # noqa
+    - stylegan2-car-config-f: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-car-config-f-official_20210327_172340-8cfe053c.pth  # noqa
+    - stylegan2-cat-config-f: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-cat-config-f-official_20210327_172444-15bc485b.pth  # noqa
+    - stylegan2-church-config-f: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth  # noqa
 
     If you want to load the ema model, you can just use following codes:
 
     .. code-block:: python
 
         # ckpt_http is one of the valid path from http source
-        generator = StyleGANv2Generator(1024, 512,
-                                        pretrained=dict(
-                                            ckpt_path=ckpt_http,
-                                            prefix='discriminator'))
+        discriminator = StyleGAN2Discriminator(1024, 512,
+                                               pretrained=dict(
+                                                   ckpt_path=ckpt_http,
+                                                   prefix='discriminator'))
 
     Of course, you can also download the checkpoint in advance and set
     ``ckpt_path`` with local path.
@@ -460,6 +491,16 @@ class StyleGAN2Discriminator(nn.Module):
             to [1, 3, 3, 1].
         mbstd_cfg (dict, optional): Configs for minibatch-stddev layer.
             Defaults to dict(group_size=4, channel_groups=1).
+        num_fp16_scales (int, optional): The number of resolutions to use auto
+            fp16 training. Defaults to 0.
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. Defaults to False.
+        out_fp32 (bool, optional): Whether to convert the output feature map to
+            `torch.float32`. Defaults to `True`.
+        convert_input_fp32 (bool, optional): Whether to convert input type to
+            fp32 if not `fp16_enabled`. This argument is designed to deal with
+            the cases where some modules are run in FP16 and others in FP32.
+            Defaults to True.
         pretrained (dict | None, optional): Information for pretained models.
             The necessary key is 'ckpt_path'. Besides, you can also provide
             'prefix' to load the generator part from the whole state dict.
@@ -471,8 +512,16 @@ class StyleGAN2Discriminator(nn.Module):
                  channel_multiplier=2,
                  blur_kernel=[1, 3, 3, 1],
                  mbstd_cfg=dict(group_size=4, channel_groups=1),
+                 num_fp16_scales=0,
+                 fp16_enabled=False,
+                 out_fp32=True,
+                 convert_input_fp32=True,
                  pretrained=None):
         super().__init__()
+        self.num_fp16_scale = num_fp16_scales
+        self.fp16_enabled = fp16_enabled
+        self.convert_input_fp32 = convert_input_fp32
+        self.out_fp32 = out_fp32
 
         channels = {
             4: 512,
@@ -486,16 +535,28 @@ class StyleGAN2Discriminator(nn.Module):
             1024: 16 * channel_multiplier,
         }
 
-        log_size = int(math.log2(in_size))
+        log_size = int(np.log2(in_size))
 
         in_channels = channels[in_size]
 
-        convs = [ConvDownLayer(3, channels[in_size], 1)]
+        _use_fp16 = num_fp16_scales > 0
+        convs = [
+            ConvDownLayer(3, channels[in_size], 1, fp16_enabled=_use_fp16)
+        ]
 
         for i in range(log_size, 2, -1):
             out_channel = channels[2**(i - 1)]
 
-            convs.append(ResBlock(in_channels, out_channel, blur_kernel))
+            # add fp16 training for higher resolutions
+            _use_fp16 = (log_size - i) < num_fp16_scales or fp16_enabled
+
+            convs.append(
+                ResBlock(
+                    in_channels,
+                    out_channel,
+                    blur_kernel,
+                    fp16_enabled=_use_fp16,
+                    convert_input_fp32=convert_input_fp32))
 
             in_channels = out_channel
 
@@ -524,6 +585,7 @@ class StyleGAN2Discriminator(nn.Module):
         self.load_state_dict(state_dict, strict=strict)
         mmcv.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
 
+    @auto_fp16()
     def forward(self, x):
         """Forward function.
 
@@ -536,6 +598,8 @@ class StyleGAN2Discriminator(nn.Module):
         x = self.convs(x)
 
         x = self.mbstd_layer(x)
+        if not self.final_conv.fp16_enabled and self.convert_input_fp32:
+            x = x.to(torch.float32)
         x = self.final_conv(x)
         x = x.view(x.shape[0], -1)
         x = self.final_linear(x)

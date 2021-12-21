@@ -1,13 +1,14 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 """Implementation for Positional Encoding as Spatial Inductive Bias in GANs.
 
 In this module, we provide necessary components to conduct experiments
 mentioned in the paper: Positional Encoding as Spatial Inductive Bias in GANs.
 More details can be found in: https://arxiv.org/pdf/2012.05217.pdf
 """
-import math
 from functools import partial
 
 import mmcv
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -97,9 +98,10 @@ class SinGANMSGeneratorPE(SinGANMultiScaleGenerator):
             F.interpolate, mode='bicubic', align_corners=True)
 
         for scale in range(num_scales + 1):
-            base_ch = min(base_channels * pow(2, math.floor(scale / 4)), 128)
+            base_ch = min(base_channels * pow(2, int(np.floor(scale / 4))),
+                          128)
             min_feat_ch = min(
-                min_feat_channels * pow(2, math.floor(scale / 4)), 128)
+                min_feat_channels * pow(2, int(np.floor(scale / 4))), 128)
 
             if scale == 0:
                 in_ch = (
@@ -190,7 +192,7 @@ class SinGANMSGeneratorPE(SinGANMultiScaleGenerator):
                 head_grid = self.head_position_encode(fixed_noises[0])
                 noise_ = noise_ + head_grid
 
-            # add pading at head
+            # add padding at head
             if self.pad_at_head:
                 if self.interp_pad:
                     if self.noise_with_pad:

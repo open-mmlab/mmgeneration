@@ -39,7 +39,7 @@ data = dict(
             pipeline=train_pipeline)))
 
 ```
-Here, we adopt `RepeatDataset` to avoid frequent dataloader reloading, which will accelerate the training procedure. As shown in the example, `pipeline` provides important data pipeline to process images, including loading from file system, resizing, cropping and transfering to `torch.Tensor`. All of supported data pipelines can be found in `mmgen/datasets/pipelines`.
+Here, we adopt `RepeatDataset` to avoid frequent dataloader reloading, which will accelerate the training procedure. As shown in the example, `pipeline` provides important data pipeline to process images, including loading from file system, resizing, cropping and transferring to `torch.Tensor`. All of supported data pipelines can be found in `mmgen/datasets/pipelines`.
 
 For unconditional GANs with dynamic architectures like PGGAN and StyleGANv1, `GrowScaleImgDataset` is recommended to use for training. Since such dynamic architectures need real images in different scales, directly adopting `UnconditionalImageDataset` will bring heavy I/O cost for loading multiple high-resolution images. Here is an example we use for training PGGAN in CelebA-HQ dataset:
 
@@ -188,7 +188,7 @@ data = dict(
 ```
 
 Here, we adopt `LoadPairedImageFromFile` to load a paired image as the common loader does and crops
-it into two images with the same shape in different domains. As shown in the example, `pipeline` provides important data pipeline to process images, including loading from file system, resizing, cropping, flipping and transfering to `torch.Tensor`. All of supported data pipelines can be found in `mmgen/datasets/pipelines`.
+it into two images with the same shape in different domains. As shown in the example, `pipeline` provides important data pipeline to process images, including loading from file system, resizing, cropping, flipping and transferring to `torch.Tensor`. All of supported data pipelines can be found in `mmgen/datasets/pipelines`.
 
 For unpaired-data trained translation model like CycleGAN , `UnpairedImageDataset` is designed to train such translation models. Here is an example config for horse2zebra dataset:
 
@@ -277,4 +277,4 @@ data = dict(
         test_mode=True))
 
 ```
-Here, `UnpairedImageDataset` will load both images(domain A and B) from different paths and transform them at the same time.
+Here, `UnpairedImageDataset` will load both images (domain A and B) from different paths and transform them at the same time.

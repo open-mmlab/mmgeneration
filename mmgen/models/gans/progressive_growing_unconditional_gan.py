@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from copy import deepcopy
 from functools import partial
 
@@ -214,7 +215,7 @@ class ProgressiveGrowingGAN(BaseGAN):
         """
         # use `self.curr_scale` if curr_scale is None
         if curr_scale is None:
-            # in training, 'curr_scale' wil be set as attribute
+            # in training, 'curr_scale' will be set as attribute
             if hasattr(self, 'curr_scale'):
                 curr_scale = self.curr_scale[0]
             # in testing, adopt '_curr_scale_int' from buffer as testing scale

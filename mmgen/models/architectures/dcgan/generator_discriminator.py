@@ -1,5 +1,5 @@
-import math
-
+# Copyright (c) OpenMMLab. All rights reserved.
+import numpy as np
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, normal_init
@@ -43,8 +43,6 @@ class DCGANGenerator(nn.Module):
             convolutional feature, respectively. Defaults to 4.
         noise_size (int, optional): Size of the input noise
             vector. Defaults to 100.
-        conv_cfg (dict, optional): Config for the convolution module used in
-            this generator. Defaults to ``dict(type='ConvTranspose2d')``.
         default_norm_cfg (dict, optional): Norm config for all of layers
             except for the final output layer. Defaults to ``dict(type='BN')``.
         default_act_cfg (dict, optional): Activation config for all of layers
@@ -62,7 +60,6 @@ class DCGANGenerator(nn.Module):
                  base_channels=1024,
                  input_scale=4,
                  noise_size=100,
-                 conv_cfg=dict(type='ConvTranspose2d'),
                  default_norm_cfg=dict(type='BN'),
                  default_act_cfg=dict(type='ReLU'),
                  out_act_cfg=dict(type='Tanh'),
@@ -74,7 +71,7 @@ class DCGANGenerator(nn.Module):
         self.noise_size = noise_size
 
         # the number of times for upsampling
-        self.num_upsamples = int(math.log2(output_scale // input_scale))
+        self.num_upsamples = int(np.log2(output_scale // input_scale))
 
         # output 4x4 feature map
         self.noise2feat = ConvModule(
@@ -83,7 +80,7 @@ class DCGANGenerator(nn.Module):
             kernel_size=4,
             stride=1,
             padding=0,
-            conv_cfg=conv_cfg,
+            conv_cfg=dict(type='ConvTranspose2d'),
             norm_cfg=default_norm_cfg,
             act_cfg=default_act_cfg)
 
@@ -98,7 +95,7 @@ class DCGANGenerator(nn.Module):
                     kernel_size=4,
                     stride=2,
                     padding=1,
-                    conv_cfg=conv_cfg,
+                    conv_cfg=dict(type='ConvTranspose2d'),
                     norm_cfg=default_norm_cfg,
                     act_cfg=default_act_cfg))
 
@@ -113,7 +110,7 @@ class DCGANGenerator(nn.Module):
             kernel_size=4,
             stride=2,
             padding=1,
-            conv_cfg=conv_cfg,
+            conv_cfg=dict(type='ConvTranspose2d'),
             norm_cfg=None,
             act_cfg=out_act_cfg)
 
@@ -213,8 +210,6 @@ class DCGANDiscriminator(nn.Module):
         base_channels (int, optional): The basic channel number of the
             generator. The other layers contains channels based on this number.
             Defaults to 128.
-        conv_cfg (dict, optional): Config for the convolution module used in
-            this discriminator. Defaults to dict(type='Conv2d').
         default_norm_cfg (dict, optional): Norm config for all of layers
             except for the final output layer. Defaults to ``dict(type='BN')``.
         default_act_cfg (dict, optional): Activation config for all of layers
@@ -232,7 +227,6 @@ class DCGANDiscriminator(nn.Module):
                  out_channels,
                  in_channels=3,
                  base_channels=128,
-                 conv_cfg=dict(type='Conv2d'),
                  default_norm_cfg=dict(type='BN'),
                  default_act_cfg=dict(type='LeakyReLU'),
                  out_act_cfg=None,
@@ -244,7 +238,7 @@ class DCGANDiscriminator(nn.Module):
         self.base_channels = base_channels
 
         # the number of times for downsampling
-        self.num_downsamples = int(math.log2(input_scale // output_scale))
+        self.num_downsamples = int(np.log2(input_scale // output_scale))
 
         # build up downsampling backbone (excluding the output layer)
         downsamples = []
@@ -260,7 +254,7 @@ class DCGANDiscriminator(nn.Module):
                     kernel_size=4,
                     stride=2,
                     padding=1,
-                    conv_cfg=conv_cfg,
+                    conv_cfg=dict(type='Conv2d'),
                     norm_cfg=norm_cfg_,
                     act_cfg=default_act_cfg))
             curr_channels = base_channels * 2**i
@@ -274,7 +268,7 @@ class DCGANDiscriminator(nn.Module):
             kernel_size=4,
             stride=1,
             padding=0,
-            conv_cfg=conv_cfg,
+            conv_cfg=dict(type='Conv2d'),
             norm_cfg=None,
             act_cfg=out_act_cfg)
 

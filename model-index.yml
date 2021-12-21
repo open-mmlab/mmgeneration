@@ -1,0 +1,15 @@
+Import:
+- configs/biggan/metafile.yml
+- configs/cyclegan/metafile.yml
+- configs/dcgan/metafile.yml
+- configs/ggan/metafile.yml
+- configs/lsgan/metafile.yml
+- configs/pggan/metafile.yml
+- configs/pix2pix/metafile.yml
+- configs/positional_encoding_in_gans/metafile.yml
+- configs/sagan/metafile.yml
+- configs/singan/metafile.yml
+- configs/sngan_proj/metafile.yml
+- configs/styleganv1/metafile.yml
+- configs/styleganv2/metafile.yml
+- configs/wgan-gp/metafile.yml
