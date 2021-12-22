@@ -44,4 +44,3 @@
 
 
 	* [Improved Training of Wasserstein GANs](https://github.com/open-mmlab/mmgeneration/blob/master/https://github.com/open-mmlab/mmgeneration/blob/master/configs/wgan-gp) (2 ckpts)
-
