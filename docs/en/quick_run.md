@@ -281,7 +281,7 @@ In the aforementioned command, the script will take the PyTorch InceptionV3 by d
 python tools/utils/inception_stat.py --imgsdir ${IMGS_PATH} --pklname ${PKLNAME} --size ${SIZE} \
     --inception-style stylegan --inception-pth ${PATH_SCRIPT_MODULE}
 ```
-If you want to know more information about how to extract the inception state please refer to this [doc](https://github.com/open-mmlab/mmgeneration/blob/master/docs/tutorials/inception_stat.md).
+If you want to know more information about how to extract the inception state please refer to this [doc](https://github.com/open-mmlab/mmgeneration/blob/master/docs/en/tutorials/inception_stat.md).
 
 To use the FID metric, you should add the metric in a config file like this:
 

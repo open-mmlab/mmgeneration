@@ -18,9 +18,9 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 ## Major Features
 
 - **High-quality Training Performance:** We currently support training on Unconditional GANs, Internal GANs, and Image Translation Models. Support for conditional models will come soon.
-- **Powerful Application Toolkit:** A plentiful toolkit containing multiple applications in GANs is provided to users. GAN interpolation, GAN projection, and GAN manipulations are integrated into our framework. It's time to play with your GANs! ([Tutorial for applications](docs/tutorials/applications.md))
-- **Efficient Distributed Training for Generative Models:** For the highly dynamic training in generative models, we adopt a new way to train dynamic models with `MMDDP`. ([Tutorial for DDP](docs/tutorials/ddp_train_gans.md))
-- **New Modular Design for Flexible Combination:** A new design for complex loss modules is proposed for customizing the links between modules, which can achieve flexible combination among different modules. ([Tutorial for new modular design](docs/tutorials/customize_losses.md))
+- **Powerful Application Toolkit:** A plentiful toolkit containing multiple applications in GANs is provided to users. GAN interpolation, GAN projection, and GAN manipulations are integrated into our framework. It's time to play with your GANs! ([Tutorial for applications](docs/en/tutorials/applications.md))
+- **Efficient Distributed Training for Generative Models:** For the highly dynamic training in generative models, we adopt a new way to train dynamic models with `MMDDP`. ([Tutorial for DDP](docs/en/tutorials/ddp_train_gans.md))
+- **New Modular Design for Flexible Combination:** A new design for complex loss modules is proposed for customizing the links between modules, which can achieve flexible combination among different modules. ([Tutorial for new modular design](docs/en/tutorials/customize_losses.md))
 
 
 <table>
@@ -61,7 +61,7 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 * Mixed-precision training (FP16) for StyleGAN2 has been supported. Please check [the comparison](configs/styleganv2/README.md) between different implementations.
 ## Changelog
 
-v0.4.0 was released on 03/11/2021. Please refer to [changelog.md](docs/changelog.md) for details and release history.
+v0.4.0 was released on 03/11/2021. Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
 
 ## ModelZoo
 
@@ -120,7 +120,7 @@ Please refer to [get_started.md](docs/get_started.md) for installation.
 
 ## Getting Started
 
-Please see [get_started.md](docs/get_started.md) for the basic usage of MMGeneration. [docs/quick_run.md](docs/quick_run.md) can offer full guidance for quick run. For other details and tutorials, please go to our [documentation](https://mmgeneration.readthedocs.io/).
+Please see [get_started.md](docs/en/get_started.md) for the basic usage of MMGeneration. [docs/en/quick_run.md](docs/en/quick_run.md) can offer full guidance for quick run. For other details and tutorials, please go to our [documentation](https://mmgeneration.readthedocs.io/).
 
 ## Contributing
 
