@@ -81,7 +81,7 @@ If you have already import some modules in a `__init__.py` file, the code still 
 
 ### Modify config file to use new model
 
-As discussed in the [tutorial for our config system](https://github.com/open-mmlab/mmgeneration/blob/master/docs/tutorials/config.md), users are recommended to create a new config file based on existing standard configs. Here, we show how to modify the [StyleGAN2 model](https://github.com/open-mmlab/mmgeneration/blob/master/configs/styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py) with our new generator:
+As discussed in the [tutorial for our config system](https://github.com/open-mmlab/mmgeneration/blob/master/docs/en/tutorials/config.md), users are recommended to create a new config file based on existing standard configs. Here, we show how to modify the [StyleGAN2 model](https://github.com/open-mmlab/mmgeneration/blob/master/configs/styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py) with our new generator:
 
 ```python
 _base_ = ['configs/styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py']
