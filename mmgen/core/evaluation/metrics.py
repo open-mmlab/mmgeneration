@@ -127,7 +127,7 @@ def _load_inception_torch(inception_args, metric):
             'please use Tero\'s Inception V3 checkpoints '
             'and use Bicubic Interpolation with Pillow backend '
             'for image resizing. More details may refer to '
-            'https://github.com/open-mmlab/mmgeneration/blob/master/docs/quick_run.md#is.',  # noqa
+            'https://github.com/open-mmlab/mmgeneration/blob/master/docs/en/quick_run.md#is.',  # noqa
             'mmgen')
     return inception_model
 
@@ -392,6 +392,7 @@ class Metric(ABC):
             mode (str): Mark the batch as real or fake images. Value can be
                 'reals' or 'fakes',
         """
+        _, ws = get_dist_info()
         if mode == 'reals':
             if self.num_real_feeded == self.num_real_need:
                 return 0
@@ -406,8 +407,11 @@ class Metric(ABC):
                 end = min(batch_size,
                           self.num_real_need - self.num_real_feeded)
                 batch_to_feed = batch[:end, ...]
+
+            global_end = min(batch_size * ws,
+                             self.num_real_need - self.num_real_feeded)
             self.feed_op(batch_to_feed, mode)
-            self.num_real_feeded += end
+            self.num_real_feeded += global_end
             return end
 
         elif mode == 'fakes':
@@ -420,8 +424,11 @@ class Metric(ABC):
                 batch_to_feed = {k: v[:end, ...] for k, v in batch.items()}
             else:
                 batch_to_feed = batch[:end, ...]
+
+            global_end = min(batch_size * ws,
+                             self.num_fake_need - self.num_fake_feeded)
             self.feed_op(batch_to_feed, mode)
-            self.num_fake_feeded += end
+            self.num_fake_feeded += global_end
             return end
         else:
             raise ValueError(

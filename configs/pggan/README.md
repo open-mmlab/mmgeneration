@@ -1,9 +1,18 @@
 # Progressive Growing of GANs for Improved Quality, Stability, and Variation
 
-## Introduction
+## Abstract
+
+We describe a new training methodology for generative adversarial networks. The key idea is to grow both the generator and discriminator progressively: starting from a low resolution, we add new layers that model increasingly fine details as training progresses. This both speeds the training up and greatly stabilizes it, allowing us to produce images of unprecedented quality, e.g., CelebA images at 1024^2. We also propose a simple way to increase the variation in generated images, and achieve a record inception score of 8.80 in unsupervised CIFAR10. Additionally, we describe several implementation details that are important for discouraging unhealthy competition between the generator and discriminator. Finally, we suggest a new metric for evaluating GAN results, both in terms of image quality and variation. As an additional contribution, we construct a higher-quality version of the CelebA dataset.
+
+<!-- [IMAGE] -->
+<div align=center>
+<img src="https://user-images.githubusercontent.com/28132635/143053374-c03894c3-6def-49c2-94ed-80c4accee726.JPG" />
+</div>
+
+## Citation
+
 <!-- [ALGORITHM] -->
 
-<details>
 <summary align="right"><a href="https://arxiv.org/abs/1710.10196">PGGAN (arXiv'2017)</a></summary>
 
 ```latex
@@ -15,8 +24,6 @@
   url={https://arxiv.org/abs/1710.10196},
 }
 ```
-
-</details>
 
 <div align="center">
   <b> Results (compressed) from our PGGAN trained in CelebA-HQ@1024</b>

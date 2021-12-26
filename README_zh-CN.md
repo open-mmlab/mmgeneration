@@ -109,6 +109,8 @@ v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changel
 
 </details>
 
+## 相关应用
+- ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
 ## 开源许可证
 
@@ -116,11 +118,11 @@ v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changel
 
 ## 安装
 
-请参考[快速入门](docs/get_started.md)进行安装。
+请参考[快速入门](docs/zh_cn/get_started.md)进行安装。
 
 ## 快速入门
 
-对于 `MMGeneration` 的基本使用请参考 [快速入门](docs/get_started.md)。其他细节和教程，请参考我们的[文档](https://mmgeneration.readthedocs.io/)。
+对于 `MMGeneration` 的基本使用请参考 [快速入门](docs/zh_cn/get_started.md)。其他细节和教程，请参考我们的[文档](https://mmgeneration.readthedocs.io/)。
 
 ## 贡献指南
 
@@ -142,6 +144,7 @@ v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changel
 ## OpenMMLab 的其他项目
 
 - [MMCV](https://github.com/open-mmlab/mmcv): OpenMMLab 计算机视觉基础库
+- [MIM](https://github.com/open-mmlab/mim): MIM 是 OpenMMLab 项目、算法、模型的统一入口
 - [MMClassification](https://github.com/open-mmlab/mmclassification): OpenMMLab 图像分类工具箱与测试基准
 - [MMDetection](https://github.com/open-mmlab/mmdetection): OpenMMLab 检测工具箱与测试基准
 - [MMDetection3D](https://github.com/open-mmlab/mmdetection3d): OpenMMLab 新一代通用3D目标检测平台
@@ -152,7 +155,9 @@ v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changel
 - [MMEditing](https://github.com/open-mmlab/mmediting): OpenMMLab 图像视频编辑工具箱
 - [MMOCR](https://github.com/open-mmlab/mmocr): OpenMMLab 全流程文字检测识别理解工具包
 - [MMGeneration](https://github.com/open-mmlab/mmgeneration): OpenMMLab 新一代生成模型工具箱
-
+- [MMFlow](https://github.com/open-mmlab/mmflow): OpenMMLab 光流估计工具箱与测试基准
+- [MMFewShot](https://github.com/open-mmlab/mmfewshot): OpenMMLab 少样本学习工具箱与测试基准
+- [MMHuman3D](https://github.com/open-mmlab/mmhuman3d): OpenMMLab 人体参数化模型工具箱与测试基准
 
 ## 欢迎加入 OpenMMLab 社区
 

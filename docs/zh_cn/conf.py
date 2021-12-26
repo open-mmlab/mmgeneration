@@ -14,14 +14,14 @@ import os
 import subprocess
 import sys
 
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../../'))
 
 # -- Project information -----------------------------------------------------
 
 project = 'MMGeneration'
 copyright = '2018-2020, OpenMMLab'
 author = 'MMGeneration Authors'
-version_file = '../mmgen/version.py'
+version_file = '../../mmgen/version.py'
 
 
 def get_version():

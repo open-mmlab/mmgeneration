@@ -11,12 +11,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--stylegan2_c2_ffhq_256_b3x8_1100k
+  Name: stylegan2_c2
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 5.56
-      Models: stylegan2_c2_256_baseline
       P&R10k: 75.92/51.24
       Reference in Paper: Tab.5 config-a
       Scales: 256.0
@@ -26,12 +25,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--stylegan2_c2_ffhq_512_b3x8_1100k
+  Name: stylegan2_ffhq
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 4.91
-      Models: stylegan2_c2_512_baseline
       P&R10k: 75.65/54.58
       Reference in Paper: Tab.5 config-b
       Scales: 512.0
@@ -41,12 +39,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-c_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_c2
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 3.35
-      Models: ms-pie_stylegan2_c2_config-c
       P&R10k: 73.84/55.77
       Reference in Paper: Tab.5 config-c
       Scales: 256, 384, 512
@@ -56,12 +53,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-d_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-d
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 3.5
-      Models: ms-pie_stylegan2_c2_config-d
       P&R10k: 73.28/56.16
       Reference in Paper: Tab.5 config-d
       Scales: 256, 384, 512
@@ -71,12 +67,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-e_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-e
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 3.15
-      Models: ms-pie_stylegan2_c2_config-e
       P&R10k: 74.13/56.88
       Reference in Paper: Tab.5 config-e
       Scales: 256, 384, 512
@@ -86,12 +81,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-f_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-f
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 2.93
-      Models: ms-pie_stylegan2_c2_config-f
       P&R10k: 73.51/57.32
       Reference in Paper: Tab.5 config-f
       Scales: 256, 384, 512
@@ -101,12 +95,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c1_config-g_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_c1
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 3.4
-      Models: ms-pie_stylegan2_c1_config-g
       P&R10k: 73.05/56.45
       Reference in Paper: Tab.5 config-g
       Scales: 256, 384, 512
@@ -116,12 +109,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-h_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-h
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 4.01
-      Models: ms-pie_stylegan2_c2_config-h
       P&R10k: 72.81/54.35
       Reference in Paper: Tab.5 config-h
       Scales: 256, 384, 512
@@ -131,12 +123,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-i_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-i
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 3.76
-      Models: ms-pie_stylegan2_c2_config-i
       P&R10k: 73.26/54.71
       Reference in Paper: Tab.5 config-i
       Scales: 256, 384, 512
@@ -146,12 +137,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-j_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-j
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 4.23
-      Models: ms-pie_stylegan2_c2_config-j
       P&R10k: 73.11/54.63
       Reference in Paper: Tab.5 config-j
       Scales: 256, 384, 512
@@ -161,12 +151,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-k_ffhq_256-512_b3x8_1100k
+  Name: mspie-stylegan2_config-k
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 4.17
-      Models: ms-pie_stylegan2_c2_config-k
       P&R10k: 73.05/51.07
       Reference in Paper: Tab.5 config-k
       Scales: 256, 384, 512
@@ -176,12 +165,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c2_config-f_ffhq_256-896_b3x8_1100k
+  Name: mspie-stylegan2_ffhq
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 4.1
-      Models: ms-pie_stylegan2_c2_config-f
       P&R10k: 72.21/50.29
       Reference in Paper: higher-resolution
       Scales: 256, 512, 896
@@ -191,12 +179,11 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--mspie-stylegan2_c1_config-f_ffhq_256-1024_b2x8_1600k
+  Name: mspie-stylegan2_256-1024
   Results:
   - Dataset: FFHQ
     Metrics:
       FID50k: 6.24
-      Models: ms-pie_stylegan2_c1_config-f
       P&R10k: 71.79/49.92
       Reference in Paper: higher-resolution
       Scales: 256, 512, 1024
@@ -206,7 +193,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_interp-pad_balloons
+  Name: singan_interp-pad
   Results:
   - Dataset: Others
     Metrics:
@@ -217,7 +204,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_interp-pad_disc-nobn_balloons
+  Name: singan_balloons
   Results:
   - Dataset: Others
     Metrics:
@@ -228,7 +215,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_interp-pad_disc-nobn_fish
+  Name: singan_disc-nobn
   Results:
   - Dataset: Others
     Metrics:
@@ -239,7 +226,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_csg_fish
+  Name: singan_csg
   Results:
   - Dataset: Others
     Metrics:
@@ -250,7 +237,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_csg_bohemian
+  Name: singan_bohemian
   Results:
   - Dataset: Others
     Metrics:
@@ -261,7 +248,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_spe-dim4_fish
+  Name: singan_spe-dim4
   Results:
   - Dataset: Others
     Metrics:
@@ -272,7 +259,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_spe-dim4_bohemian
+  Name: singan
   Results:
   - Dataset: Others
     Metrics:
@@ -283,7 +270,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--positional_encoding_in_gans--singan_spe-dim8_bohemian
+  Name: singan_spe-dim8
   Results:
   - Dataset: Others
     Metrics:

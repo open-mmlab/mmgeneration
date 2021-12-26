@@ -11,17 +11,15 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: CIFAR
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
+  Name: sngan_woReLUinplace
   Results:
   - Dataset: CIFAR
     Metrics:
-      Dataset: CIFAR10
       FID: 9.8203
       IS: 9.6919
       Inplace ReLU: w/o
       Iter: 400000.0
-      Log: '[Log](https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_cifar10_32_lr-2e-4_b64x1_woReLUinplace_20210624_065306_fid-ba0862a0_is-902ce1ae.json)'
-      Models: SNGAN_Proj-32x32-woInplaceReLU Best IS
+      Log: '[Log]'
       Total Iters\*: 500000.0
       disc_step: 5.0
     Task: Conditional GANs
@@ -30,17 +28,15 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: CIFAR
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
+  Name: sngan_woReLUinplace
   Results:
   - Dataset: CIFAR
     Metrics:
-      Dataset: CIFAR10
       FID: 8.1158
       IS: 9.5659
       Inplace ReLU: w/o
       Iter: 490000.0
-      Log: '[Log](https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_cifar10_32_lr-2e-4_b64x1_woReLUinplace_20210624_065306_fid-ba0862a0_is-902ce1ae.json)'
-      Models: SNGAN_Proj-32x32-woInplaceReLU Best FID
+      Log: '[Log]'
       Total Iters\*: 500000.0
       disc_step: 5.0
     Task: Conditional GANs
@@ -49,17 +45,15 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: CIFAR
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
+  Name: sngan_32
   Results:
   - Dataset: CIFAR
     Metrics:
-      Dataset: CIFAR10
       FID: 8.3462
       IS: 9.5564
       Inplace ReLU: w
       Iter: 490000.0
-      Log: '[Log](https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_cifar10_32_lr-2e-4_b64x1_wReLUinplace_20210624_065306_fid-ba0862a0_is-902ce1ae.json)'
-      Models: SNGAN_Proj-32x32-wInplaceReLU Best IS
+      Log: '[Log]'
       Total Iters\*: 500000.0
       disc_step: 5.0
     Task: Conditional GANs
@@ -68,17 +62,15 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: CIFAR
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
+  Name: sngan_32
   Results:
   - Dataset: CIFAR
     Metrics:
-      Dataset: CIFAR10
       FID: 8.3462
       IS: 9.5564
       Inplace ReLU: w
       Iter: 490000.0
-      Log: '[Log](https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_cifar10_32_lr-2e-4_b64x1_wReLUinplace_20210624_065306_fid-ba0862a0_is-902ce1ae.json)'
-      Models: SNGAN_Proj-32x32-wInplaceReLU Best FID
+      Log: '[Log]'
       Total Iters\*: 500000.0
       disc_step: 5.0
     Task: Conditional GANs
@@ -87,17 +79,15 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_128_woReLUinplace_Glr-2e-4_Dlr-5e-5_ndisc5_imagenet1k_b128x2
+  Name: sngan_Glr-2e-4
   Results:
   - Dataset: IMAGENET
     Metrics:
-      Dataset: ImageNet
       FID: 33.4682
       IS: 30.0651
       Inplace ReLU: w/o
       Iter: 952000.0
-      Log: '[Log](https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_imagenet1k_128_Glr2e-4_Dlr5e-5_ndisc5_b128x2_woReLUinplace_20210730_131424_fid-061bf803_is-9c884a21.json)'
-      Models: SNGAN_Proj-128x128-woInplaceReLU Best IS
+      Log: '[Log]'
       Total Iters\*: 1000000.0
       disc_step: 5.0
     Task: Conditional GANs
@@ -106,17 +96,15 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_128_woReLUinplace_Glr-2e-4_Dlr-5e-5_ndisc5_imagenet1k_b128x2
+  Name: sngan_Glr-2e-4
   Results:
   - Dataset: IMAGENET
     Metrics:
-      Dataset: ImageNet
       FID: 32.6193
       IS: 29.5779
       Inplace ReLU: w/o
       Iter: 989000.0
-      Log: '[Log](https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_imagenet1k_128_Glr2e-4_Dlr5e-5_ndisc5_b128x2_woReLUinplace_20210730_131424_fid-061bf803_is-9c884a21.json)'
-      Models: SNGAN_Proj-128x128-woInplaceReLU Best FID
+      Log: '[Log]'
       Total Iters\*: 1000000.0
       disc_step: 5.0
     Task: Conditional GANs
@@ -125,17 +113,15 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_128_wReLUinplace_Glr-2e-4_Dlr-5e-5_ndisc5_imagenet1k_b128x2
+  Name: sngan_128
   Results:
   - Dataset: IMAGENET
     Metrics:
-      Dataset: ImageNet
       FID: 34.3383
       IS: 28.1799
       Inplace ReLU: w
       Iter: 944000.0
-      Log: '[Log](https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_imagenet1k_128_Glr2e-4_Dlr5e-5_ndisc5_b128x2_wReLUinplace_20210730_132401_fid-9a682411_is-ca0ccd07.json)'
-      Models: SNGAN_Proj-128x128-wInplaceReLU Best IS
+      Log: '[Log]'
       Total Iters\*: 1000000.0
       disc_step: 5.0
     Task: Conditional GANs
@@ -144,17 +130,15 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: IMAGENET
-  Name: https:----github.com--open-mmlab--mmgeneration--tree--master--sngan_proj--sngan_proj_128_wReLUinplace_Glr-2e-4_Dlr-5e-5_ndisc5_imagenet1k_b128x2
+  Name: sngan_128
   Results:
   - Dataset: IMAGENET
     Metrics:
-      Dataset: ImageNet
       FID: 33.4821
       IS: 27.7948
       Inplace ReLU: w
       Iter: 988000.0
-      Log: '[Log](https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_imagenet1k_128_Glr2e-4_Dlr5e-5_ndisc5_b128x2_wReLUinplace_20210730_132401_fid-9a682411_is-ca0ccd07.json)'
-      Models: SNGAN_Proj-128x128-wInplaceReLU Best FID
+      Log: '[Log]'
       Total Iters\*: 1000000.0
       disc_step: 5.0
     Task: Conditional GANs
@@ -163,17 +147,15 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--sngan_proj_32x32
+  Name: sngan_32x32
   Results:
   - Dataset: Others
     Metrics:
-      Dataset: CIFAR10
       FID (Our Pipeline): 10.2011
       FID (StudioGAN): 13.248
       IS (Our Pipeline): 9.372
       IS (StudioGAN): 8.677
       Inplace ReLU: w
-      Models: SAGAN_Proj-32x32 StudioGAN
       Total Iters: 100000.0
       disc_step: 5.0
     Task: Conditional GANs
@@ -182,17 +164,15 @@ Models:
   In Collection: SNGAN
   Metadata:
     Training Data: Others
-  Name: https:----github.com--open-mmlab--mmgeneration--blob--master--_base_--models--sngan_proj_128x128
+  Name: sngan_128x128
   Results:
   - Dataset: Others
     Metrics:
-      Dataset: ImageNet
       FID (Our Pipeline): 29.8199
       FID (StudioGAN): 26.792
       IS (Our Pipeline): 30.218
       IS (StudioGAN): 32.247
       Inplace ReLU: w
-      Models: SAGAN_Proj-128x128 StudioGAN
       Total Iters: 1000000.0
       disc_step: 2.0
     Task: Conditional GANs

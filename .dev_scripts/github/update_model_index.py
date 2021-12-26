@@ -7,14 +7,16 @@
 # detected before a commit.
 
 import glob
+import os
 import os.path as osp
 import re
 import sys
 import warnings
+from functools import reduce
 
 import mmcv
 
-MMEditing_ROOT = osp.dirname(osp.dirname(osp.dirname(__file__)))
+MMGeneration_ROOT = osp.dirname(osp.dirname(osp.dirname(__file__)))
 
 all_training_data = [
     'cifar', 'ffhq', 'celeba', 'imagenet', 'lsun', 'reds', 'ffhq', 'cat',
@@ -67,9 +69,13 @@ def collate_metrics(keys):
     used_metrics = dict()
     for idx, key in enumerate(keys):
         if key in [
-                'Model', 'Download', 'Config', 'Original Download link', 'Data'
+                'Model', 'Models', 'Download', 'Config',
+                'Original Download link', 'Data', 'Dataset'
         ]:
             continue
+        # process metric such as Best FID and Best IS
+        if '(Iter)' in key:
+            key = key.split('(')[0].strip()
         used_metrics[key] = idx
     return used_metrics
 
@@ -105,6 +111,45 @@ def get_task_dict(md_file):
     return task_dict
 
 
+def generate_unique_name(md_file):
+    """Search config files and return the unique name of them. For Confin.Name.
+
+    Args:
+        md_file (str): Path to .md file.
+    Returns:
+        dict: dict of unique name for each config file.
+    """
+    # add configs from _base_/models/MODEL_NAME
+    md_root = md_file.split('/')[:2]
+    model_name = md_file.split('/')[1]
+    base_path = osp.join(*md_root, '..', '_base_', 'models', model_name)
+    base_files = os.listdir(base_path) if osp.exists(base_path) else []
+
+    files = os.listdir(osp.dirname(md_file)) + base_files
+    config_files = [f[:-3] for f in files if f[-3:] == '.py']
+    config_files.sort()
+    config_files.sort(key=lambda x: len(x))
+    split_names = [f.split('_') for f in config_files]
+    config_sets = [set(f.split('_')) for f in config_files]
+    common_set = reduce(lambda x, y: x & y, config_sets)
+    unique_lists = [[n for n in name if n not in common_set]
+                    for name in split_names]
+
+    unique_dict = dict()
+    name_list = []
+    for i, f in enumerate(config_files):
+        base = split_names[i][0]
+        unique_dict[f] = base
+        if len(unique_lists[i]) > 0:
+            for unique in unique_lists[i]:
+                candidate_name = f'{base}_{unique}'
+                if candidate_name not in name_list and base != unique:
+                    unique_dict[f] = candidate_name
+                    name_list.append(candidate_name)
+                    break
+    return unique_dict
+
+
 def parse_md(md_file, task):
     """Parse .md file and convert it to a .yml file which can be used for MIM.
 
@@ -114,11 +159,13 @@ def parse_md(md_file, task):
     Returns:
         Bool: If the target YAML file is different from the original.
     """
+    unique_dict = generate_unique_name(md_file)
+
     collection_name = osp.splitext(osp.basename(md_file))[0]
     collection = dict(
         Name=collection_name,
         Metadata={'Architecture': []},
-        README=osp.relpath(md_file, MMEditing_ROOT),
+        README=osp.relpath(md_file, MMGeneration_ROOT),
         Paper=[])
     models = []
     with open(md_file, 'r') as md:
@@ -126,7 +173,8 @@ def parse_md(md_file, task):
         i = 0
         while i < len(lines):
             # parse reference
-            if lines[i][:2] == '<!':
+            if lines[i][:2] == '<!' and ('ALGORITHM' in lines[i]
+                                         or 'BACKBONE' in lines[i]):
                 j = i + 1
                 while len(lines[j]) < 8 or lines[j][:8] != '<summary':
                     j += 1
@@ -181,9 +229,14 @@ def parse_md(md_file, task):
                             left = line[checkpoint_idx].index('ckpt](') + 6
                         right = line[checkpoint_idx].index(')', left)
                         checkpoint = line[checkpoint_idx][left:right]
-
-                    model_name = osp.splitext(config)[0].replace(
-                        'configs/', '', 1).replace('/', '--')
+                    name_key = osp.splitext(osp.basename(config))[0]
+                    if name_key in unique_dict:
+                        model_name = unique_dict[name_key]
+                    else:
+                        model_name = name_key
+                        warnings.warn(
+                            f'Config file of {model_name} is not found,'
+                            'please check it again.')
 
                     # find dataset in config file
                     dataset = 'Others'
@@ -203,9 +256,13 @@ def parse_md(md_file, task):
                     for key in used_metrics:
                         metrics_data = line[used_metrics[key]]
                         metrics_data = metrics_data.replace('*', '')
+                        if '(' in metrics_data and ')' in metrics_data:
+                            metrics_data = metrics_data.split('(')[0].strip()
                         try:
                             metrics[key] = float(metrics_data)
                         except ValueError:
+                            # import ipdb
+                            # ipdb.set_trace()
                             metrics[key] = metrics_data.strip()
 
                     model = {
@@ -248,15 +305,15 @@ def update_model_index():
     Returns:
         Bool: If the updated model-index.yml is different from the original.
     """
-    configs_dir = osp.join(MMEditing_ROOT, 'configs')
+    configs_dir = osp.join(MMGeneration_ROOT, 'configs')
     yml_files = glob.glob(osp.join(configs_dir, '**', '*.yml'), recursive=True)
     yml_files.sort()
 
     model_index = {
         'Import':
-        [osp.relpath(yml_file, MMEditing_ROOT) for yml_file in yml_files]
+        [osp.relpath(yml_file, MMGeneration_ROOT) for yml_file in yml_files]
     }
-    model_index_file = osp.join(MMEditing_ROOT, 'model-index.yml')
+    model_index_file = osp.join(MMGeneration_ROOT, 'model-index.yml')
     is_different = dump_yaml_and_check_difference(model_index,
                                                   model_index_file)
 
@@ -265,7 +322,7 @@ def update_model_index():
 
 if __name__ == '__main__':
     if len(sys.argv) <= 1:
-        configs_root = osp.join(MMEditing_ROOT, 'configs')
+        configs_root = osp.join(MMGeneration_ROOT, 'configs')
         file_list = glob.glob(
             osp.join(configs_root, '**', '*README.md'), recursive=True)
         file_list.sort()
@@ -278,7 +335,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     # get task name of each method
-    task_dict = get_task_dict(osp.join(MMEditing_ROOT, 'README.md'))
+    task_dict = get_task_dict(osp.join(MMGeneration_ROOT, 'README.md'))
 
     file_modified = False
     for fn in file_list:
