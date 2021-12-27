@@ -23,10 +23,10 @@ train_cfg = dict(first_fixed_noises_ch=embedding_dim * 2)
 
 data = dict(
     train=dict(
-        img_path='./data/singan/fish.jpg',
+        img_path='./data/singan/bohemian.png',
         min_size=25,
-        max_size=300,
+        max_size=500,
     ))
 
-dist_params = dict(backend='nccl', port=28119)
+dist_params = dict(backend='nccl')
 total_iters = 22000
