@@ -9,6 +9,7 @@ model = dict(
         base_channels=64,
         with_shared_embedding=False,
         sn_eps=1e-8,
+        sn_style='torch',
         init_type='N02',
         split_noise=False,
         auto_sync_bn=False),
@@ -18,6 +19,7 @@ model = dict(
         num_classes=10,
         base_channels=64,
         sn_eps=1e-8,
+        sn_style='torch',
         init_type='N02',
         with_spectral_norm=True),
     gan_loss=dict(type='GANLoss', gan_type='hinge'))
