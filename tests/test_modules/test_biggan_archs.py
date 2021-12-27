@@ -42,12 +42,27 @@ class TestBigGANConditionBN:
         out = module(self.x, self.label)
         assert out.shape == (2, 64, 32, 32)
 
-        # test ajbrock-sn
+        # test torch-sn
         cfg = deepcopy(self.default_cfg)
-        cfg.update(dict(sn_style='ajbrock'))
+        cfg.update(dict(sn_style='torch'))
         module = build_module(cfg)
         out = module(self.x, self.y)
         assert out.shape == (2, 64, 32, 32)
+
+        # test torch-sn
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(sn_style='torch'))
+        module = build_module(cfg)
+        out = module(self.x, self.y)
+        assert out.shape == (2, 64, 32, 32)
+
+        # test not-implemented sn-style
+        with pytest.raises(NotImplementedError):
+            cfg = deepcopy(self.default_cfg)
+            cfg.update(dict(sn_style='tero'))
+            module = build_module(cfg)
+            out = module(self.x, self.y)
+            assert out.shape == (2, 64, 32, 32)
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_biggan_condition_bn_cuda(self):
@@ -64,12 +79,20 @@ class TestBigGANConditionBN:
         out = module(self.x.cuda(), self.label.cuda())
         assert out.shape == (2, 64, 32, 32)
 
-        # test ajbrock-sn
+        # test torch-sn
         cfg = deepcopy(self.default_cfg)
-        cfg.update(dict(sn_style='ajbrock'))
+        cfg.update(dict(sn_style='torch'))
         module = build_module(cfg).cuda()
         out = module(self.x.cuda(), self.y.cuda())
         assert out.shape == (2, 64, 32, 32)
+
+        # test not-implemented sn-style
+        with pytest.raises(NotImplementedError):
+            cfg = deepcopy(self.default_cfg)
+            cfg.update(dict(sn_style='tero'))
+            module = build_module(cfg).cuda()
+            out = module(self.x.cuda(), self.y.cuda())
+            assert out.shape == (2, 64, 32, 32)
 
 
 class TestSelfAttentionBlock:
@@ -94,9 +117,9 @@ class TestSelfAttentionBlock:
         out = module(x)
         assert out.shape == (2, 10, 8, 8)
 
-        # test ajbrock-sn
+        # test torch-sn
         cfg = deepcopy(self.default_cfg)
-        cfg.update(dict(sn_style='ajbrock'))
+        cfg.update(dict(sn_style='torch'))
         module = build_module(cfg)
         out = module(self.x)
         assert out.shape == (2, 16, 8, 8)
@@ -117,9 +140,9 @@ class TestSelfAttentionBlock:
         out = module(x)
         assert out.shape == (2, 10, 8, 8)
 
-        # test ajbrock-sn
+        # test torch-sn
         cfg = deepcopy(self.default_cfg)
-        cfg.update(dict(sn_style='ajbrock'))
+        cfg.update(dict(sn_style='torch'))
         module = build_module(cfg).cuda()
         out = module(self.x.cuda())
         assert out.shape == (2, 16, 8, 8)
@@ -165,9 +188,9 @@ class TestBigGANGenResBlock:
         out = module(self.x, self.label)
         assert out.shape == (2, 16, 16, 16)
 
-        # test ajbrock-sn
+        # test torch-sn
         cfg = deepcopy(self.default_cfg)
-        cfg.update(dict(sn_style='ajbrock'))
+        cfg.update(dict(sn_style='torch'))
         module = build_module(cfg)
         out = module(self.x, self.y)
         assert out.shape == (2, 16, 16, 16)
@@ -194,9 +217,9 @@ class TestBigGANGenResBlock:
         out = module(self.x.cuda(), self.label.cuda())
         assert out.shape == (2, 16, 16, 16)
 
-        # test ajbrock-sn
+        # test torch-sn
         cfg = deepcopy(self.default_cfg)
-        cfg.update(dict(sn_style='ajbrock'))
+        cfg.update(dict(sn_style='torch'))
         module = build_module(cfg).cuda()
         out = module(self.x.cuda(), self.y.cuda())
         assert out.shape == (2, 16, 16, 16)
@@ -231,9 +254,9 @@ class TestBigGANDiscResBlock:
         out = module(self.x)
         assert out.shape == (2, 64, 16, 16)
 
-        # test ajbrock-sn
+        # test torch-sn
         cfg = deepcopy(self.default_cfg)
-        cfg.update(dict(sn_style='ajbrock'))
+        cfg.update(dict(sn_style='torch'))
         module = build_module(cfg)
         out = module(self.x)
         assert out.shape == (2, 64, 8, 8)
@@ -253,9 +276,9 @@ class TestBigGANDiscResBlock:
         out = module(self.x.cuda())
         assert out.shape == (2, 64, 16, 16)
 
-        # test ajbrock-sn
+        # test torch-sn
         cfg = deepcopy(self.default_cfg)
-        cfg.update(dict(sn_style='ajbrock'))
+        cfg.update(dict(sn_style='torch'))
         module = build_module(cfg).cuda()
         out = module(self.x.cuda())
         assert out.shape == (2, 64, 8, 8)
@@ -355,9 +378,9 @@ class TestBigGANGenerator(object):
         res = g(None, None, num_batches=3)
         assert res.shape == (3, 3, 128, 128)
 
-        # test ajbrock-sn
+        # test torch-sn
         cfg = deepcopy(self.default_config)
-        cfg.update(dict(sn_style='ajbrock'))
+        cfg.update(dict(sn_style='torch'))
         g = build_module(cfg)
         res = g(None, None, num_batches=3)
         assert res.shape == (3, 3, 128, 128)
@@ -444,10 +467,10 @@ class TestBigGANGenerator(object):
         res = g(None, None, num_batches=3)
         assert res.shape == (3, 3, 128, 128)
 
-        # test ajbrock-sn
+        # test torch-sn
         cfg = deepcopy(self.default_config)
-        cfg.update(dict(sn_style='ajbrock'))
-        g = build_module(cfg).cuda()
+        cfg.update(dict(sn_style='torch'))
+        g = build_module(cfg)
         res = g(None, None, num_batches=3)
         assert res.shape == (3, 3, 128, 128)
 
@@ -499,9 +522,9 @@ class TestBigGANDiscriminator(object):
         y = d(self.x, self.label)
         assert y.shape == (2, 1)
 
-        # test ajbrock-sn
+        # test torch-sn
         cfg = deepcopy(self.default_config)
-        cfg.update(dict(sn_style='ajbrock'))
+        cfg.update(dict(sn_style='torch'))
         d = build_module(cfg)
         y = d(self.x, self.label)
         assert y.shape == (2, 1)
@@ -540,9 +563,9 @@ class TestBigGANDiscriminator(object):
         y = d(self.x.cuda(), self.label.cuda())
         assert y.shape == (2, 1)
 
-        # test ajbrock-sn
+        # test torch-sn
         cfg = deepcopy(self.default_config)
-        cfg.update(dict(sn_style='ajbrock'))
+        cfg.update(dict(sn_style='torch'))
         d = build_module(cfg).cuda()
         y = d(self.x.cuda(), self.label.cuda())
         assert y.shape == (2, 1)
