@@ -120,7 +120,7 @@ class DynamicIterBasedRunner(IterBasedRunner):
 
     In this Dynamic Iterbased Runner, we will pass the ``reducer`` to the
     ``train_step`` so that the models can be trained with dynamic architecture.
-    More details and clarification can be found in this [tutorial](docs/tutorials/ddp_train_gans.md).  # noqa
+    More details and clarification can be found in this [tutorial](docs/en/tutorials/ddp_train_gans.md).  # noqa
 
     Args:
         is_dynamic_ddp (bool, optional): Whether to adopt the dynamic ddp.

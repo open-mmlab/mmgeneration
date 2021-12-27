@@ -118,11 +118,11 @@ v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changel
 
 ## 安装
 
-请参考[快速入门](docs/get_started.md)进行安装。
+请参考[快速入门](docs/zh_cn/get_started.md)进行安装。
 
 ## 快速入门
 
-对于 `MMGeneration` 的基本使用请参考 [快速入门](docs/get_started.md)。其他细节和教程，请参考我们的[文档](https://mmgeneration.readthedocs.io/)。
+对于 `MMGeneration` 的基本使用请参考 [快速入门](docs/zh_cn/get_started.md)。其他细节和教程，请参考我们的[文档](https://mmgeneration.readthedocs.io/)。
 
 ## 贡献指南
 

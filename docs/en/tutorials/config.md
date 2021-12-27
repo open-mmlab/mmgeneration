@@ -60,7 +60,7 @@ We follow the below style to name config files. Contributors are advised to foll
 
 To help the users have a basic idea of a complete config and the modules in a modern detection system,
 we make brief comments on the config of Stylegan2 at 256x256 scale.
-For more detailed usage and the corresponding alternative for each module, please refer to the API documentation and the [tutorial in MMDetection](https://github.com/open-mmlab/mmdetection/blob/master/docs/tutorials/config.md).
+For more detailed usage and the corresponding alternative for each module, please refer to the API documentation and the [tutorial in MMDetection](https://github.com/open-mmlab/mmdetection/blob/master/docs/en/tutorials/config.md).
 
 ```python
 _base_ = [
@@ -115,7 +115,7 @@ total_iters = 800002  # define the total number of iterations
 Sometimes, you may set `_delete_=True` to ignore some of fields in base configs.
 You may refer to [mmcv](https://mmcv.readthedocs.io/en/latest/utils.html#inherit-from-base-config-with-ignored-fields) for simple illustration.
 
-You may have a careful look at [this tutorial](https://github.com/open-mmlab/mmdetection/blob/master/docs/tutorials/config.md) for better understanding of this feature.
+You may have a careful look at [this tutorial](https://github.com/open-mmlab/mmdetection/blob/master/docs/en/tutorials/config.md) for better understanding of this feature.
 
 ### Use intermediate variables in configs
 

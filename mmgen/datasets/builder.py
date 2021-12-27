@@ -1,14 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import platform
 import random
+import warnings
 from copy import deepcopy
 from functools import partial
 
 import numpy as np
-import torch
 from mmcv.parallel import collate
 from mmcv.runner import get_dist_info
-from mmcv.utils import Registry, build_from_cfg
+from mmcv.utils import TORCH_VERSION, Registry, build_from_cfg, digit_version
 from torch.utils.data import DataLoader
 
 from .samplers import DistributedSampler
@@ -115,27 +115,22 @@ def build_dataloader(dataset,
         worker_init_fn, num_workers=num_workers, rank=rank,
         seed=seed) if seed is not None else None
 
-    if torch.__version__ >= '1.7.0':
-        data_loader = DataLoader(
-            dataset,
-            batch_size=batch_size,
-            sampler=sampler,
-            num_workers=num_workers,
-            collate_fn=partial(collate, samples_per_gpu=samples_per_gpu),
-            shuffle=shuffle,
-            worker_init_fn=init_fn,
-            persistent_workers=persistent_workers,
-            **kwargs)
-    else:
-        data_loader = DataLoader(
-            dataset,
-            batch_size=batch_size,
-            sampler=sampler,
-            num_workers=num_workers,
-            collate_fn=partial(collate, samples_per_gpu=samples_per_gpu),
-            shuffle=shuffle,
-            worker_init_fn=init_fn,
-            **kwargs)
+    if (digit_version(TORCH_VERSION) >= digit_version('1.7.0')
+            and TORCH_VERSION != 'parrots'):
+        kwargs['persistent_workers'] = persistent_workers
+    elif persistent_workers is True:
+        warnings.warn('persistent_workers is invalid because your pytorch '
+                      'version is lower than 1.7.0')
+
+    data_loader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        sampler=sampler,
+        num_workers=num_workers,
+        collate_fn=partial(collate, samples_per_gpu=samples_per_gpu),
+        shuffle=shuffle,
+        worker_init_fn=init_fn,
+        **kwargs)
 
     return data_loader
 

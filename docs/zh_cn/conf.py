@@ -14,18 +14,14 @@ import os
 import subprocess
 import sys
 
-import pytorch_sphinx_theme
-from m2r import MdInclude
-from recommonmark.transform import AutoStructify
-
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../../'))
 
 # -- Project information -----------------------------------------------------
 
 project = 'MMGeneration'
 copyright = '2018-2020, OpenMMLab'
 author = 'MMGeneration Authors'
-version_file = '../mmgen/version.py'
+version_file = '../../mmgen/version.py'
 
 
 def get_version():
@@ -46,19 +42,13 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
+    'recommonmark',
     'sphinx_markdown_tables',
-    'sphinx.ext.autosectionlabel',
-    'myst_parser',
-    'sphinx_copybutton',
 ]
 
 autodoc_mock_imports = [
     'matplotlib', 'pycocotools', 'terminaltables', 'mmgen.version', 'mmcv.ops'
 ]
-
-# Ignore >>> when copying code
-copybutton_prompt_text = r'>>> |\.\.\. '
-copybutton_prompt_is_regexp = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -84,29 +74,12 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'sphinx_rtd_theme'
-html_theme = 'pytorch_sphinx_theme'
-html_theme_path = [pytorch_sphinx_theme.get_html_theme_path()]
-
-html_theme_options = {
-    # 'logo_url': 'https://mmocr.readthedocs.io/en/latest/',
-    'menu': [
-        {
-            'name': 'GitHub',
-            'url': 'https://github.com/open-mmlab/mmgeneration',
-        },
-    ],
-    'menu_lang':
-    'en'
-}
+html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-html_css_files = ['css/readthedocs.css']
-
-myst_enable_extensions = ['colon_fence']
 
 
 def builder_inited_handler(app):
@@ -115,13 +88,3 @@ def builder_inited_handler(app):
 
 def setup(app):
     app.connect('builder-inited', builder_inited_handler)
-    app.add_config_value('no_underscore_emphasis', False, 'env')
-    app.add_config_value('m2r_parse_relative_links', False, 'env')
-    app.add_config_value('m2r_anonymous_references', False, 'env')
-    app.add_config_value('m2r_disable_inline_math', False, 'env')
-    app.add_directive('mdinclude', MdInclude)
-    app.add_config_value('recommonmark_config', {
-        'auto_toc_tree_section': 'Contents',
-        'enable_eval_rst': True,
-    }, True)
-    app.add_transform(AutoStructify)
