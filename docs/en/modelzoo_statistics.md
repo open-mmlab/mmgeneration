@@ -2,9 +2,9 @@
 # Model Zoo Statistics
 
 * Number of papers: 14
-* Number of checkpoints: 87
+* Number of checkpoints: 88
 
-	* [Large Scale GAN Training for High Fidelity Natural Image Synthesis](https://github.com/open-mmlab/mmgeneration/blob/master/https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan) (6 ckpts)
+	* [Large Scale GAN Training for High Fidelity Natural Image Synthesis](https://github.com/open-mmlab/mmgeneration/blob/master/https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan) (7 ckpts)
 
 
 	* [CycleGAN: Unpaired Image-to-Image Translation Using Cycle-Consistent Adversarial Networks](https://github.com/open-mmlab/mmgeneration/blob/master/https://github.com/open-mmlab/mmgeneration/blob/master/configs/cyclegan) (6 ckpts)
@@ -44,3 +44,4 @@
 
 
 	* [Improved Training of Wasserstein GANs](https://github.com/open-mmlab/mmgeneration/blob/master/https://github.com/open-mmlab/mmgeneration/blob/master/configs/wgan-gp) (2 ckpts)
+

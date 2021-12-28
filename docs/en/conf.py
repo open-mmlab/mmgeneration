@@ -18,7 +18,7 @@ import pytorch_sphinx_theme
 from m2r import MdInclude
 from recommonmark.transform import AutoStructify
 
-sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath('../../'))
 
 # -- Project information -----------------------------------------------------
 
