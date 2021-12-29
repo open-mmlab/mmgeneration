@@ -127,14 +127,10 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         if self.test_cfg is None:
             self.test_cfg = dict()
 
-        # basic testing information
-        self.batch_size = self.test_cfg.get('batch_size', 1)
-
         # whether to use exponential moving average for testing
         self.use_ema = self.test_cfg.get('use_ema', False)
         if self.use_ema:
             self.denoising_ema = deepcopy(self.denoising)
-        # TODO: finish ema part --> what should we do here?
 
     def _get_loss(self, outputs_dict):
         losses_dict = {}
@@ -225,7 +221,10 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         # denoising training
         optimizer['denoising'].zero_grad()
         denoising_dict_ = self.reconstruction_step(
-            data, timesteps=self.sampler, return_noise=True)
+            data,
+            timesteps=self.sampler,
+            sample_model='orig',
+            return_noise=True)
         denoising_dict_['iteration'] = curr_iter
         denoising_dict_['real_imgs'] = real_imgs
         denoising_dict_['loss_scaler'] = loss_scaler
@@ -263,7 +262,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             real_imgs=real_imgs,
             x_0_pred=denoising_dict_['x_0_pred'],
             x_t=denoising_dict_['diffusion_batches'],
-            x_t_1=denoising_dict_['fake_imgs'])
+            x_t_1=denoising_dict_['fake_img'])
         outputs = dict(
             log_vars=log_vars, num_samples=real_imgs.shape[0], results=results)
 
@@ -277,8 +276,12 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                             noise=None,
                             label=None,
                             timesteps=None,
-                            return_noise=False):
-        """Reconstruction step at corresponding `timestep`.
+                            sample_model='orig',
+                            return_noise=False,
+                            **kwargs):
+        """Reconstruction step at corresponding `timestep`. To be noted that,
+        denoisint target ``x_t`` for each timestep are all generated from real
+        images, but not the denoising result from denoising network.
 
         ``sample_from_noise`` focus on generate samples start from **random
         (or given) noise**. Therefore, we design this function to realize a
@@ -298,7 +301,24 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                 the input image. Defaults to None.
             timestep (int | list | torch.Tensor | callable | None): Target
                 timestep to perform reconstruction.
+            sampel_model (str, optional): Use which model to sample fake
+                images. Defaults to `'orig'`.
+            return_noise (bool, optional): If True,``noise_batch``, ``label``
+                and all other intermedia variables will be returned together
+                with ``fake_img`` in a dict. Defaults to False.
+
+        Returns:
+            torch.Tensor | dict: The output may be the direct synthesized
+                images in ``torch.Tensor``. Otherwise, a dict with required
+                data , including generated images, will be returned.
         """
+        assert sample_model in [
+            'orig', 'ema'
+        ], ('We only support \'orig\' and \'ema\' for '
+            f'\'reconstruction_step\', but receive \'{sample_model}\'.')
+
+        denoising_model = self.denoising if sample_model == 'orig' \
+            else self.denoising_ema
         # 0. prepare for timestep, noise and label
         device = get_module_device(self)
         real_imgs = data_batch[self.real_img_key]
@@ -328,9 +348,6 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         if noise is None:
             noise = data_batch['noise'] if 'noise' in data_batch else None
 
-        noise_batches = self.get_noise(
-            noise, num_batches=num_batches).to(device)
-
         if self.num_classes > 0:
             if label is not None:
                 assert 'label' not in data_batch, (
@@ -347,11 +364,14 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         # loop all timesteps
         for timestep in timesteps:
             # 1. get diffusion results and parameters
+            noise_batches = self.get_noise(
+                noise, num_batches=num_batches).to(device)
+
             diffusion_batches = self.q_sample(real_imgs, timestep,
                                               noise_batches)
             # 2. get denoising results.
             denoising_batches = self.denoising_step(
-                self.denoising,
+                denoising_model,
                 diffusion_batches,
                 timestep,
                 label=label_batches,
@@ -370,7 +390,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                 output_dict_.update(denoising_batches)
                 output_dict_.update(target_batches)
             else:
-                output_dict_['fake_imgs'] = denoising_batches
+                output_dict_ = dict(fake_img=denoising_batches)
             # update output of `timestep` to output_dict
             for k, v in output_dict_.items():
                 if k in output_dict:
@@ -385,20 +405,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         # 5. return results
         if return_noise:
             return output_dict
-        return output_dict['fake_imgs']
-
-        # if return_noise:
-        #     # return t and target_noise for calculate loss terms or metrics
-        #     output_dict = dict(
-        #         timesteps=timesteps,
-        #         noise=noise_batches,
-        #         label=label_batches,
-        #         diffusion_batches=diffusion_batches)
-        #     output_dict.update(denoising_batches)
-        #     output_dict.update(target_batches)
-        #     return output_dict
-
-        # return denoising_batches
+        return output_dict['fake_img']
 
     def sample_from_noise(self,
                           noise,
@@ -451,20 +458,33 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             **kwargs)
 
         if isinstance(outputs, dict) and 'noise_batch' in outputs:
-            noise = outputs['noise_batch']
+            # return_noise = True
+            noise = outputs['x_t']
+            label = outputs['label']
+            kwargs['timesteps_noise'] = outputs['noise_batch']
+            fake_img = outputs['fake_img']
+        else:
+            fake_img = outputs
 
         if sample_model == 'ema/orig' and self.use_ema:
             _model = self.denoising
             outputs_ = sample_fn(
                 _model, noise=noise, num_batches=num_batches, **kwargs)
-
-            if isinstance(outputs_, dict):
-                outputs['fake_img'] = torch.cat(
-                    [outputs['fake_img'], outputs_['fake_img']], dim=0)
+            if isinstance(outputs_, dict) and 'noise_batch' in outputs_:
+                # return_noise = True
+                fake_img_ = outputs_['fake_img']
             else:
-                outputs = torch.cat([outputs, outputs_], dim=0)
+                fake_img_ = outputs_
+            if isinstance(fake_img, dict):
+                # save_intermedia = True
+                fake_img = {
+                    k: torch.cat([fake_img[k], fake_img_[k]], dim=0)
+                    for k in fake_img.keys()
+                }
+            else:
+                fake_img = torch.cat([fake_img, fake_img_], dim=0)
 
-        return outputs
+        return fake_img
 
     @torch.no_grad()
     def DDPM_sample(self,
@@ -474,6 +494,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                     label=None,
                     save_intermedia=False,
                     timesteps_noise=None,
+                    return_noise=False,
                     **kwargs):
         """DDPM sample from random noise.
         Args:
@@ -495,13 +516,19 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                 denoising timestep. If given, the input noise will be shaped to
                 [num_timesteps, b, c, h, w]. If set as None, noise of each
                 denoising timestep will be randomly sampled. Default as None.
+            return_noise (bool, optional): If True, a dict contains
+                ``noise_batch``, ``x_t`` and ``label`` will be returned
+                together with the denoising results, and the key of denoising
+                results is ``fake_img``. To be noted that ``noise_batches``
+                will shape as [num_timesteps, b, c, h, w]. Defaults to False.
         Returns:
             torch.Tensor | dict: If ``save_intermedia``, a dict contains
                 denoising results of each timestep will be returned.
                 Otherwise, only the final denoising result will be returned.
         """
         device = get_module_device(self)
-        x_t = self.get_noise(noise, num_batches=num_batches).to(device)
+        noise = self.get_noise(noise, num_batches=num_batches).to(device)
+        x_t = noise.clone()
         if save_intermedia:
             # save input
             intermedia = {self.num_timesteps: x_t.clone()}
@@ -522,16 +549,20 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             x_t = self.denoising_step(
                 model, x_t, batched_t, noise=step_noise, label=label, **kwargs)
             if save_intermedia:
-                intermedia[int(t)] = x_t.clone()
-        if save_intermedia:
-            return intermedia
-        return x_t
+                intermedia[int(t)] = x_t.cpu().clone()
+        denoising_results = intermedia if save_intermedia else x_t
+
+        if return_noise:
+            return dict(
+                noise_batch=timesteps_noise,
+                x_t=noise,
+                label=label,
+                fake_img=denoising_results)
+
+        return denoising_results
 
     def prepare_diffusion_vars(self):
-        """Prepare for variables used in the diffusion process.
-
-        TODO: we should use cupy or torch for speeding up?
-        """
+        """Prepare for variables used in the diffusion process."""
         self.betas = self.get_betas()
         self.alphas = 1.0 - self.betas
         self.alphas_bar = np.cumproduct(self.alphas, axis=0)
@@ -811,11 +842,6 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             k: output_dict[k]
             for k in output_dict.keys() if k not in denoising_output
         }
-        # return dict(
-        #     var_pred=varpred,
-        #     logvar_pred=logvar_pred,
-        #     mean_pred=mean_pred,
-        #     x_0_pred=x_0_pred)
 
     def denoising_step(self,
                        model,
@@ -885,7 +911,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         sample = mean_pred + nonzero_mask * torch.sqrt(var_pred) * noise
         if return_noise:
             return dict(
-                fake_imgs=sample,
+                fake_img=sample,
                 noise_repar=noise,
                 **denoising_output,
                 **p_output)
@@ -957,7 +983,6 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             return self.sample_from_noise(data, **kwargs)
         elif mode == 'reconstruction':
             # this mode is design for evaluation likelood metrics
-            kwargs['return_noise'] = True
             return self.reconstruction_step(data, **kwargs)
 
         raise NotImplementedError('Other specific testing functions should'
