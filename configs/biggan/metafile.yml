@@ -15,22 +15,34 @@ Models:
   Results:
   - Dataset: CIFAR
     Metrics:
-      Best FID: 9.78
-      Best IS: 8.7
+      FID: 9.78
+      IS: 8.7
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32x32_b25x2_500k_20210728_110906-08b61a44.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_imagenet1k_128x128_b32x8_1500k.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py
   In Collection: BigGAN
   Metadata:
     Training Data: IMAGENET
-  Name: biggan_imagenet1k
+  Name: biggan_ajbrock-sn
   Results:
   - Dataset: IMAGENET
     Metrics:
-      Best FID: 10.02
-      Best IS: 86.8
+      FID: 8.69
+      IS: 101.15
     Task: Conditional GANs
-  Weights: https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1449000_20210906_141519-f9128faf.pth
+  Weights: https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_best_fid_iter_1232000_20211111_122548-5315b13d.pth
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py
+  In Collection: BigGAN
+  Metadata:
+    Training Data: IMAGENET
+  Name: biggan_ajbrock-sn
+  Results:
+  - Dataset: IMAGENET
+    Metrics:
+      FID: 13.51
+      IS: 129.07
+    Task: Conditional GANs
+  Weights: https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_best_is_iter_1328000_20211111_122911-28c688bc.pth
 - Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan_128x128_cvt_BigGAN-PyTorch_rgb.py
   In Collection: BigGAN
   Metadata:
