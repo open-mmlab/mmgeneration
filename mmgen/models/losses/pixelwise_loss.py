@@ -78,7 +78,7 @@ def gaussian_kld(mean_target, mean_pred, logvar_target, logvar_pred, base='e'):
                  torch.exp(logvar_target - logvar_pred) +
                  ((mean_target - mean_pred)**2) * torch.exp(-logvar_pred))
     if base == '2':
-        return kld / np.log(2)
+        return kld / np.log(2.0)
     return kld
 
 
@@ -104,7 +104,7 @@ def approx_gaussian_cdf(x):
         torch.Tensor: Calculated cumulative distribution.
 
     """
-    factor = np.sqrt(2 / np.pi)
+    factor = np.sqrt(2.0 / np.pi)
     y = factor * (x + 0.044715 * torch.pow(x, 3))
     phi = 0.5 * (1 + torch.tanh(y))
     return phi
@@ -153,16 +153,16 @@ def discretized_gaussian_log_likelihood(x, mean, logvar, base='e'):
         raise ValueError('Only support 2 and e for log base, but receive '
                          f'{base}')
 
-    inv_std = torch.exp(logvar * 0.5)
+    inv_std = torch.exp(-logvar * 0.5)
     x_centered = x - mean
 
-    lower_bound = (x_centered - 1 / 255) / inv_std
-    upper_bound = (x_centered + 1 / 255) / inv_std
+    lower_bound = (x_centered - 1.0 / 255.0) * inv_std
+    upper_bound = (x_centered + 1.0 / 255.0) * inv_std
     cdf_to_lower = approx_gaussian_cdf(lower_bound)
     cdf_to_upper = approx_gaussian_cdf(upper_bound)
 
     log_cdf_upper = torch.log(cdf_to_upper.clamp(min=1e-12))
-    log_one_minus_cdf_lower = torch.log((1 - cdf_to_lower).clamp(min=1e-12))
+    log_one_minus_cdf_lower = torch.log((1.0 - cdf_to_lower).clamp(min=1e-12))
     log_cdf_delta = torch.log((cdf_to_upper - cdf_to_lower).clamp(min=1e-12))
 
     log_probs = torch.where(
@@ -170,8 +170,7 @@ def discretized_gaussian_log_likelihood(x, mean, logvar, base='e'):
         torch.where(x > 0.999, log_one_minus_cdf_lower, log_cdf_delta))
 
     if base == '2':
-        return log_probs / np.log(2)
-
+        return log_probs / np.log(2.0)
     return log_probs
 
 
