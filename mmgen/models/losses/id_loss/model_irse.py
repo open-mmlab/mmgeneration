@@ -1,10 +1,14 @@
-from torch.nn import (Linear, Conv2d, BatchNorm1d, BatchNorm2d, PReLU, Dropout,
-                      Sequential, Module)
-from .helpers import (get_blocks, Flatten, bottleneck_IR, bottleneck_IR_SE,
+from torch.nn import (BatchNorm1d, BatchNorm2d, Conv2d, Dropout, Linear,
+                      Module, PReLU, Sequential)
+
+from .helpers import (Flatten, bottleneck_IR, bottleneck_IR_SE, get_blocks,
                       l2_norm)
+
+# yapf: disable
 """
-Modified Backbone implementation from [TreB1eN](https://github.com/TreB1eN/InsightFace_Pytorch) # noqa
+Modified Backbone implementation from [TreB1eN](https://github.com/TreB1eN/InsightFace_Pytorch) # isort:skip  # noqa
 """
+# yapf: enable
 
 
 class Backbone(Module):
@@ -16,10 +20,10 @@ class Backbone(Module):
                  drop_ratio=0.4,
                  affine=True):
         super(Backbone, self).__init__()
-        assert input_size in [112, 224], "input_size should be 112 or 224"
+        assert input_size in [112, 224], 'input_size should be 112 or 224'
         assert num_layers in [50, 100,
-                              152], "num_layers should be 50, 100 or 152"
-        assert mode in ['ir', 'ir_se'], "mode should be ir or ir_se"
+                              152], 'num_layers should be 50, 100 or 152'
+        assert mode in ['ir', 'ir_se'], 'mode should be ir or ir_se'
         blocks = get_blocks(num_layers)
         if mode == 'ir':
             unit_module = bottleneck_IR

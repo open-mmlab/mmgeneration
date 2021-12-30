@@ -1,10 +1,14 @@
 from collections import namedtuple
+
 import torch
-from torch.nn import (Conv2d, BatchNorm2d, PReLU, ReLU, Sigmoid, MaxPool2d,
-                      AdaptiveAvgPool2d, Sequential, Module)
+from torch.nn import (AdaptiveAvgPool2d, BatchNorm2d, Conv2d, MaxPool2d,
+                      Module, PReLU, ReLU, Sequential, Sigmoid)
+
+# yapf: disable
 """
-ArcFace implementation from [TreB1eN](https://github.com/TreB1eN/InsightFace_Pytorch) # noqa
+ArcFace implementation from [TreB1eN](https://github.com/TreB1eN/InsightFace_Pytorch) # isort:skip  # noqa
 """
+# yapf: enable
 
 
 class Flatten(Module):
@@ -20,7 +24,7 @@ def l2_norm(input, axis=1):
 
 
 class Bottleneck(namedtuple('Block', ['in_channel', 'depth', 'stride'])):
-    """ A named tuple describing a ResNet block. """
+    """A named tuple describing a ResNet block."""
 
 
 def get_block(in_channel, depth, num_units, stride=2):
@@ -52,7 +56,7 @@ def get_blocks(num_layers):
         ]
     else:
         raise ValueError(
-            "Invalid number of layers: {}. Must be one of [50, 100, 152]".
+            'Invalid number of layers: {}. Must be one of [50, 100, 152]'.
             format(num_layers))
     return blocks
 

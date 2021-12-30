@@ -1,15 +1,15 @@
+import mmcv
 import torch
 from torch import nn
 
 from .model_irse import Backbone
-import mmcv
 
 
 class IDLoss(nn.Module):
 
     def __init__(self, opts):
         super(IDLoss, self).__init__()
-        mmcv.print_log('Loading ResNet ArcFace', "mmgen")
+        mmcv.print_log('Loading ResNet ArcFace', 'mmgen')
         self.facenet = Backbone(
             input_size=112, num_layers=50, drop_ratio=0.6, mode='ir_se')
         self.facenet.load_state_dict(torch.load(opts.ir_se50_weights))

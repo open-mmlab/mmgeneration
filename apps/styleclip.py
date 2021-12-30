@@ -2,19 +2,16 @@ import argparse
 import math
 import os
 
+import clip
+import mmcv
 import torch
 import torchvision
 from torch import optim
 from tqdm import tqdm
 
-import mmcv
-
+from mmgen.apis import init_model
 from mmgen.models.losses.clip_loss import CLIPLoss
 from mmgen.models.losses.id_loss.id_loss import IDLoss
-
-from mmgen.apis import init_model
-
-import clip
 
 
 def get_lr(t, initial_lr, rampdown=0.25, rampup=0.05):
@@ -34,27 +31,27 @@ def parse_args():
         action='store_true',
         help='whether to use cpu device for sampling')
     parser.add_argument(
-        "--description",
+        '--description',
         type=str,
-        default="a person with purple hair",
-        help="the text that guides the editing/generation")
-    parser.add_argument("--lr", type=float, default=0.1)
+        default='a person with purple hair',
+        help='the text that guides the editing/generation')
+    parser.add_argument('--lr', type=float, default=0.1)
     parser.add_argument(
-        "--mode",
+        '--mode',
         type=str,
-        default="edit",
-        choices=["edit", "generate"],
-        help="choose between edit an image an generate a free one")
+        default='edit',
+        choices=['edit', 'generate'],
+        help='choose between edit an image an generate a free one')
     parser.add_argument(
-        "--l2_lambda",
+        '--l2_lambda',
         type=float,
         default=0.008,
-        help="weight of the latent distance, used for editing only")
+        help='weight of the latent distance, used for editing only')
     parser.add_argument(
-        "--id_lambda",
+        '--id_lambda',
         type=float,
         default=0.000,
-        help="weight of id loss, used for editing only")
+        help='weight of id loss, used for editing only')
     parser.add_argument(
         '--proj-latent',
         type=str,
@@ -63,18 +60,18 @@ def parse_args():
         argument is given, then the projected latent will be used as the init\
         latent.')
     parser.add_argument(
-        "--truncation",
+        '--truncation',
         type=float,
         default=0.7,
-        help="used only for the initial latent vector, and only when a latent "
-        "code path is not provided")
+        help='used only for the initial latent vector, and only when a latent '
+        'code path is not provided')
     parser.add_argument(
-        "--save_intermediate_image_every",
+        '--save_intermediate_image_every',
         type=int,
         default=20,
-        help="if > 0 then saves intermidate results during the optimization")
+        help='if > 0 then saves intermidate results during the optimization')
     parser.add_argument(
-        "--results_dir", type=str, default="work_dirs/styleclip/")
+        '--results_dir', type=str, default='work_dirs/styleclip/')
 
     args = parser.parse_args()
     return args
@@ -104,7 +101,7 @@ def main():
         for img_path in proj_file:
             noise_batch.append(proj_file[img_path]['latent'].unsqueeze(0))
         latent_code_init = torch.cat(noise_batch, dim=0).cuda()
-    elif args.mode == "edit":
+    elif args.mode == 'edit':
         latent_code_init_not_trunc = torch.randn(1, 512).cuda()
         with torch.no_grad():
             results = g_ema([latent_code_init_not_trunc],
@@ -136,7 +133,7 @@ def main():
     for i in pbar:
         t = i / args.step
         lr = get_lr(t, args.lr)
-        optimizer.param_groups[0]["lr"] = lr
+        optimizer.param_groups[0]['lr'] = lr
 
         img_gen = g_ema([latent], input_is_latent=True, randomize_noise=False)
 
@@ -150,7 +147,7 @@ def main():
         else:
             i_loss = 0
 
-        if args.mode == "edit":
+        if args.mode == 'edit':
             l2_loss = ((latent_code_init - latent)**2).sum()
             loss = c_loss + args.l2_lambda * l2_loss + args.id_lambda * i_loss
         else:
@@ -160,7 +157,7 @@ def main():
         loss.backward()
         optimizer.step()
 
-        pbar.set_description((f"loss: {loss.item():.4f};"))
+        pbar.set_description((f'loss: {loss.item():.4f};'))
         if args.save_intermediate_image_every > 0 and (
                 i % args.save_intermediate_image_every == 0):
             with torch.no_grad():
@@ -172,11 +169,11 @@ def main():
 
             torchvision.utils.save_image(
                 img_gen,
-                os.path.join(args.results_dir, f"{str(i).zfill(5)}.png"),
+                os.path.join(args.results_dir, f'{str(i).zfill(5)}.png'),
                 normalize=True,
                 range=(-1, 1))
 
-    if args.mode == "edit":
+    if args.mode == 'edit':
         img_orig = img_orig[:, [2, 1, 0], ...]
         final_result = torch.cat([img_orig, img_gen])
     else:
@@ -184,11 +181,11 @@ def main():
 
     torchvision.utils.save_image(
         final_result.detach().cpu(),
-        os.path.join(args.results_dir, "final_result.png"),
+        os.path.join(args.results_dir, 'final_result.png'),
         normalize=True,
         scale_each=True,
         range=(-1, 1))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
