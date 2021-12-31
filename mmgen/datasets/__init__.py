@@ -8,6 +8,7 @@ from .pipelines import (Collect, Compose, Flip, ImageToTensor,
 from .quick_test_dataset import QuickTestImageDataset
 from .samplers import DistributedSampler
 from .singan_dataset import SinGANDataset
+from .unconditional_file_dataset import FileDataset
 from .unconditional_image_dataset import UnconditionalImageDataset
 from .unpaired_image_dataset import UnpairedImageDataset
 
@@ -16,5 +17,5 @@ __all__ = [
     'DistributedSampler', 'UnconditionalImageDataset', 'Compose', 'ToTensor',
     'ImageToTensor', 'Collect', 'Flip', 'Resize', 'RepeatDataset', 'Normalize',
     'GrowScaleImgDataset', 'SinGANDataset', 'PairedImageDataset',
-    'UnpairedImageDataset', 'QuickTestImageDataset'
+    'UnpairedImageDataset', 'QuickTestImageDataset', 'FileDataset'
 ]
