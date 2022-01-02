@@ -64,11 +64,10 @@ def make_vanilla_dataloader(img_path, batch_size, dist=False):
 
 
 def make_npz_dataloader(npz_path, batch_size, dist=False):
-    # TODO: align keys
     pipeline = [
         # permute the color channel. Because in npz_dataloader's pipeline, we
-        # direct the image files from npz file which is RGB order and we must
-        # convert it to BGR.
+        # direct load image in RGB order from npz file and we must convert it
+        # to BGR by setting ``to_rgb=True``.
         dict(
             type='Normalize',
             keys=['real_img'],
@@ -291,7 +290,8 @@ def offline_evaluation(model,
                     samples_path,
                     f'samples_{num_imgs}x{H}x{W}x{num_channels}.npz')
 
-                # save new npz file
+                # save new npz file -->
+                # set key as ``real_img`` to align with vanilla dataset
                 np.savez(npz_path, real_img=fake_imgs)
                 mmcv.print_log(f'Save new npz_file to \'{npz_path}\'.',
                                'mmgen')
