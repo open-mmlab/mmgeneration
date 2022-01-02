@@ -47,15 +47,25 @@ class FileDataset(Dataset):
     def load_annotations(self):
         """Load annotations."""
         if self.file_path.endswith('.npz'):
-            data_info_list = self._load_annotations_from_npz()
-        self.data_infos = data_info_list
+            data_info, data_length = self._load_annotations_from_npz()
+            data_fetch_fn = self._npz_data_fetch_fn
+
+        self.data_infos = data_info
+        self.data_fetch_fn = data_fetch_fn
+        self.data_length = data_length
 
     def _load_annotations_from_npz(self):
-        npz_file = np.load(self.file_path)
+        """Load annotations from npz file and check number of samples are
+        consistent  among all items.
+
+        Returns:
+            tuple: dict and int
+        """
+        npz_file = np.load(self.file_path, mmap_mode='r')
         data_info_dict = dict()
-        data_info_list = []
         npz_keys = list(npz_file.keys())
 
+        # checnk num samples
         num_samples = None
         for k in npz_keys:
             data_info_dict[k] = npz_file[k]
@@ -64,35 +74,45 @@ class FileDataset(Dataset):
                 num_samples = npz_file[k].shape[0]
             else:
                 assert num_samples == npz_file[k].shape[0]
+        return data_info_dict, num_samples
 
-        # save to list
-        for idx in range(num_samples):
-            data_info = dict()
-            for k in npz_keys:
-                var = data_info_dict[k][idx]
-                if var.shape == ():
-                    var = np.array([var])
-                data_info[k] = var
-            data_info_list.append(data_info)
+    @staticmethod
+    def _npz_data_fetch_fn(data_infos, idx):
+        """Fetch data from npz file by idx and package them to a dict.
 
-        return data_info_list
+        Args:
+            data_infos (array, tuple, dict): Data infos in the npz file.
+            idx (int): Index of current batch.
 
-    def prepare_data(self, idx):
+        Returns:
+            dict: Data infos of the given idx.
+        """
+        data_dict = dict()
+        for k in data_infos.keys():
+            data_dict[k] = data_infos[k][idx]
+        return data_dict
+
+    def prepare_data(self, idx, data_fetch_fn=None):
         """Prepare data.
 
         Args:
             idx (int): Index of current batch.
+            data_fetch_fn (callable): Function to fetch data.
 
         Returns:
             dict: Prepared training data batch.
         """
-        return self.pipeline(self.data_infos[idx])
+        if data_fetch_fn is None:
+            data = self.data_infos[idx]
+        else:
+            data = data_fetch_fn(self.data_infos, idx)
+        return self.pipeline(data)
 
     def __len__(self):
-        return len(self.data_infos)
+        return self.data_length
 
     def __getitem__(self, idx):
-        return self.prepare_data(idx)
+        return self.prepare_data(idx, self.data_fetch_fn)
 
     def __repr__(self):
         dataset_name = self.__class__

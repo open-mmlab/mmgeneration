@@ -51,6 +51,12 @@ def parse_args():
         help='path to store images. If not given, remove it after evaluation\
              finished')
     parser.add_argument(
+        '--save-npz',
+        action='store_true',
+        help=('whether to save generated images to a npz file named '
+              '\'NUM_IMAGES.npz\'. The npz file will be saved at '
+              '`samples-path`. (only work in offline mode)'))
+    parser.add_argument(
         '--sample-model',
         type=str,
         default='ema',
@@ -113,8 +119,6 @@ def main():
         init_dist(args.launcher, **cfg.dist_params)
         rank, world_size = get_dist_info()
         cfg.gpu_ids = range(world_size)
-        assert args.online or world_size == 1, (
-            'We only support online mode for distrbuted evaluation.')
 
     dirname = os.path.dirname(args.checkpoint)
     ckpt = os.path.basename(args.checkpoint)
@@ -218,7 +222,7 @@ def main():
     else:
         offline_evaluation(model, data_loader, metrics, logger,
                            basic_table_info, args.batch_size,
-                           args.samples_path, **args.sample_cfg)
+                           args.samples_path, args.save_npz, **args.sample_cfg)
 
 
 if __name__ == '__main__':
