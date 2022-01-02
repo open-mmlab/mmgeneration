@@ -90,7 +90,6 @@ def test_collect():
     collect = Collect(keys, meta_keys=meta_keys)
     results = collect(inputs)
     assert set(list(results.keys())) == set(['img', 'label', 'meta'])
-    inputs.pop('img')
     assert set(results['meta'].data.keys()) == set(meta_keys)
     for key in results['meta'].data:
         assert results['meta'].data[key] == inputs[key]
@@ -98,3 +97,9 @@ def test_collect():
     assert repr(collect) == (
         collect.__class__.__name__ +
         f'(keys={keys}, meta_keys={collect.meta_keys})')
+
+    # test meta is None
+    collect = Collect(keys)
+    results = collect(inputs)
+    print(results['meta'].data)
+    assert results['meta'].data == {}
