@@ -37,7 +37,9 @@ def _get_noise_batch(noise,
         image_shape (torch.Size): Size of images in the diffusion process.
         num_timesteps (int, optional): Total timestpes of the diffusion and
             denoising process. Defaults to 0.
-        num_batches (int, optional): The number of batch size. Defaults to 0.
+        num_batches (int, optional): The number of batch size. To be noted that
+            this argument only work when the input ``noise`` is callable or
+            ``None``. Defaults to 0.
         timesteps_noise (bool, optional): If True, returned noise will shape
             as [n, bz, c, h, w], otherwise shape as [bz, c, h, w].
             Defaults to False.
@@ -145,7 +147,9 @@ def _get_label_batch(label,
             ``None`` indicates to use the default noise sampler.
         num_timesteps (int, optional): Total timestpes of the diffusion and
             denoising process. Defaults to 0.
-        num_batches (int, optional): The number of batch size. Defaults to 0.
+        num_batches (int, optional): The number of batch size. To be noted that
+            this argument only work when the input ``noise`` is callable or
+            ``None``. Defaults to 0.
         timesteps_noise (bool, optional): If True, returned noise will shape
             as [n, bz, c, h, w], otherwise shape as [bz, c, h, w].
             Defaults to False.
