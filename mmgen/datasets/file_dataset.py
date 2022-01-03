@@ -11,8 +11,8 @@ from .pipelines import Compose
 class FileDataset(Dataset):
     """Uncoditional file Dataset.
 
-    This dataset contains raw images for training unconditional GANs. Given
-    the path of a file, we will load all image in this file. The
+    This dataset load data information from files for training GANs. Given
+    the path of a file, we will load all information in the file. The
     transformation on data is defined by the pipeline. Please ensure that
     ``LoadImageFromFile`` is not in your pipeline configs because we directly
     get images in ``np.ndarray`` from the given file.
@@ -89,7 +89,11 @@ class FileDataset(Dataset):
         """
         data_dict = dict()
         for k in data_infos.keys():
-            data_dict[k] = data_infos[k][idx]
+            if data_infos[k][idx].shape == ():
+                v = np.array([data_infos[k][idx]])
+            else:
+                v = data_infos[k][idx]
+            data_dict[k] = v
         return data_dict
 
     def prepare_data(self, idx, data_fetch_fn=None):
