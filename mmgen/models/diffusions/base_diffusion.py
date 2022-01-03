@@ -1,9 +1,11 @@
+import sys
 from abc import ABCMeta
 from collections import defaultdict
 from copy import deepcopy
 from functools import partial
 from typing import OrderedDict
 
+import mmcv
 import numpy as np
 import torch
 import torch.distributed as dist
@@ -77,6 +79,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         image_size = self.denoising.image_size
 
         image_shape = torch.Size([image_channels, image_size, image_size])
+        self.image_shape = image_shape
         self.get_noise = partial(
             _get_noise_batch,
             image_shape=image_shape,
@@ -458,7 +461,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             **kwargs)
 
         if isinstance(outputs, dict) and 'noise_batch' in outputs:
-            # return_noise = True
+            # return_noise is True
             noise = outputs['x_t']
             label = outputs['label']
             kwargs['timesteps_noise'] = outputs['noise_batch']
@@ -471,12 +474,12 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             outputs_ = sample_fn(
                 _model, noise=noise, num_batches=num_batches, **kwargs)
             if isinstance(outputs_, dict) and 'noise_batch' in outputs_:
-                # return_noise = True
+                # return_noise is True
                 fake_img_ = outputs_['fake_img']
             else:
                 fake_img_ = outputs_
             if isinstance(fake_img, dict):
-                # save_intermedia = True
+                # save_intermedia is True
                 fake_img = {
                     k: torch.cat([fake_img[k], fake_img_[k]], dim=0)
                     for k in fake_img.keys()
@@ -495,6 +498,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                     save_intermedia=False,
                     timesteps_noise=None,
                     return_noise=False,
+                    show_pbar=False,
                     **kwargs):
         """DDPM sample from random noise.
         Args:
@@ -521,6 +525,8 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                 together with the denoising results, and the key of denoising
                 results is ``fake_img``. To be noted that ``noise_batches``
                 will shape as [num_timesteps, b, c, h, w]. Defaults to False.
+            show_pbar (bool, optional): If True, a progress bar will be
+                displayed. Defaults to False.
         Returns:
             torch.Tensor | dict: If ``save_intermedia``, a dict contains
                 denoising results of each timestep will be returned.
@@ -541,6 +547,8 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
 
         batched_timesteps = torch.arange(self.num_timesteps - 1, -1,
                                          -1).long().to(device)
+        if show_pbar:
+            pbar = mmcv.ProgressBar(self.num_timesteps)
         for t in batched_timesteps:
             batched_t = t.expand(x_t.shape[0])
             step_noise = timesteps_noise[t, ...] \
@@ -550,7 +558,12 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                 model, x_t, batched_t, noise=step_noise, label=label, **kwargs)
             if save_intermedia:
                 intermedia[int(t)] = x_t.cpu().clone()
+            if show_pbar:
+                pbar.update()
         denoising_results = intermedia if save_intermedia else x_t
+
+        if show_pbar:
+            sys.stdout.write('\n')
 
         if return_noise:
             return dict(
