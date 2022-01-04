@@ -74,7 +74,7 @@ These methods have been carefully studied and supported in our frameworks:
 - ✅ [DCGAN](configs/dcgan/README.md) (ICLR'2016)
 - ✅ [WGAN-GP](configs/wgan-gp/README.md) (NIPS'2017)
 - ✅ [LSGAN](configs/lsgan/README.md) (ICCV'2017)
-- ✅ [GGAN](configs/ggan/README.md) (Axiv'2017)
+- ✅ [GGAN](configs/ggan/README.md) (arXiv'2017)
 - ✅ [PGGAN](configs/pggan/README.md) (ICLR'2018)
 - ✅ [StyleGANV1](configs/styleganv1/README.md) (CVPR'2019)
 - ✅ [StyleGANV2](configs/styleganv2/README.md) (CVPR'2020)
@@ -104,6 +104,13 @@ These methods have been carefully studied and supported in our frameworks:
 <summary>Internal Learning (click to collapse)</summary>
 
 - ✅ [SinGAN](configs/singan/README.md) (ICCV'2019)
+
+</details>
+
+<details open>
+<summary>Denoising Diffusion Probabilistic Models (click to collapse)</summary>
+
+- ✅ [Improved DDPM](configs/improved_ddpm/README.md) (arXiv'2021)
 
 </details>
 
