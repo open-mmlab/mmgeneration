@@ -774,12 +774,12 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         device = get_module_device(self)
         # prepare for var and logvar
         if self.denoising_var_mode.upper() == 'LEARNED':
-            # TODO: maybe change to LEARNED_LOG_VAR
+            # NOTE: the output actually LEARNED_LOG_VAR
             logvar_pred = denoising_output['logvar']
             varpred = torch.exp(logvar_pred)
 
         elif self.denoising_var_mode.upper() == 'LEARNED_RANGE':
-            # TODO: maybe change to LEARNED_FACTOR ?
+            # NOTE: the output actually LEARNED_FACTOR
             var_factor = denoising_output['factor']
             lower_bound_logvar = var_to_tensor(self.log_tilde_betas_t_clipped,
                                                t, target_shape, device)
@@ -836,7 +836,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
             mean_pred = self.q_posterior_mean_variance(
                 x_0_pred, x_t, t, need_var=False)
         elif self.denoising_mean_mode.upper() == 'PREVIOUS_X':
-            # TODO: maybe we should call this PREVIOUS_X_MEAN or MU_THETA
+            # NOTE: the output actually PREVIOUS_X_MEAN (MU_THETA)
             # because this actually predict \mu_{\theta}
             mean_pred = denoising_output['x_tm1_pred']
             x_0_pred = process_x_0(self.pred_x_0_from_x_tm1(mean_pred, x_t, t))
@@ -953,12 +953,12 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
 
     def pred_x_0_from_x_tm1(self, x_tm1, x_t, t):
         r"""
-        TODO: may be we should change the signature of this function to
-        ``pred_x_0_from_mu_theta(self, mu_theta, x_t, t)``
-
         Predict `x_0` from `x_{t-1}`. (actually from `\mu_{\theta}`).
         `(\mu_{\theta} - coef2 * x_t) / coef1`, where `coef1` and `coef2`
         are from Eq 6 of the DDPM paper.
+
+        NOTE: This function actually predict ``x_0`` from ``mu_theta`` (mean
+        of ``x_{t-1}``).
 
         Args:
             x_tm1 (torch.Tensor): `x_{t-1}` used to predict `x_0`.
