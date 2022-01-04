@@ -115,7 +115,6 @@ def main():
     if args.sample_cfg is None:
         args.sample_cfg = dict()
 
-    # noise_batch = None  # set default noise batch as None
     suffix = osp.splitext(args.save_path)[-1]
     if suffix == '.gif':
         args.sample_cfg['save_intermedia'] = True
