@@ -75,7 +75,7 @@ v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changel
 - ✅ [DCGAN](configs/dcgan/README.md) (ICLR'2016)
 - ✅ [WGAN-GP](configs/wgan-gp/README.md) (NIPS'2017)
 - ✅ [LSGAN](configs/lsgan/README.md) (ICCV'2017)
-- ✅ [GGAN](configs/ggan/README.md) (Axiv'2017)
+- ✅ [GGAN](configs/ggan/README.md) (arXiv'2017)
 - ✅ [PGGAN](configs/pggan/README.md) (ICLR'2018)
 - ✅ [StyleGANV1](configs/styleganv1/README.md) (CVPR'2019)
 - ✅ [StyleGANV2](configs/styleganv2/README.md) (CVPR'2020)
@@ -106,6 +106,13 @@ v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changel
 <summary>Internal Learning (点击折叠)</summary>
 
 - ✅ [SinGAN](configs/dcgan/README.md) (ICCV'2019)
+
+</details>
+
+<details open>
+<summary>Denoising Diffusion Probabilistic Models (点击折叠)</summary>
+
+- ✅ [Improved DDPM](configs/improved_ddpm/README.md) (arXiv'2021)
 
 </details>
 
