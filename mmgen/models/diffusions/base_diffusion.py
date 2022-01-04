@@ -19,12 +19,11 @@ from .utils import _get_label_batch, _get_noise_batch, var_to_tensor
 
 @MODELS.register_module()
 class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
-    """Basic module for gaussian Diffusion Denoising Probabilistic Models A
+    """Basic module for gaussian Diffusion Denoising Probabilistic Models. A
     diffusion probabilistic model (which we will call a 'diffusion model' for
     brevity) is a parameterized Markov chain trained using variational
     inference to produce samples matching the data after finite time.
 
-    Ref:
     The design of this module implements DDPM and improve-DDPM according to
     "Denoising Diffusion Probabilistic Models" (2020) and "Improved Denoising
     Diffusion Probabilistic Models" (2021).
