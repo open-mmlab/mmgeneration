@@ -19,7 +19,8 @@ train_cfg = dict(
 # )
 
 data = dict(
-    train=dict(img_path='./data/singan/fish.png', min_size=25, max_size=300))
+    train=dict(
+        img_path='./data/singan/fish-crop.jpg', min_size=25, max_size=300))
 
 optimizer = None
 lr_config = None
