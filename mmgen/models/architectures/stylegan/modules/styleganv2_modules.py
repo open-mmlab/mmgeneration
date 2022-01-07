@@ -339,7 +339,7 @@ class ModulatedConv2d(nn.Module):
 
         self.padding = padding if padding else (kernel_size // 2)
 
-    def forward(self, x, style):
+    def forward(self, x, style, input_gain=None):
         n, c, h, w = x.shape
 
         weight = self.weight
@@ -362,6 +362,12 @@ class ModulatedConv2d(nn.Module):
             demod = torch.rsqrt(weight.pow(2).sum([2, 3, 4]) + self.eps)
             weight = weight * demod.view(n, self.out_channels, 1, 1, 1)
 
+        # TODO: input gain added by yyf
+        if input_gain is not None:
+            input_gain = input_gain.expand(n, self.in_channels)  # [NI]
+            weight = weight * input_gain.unsqueeze(1).unsqueeze(3).unsqueeze(
+                4)  # [NOIkk]
+
         weight = weight.view(n * self.out_channels, c, self.kernel_size,
                              self.kernel_size)
 
@@ -383,10 +389,9 @@ class ModulatedConv2d(nn.Module):
             x = conv2d(x, weight, stride=2, padding=0, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
         else:
-            x = x.shape(1, n * c, h, w)
+            x = x.reshape(1, n * c, h, w)
             x = conv2d(x, weight, stride=1, padding=self.padding, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
-
         return x
 
 

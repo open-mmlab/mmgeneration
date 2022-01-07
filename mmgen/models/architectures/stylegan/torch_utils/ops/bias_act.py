@@ -10,16 +10,33 @@
 import os
 import numpy as np
 import torch
-from ... import dnnlib
 
 from .. import custom_ops
 from .. import misc
-
+from typing import Any
 #----------------------------------------------------------------------------
+
+
+class EasyDict(dict):
+    """Convenience class that behaves like a dict 
+    but allows access with the attribute syntax."""
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        self[name] = value
+
+    def __delattr__(self, name: str) -> None:
+        del self[name]
+
 
 activation_funcs = {
     'linear':
-    dnnlib.EasyDict(
+    EasyDict(
         func=lambda x, **_: x,
         def_alpha=0,
         def_gain=1,
@@ -27,7 +44,7 @@ activation_funcs = {
         ref='',
         has_2nd_grad=False),
     'relu':
-    dnnlib.EasyDict(
+    EasyDict(
         func=lambda x, **_: torch.nn.functional.relu(x),
         def_alpha=0,
         def_gain=np.sqrt(2),
@@ -35,7 +52,7 @@ activation_funcs = {
         ref='y',
         has_2nd_grad=False),
     'lrelu':
-    dnnlib.EasyDict(
+    EasyDict(
         func=lambda x, alpha, **_: torch.nn.functional.leaky_relu(x, alpha),
         def_alpha=0.2,
         def_gain=np.sqrt(2),
@@ -43,7 +60,7 @@ activation_funcs = {
         ref='y',
         has_2nd_grad=False),
     'tanh':
-    dnnlib.EasyDict(
+    EasyDict(
         func=lambda x, **_: torch.tanh(x),
         def_alpha=0,
         def_gain=1,
@@ -51,7 +68,7 @@ activation_funcs = {
         ref='y',
         has_2nd_grad=True),
     'sigmoid':
-    dnnlib.EasyDict(
+    EasyDict(
         func=lambda x, **_: torch.sigmoid(x),
         def_alpha=0,
         def_gain=1,
@@ -59,7 +76,7 @@ activation_funcs = {
         ref='y',
         has_2nd_grad=True),
     'elu':
-    dnnlib.EasyDict(
+    EasyDict(
         func=lambda x, **_: torch.nn.functional.elu(x),
         def_alpha=0,
         def_gain=1,
@@ -67,7 +84,7 @@ activation_funcs = {
         ref='y',
         has_2nd_grad=True),
     'selu':
-    dnnlib.EasyDict(
+    EasyDict(
         func=lambda x, **_: torch.nn.functional.selu(x),
         def_alpha=0,
         def_gain=1,
@@ -75,7 +92,7 @@ activation_funcs = {
         ref='y',
         has_2nd_grad=True),
     'softplus':
-    dnnlib.EasyDict(
+    EasyDict(
         func=lambda x, **_: torch.nn.functional.softplus(x),
         def_alpha=0,
         def_gain=1,
@@ -83,7 +100,7 @@ activation_funcs = {
         ref='y',
         has_2nd_grad=True),
     'swish':
-    dnnlib.EasyDict(
+    EasyDict(
         func=lambda x, **_: torch.sigmoid(x) * x,
         def_alpha=0,
         def_gain=np.sqrt(2),

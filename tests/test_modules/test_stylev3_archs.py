@@ -131,6 +131,7 @@ class TestSynthesisLayer:
             is_torgb=False,
             is_critically_sampled=False,
             use_fp16=False,
+            conv_kernel=3,
             in_channels=3,
             out_channels=3,
             in_size=16,
@@ -199,6 +200,9 @@ class TestStyleGAN3Generator:
         y = generator(z, c)
         assert y.shape == (2, 3, 16, 16)
 
+        y = generator(None, None, num_batches=2)
+        assert y.shape == (2, 3, 16, 16)
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_cuda(self):
         generator = StyleGANv3Generator(**self.default_cfg).cuda()
@@ -222,6 +226,10 @@ class TestStyleGAN3Generator:
 #         pass
 
 if __name__ == '__main__':
-    testor = TestStyleGAN3Generator()
+    # testor = TestStyleGAN3Generator()
+    # testor.setup_class()
+    # testor.test_cuda()
+
+    testor = TestSynthesisLayer()
     testor.setup_class()
-    testor.test_cpu()
+    testor.test_cuda()

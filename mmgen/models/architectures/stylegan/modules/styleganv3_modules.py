@@ -1,62 +1,13 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from ..torch_utils.misc import assert_shape, suppress_tracer_warnings
 
 import scipy
 
 from ..torch_utils.ops import filtered_lrelu
-from ..torch_utils.ops import conv2d_gradfix
 
 from .styleganv2_modules import ModulatedConv2d
 from mmcv.ops.fused_bias_leakyrelu import fused_bias_leakyrelu
-import torchsnooper
-
-
-# TODO:replace it with s2' ModulatedConv2d
-def modulated_conv2d(
-    x,  # Input tensor: [batch_size, in_channels, in_height, in_width]
-    w,  # Weight tensor: [out_channels, in_channels, kernel_height, kernel_width]
-    s,  # Style tensor: [batch_size, in_channels]
-    demodulate=True,  # Apply weight demodulation?
-    padding=0,  # Padding: int or [padH, padW]
-    input_gain=None,  # Optional scale factors for the input channels: [], [in_channels], or [batch_size, in_channels]
-):
-    with suppress_tracer_warnings(
-    ):  # this value will be treated as a constant
-        batch_size = int(x.shape[0])
-    out_channels, in_channels, kh, kw = w.shape
-    assert_shape(w, [out_channels, in_channels, kh, kw])  # [OIkk]
-    assert_shape(x, [batch_size, in_channels, None, None])  # [NIHW]
-    assert_shape(s, [batch_size, in_channels])  # [NI]
-
-    # Pre-normalize inputs.
-    if demodulate:
-        w = w * w.square().mean([1, 2, 3], keepdim=True).rsqrt()
-        s = s * s.square().mean().rsqrt()
-
-    # Modulate weights.
-    w = w.unsqueeze(0)  # [NOIkk]
-    w = w * s.unsqueeze(1).unsqueeze(3).unsqueeze(4)  # [NOIkk]
-
-    # Demodulate weights.
-    if demodulate:
-        dcoefs = (w.square().sum(dim=[2, 3, 4]) + 1e-8).rsqrt()  # [NO]
-        w = w * dcoefs.unsqueeze(2).unsqueeze(3).unsqueeze(4)  # [NOIkk]
-
-    # Apply input scaling.
-    if input_gain is not None:
-        input_gain = input_gain.expand(batch_size, in_channels)  # [NI]
-        w = w * input_gain.unsqueeze(1).unsqueeze(3).unsqueeze(4)  # [NOIkk]
-
-    # Execute as one fused op using grouped convolution.
-    x = x.reshape(1, -1, *x.shape[2:])
-    w = w.reshape(-1, in_channels, kh, kw)
-    # TODO: conv2d_gradfix is what in modulated conv
-    x = conv2d_gradfix.conv2d(
-        input=x, weight=w.to(x.dtype), padding=padding, groups=batch_size)
-    x = x.reshape(batch_size, -1, *x.shape[2:])
-    return x
 
 
 class FullyConnectedLayer(nn.Module):
@@ -85,7 +36,6 @@ class FullyConnectedLayer(nn.Module):
         self.weight_gain = lr_multiplier / np.sqrt(in_features)
         self.bias_gain = lr_multiplier
 
-    @torchsnooper.snoop()
     def forward(self, x):
         w = self.weight.to(x.dtype) * self.weight_gain
         b = self.bias
@@ -107,14 +57,14 @@ class FullyConnectedLayer(nn.Module):
 class MappingNetwork(torch.nn.Module):
 
     def __init__(
-            self,
-            z_dim,  # Input latent (Z) dimensionality.
-            c_dim,  # Conditioning label (C) dimensionality, 0 = no labels.
-            w_dim,  # Intermediate latent (W) dimensionality.
-            num_ws,  # Number of intermediate latents to output.
-            num_layers=2,  # Number of mapping layers.
-            lr_multiplier=0.01,  # Learning rate multiplier for the mapping layers.
-            w_avg_beta=0.998,  # Decay for tracking the moving average of W during training.
+        self,
+        z_dim,
+        c_dim,
+        w_dim,
+        num_ws,
+        num_layers=2,
+        lr_multiplier=0.01,
+        w_avg_beta=0.998,
     ):
         super().__init__()
         self.z_dim = z_dim
@@ -142,11 +92,11 @@ class MappingNetwork(torch.nn.Module):
 
     def forward(self,
                 z,
-                c,
+                c=None,
                 truncation_psi=1,
                 truncation_cutoff=None,
                 update_emas=False):
-        assert_shape(z, [None, self.z_dim])
+
         if truncation_cutoff is None:
             truncation_cutoff = self.num_ws
 
@@ -154,7 +104,6 @@ class MappingNetwork(torch.nn.Module):
         x = z.to(torch.float32)
         x = x * (x.square().mean(1, keepdim=True) + 1e-8).rsqrt()
         if self.c_dim > 0:
-            assert_shape(c, [None, self.c_dim])
             y = self.embed(c.to(torch.float32))
             y = y * (y.square().mean(1, keepdim=True) + 1e-8).rsqrt()
             x = torch.cat([x, y], dim=1) if x is not None else y
@@ -234,13 +183,17 @@ class SynthesisInput(torch.nn.Module):
                  1])  # Inverse translation wrt. resulting image.
         m_t[:, 0, 2] = -t[:, 2]  # t'_x
         m_t[:, 1, 2] = -t[:, 3]  # t'_y
-        transforms = m_r @ m_t @ transforms  # First rotate resulting image, then translate, and finally apply user-specified transform.
+
+        # First rotate resulting image, then translate
+        # and finally apply user-specified transform.
+        transforms = m_r @ m_t @ transforms
 
         # Transform frequencies.
         phases = phases + (freqs @ transforms[:, :2, 2:]).squeeze(2)
         freqs = freqs @ transforms[:, :2, :2]
 
-        # Dampen out-of-band frequencies that may occur due to the user-specified transform.
+        # Dampen out-of-band frequencies
+        # that may occur due to the user-specified transform.
         amplitudes = (1 - (freqs.norm(dim=2) - self.bandwidth) /
                       (self.sampling_rate / 2 - self.bandwidth)).clamp(0, 1)
 
@@ -266,38 +219,33 @@ class SynthesisInput(torch.nn.Module):
 
         # Ensure correct shape.
         x = x.permute(0, 3, 1, 2)  # [batch, channel, height, width]
-        assert_shape(
-            x,
-            [w.shape[0], self.channels,
-             int(self.size[1]),
-             int(self.size[0])])
         return x
 
 
 class SynthesisLayer(torch.nn.Module):
 
     def __init__(
-            self,
-            w_dim,  # Intermediate latent (W) dimensionality.
-            is_torgb,  # Is this the final ToRGB layer?
-            is_critically_sampled,  # Does this layer use critical sampling?
-            use_fp16,  # Does this layer use FP16?
-            in_channels,  # Number of input channels.
-            out_channels,  # Number of output channels.
-            in_size,  # Input spatial size: int or [width, height].
-            out_size,  # Output spatial size: int or [width, height].
-            in_sampling_rate,  # Input sampling rate (s).
-            out_sampling_rate,  # Output sampling rate (s).
-            in_cutoff,  # Input cutoff frequency (f_c).
-            out_cutoff,  # Output cutoff frequency (f_c).
-            in_half_width,  # Input transition band half-width (f_h).
-            out_half_width,  # Output Transition band half-width (f_h).
-            conv_kernel=3,  # Convolution kernel size. Ignored for final the ToRGB layer.
-            filter_size=6,  # Low-pass filter size relative to the lower resolution when up/downsampling.
-            lrelu_upsampling=2,  # Relative sampling rate for leaky ReLU. Ignored for final the ToRGB layer.
-            use_radial_filters=False,  # Use radially symmetric downsampling filter? Ignored for critically sampled layers.
-            conv_clamp=256,  # Clamp the output to [-X, +X], None = disable clamping.
-            magnitude_ema_beta=0.999,  # Decay rate for the moving average of input magnitudes.
+        self,
+        w_dim,
+        is_torgb,
+        is_critically_sampled,
+        use_fp16,
+        in_channels,
+        out_channels,
+        in_size,
+        out_size,
+        in_sampling_rate,
+        out_sampling_rate,
+        in_cutoff,
+        out_cutoff,
+        in_half_width,
+        out_half_width,
+        conv_kernel=3,
+        filter_size=6,
+        lrelu_upsampling=2,
+        use_radial_filters=False,
+        conv_clamp=256,
+        magnitude_ema_beta=0.999,
     ):
         super().__init__()
         self.w_dim = w_dim
@@ -320,14 +268,6 @@ class SynthesisLayer(torch.nn.Module):
         self.conv_clamp = conv_clamp
         self.magnitude_ema_beta = magnitude_ema_beta
 
-        # Setup parameters and buffers.
-        # self.affine = FullyConnectedLayer(
-        #     self.w_dim, self.in_channels, bias_init=1)
-        # self.weight = torch.nn.Parameter(
-        #     torch.randn([
-        #         self.out_channels, self.in_channels, self.conv_kernel,
-        #         self.conv_kernel
-        #     ]))
         self.bias = torch.nn.Parameter(torch.zeros([self.out_channels]))
 
         self.conv = ModulatedConv2d(
@@ -345,7 +285,8 @@ class SynthesisLayer(torch.nn.Module):
         self.up_factor = int(
             np.rint(self.tmp_sampling_rate / self.in_sampling_rate))
         assert self.in_sampling_rate * self.up_factor == self.tmp_sampling_rate
-        self.up_taps = filter_size * self.up_factor if self.up_factor > 1 and not self.is_torgb else 1
+        self.up_taps = filter_size * self.up_factor if (
+            self.up_factor > 1 and not self.is_torgb) else 1
         self.register_buffer(
             'up_filter',
             self.design_lowpass_filter(
@@ -357,9 +298,12 @@ class SynthesisLayer(torch.nn.Module):
         # Design downsampling filter.
         self.down_factor = int(
             np.rint(self.tmp_sampling_rate / self.out_sampling_rate))
-        assert self.out_sampling_rate * self.down_factor == self.tmp_sampling_rate
-        self.down_taps = filter_size * self.down_factor if self.down_factor > 1 and not self.is_torgb else 1
-        self.down_radial = use_radial_filters and not self.is_critically_sampled
+        assert (self.out_sampling_rate *
+                self.down_factor == self.tmp_sampling_rate)
+        self.down_taps = filter_size * self.down_factor if (
+            self.down_factor > 1 and not self.is_torgb) else 1
+        self.down_radial = (
+            use_radial_filters and not self.is_critically_sampled)
         self.register_buffer(
             'down_filter',
             self.design_lowpass_filter(
@@ -375,10 +319,11 @@ class SynthesisLayer(torch.nn.Module):
         ) * self.down_factor + 1  # Desired output size before downsampling.
         pad_total -= (self.in_size + self.conv_kernel -
                       1) * self.up_factor  # Input size after upsampling.
-        pad_total += self.up_taps + self.down_taps - 2  # Size reduction caused by the filters.
-        pad_lo = (
-            pad_total + self.up_factor
-        ) // 2  # Shift sample locations according to the symmetric interpretation (Appendix C.3).
+        # Size reduction caused by the filters.
+        pad_total += self.up_taps + self.down_taps - 2
+        # Shift sample locations according to
+        # the symmetric interpretation (Appendix C.3).
+        pad_lo = (pad_total + self.up_factor) // 2
         pad_hi = pad_total - pad_lo
         self.padding = [
             int(pad_lo[0]),
@@ -387,19 +332,14 @@ class SynthesisLayer(torch.nn.Module):
             int(pad_hi[1])
         ]
 
-    def forward(self,
-                x,
-                w,
-                noise_mode='random',
-                force_fp32=False,
-                update_emas=False):
+    def forward(
+            self,
+            x,
+            w,
+            noise_mode='random',
+            force_fp32=True,  # TODO: notice 
+            update_emas=False):
         assert noise_mode in ['random', 'const', 'none']  # unused
-        assert_shape(x, [
-            None, self.in_channels,
-            int(self.in_size[1]),
-            int(self.in_size[0])
-        ])
-        assert_shape(w, [x.shape[0], self.w_dim])
 
         # Track input magnitude.
         if update_emas:
@@ -411,24 +351,11 @@ class SynthesisLayer(torch.nn.Module):
                                        self.magnitude_ema_beta))
         input_gain = self.magnitude_ema.rsqrt()
 
-        # Execute affine layer.
-        # styles = self.affine(w)
-        # if self.is_torgb:
-        #     weight_gain = 1 / np.sqrt(self.in_channels * (self.conv_kernel**2))
-        #     styles = styles * weight_gain
-
         # Execute modulated conv2d.
         dtype = torch.float16 if (self.use_fp16 and not force_fp32 and
                                   x.device.type == 'cuda') else torch.float32
 
-        x = self.conv(x, w)
-        # x = modulated_conv2d(
-        #     x=x.to(dtype),
-        #     w=self.weight,
-        #     s=styles,
-        #     padding=self.conv_kernel - 1,
-        #     demodulate=(not self.is_torgb),
-        #     input_gain=input_gain)
+        x = self.conv(x, w, input_gain=input_gain)
 
         # Execute bias, filtered leaky ReLU, and clamping.
         gain = 1 if self.is_torgb else np.sqrt(2)
@@ -444,14 +371,11 @@ class SynthesisLayer(torch.nn.Module):
             gain=gain,
             slope=slope,
             clamp=self.conv_clamp)
-
-        # Ensure correct shape and dtype.
-        assert_shape(x, [
-            None, self.out_channels,
-            int(self.out_size[1]),
-            int(self.out_size[0])
-        ])
-        # assert x.dtype == dtype
+        try:
+            assert x.dtype == dtype
+        except:
+            import ipdb
+            ipdb.set_trace()
         return x
 
     @staticmethod
@@ -570,7 +494,6 @@ class SynthesisNetwork(torch.nn.Module):
             self.layer_names.append(name)
 
     def forward(self, ws, **layer_kwargs):
-        assert_shape(ws, [None, self.num_ws, self.w_dim])
         ws = ws.to(torch.float32).unbind(dim=1)
 
         # Execute layers.
@@ -580,9 +503,5 @@ class SynthesisNetwork(torch.nn.Module):
         if self.output_scale != 1:
             x = x * self.output_scale
 
-        # Ensure correct shape and dtype.
-        assert_shape(x, [
-            None, self.img_channels, self.img_resolution, self.img_resolution
-        ])
         x = x.to(torch.float32)
         return x
