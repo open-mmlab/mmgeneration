@@ -11,9 +11,7 @@ import contextlib
 import numpy as np
 import torch
 import warnings
-from .. import dnnlib
 
-#----------------------------------------------------------------------------
 # Cached construction of constant tensors. Avoids CPU=>GPU copy when the
 # same constant is used multiple times.
 
@@ -43,14 +41,13 @@ def constant(value, shape=None, dtype=None, device=None, memory_format=None):
     return tensor
 
 
-#----------------------------------------------------------------------------
 # Replace NaN/Inf with specified numerical values.
 
 try:
     nan_to_num = torch.nan_to_num  # 1.8.0a0
 except AttributeError:
 
-    def nan_to_num(input, nan=0.0, posinf=None, neginf=None, *, out=None):  # pylint: disable=redefined-builtin
+    def nan_to_num(input, nan=0.0, posinf=None, neginf=None, *, out=None):
         assert isinstance(input, torch.Tensor)
         if posinf is None:
             posinf = torch.finfo(input.dtype).max
@@ -61,15 +58,13 @@ except AttributeError:
             input.unsqueeze(0).nansum(0), min=neginf, max=posinf, out=out)
 
 
-#----------------------------------------------------------------------------
 # Symbolic assert.
 
 try:
-    symbolic_assert = torch._assert  # 1.8.0a0 # pylint: disable=protected-access
+    symbolic_assert = torch._assert  # 1.8.0a0
 except AttributeError:
     symbolic_assert = torch.Assert  # 1.7.0
 
-#----------------------------------------------------------------------------
 # Context manager to temporarily suppress known warnings in torch.jit.trace().
 # Note: Cannot use catch_warnings because of https://bugs.python.org/issue29672
 
@@ -82,7 +77,6 @@ def suppress_tracer_warnings():
     warnings.filters.remove(flt)
 
 
-#----------------------------------------------------------------------------
 # Assert that the shape of a tensor matches the given list of integers.
 # None indicates that the size of a dimension is allowed to vary.
 # Performs symbolic assertion when used in torch.jit.trace().
@@ -90,9 +84,8 @@ def suppress_tracer_warnings():
 
 def assert_shape(tensor, ref_shape):
     if tensor.ndim != len(ref_shape):
-        raise AssertionError(
-            f'Wrong number of dimensions: got {tensor.ndim}, expected {len(ref_shape)}'
-        )
+        raise AssertionError(f'Wrong number of dimensions: got {tensor.ndim}, '
+                             'expected {len(ref_shape)}')
     for idx, (size, ref_size) in enumerate(zip(tensor.shape, ref_shape)):
         if ref_size is None:
             pass
@@ -109,12 +102,10 @@ def assert_shape(tensor, ref_shape):
                     torch.equal(size, torch.as_tensor(ref_size)),
                     f'Wrong size for dimension {idx}: expected {ref_size}')
         elif size != ref_size:
-            raise AssertionError(
-                f'Wrong size for dimension {idx}: got {size}, expected {ref_size}'
-            )
+            raise AssertionError(f'Wrong size for dimension {idx}: got {size},'
+                                 ' expected {ref_size}')
 
 
-#----------------------------------------------------------------------------
 # Function decorator that calls torch.autograd.profiler.record_function().
 
 
@@ -128,7 +119,6 @@ def profiled_function(fn):
     return decorator
 
 
-#----------------------------------------------------------------------------
 # Sampler for torch.utils.data.DataLoader that loops over the dataset
 # indefinitely, shuffling items as it goes.
 
@@ -174,7 +164,6 @@ class InfiniteSampler(torch.utils.data.Sampler):
             idx += 1
 
 
-#----------------------------------------------------------------------------
 # Utilities for operating with torch.nn.Module parameters and buffers.
 
 
@@ -199,7 +188,6 @@ def copy_params_and_buffers(src_module, dst_module, require_all=False):
                 tensor.requires_grad)
 
 
-#----------------------------------------------------------------------------
 # Context manager for easily enabling/disabling DistributedDataParallel
 # synchronization.
 
@@ -215,7 +203,6 @@ def ddp_sync(module, sync):
             yield
 
 
-#----------------------------------------------------------------------------
 # Check DistributedDataParallel consistency across processes.
 
 
@@ -231,105 +218,3 @@ def check_ddp_consistency(module, ignore_regex=None):
         other = tensor.clone()
         torch.distributed.broadcast(tensor=other, src=0)
         assert (tensor == other).all(), fullname
-
-
-#----------------------------------------------------------------------------
-# Print summary table of module hierarchy.
-
-
-def print_module_summary(module, inputs, max_nesting=3, skip_redundant=True):
-    assert isinstance(module, torch.nn.Module)
-    assert not isinstance(module, torch.jit.ScriptModule)
-    assert isinstance(inputs, (tuple, list))
-
-    # Register hooks.
-    entries = []
-    nesting = [0]
-
-    def pre_hook(_mod, _inputs):
-        nesting[0] += 1
-
-    def post_hook(mod, _inputs, outputs):
-        nesting[0] -= 1
-        if nesting[0] <= max_nesting:
-            outputs = list(outputs) if isinstance(outputs,
-                                                  (tuple,
-                                                   list)) else [outputs]
-            outputs = [t for t in outputs if isinstance(t, torch.Tensor)]
-            entries.append(dnnlib.EasyDict(mod=mod, outputs=outputs))
-
-    hooks = [
-        mod.register_forward_pre_hook(pre_hook) for mod in module.modules()
-    ]
-    hooks += [mod.register_forward_hook(post_hook) for mod in module.modules()]
-
-    # Run module.
-    outputs = module(*inputs)
-    for hook in hooks:
-        hook.remove()
-
-    # Identify unique outputs, parameters, and buffers.
-    tensors_seen = set()
-    for e in entries:
-        e.unique_params = [
-            t for t in e.mod.parameters() if id(t) not in tensors_seen
-        ]
-        e.unique_buffers = [
-            t for t in e.mod.buffers() if id(t) not in tensors_seen
-        ]
-        e.unique_outputs = [t for t in e.outputs if id(t) not in tensors_seen]
-        tensors_seen |= {
-            id(t)
-            for t in e.unique_params + e.unique_buffers + e.unique_outputs
-        }
-
-    # Filter out redundant entries.
-    if skip_redundant:
-        entries = [
-            e for e in entries if len(e.unique_params) or len(e.unique_buffers)
-            or len(e.unique_outputs)
-        ]
-
-    # Construct table.
-    rows = [[
-        type(module).__name__, 'Parameters', 'Buffers', 'Output shape',
-        'Datatype'
-    ]]
-    rows += [['---'] * len(rows[0])]
-    param_total = 0
-    buffer_total = 0
-    submodule_names = {mod: name for name, mod in module.named_modules()}
-    for e in entries:
-        name = '<top-level>' if e.mod is module else submodule_names[e.mod]
-        param_size = sum(t.numel() for t in e.unique_params)
-        buffer_size = sum(t.numel() for t in e.unique_buffers)
-        output_shapes = [str(list(t.shape)) for t in e.outputs]
-        output_dtypes = [str(t.dtype).split('.')[-1] for t in e.outputs]
-        rows += [[
-            name + (':0' if len(e.outputs) >= 2 else ''),
-            str(param_size) if param_size else '-',
-            str(buffer_size) if buffer_size else '-',
-            (output_shapes + ['-'])[0],
-            (output_dtypes + ['-'])[0],
-        ]]
-        for idx in range(1, len(e.outputs)):
-            rows += [[
-                name + f':{idx}', '-', '-', output_shapes[idx],
-                output_dtypes[idx]
-            ]]
-        param_total += param_size
-        buffer_total += buffer_size
-    rows += [['---'] * len(rows[0])]
-    rows += [['Total', str(param_total), str(buffer_total), '-', '-']]
-
-    # Print table.
-    widths = [max(len(cell) for cell in column) for column in zip(*rows)]
-    print()
-    for row in rows:
-        print('  '.join(cell + ' ' * (width - len(cell))
-                        for cell, width in zip(row, widths)))
-    print()
-    return outputs
-
-
-#----------------------------------------------------------------------------

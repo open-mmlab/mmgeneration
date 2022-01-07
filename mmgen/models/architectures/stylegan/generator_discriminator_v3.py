@@ -99,7 +99,7 @@ class StyleGANv3Generator(nn.Module):
         if self.rgb2bgr:
             out_img = out_img[:, [2, 1, 0], ...]
 
-        if return_noise:
+        if return_noise or return_latent:
             output = dict(
                 fake_img=out_img, noise_batch=noise_batch, label=label_batch)
             return output

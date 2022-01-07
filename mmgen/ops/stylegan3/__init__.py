@@ -7,3 +7,6 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
 # empty
+from .ops import filtered_lrelu
+
+__all__ = ['filtered_lrelu']

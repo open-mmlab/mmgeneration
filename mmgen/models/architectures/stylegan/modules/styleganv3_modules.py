@@ -4,24 +4,21 @@ import numpy as np
 
 import scipy
 
-from ..torch_utils.ops import filtered_lrelu
-
 from .styleganv2_modules import ModulatedConv2d
 from mmcv.ops.fused_bias_leakyrelu import fused_bias_leakyrelu
+from mmgen.ops import filtered_lrelu
 
 
 class FullyConnectedLayer(nn.Module):
 
-    def __init__(
-            self,
-            in_features,  # Number of input features.
-            out_features,  # Number of output features.
-            activation='linear',  # Activation function: 'relu', 'lrelu', etc.
-            bias=True,  # Apply additive bias before the activation function?
-            lr_multiplier=1,  # Learning rate multiplier.
-            weight_init=1,  # Initial standard deviation of the weight tensor.
-            bias_init=0,  # Initial value of the additive bias.
-    ):
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 activation='linear',
+                 bias=True,
+                 lr_multiplier=1,
+                 weight_init=1,
+                 bias_init=0):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -86,7 +83,6 @@ class MappingNetwork(torch.nn.Module):
                 out_features,
                 activation='lrelu',
                 lr_multiplier=lr_multiplier)
-            # TODO: whether use this fc
             setattr(self, f'fc{idx}', layer)
         self.register_buffer('w_avg', torch.zeros([w_dim]))
 
@@ -125,7 +121,6 @@ class MappingNetwork(torch.nn.Module):
         return x
 
 
-# TODO: set fourier feature and geometric transform standalone
 class SynthesisInput(torch.nn.Module):
 
     def __init__(
@@ -371,11 +366,7 @@ class SynthesisLayer(torch.nn.Module):
             gain=gain,
             slope=slope,
             clamp=self.conv_clamp)
-        try:
-            assert x.dtype == dtype
-        except:
-            import ipdb
-            ipdb.set_trace()
+        assert x.dtype == dtype
         return x
 
     @staticmethod
