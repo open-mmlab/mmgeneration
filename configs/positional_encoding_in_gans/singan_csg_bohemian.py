@@ -1,4 +1,4 @@
-_base_ = ['../singan/singan_fish.py']
+_base_ = ['../singan/singan_bohemian.py']
 
 num_scales = 10  # start from zero
 model = dict(
@@ -21,5 +21,5 @@ data = dict(
         max_size=500,
     ))
 
-dist_params = dict(backend='nccl', port=28120)
+dist_params = dict(backend='nccl')
 total_iters = 22000

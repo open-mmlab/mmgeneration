@@ -8,4 +8,11 @@ model = dict(
 
 train_cfg = dict(fixed_noise_with_pad=True)
 
-dist_params = dict(backend='nccl', port=23119)
+data = dict(
+    train=dict(
+        img_path='./data/singan/fish-crop.jpg',
+        min_size=25,
+        max_size=300,
+    ))
+
+dist_params = dict(backend='nccl')
