@@ -2,6 +2,7 @@
 import os
 import pickle
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from copy import deepcopy
 from functools import partial
 
@@ -130,6 +131,21 @@ def _load_inception_torch(inception_args, metric):
             'https://github.com/open-mmlab/mmgeneration/blob/master/docs/en/quick_run.md#is.',  # noqa
             'mmgen')
     return inception_model
+
+
+@contextmanager
+def disable_gpu_fuser_on_pt19():
+    # On PyTorch 1.9 a CUDA fuser bug prevents the Inception JIT model to run.
+    # Refers to:
+    #   https://github.com/GaParmar/clean-fid/blob/5e1e84cdea9654b9ac7189306dfa4057ea2213d8/cleanfid/inception_torchscript.py#L9  # noqa
+    #   https://github.com/GaParmar/clean-fid/issues/5
+    #   https://github.com/pytorch/pytorch/issues/64062
+    if torch.__version__.startswith('1.9.'):
+        old_val = torch._C._jit_can_fuse_on_gpu()
+        torch._C._jit_override_can_fuse_on_gpu(False)
+    yield
+    if torch.__version__.startswith('1.9.'):
+        torch._C._jit_override_can_fuse_on_gpu(old_val)
 
 
 def _ssim_for_multi_scale(img1,
@@ -530,7 +546,8 @@ class FID(Metric):
 
         if self.inception_style == 'StyleGAN':
             batch = (batch * 127.5 + 128).clamp(0, 255).to(torch.uint8)
-            feat = self.inception_net(batch, return_features=True)
+            with disable_gpu_fuser_on_pt19():
+                feat = self.inception_net(batch, return_features=True)
         else:
             feat = self.inception_net(batch)[0].view(batch.shape[0], -1)
 
@@ -1086,7 +1103,8 @@ class IS(Metric):
             np.array: Inception score.
         """
         if self.use_tero_script:
-            x = self.inception_model(x, no_output_bias=True)
+            with disable_gpu_fuser_on_pt19():
+                x = self.inception_model(x, no_output_bias=True)
         else:
             # specify the dimension to avoid warning
             x = F.softmax(self.inception_model(x), dim=1)
