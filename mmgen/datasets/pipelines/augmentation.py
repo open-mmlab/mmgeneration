@@ -204,7 +204,7 @@ class Resize:
             else:
                 scale = (self.scale[-1], int(self.scale[-1] / w * h))
         else:
-            # direct use the given ones.
+            # direct use the given ones
             scale = self.scale[::-1]
 
         # here we assume all images in self.keys have the same input size
