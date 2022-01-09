@@ -2,13 +2,13 @@ from copy import deepcopy
 
 import pytest
 import torch
+
+from mmgen.models.architectures.stylegan import StyleGANv3Generator
 from mmgen.models.architectures.stylegan.modules import (FullyConnectedLayer,
                                                          MappingNetwork,
                                                          SynthesisInput,
                                                          SynthesisLayer,
                                                          SynthesisNetwork)
-from mmgen.models.architectures.stylegan import StyleGANv3Generator
-from copy import deepcopy
 
 
 class TestFullyConnectedLayer:
@@ -210,26 +210,3 @@ class TestStyleGAN3Generator:
         c = None
         y = generator(z, c)
         assert y.shape == (2, 3, 16, 16)
-
-
-# class Test:
-
-#     @classmethod
-#     def setup_class(cls):
-#         cls.default_cfg = dict()
-
-#     def test_cpu(self):
-#         pass
-
-#     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
-#     def test_cuda(self):
-#         pass
-
-if __name__ == '__main__':
-    # testor = TestStyleGAN3Generator()
-    # testor.setup_class()
-    # testor.test_cuda()
-
-    testor = TestSynthesisLayer()
-    testor.setup_class()
-    testor.test_cuda()

@@ -8,18 +8,17 @@
 """Custom PyTorch ops for efficient bias and activation."""
 
 import os
+from typing import Any
+
 import numpy as np
 import torch
 
-from .. import custom_ops
-from .. import misc
-from typing import Any
-#----------------------------------------------------------------------------
+from .. import custom_ops, misc
 
 
 class EasyDict(dict):
-    """Convenience class that behaves like a dict 
-    but allows access with the attribute syntax."""
+    """Convenience class that behaves like a dict but allows access with the
+    attribute syntax."""
 
     def __getattr__(self, name: str) -> Any:
         try:
@@ -109,8 +108,6 @@ activation_funcs = {
         has_2nd_grad=True),
 }
 
-#----------------------------------------------------------------------------
-
 _plugin = None
 _null_tensor = torch.empty([0])
 
@@ -128,9 +125,6 @@ def _init():
     return True
 
 
-#----------------------------------------------------------------------------
-
-
 def bias_act(x,
              b=None,
              dim=1,
@@ -140,30 +134,32 @@ def bias_act(x,
              clamp=None,
              impl='cuda'):
     r"""Fused bias and activation function.
-
-    Adds bias `b` to activation tensor `x`, evaluates activation function `act`,
-    and scales the result by `gain`. Each of the steps is optional. In most cases,
-    the fused op is considerably more efficient than performing the same calculation
-    using standard PyTorch ops. It supports first and second order gradients,
-    but not third order gradients.
+    Adds bias `b` to activation tensor `x`, evaluates activation function
+    `act`, and scales the result by `gain`. Each of the steps is optional.
+    In most cases, the fused op is considerably more efficient than performing
+    the same calculation using standard PyTorch ops. It supports first and
+    second order gradients, but not third order gradients.
 
     Args:
         x:      Input activation tensor. Can be of any shape.
-        b:      Bias vector, or `None` to disable. Must be a 1D tensor of the same type
-                as `x`. The shape must be known, and it must match the dimension of `x`
-                corresponding to `dim`.
+        b:      Bias vector, or `None` to disable. Must be a 1D tensor of the
+                same type as `x`. The shape must be known, and it must match
+                the dimension of `x` corresponding to `dim`.
         dim:    The dimension in `x` corresponding to the elements of `b`.
                 The value of `dim` is ignored if `b` is not specified.
-        act:    Name of the activation function to evaluate, or `"linear"` to disable.
-                Can be e.g. `"relu"`, `"lrelu"`, `"tanh"`, `"sigmoid"`, `"swish"`, etc.
-                See `activation_funcs` for a full list. `None` is not allowed.
-        alpha:  Shape parameter for the activation function, or `None` to use the default.
+        act:    Name of the activation function to evaluate, or `"linear"` to
+                disable. Can be e.g. `"relu"`, `"lrelu"`, `"tanh"`,
+                `"sigmoid"`, `"swish"`, etc. See `activation_funcs` for a full
+                list. `None` is not allowed.
+        alpha:  Shape parameter for the activation function, or `None` to use
+                the default.
         gain:   Scaling factor for the output tensor, or `None` to use default.
-                See `activation_funcs` for the default scaling of each activation function.
-                If unsure, consider specifying 1.
-        clamp:  Clamp the output values to `[-clamp, +clamp]`, or `None` to disable
-                the clamping (default).
-        impl:   Name of the implementation to use. Can be `"ref"` or `"cuda"` (default).
+                See `activation_funcs` for the default scaling of each
+                activation function. If unsure, consider specifying 1.
+        clamp:  Clamp the output values to `[-clamp, +clamp]`, or `None` to
+                disable the clamping (default).
+        impl:   Name of the implementation to use. Can be `"ref"` or `"cuda"`
+                (default).
 
     Returns:
         Tensor of the same shape and datatype as `x`.
@@ -177,9 +173,6 @@ def bias_act(x,
         x=x, b=b, dim=dim, act=act, alpha=alpha, gain=gain, clamp=clamp)
 
 
-#----------------------------------------------------------------------------
-
-
 @misc.profiled_function
 def _bias_act_ref(x,
                   b=None,
@@ -188,8 +181,8 @@ def _bias_act_ref(x,
                   alpha=None,
                   gain=None,
                   clamp=None):
-    """Slow reference implementation of `bias_act()` using standard TensorFlow ops.
-    """
+    """Slow reference implementation of `bias_act()` using standard TensorFlow
+    ops."""
     assert isinstance(x, torch.Tensor)
     assert clamp is None or clamp >= 0
     spec = activation_funcs[act]
@@ -215,18 +208,16 @@ def _bias_act_ref(x,
 
     # Clamp.
     if clamp >= 0:
-        x = x.clamp(-clamp, clamp)  # pylint: disable=invalid-unary-operand-type
+        # pylint: disable=invalid-unary-operand-type
+        x = x.clamp(-clamp, clamp)
     return x
 
-
-#----------------------------------------------------------------------------
 
 _bias_act_cuda_cache = dict()
 
 
 def _bias_act_cuda(dim=1, act='linear', alpha=None, gain=None, clamp=None):
-    """Fast CUDA implementation of `bias_act()` using custom ops.
-    """
+    """Fast CUDA implementation of `bias_act()` using custom ops."""
     # Parse arguments.
     assert clamp is None or clamp >= 0
     spec = activation_funcs[act]
@@ -249,7 +240,8 @@ def _bias_act_cuda(dim=1, act='linear', alpha=None, gain=None, clamp=None):
             x = x.contiguous(memory_format=ctx.memory_format)
             b = b.contiguous() if b is not None else _null_tensor
             y = x
-            if act != 'linear' or gain != 1 or clamp >= 0 or b is not _null_tensor:
+            if act != 'linear' or gain != 1 or clamp >= 0 or (
+                    b is not _null_tensor):
                 y = _plugin.bias_act(x, b, _null_tensor, _null_tensor,
                                      _null_tensor, 0, dim, spec.cuda_idx,
                                      alpha, gain, clamp)
@@ -281,8 +273,8 @@ def _bias_act_cuda(dim=1, act='linear', alpha=None, gain=None, clamp=None):
 
         @staticmethod
         def forward(ctx, dy, x, b, y):  # pylint: disable=arguments-differ
-            ctx.memory_format = torch.channels_last if dy.ndim > 2 and dy.stride(
-                1) == 1 else torch.contiguous_format
+            ctx.memory_format = torch.channels_last if dy.ndim > 2 and (
+                dy.stride(1) == 1) else torch.contiguous_format
             dx = _plugin.bias_act(dy, b, x, y, _null_tensor, 1, dim,
                                   spec.cuda_idx, alpha, gain, clamp)
             ctx.save_for_backward(dy if spec.has_2nd_grad else _null_tensor, x,
@@ -314,6 +306,3 @@ def _bias_act_cuda(dim=1, act='linear', alpha=None, gain=None, clamp=None):
     # Add to cache.
     _bias_act_cuda_cache[key] = BiasActCuda
     return BiasActCuda
-
-
-#----------------------------------------------------------------------------

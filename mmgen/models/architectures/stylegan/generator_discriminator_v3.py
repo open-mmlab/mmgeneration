@@ -1,8 +1,9 @@
-import torch.nn as nn
-from .modules import SynthesisNetwork, MappingNetwork
-from mmgen.models.builder import MODULES
 import torch
+import torch.nn as nn
+
 from mmgen.models.architectures.common import get_module_device
+from mmgen.models.builder import MODULES
+from .modules import MappingNetwork, SynthesisNetwork
 
 
 @MODULES.register_module()

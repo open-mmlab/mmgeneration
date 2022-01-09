@@ -1,12 +1,11 @@
+import numpy as np
+import scipy
 import torch
 import torch.nn as nn
-import numpy as np
-
-import scipy
-
-from .styleganv2_modules import ModulatedConv2d
 from mmcv.ops.fused_bias_leakyrelu import fused_bias_leakyrelu
+
 from mmgen.ops import filtered_lrelu
+from .styleganv2_modules import ModulatedConv2d
 
 
 class FullyConnectedLayer(nn.Module):
@@ -47,7 +46,7 @@ class FullyConnectedLayer(nn.Module):
             x = fused_bias_leakyrelu(x, b)
         else:
             raise NotImplementedError(
-                f"fused bias {self.activation} has not been supported yet")
+                f'fused bias {self.activation} has not been supported yet')
         return x
 
 
@@ -332,7 +331,7 @@ class SynthesisLayer(torch.nn.Module):
             x,
             w,
             noise_mode='random',
-            force_fp32=True,  # TODO: notice 
+            force_fp32=True,  # TODO: notice
             update_emas=False):
         assert noise_mode in ['random', 'const', 'none']  # unused
 

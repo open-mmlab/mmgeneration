@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .styleganv2_modules import (Blur, ConstantInput, ModulatedStyleConv,
-                                 ModulatedToRGB, NoiseInjection,
-                                 ModulatedConv2d)
+from .styleganv2_modules import (Blur, ConstantInput, ModulatedConv2d,
+                                 ModulatedStyleConv, ModulatedToRGB,
+                                 NoiseInjection)
 from .styleganv3_modules import (FullyConnectedLayer, MappingNetwork,
                                  SynthesisInput, SynthesisLayer,
                                  SynthesisNetwork)
