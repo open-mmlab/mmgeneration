@@ -26,8 +26,9 @@ def _get_noise_batch(noise,
             --> generate noise shape as [n, bz, c, h, w]
         2. timesteps_noise == False
             --> generate noise shape as [bz, c, h, w]
-    To be noted that, we do not move the generated noise to target device in
-    this function because we can not get which device the noise should move to.
+    It's to be noted that, we do not move the generated label to target device
+    in this function because we can not get which device the noise should move
+    to.
 
     Args:
         noise (torch.Tensor | callable | None): You can directly give a
@@ -55,14 +56,17 @@ def _get_noise_batch(noise,
         if timesteps_noise:
             if noise.ndim == 4:
                 assert num_batches > 0 and num_timesteps > 0
+                # noise shape as [n, c, h, w], expand to [n, bz, c, h, w]
                 if noise.shape[0] == num_timesteps:
                     noise_batch = noise.view(num_timesteps, 1, *image_shape)
                     noise_batch = noise_batch.expand(-1, num_batches, -1, -1,
                                                      -1)
+                # noise shape as [bz, c, h, w], expand to [n, bz, c, h, w]
                 elif noise.shape[0] == num_batches:
                     noise_batch = noise.view(1, num_batches, *image_shape)
                     noise_batch = noise_batch.expand(num_timesteps, -1, -1, -1,
                                                      -1)
+                # noise shape as [n*bz, c, h, w], reshape to [b, bz, c, h, w]
                 elif noise.shape[0] == num_timesteps * num_batches:
                     noise_batch = noise.view(num_timesteps, -1, *image_shape)
                 else:
@@ -72,6 +76,7 @@ def _get_noise_batch(noise,
                         f'(n, bz, c, h, w). But receive {noise.shape}.')
 
             elif noise.ndim == 5:
+                # direct return noise
                 noise_batch = noise
             else:
                 raise ValueError(
@@ -80,8 +85,10 @@ def _get_noise_batch(noise,
                     f'(n, bz, c, h, w). But receive {noise.shape}.')
         else:
             if noise.ndim == 3:
+                # reshape noise to [1, c, h, w]
                 noise_batch = noise[None, ...]
             elif noise.ndim == 4:
+                # do nothing
                 noise_batch = noise
             else:
                 raise ValueError(
@@ -93,18 +100,22 @@ def _get_noise_batch(noise,
         noise_generator = noise
         if timesteps_noise:
             assert num_timesteps > 0
+            # generate noise shape as [n, bz, c, h, w]
             noise_batch = noise_generator(
                 (num_timesteps, num_batches, *image_shape))
         else:
+            # generate noise shape as [bz, c, h, w]
             noise_batch = noise_generator((num_batches, *image_shape))
     # otherwise, we will adopt default noise sampler.
     else:
         assert num_batches > 0
         if timesteps_noise:
             assert num_timesteps > 0
+            # generate noise shape as [n, bz, c, h, w]
             noise_batch = torch.randn(
                 (num_timesteps, num_batches, *image_shape))
         else:
+            # generate noise shape as [bz, c, h, w]
             noise_batch = torch.randn((num_batches, *image_shape))
 
     return noise_batch
@@ -137,8 +148,9 @@ def _get_label_batch(label,
             --> generate label shape as [n, bz, ]
         2. timesteps_noise == False
             --> generate label shape as [bz, ]
-    To be noted that, we do not move the generated label to target device in
-    this function because we can not get which device the noise should move to.
+    It's to be noted that, we do not move the generated label to target device
+    in this function because we can not get which device the noise should move
+    to.
 
     Args:
         label (torch.Tensor | callable | None): You can directly give a
@@ -168,12 +180,15 @@ def _get_label_batch(label,
         if timesteps_noise:
             if label.ndim == 1:
                 assert num_batches > 0 and num_timesteps > 0
+                # [n, ] to [n, bz]
                 if label.shape[0] == num_timesteps:
                     label_batch = label.view(num_timesteps, 1)
                     label_batch = label_batch.expand(-1, num_batches)
+                # [bz, ] to [n, bz]
                 elif label.shape[0] == num_batches:
                     label_batch = label.view(1, num_batches)
                     label_batch = label_batch.expand(num_timesteps, -1)
+                # [n*bz, ] to [n, bz]
                 elif label.shape[0] == num_timesteps * num_batches:
                     label_batch = label.view(num_timesteps, -1)
                 else:
@@ -183,6 +198,7 @@ def _get_label_batch(label,
                         f'{label.shape}.')
 
             elif label.ndim == 2:
+                # dimension is 2, direct return
                 label_batch = label
             else:
                 raise ValueError(
@@ -190,8 +206,10 @@ def _get_label_batch(label,
                     '(n, ), (bz,), (n*bz, ) or (n, bz, ). But receive '
                     f'{label.shape}.')
         else:
+            # dimension is 0, expand to [1, ]
             if label.ndim == 0:
                 label_batch = label[None, ...]
+            # dimension is 1, do nothing
             elif label.ndim == 1:
                 label_batch = label
             else:
@@ -204,17 +222,21 @@ def _get_label_batch(label,
         label_generator = label
         if timesteps_noise:
             assert num_timesteps > 0
+            # generate label shape as [n, bz]
             label_batch = label_generator((num_timesteps, num_batches))
         else:
+            # generate label shape as [bz, ]
             label_batch = label_generator((num_batches, ))
     # otherwise, we will adopt default label sampler.
     else:
         assert num_batches > 0
         if timesteps_noise:
             assert num_timesteps > 0
+            # generate label shape as [n, bz]
             label_batch = torch.randint(0, num_classes,
                                         (num_timesteps, num_batches))
         else:
+            # generate label shape as [bz, ]
             label_batch = torch.randint(0, num_classes, (num_batches, ))
 
     return label_batch
