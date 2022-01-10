@@ -6,7 +6,7 @@ train_pipeline = [
         key='real_img',
         io_backend='disk',
     ),
-    dict(type='Resize', keys=['real_img'], scale=(512, 384)),
+    dict(type='Resize', keys=['real_img'], scale=(384, 512)),
     dict(
         type='NumpyPad',
         keys=['real_img'],
