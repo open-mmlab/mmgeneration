@@ -8,6 +8,7 @@ from mmcv.cnn import (build_activation_layer, build_norm_layer,
 from torch.nn.init import xavier_uniform_
 from torch.nn.utils import spectral_norm
 
+from mmgen.models.architectures.biggan.biggan_snmodule import SNEmbedding
 from mmgen.models.architectures.biggan.modules import SNConvModule
 from mmgen.models.builder import MODULES
 from mmgen.utils import check_dist_init
@@ -47,6 +48,12 @@ class SNGANGenResBlock(nn.Module):
             specified (set as ``None``), ``with_embedding_spectral_norm`` would
             be set as the same value as ``with_spectral_norm``.
             Default to None.
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `ajbrock`, implementation by
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
+            Defaults to `torch`.
         norm_eps (float, optional): eps for Normalization layers (both
             conditional and non-conditional ones). Default to `1e-4`.
         sn_eps (float, optional): eps for spectral normalization operation.
@@ -72,6 +79,7 @@ class SNGANGenResBlock(nn.Module):
                  conv_cfg=None,
                  with_spectral_norm=False,
                  with_embedding_spectral_norm=None,
+                 sn_style='torch',
                  norm_eps=1e-4,
                  sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN')):
@@ -96,7 +104,7 @@ class SNGANGenResBlock(nn.Module):
         with_embedding_spectral_norm = with_embedding_spectral_norm \
             if with_embedding_spectral_norm is not None else with_spectral_norm
 
-        sn_cfg = dict(eps=sn_eps)
+        sn_cfg = dict(eps=sn_eps, sn_style=sn_style)
         self.conv_1 = SNConvModule(
             in_channels,
             hidden_channels,
@@ -112,12 +120,12 @@ class SNGANGenResBlock(nn.Module):
 
         self.norm_1 = SNConditionNorm(in_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      with_embedding_spectral_norm, norm_eps,
-                                      sn_eps, init_cfg)
+                                      with_embedding_spectral_norm, sn_style,
+                                      norm_eps, sn_eps, init_cfg)
         self.norm_2 = SNConditionNorm(hidden_channels, num_classes, use_cbn,
                                       norm_cfg, use_norm_affine, auto_sync_bn,
-                                      with_embedding_spectral_norm, norm_eps,
-                                      sn_eps, init_cfg)
+                                      with_embedding_spectral_norm, sn_style,
+                                      norm_eps, sn_eps, init_cfg)
 
         if self.learnable_sc:
             # use hyperparameters-fixed shortcut here
@@ -215,6 +223,12 @@ class SNGANDiscResBlock(nn.Module):
             conv blocks and norm layers. Defaults to true.
         sn_eps (float, optional): eps for spectral normalization operation.
             Default to `1e-12`.
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `ajbrock`, implementation by
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
+            Defaults to `torch`.
         init_cfg (dict, optional): Config for weight initialization.
             Defaults to ``dict(type='BigGAN')``.
     """
@@ -229,6 +243,7 @@ class SNGANDiscResBlock(nn.Module):
                  act_cfg=dict(type='ReLU'),
                  conv_cfg=None,
                  with_spectral_norm=True,
+                 sn_style='torch',
                  sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN')):
 
@@ -244,7 +259,7 @@ class SNGANDiscResBlock(nn.Module):
 
         self.activate = build_activation_layer(act_cfg)
 
-        sn_cfg = dict(eps=sn_eps)
+        sn_cfg = dict(eps=sn_eps, sn_style=sn_style)
         self.conv_1 = SNConvModule(
             in_channels,
             hidden_channels,
@@ -348,6 +363,12 @@ class SNGANDiscHeadResBlock(nn.Module):
             to ``dict(type='relu')``.
         with_spectral_norm (bool, optional): whether use spectral norm for
             conv blocks and norm layers. default to true.
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `ajbrock`, implementation by
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
+            Defaults to `torch`.
         sn_eps (float, optional): eps for spectral normalization operation.
             Default to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
@@ -363,6 +384,7 @@ class SNGANDiscHeadResBlock(nn.Module):
                  act_cfg=dict(type='ReLU'),
                  with_spectral_norm=True,
                  sn_eps=1e-12,
+                 sn_style='torch',
                  init_cfg=dict(type='BigGAN')):
 
         super().__init__()
@@ -374,7 +396,7 @@ class SNGANDiscHeadResBlock(nn.Module):
 
         self.activate = build_activation_layer(act_cfg)
 
-        sn_cfg = dict(eps=sn_eps)
+        sn_cfg = dict(eps=sn_eps, sn_style=sn_style)
         self.conv_1 = SNConvModule(
             in_channels,
             out_channels,
@@ -467,12 +489,20 @@ class SNConditionNorm(nn.Module):
             label to weight and bias used in normalization process.
         norm_cfg (dict, optional): Config for normalization method. Defaults
             to ``dict(type='BN')``.
+        cbn_norm_affine (bool):  Whether set ``affine=True`` when use conditional batch norm.
+            This argument only work when ``use_cbn`` is True. Defaults to False.
         auto_sync_bn (bool, optional): Whether convert Batch Norm to
             Synchronized ones when Distributed training is on. Defaults to True.
         with_spectral_norm (bool, optional): whether use spectral norm for
             conv blocks and norm layers. Defaults to true.
         norm_eps (float, optional): eps for Normalization layers (both
             conditional and non-conditional ones). Defaults to `1e-4`.
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `ajbrock`, implementation by
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
+            Defaults to `torch`.
         sn_eps (float, optional): eps for spectral normalization operation.
             Defaults to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
@@ -487,6 +517,7 @@ class SNConditionNorm(nn.Module):
                  cbn_norm_affine=False,
                  auto_sync_bn=True,
                  with_spectral_norm=False,
+                 sn_style='torch',
                  norm_eps=1e-4,
                  sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN')):
@@ -515,16 +546,27 @@ class SNConditionNorm(nn.Module):
             if num_classes <= 0:
                 raise ValueError('`num_classes` must be larger '
                                  'than 0 with `use_cbn=True`')
-            self.weight_embedding = nn.Embedding(num_classes, in_channels)
-            self.bias_embedding = nn.Embedding(num_classes, in_channels)
             self.reweight_embedding = (
                 self.init_type.upper() == 'BIGGAN'
                 or self.init_type.upper() == 'STUDIO')
             if with_spectral_norm:
-                self.weight_embedding = spectral_norm(
-                    self.weight_embedding, eps=sn_eps)
-                self.bias_embedding = spectral_norm(
-                    self.bias_embedding, eps=sn_eps)
+                if sn_style == 'torch':
+                    self.weight_embedding = spectral_norm(
+                        nn.Embedding(num_classes, in_channels), eps=sn_eps)
+                    self.bias_embedding = spectral_norm(
+                        nn.Embedding(num_classes, in_channels), eps=sn_eps)
+                elif sn_style == 'ajbrock':
+                    self.weight_embedding = SNEmbedding(
+                        num_classes, in_channels, eps=sn_eps)
+                    self.bias_embedding = SNEmbedding(
+                        num_classes, in_channels, eps=sn_eps)
+                else:
+                    raise NotImplementedError(
+                        f'{sn_style} style spectral Norm is not '
+                        'supported yet')
+            else:
+                self.weight_embedding = nn.Embedding(num_classes, in_channels)
+                self.bias_embedding = nn.Embedding(num_classes, in_channels)
 
         self.init_weights()
 

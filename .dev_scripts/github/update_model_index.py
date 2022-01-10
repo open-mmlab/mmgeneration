@@ -261,8 +261,6 @@ def parse_md(md_file, task):
                         try:
                             metrics[key] = float(metrics_data)
                         except ValueError:
-                            # import ipdb
-                            # ipdb.set_trace()
                             metrics[key] = metrics_data.strip()
 
                     model = {
