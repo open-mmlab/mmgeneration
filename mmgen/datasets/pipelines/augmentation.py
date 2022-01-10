@@ -169,7 +169,7 @@ class Resize:
         else:
             img, w_scale, h_scale = mmcv.imresize(
                 img,
-                scale,
+                scale[::-1],
                 return_scale=True,
                 interpolation=self.interpolation,
                 backend=self.backend)
@@ -205,7 +205,7 @@ class Resize:
                 scale = (self.scale[-1], int(self.scale[-1] / w * h))
         else:
             # direct use the given ones
-            scale = self.scale[::-1]
+            scale = self.scale
 
         # here we assume all images in self.keys have the same input size
         for key in self.keys:
