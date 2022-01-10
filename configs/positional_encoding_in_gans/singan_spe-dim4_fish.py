@@ -21,10 +21,10 @@ model = dict(
 
 data = dict(
     train=dict(
-        img_path='./data/singan/fish.jpg',
+        img_path='./data/singan/fish-crop.jpg',
         min_size=25,
         max_size=300,
     ))
 
-dist_params = dict(backend='nccl', port=28119)
+dist_params = dict(backend='nccl')
 total_iters = 22000
