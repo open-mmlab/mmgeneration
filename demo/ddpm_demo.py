@@ -90,7 +90,11 @@ def create_gif(results, gif_name, fps=60, n_skip=1):
         n_skip (int, optional): Skip how many steps before selecting one to
             visualize. Defaults to 1.
     """
-    import imageio
+    try:
+        import imageio
+    except ImportError:
+        raise RuntimeError('imageio is not installed,'
+                           'Please use “pip install imageio” to install')
     frames_list = []
     for frame in results[::n_skip]:
         frames_list.append(
@@ -101,9 +105,6 @@ def create_gif(results, gif_name, fps=60, n_skip=1):
         frames_list.append((results[-1].permute(1, 2, 0).cpu().numpy() *
                             255.).astype(np.uint8))
 
-    if imageio is None:
-        raise RuntimeError('imageio is not installed,'
-                           'Please use “pip install imageio” to install')
     imageio.mimsave(gif_name, frames_list, 'GIF', fps=fps)
 
 

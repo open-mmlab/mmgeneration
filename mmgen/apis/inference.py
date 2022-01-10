@@ -279,7 +279,10 @@ def sample_ddpm_model(model,
             **kwargs)
         if isinstance(res, dict):
             res = {k: v.cpu() for k, v in res.items()}
-        else:
+        elif isinstance(res, torch.Tensor):
             res = res.cpu()
+        else:
+            raise ValueError('Sample results should be \'dict\' or '
+                             f'\'torch.Tensor\', but receive \'{type(res)}\'')
         res_list.append(res)
     return res_list
