@@ -80,7 +80,7 @@ class TestBasicGaussianDiffusion:
         diffusion = build_model(cfg)
         assert isinstance(diffusion, BasicGaussianDiffusion)
         assert isinstance(diffusion.sampler, UniformTimeStepSampler)
-        assert diffusion.use_ema is not None
+        assert diffusion.use_ema
 
         # test build_model --> parse train_cfg, without ema
         cfg = deepcopy(self.config)
@@ -102,7 +102,7 @@ class TestBasicGaussianDiffusion:
         diffusion = build_model(cfg)
         assert isinstance(diffusion, BasicGaussianDiffusion)
         assert isinstance(diffusion.sampler, UniformTimeStepSampler)
-        assert diffusion.use_ema is not None
+        assert diffusion.use_ema
 
         # test build_model --> parse test_cfg, without ema
         cfg = deepcopy(self.config)
