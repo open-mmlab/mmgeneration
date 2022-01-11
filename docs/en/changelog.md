@@ -67,3 +67,23 @@
 - Add CI for python3.9 #110
 - Add support for PyTorch1.9 #115
 - Add pre-commit hook for spell checking #135
+
+
+## v0.5.0 (11/01/2022)
+
+#### Highlights
+- Support BigGAN style's Spectral Norm and ppdate BigGAN with best FID and IS (#159)
+- Support import projected latent and export video in interpolation (#167)
+- Support Improved-DDPM model
+
+#### New Features
+
+- Support evaluation in distributed mode (#151)
+- Support `presistent_work` in validation dataloader (#179)
+- Support dockerfile (#200)
+- Support `mim` (#176)
+
+#### Fix bugs and Improvements
+
+- Fix bug in SinGAN dataset (#192)
+- Fix SAGAN, SNGAN and BigGAN's default `sn_style` (#199, #213)
