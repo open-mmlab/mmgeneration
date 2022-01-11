@@ -110,6 +110,7 @@ class TestDiffusionModel:
         assert isinstance(res, dict)
         assert all([i in res for i in range(10)])
 
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_diffusion_model_cuda(self):
         model = self.model.cuda()
         # save_intermedia is False
