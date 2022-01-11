@@ -55,10 +55,10 @@ custom_hooks = [
 metrics = dict(
     fid50k=dict(
         type='FID',
-        num_images=8,
-        inception_pkl='work_dirs/inception_pkl/afhqv2-512-whole-rgb.pkl',
-        inception_args=dict(type='StyleGAN'),
-        # inception_args=dict(type='pytorch'),
+        num_images=50000,
+        inception_pkl='work_dirs/inception_pkl/afhqv2-512-rgb-pt.pkl',
+        # inception_args=dict(type='StyleGAN'),
+        inception_args=dict(type='pytorch'),
         bgr2rgb=True))
 
 evaluation = dict(
