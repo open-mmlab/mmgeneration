@@ -72,9 +72,9 @@
 ## v0.5.0 (11/01/2022)
 
 #### Highlights
-- Support BigGAN style's Spectral Norm and ppdate BigGAN with best FID and IS (#159)
+- Support BigGAN style's Spectral Norm and update BigGAN with best FID and IS (#159)
 - Support import projected latent and export video in interpolation (#167)
-- Support Improved-DDPM model
+- Support Improved-DDPM model (#205)
 
 #### New Features
 
