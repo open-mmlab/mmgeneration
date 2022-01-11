@@ -4,7 +4,7 @@ import mmcv
 import pytest
 import torch
 
-from mmgen.apis import (init_model, sample_img2img_model,
+from mmgen.apis import (init_model, sample_ddpm_model, sample_img2img_model,
                         sample_uncoditional_model)
 
 
@@ -78,3 +78,51 @@ class TestSampleTranslationModel:
         res = sample_img2img_model(
             self.cyclegan.cuda(), self.img_path, target_domain='photo')
         assert res.shape == (1, 3, 256, 256)
+
+
+class TestDiffusionModel:
+
+    @classmethod
+    def setup_class(cls):
+        project_dir = os.path.abspath(os.path.join(__file__, '../../..'))
+        ddpm_config = mmcv.Config.fromfile(
+            os.path.join(
+                project_dir, 'configs/improved_ddpm/'
+                'ddpm_cosine_hybird_timestep-4k_drop0.3_'
+                'cifar10_32x32_b8x16_500k.py'))
+        # change timesteps to speed up test process
+        ddpm_config.model['num_timesteps'] = 10
+        cls.model = init_model(ddpm_config, checkpoint=None, device='cpu')
+
+    def test_diffusion_model_cpu(self):
+        # save_intermedia is False
+        res = sample_ddpm_model(
+            self.model, num_samples=3, num_batches=2, same_noise=True)
+        assert res.shape == (3, 3, 32, 32)
+
+        # save_intermedia is True
+        res = sample_ddpm_model(
+            self.model,
+            num_samples=2,
+            num_batches=2,
+            same_noise=True,
+            save_intermedia=True)
+        assert isinstance(res, dict)
+        assert all([i in res for i in range(10)])
+
+    def test_diffusion_model_cuda(self):
+        model = self.model.cuda()
+        # save_intermedia is False
+        res = sample_ddpm_model(
+            model, num_samples=3, num_batches=2, same_noise=True)
+        assert res.shape == (3, 3, 32, 32)
+
+        # save_intermedia is True
+        res = sample_ddpm_model(
+            model,
+            num_samples=2,
+            num_batches=2,
+            same_noise=True,
+            save_intermedia=True)
+        assert isinstance(res, dict)
+        assert all([i in res for i in range(10)])

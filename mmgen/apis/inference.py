@@ -250,7 +250,7 @@ def sample_ddpm_model(model,
             Defaults to None.
 
     Returns:
-        Tensor: Generated image tensor.
+        list[Tensor | dict]: Generated image tensor.
     """
     model.eval()
 
@@ -285,4 +285,13 @@ def sample_ddpm_model(model,
             raise ValueError('Sample results should be \'dict\' or '
                              f'\'torch.Tensor\', but receive \'{type(res)}\'')
         res_list.append(res)
-    return res_list
+
+    # gather the res_list
+    if isinstance(res_list[0], dict):
+        res_dict = dict()
+        for t in res_list[0].keys():
+            # num_samples x 3 x H x W
+            res_dict[t] = torch.cat([res[t] for res in res_list], dim=0)
+        return res_dict
+    else:
+        return torch.cat(res_list, dim=0)

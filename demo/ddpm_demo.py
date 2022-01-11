@@ -129,14 +129,12 @@ def main():
     if suffix == '.gif':
         # concentrate all output of each timestep
         results_timestep_list = []
-        for t in results[0].keys():
-            # num_samples x 3 x H x W
-            results_timestep_ = torch.cat([res[t] for res in results], dim=0)
+        for t in results.keys():
             # make grid
-            results_timestep_ = utils.make_grid(
-                results_timestep_, nrow=args.nrow, padding=args.padding)
+            results_timestep = utils.make_grid(
+                results[t], nrow=args.nrow, padding=args.padding)
             # unsqueeze at 0, because make grid output is size like [H', W', 3]
-            results_timestep_list.append(results_timestep_[None, ...])
+            results_timestep_list.append(results_timestep[None, ...])
 
         # Concatenates to [n_timesteps, H', W', 3]
         results_timestep = torch.cat(results_timestep_list, dim=0)
