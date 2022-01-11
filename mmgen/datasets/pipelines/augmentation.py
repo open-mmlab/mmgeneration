@@ -198,19 +198,18 @@ class Resize:
                 new_w = min(self.max_size - (self.max_size % self.size_factor),
                             new_w)
             scale = (new_w, new_h)
-        elif isinstance(self.scale, tuple) and (np.inf in self.scale):
+        elif isinstance(self.scale, tuple):
             # find inf in self.scale, calculate ``scale`` manually
-            h, w = results[self.keys[0]].shape[:2]
-            if h < w:
-                scale = (int(self.scale[-1] / h * w), self.scale[-1])
+            if np.inf in self.scale:
+                h, w = results[self.keys[0]].shape[:2]
+                if h < w:
+                    scale = (int(self.scale[-1] / h * w), self.scale[-1])
+                else:
+                    scale = (self.scale[-1], int(self.scale[-1] / w * h))
             else:
-                scale = (self.scale[-1], int(self.scale[-1] / w * h))
-        else:
-            # direct use the given ones
-            if mmcv.is_tuple_of(self.scale, int):
                 scale = self.scale[::-1]
-            else:
-                scale = float(self.scale)
+        else:
+            scale = float(self.scale)
 
         # here we assume all images in self.keys have the same input size
         for key in self.keys:
