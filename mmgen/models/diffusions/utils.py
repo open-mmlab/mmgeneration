@@ -7,25 +7,26 @@ def _get_noise_batch(noise,
                      num_batches=0,
                      timesteps_noise=False):
     """Get noise batch. Support get sequeue of noise along timesteps.
-    If passed noise is a torch.Tensor,
-        1. timesteps_noise == True
-            1.1. dimension of noise is 4
-                1.1.1. noise shape as [bz, c, h, w]
-                    --> expand noise to [n, bz, c, h, w]
-                1.1.2. noise shape as [n, c, h, w]
-                    --> expand noise to [n, bz, c, h, w]
-                1.1.3. noise shape as [n*bz, c, h, w]
-                    --> view noise to [n, bz, c, h, w]
-            1.2 dimension of noise is 5
-                --> return noise
-        2. timesteps_noise == False
-            2.1 dimension of noise is 3 --> view to [1, c, h, w]
-            2.2 dimension of noise is 4 --> do nothing
-    If passed noise is a callable function or None
-        1. timesteps_noise == True
-            --> generate noise shape as [n, bz, c, h, w]
-        2. timesteps_noise == False
-            --> generate noise shape as [bz, c, h, w]
+
+    We support the following use cases ('bz' denotes ```num_batches`` and 'n'
+    denotes ``num_timesteps``):
+
+    If timesteps_noise is True, we output noise which dimension is 5.
+    - Input is [bz, c, h, w]: Expand to [n, bz, c, h, w]
+    - Input is [n, c, h, w]: Expand to [n, bz, c, h, w]
+    - Input is [n*bz, c, h, w]: View to [n, bz, c, h, w]
+    - Dim of the input is 5: Return the input, ignore ``num_batches`` and
+      ``num_timesteps``
+    - Callable or None: Generate noise shape as [n, bz, c, h, w]
+    - Otherwise: Raise error
+
+    If timestep_noise is False, we output noise which dimension is 4 and
+    ignore ``num_timesteps``.
+    - Dim of the input is 3: Unsqueeze to [1, c, h, w], ignore ``num_batches``
+    - Dim of the input is 4: Return input, ignore ``num_batches``
+    - Callable or None: Generate noise shape as [bz, c, h, w]
+    - Otherwise: Raise error
+
     It's to be noted that, we do not move the generated label to target device
     in this function because we can not get which device the noise should move
     to.
@@ -48,7 +49,6 @@ def _get_noise_batch(noise,
             corresponding device.
     Returns:
         torch.Tensor: Generated noise with desired shape.
-
     """
     if isinstance(noise, torch.Tensor):
         # conduct sanity check for the last three dimension
@@ -127,27 +127,28 @@ def _get_label_batch(label,
                      num_batches=0,
                      timesteps_noise=False):
     """Get label batch. Support get sequeue of label along timesteps.
-    If passed label is a torch.Tensor,
-        0. num_classes <= 0
-            --> return None
-        1. timesteps_noise == True
-            1.1. dimension of label is 1
-                1.1.1. label shape as [bz,]
-                    --> expand label to [n, bz]
-                1.1.2. label shape as [n, ]
-                    --> expand label to [n, bz,]
-                1.1.3. label shape as [n*bz, ]
-                    --> view label to [n, bz,]
-            1.2 dimension of label is 2
-                --> return label
-        2. timesteps_noise == False
-            2.1 dimension of label is 0 --> view to [1, ]
-            2.2 dimension of noise is 1 --> do nothing
-    If passed label is a callable function or None
-        1. timesteps_noise == True
-            --> generate label shape as [n, bz, ]
-        2. timesteps_noise == False
-            --> generate label shape as [bz, ]
+
+    We support the following use cases ('bz' denotes ```num_batches`` and 'n'
+    denotes ``num_timesteps``):
+
+    If num_classes <= 0, return None.
+
+    If timesteps_noise is True, we output label which dimension is 2.
+    - Input is [bz, ]: Expand to [n, bz]
+    - Input is [n, ]: Expand to [n, bz]
+    - Input is [n*bz, ]: View to [n, bz]
+    - Dim of the input is 2: Return the input, ignore ``num_batches`` and
+      ``num_timesteps``
+    - Callable or None: Generate label shape as [n, bz]
+    - Otherwise: Raise error
+
+    If timesteps_noise is False, we output label which dimension is 1 and
+    ignore ``num_timesteps``.
+    - Dim of the input is 1: Unsqueeze to [1, ], ignore ``num_batches``
+    - Dim of the input is 2: Return the input. ignore ``num_batches``
+    - Callable or None: Generate label shape as [bz, ]
+    - Otherwise: Raise error
+
     It's to be noted that, we do not move the generated label to target device
     in this function because we can not get which device the noise should move
     to.
@@ -167,7 +168,6 @@ def _get_label_batch(label,
             Defaults to False.
     Returns:
         torch.Tensor: Generated label with desired shape.
-
     """
     # no labels output if num_classes is 0
     if num_classes == 0:
