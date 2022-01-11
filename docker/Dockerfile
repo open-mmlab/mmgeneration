@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y ffmpeg libsm6 libxext6 git ninja-build 
 # Install MMCV
 RUN pip install mmcv-full==1.3.16 -f https://download.openmmlab.com/mmcv/dist/cu111/torch1.8.0/index.html
 
-# Install MMFlow
+# Install MMGeneration
 RUN conda clean --all
 RUN git clone https://github.com/open-mmlab/mmgeneration.git /mmgen
 WORKDIR /mmgen
