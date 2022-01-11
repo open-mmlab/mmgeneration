@@ -129,14 +129,16 @@ class Resize:
                 'When max_size is used, '
                 f'size_factor should also be set. But received {size_factor}.')
         if isinstance(scale, float, int):
-            assert keep_ratio, 'When scale is a single float/int, keep_ratio must be ture'
+            assert keep_ratio, ('When scale is a single float/int,'
+                                ' keep_ratio must be ture')
             if scale <= 0:
                 raise ValueError(f'Invalid scale {scale}, must be positive.')
         elif mmcv.is_tuple_of(scale, int):
             max_long_edge = max(scale)
             max_short_edge = min(scale)
             if max_short_edge == -1:
-                assert keep_ratio, 'When scale includes a -1, keep_ratio must be ture'
+                assert keep_ratio, ('When scale includes a -1, '
+                                    'keep_ratio must be ture')
                 # assign np.inf to long edge for rescaling short edge later.
                 scale = (np.inf, max_long_edge)
         elif scale is not None:
