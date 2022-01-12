@@ -4,6 +4,7 @@ import os
 import os.path as osp
 import time
 
+import cv2
 import mmcv
 import torch
 from mmcv import Config, DictAction
@@ -15,6 +16,8 @@ from mmgen.apis import set_random_seed, train_model
 from mmgen.datasets import build_dataset
 from mmgen.models import build_model
 from mmgen.utils import collect_env, get_root_logger
+
+cv2.setNumThreads(0)
 
 
 def parse_args():
