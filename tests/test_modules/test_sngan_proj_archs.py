@@ -601,6 +601,29 @@ class TestSNGANGenResBlock(object):
         out = block(self.input, self.label)
         assert out.shape == (2, 16, 5, 5)
 
+        # test init_cfg == studio + w/o learnable shortcut
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='studio')
+        config['upsample'] = False
+        block = build_module(config)
+        out = block(self.input, self.label)
+        assert out.shape == (2, 16, 5, 5)
+
+        # test init_cfg == sagan + learnable shortcut
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='sagan')
+        block = build_module(config)
+        out = block(self.input, self.label)
+        assert out.shape == (2, 16, 10, 10)
+
+        # test init_cfg == sagan + w/o learnable shortcut
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='sagan')
+        config['upsample'] = False
+        block = build_module(config)
+        out = block(self.input, self.label)
+        assert out.shape == (2, 16, 5, 5)
+
         # test init_cft --> raise error
         config = deepcopy(self.default_config)
         config['init_cfg'] = dict(type='wgan-gp')
@@ -628,6 +651,29 @@ class TestSNGANGenResBlock(object):
         config['upsample'] = False
         block = build_module(config).cuda()
         out = block(self.input.cuda(), self.label.cuda())
+        assert out.shape == (2, 16, 5, 5)
+
+        # test init_cfg == studio + w/o learnable shortcut
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='studio')
+        config['upsample'] = False
+        block = build_module(config)
+        out = block(self.input, self.label)
+        assert out.shape == (2, 16, 5, 5)
+
+        # test init_cfg == sagan + learnable shortcut
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='sagan')
+        block = build_module(config)
+        out = block(self.input, self.label)
+        assert out.shape == (2, 16, 10, 10)
+
+        # test init_cfg == sagan + w/o learnable shortcut
+        config = deepcopy(self.default_config)
+        config['init_cfg'] = dict(type='sagan')
+        config['upsample'] = False
+        block = build_module(config)
+        out = block(self.input, self.label)
         assert out.shape == (2, 16, 5, 5)
 
         # test learnable shortcut + w/o upsample
@@ -689,6 +735,22 @@ class TestSNDiscResBlock(object):
         out = block(self.input)
         assert out.shape == (2, 8, 10, 10)
 
+        # test init cfg + w or w/o downsample
+        for init_method in [
+                'studio', 'biggan', 'sagan', 'sngan', 'sngan-proj', 'gan-proj'
+        ]:
+            config = deepcopy(self.default_config)
+            config['init_cfg'] = dict(type=init_method)
+            config['out_channels'] = 8
+            for downsample in [True, False]:
+                config['downsample'] = downsample
+                block = build_module(config)
+                out = block(self.input)
+                if downsample:
+                    assert out.shape == (2, 8, 5, 5)
+                else:
+                    assert out.shape == (2, 8, 10, 10)
+
         # test init_cft --> raise error
         config = deepcopy(self.default_config)
         config['init_cfg'] = dict(type='wgan-gp')
@@ -718,6 +780,22 @@ class TestSNDiscResBlock(object):
         out = block(self.input.cuda())
         assert out.shape == (2, 8, 10, 10)
 
+        # test init cfg + w or w/o downsample
+        for init_method in [
+                'studio', 'biggan', 'sagan', 'sngan', 'sngan-proj', 'gan-proj'
+        ]:
+            config = deepcopy(self.default_config)
+            config['init_cfg'] = dict(type=init_method)
+            config['out_channels'] = 8
+            for downsample in [True, False]:
+                config['downsample'] = downsample
+                block = build_module(config)
+                out = block(self.input)
+                if downsample:
+                    assert out.shape == (2, 8, 5, 5)
+                else:
+                    assert out.shape == (2, 8, 10, 10)
+
 
 class TestSNDiscHeadResBlock(object):
 
@@ -744,6 +822,16 @@ class TestSNDiscHeadResBlock(object):
         out = block(self.input)
         assert out.shape == (2, 16, 5, 5)
 
+        # test init cfg + w or w/o downsample
+        for init_method in [
+                'studio', 'biggan', 'sagan', 'sngan', 'sngan-proj', 'gan-proj'
+        ]:
+            config = deepcopy(self.default_config)
+            config['init_cfg'] = dict(type=init_method)
+            block = build_module(config)
+            out = block(self.input)
+            assert out.shape == (2, 16, 5, 5)
+
         # test init_cft --> raise error
         config = deepcopy(self.default_config)
         config['init_cfg'] = dict(type='wgan-gp')
@@ -756,6 +844,16 @@ class TestSNDiscHeadResBlock(object):
         block = build_module(self.default_config).cuda()
         out = block(self.input.cuda())
         assert out.shape == (2, 16, 5, 5)
+
+        # test init cfg + w or w/o downsample
+        for init_method in [
+                'studio', 'biggan', 'sagan', 'sngan', 'sngan-proj', 'gan-proj'
+        ]:
+            config = deepcopy(self.default_config)
+            config['init_cfg'] = dict(type=init_method)
+            block = build_module(config)
+            out = block(self.input)
+            assert out.shape == (2, 16, 5, 5)
 
         # test conv_cfg
         config = deepcopy(self.default_config)
@@ -813,6 +911,35 @@ class TestSNConditionalNorm(object):
         norm = build_module(config)
         out = norm(self.input, self.label)
         assert out.shape == (2, 4, 4, 4)
+
+        # test sn_style == ajbrock
+        config = deepcopy(self.default_config)
+        config['with_spectral_norm'] = True
+        config['sn_style'] = 'ajbrock'
+        norm = build_module(config)
+        out = norm(self.input, self.label)
+        for buffer in ['u0', 'sv0']:
+            assert hasattr(norm.weight_embedding, buffer)
+            assert hasattr(norm.bias_embedding, buffer)
+        assert out.shape == (2, 4, 4, 4)
+
+        # test sn_style == torch
+        config = deepcopy(self.default_config)
+        config['with_spectral_norm'] = True
+        config['sn_style'] = 'torch'
+        norm = build_module(config)
+        out = norm(self.input, self.label)
+        for buffer in ['weight_u', 'weight_v', 'weight_orig']:
+            assert hasattr(norm.weight_embedding, buffer)
+            assert hasattr(norm.bias_embedding, buffer)
+        assert out.shape == (2, 4, 4, 4)
+
+        # test sn_style --> raise error
+        config = deepcopy(self.default_config)
+        config['with_spectral_norm'] = True
+        config['sn_style'] = 'studio'
+        with pytest.raises(NotImplementedError):
+            norm = build_module(config)
 
         # test SyncBN
         # config = deepcopy(self.default_config)
@@ -874,6 +1001,35 @@ class TestSNConditionalNorm(object):
         norm = build_module(config).cuda()
         out = norm(self.input.cuda(), self.label.cuda())
         assert out.shape == (2, 4, 4, 4)
+
+        # test sn_style == ajbrock
+        config = deepcopy(self.default_config)
+        config['with_spectral_norm'] = True
+        config['sn_style'] = 'ajbrock'
+        norm = build_module(config)
+        out = norm(self.input, self.label)
+        for buffer in ['u0', 'sv0']:
+            assert hasattr(norm.weight_embedding, buffer)
+            assert hasattr(norm.bias_embedding, buffer)
+        assert out.shape == (2, 4, 4, 4)
+
+        # test sn_style == torch
+        config = deepcopy(self.default_config)
+        config['with_spectral_norm'] = True
+        config['sn_style'] = 'torch'
+        norm = build_module(config)
+        out = norm(self.input, self.label)
+        for buffer in ['weight_u', 'weight_v', 'weight_orig']:
+            assert hasattr(norm.weight_embedding, buffer)
+            assert hasattr(norm.bias_embedding, buffer)
+        assert out.shape == (2, 4, 4, 4)
+
+        # test sn_style --> raise error
+        config = deepcopy(self.default_config)
+        config['with_spectral_norm'] = True
+        config['sn_style'] = 'studio'
+        with pytest.raises(NotImplementedError):
+            norm = build_module(config)
 
         # test SyncBN
         # config = deepcopy(self.default_config)

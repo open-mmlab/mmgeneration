@@ -5,7 +5,7 @@ import re
 
 url_prefix = 'https://github.com/open-mmlab/mmgeneration/blob/master/'
 
-files = sorted(glob.glob('../configs/*/README.md'))
+files = sorted(glob.glob('../../configs/*/README.md'))
 
 stats = []
 titles = []

@@ -20,7 +20,7 @@ custom_hooks = [
         module_keys=('generator_ema', ),
         interval=8,
         start_iter=160000,
-        interp_cfg=dict(momentum=0.9999),
+        interp_cfg=dict(momentum=0.9999, momentum_nontrainable=0.9999),
         priority='VERY_HIGH')
 ]
 

@@ -8,4 +8,4 @@ model = dict(
 
 train_cfg = dict(fixed_noise_with_pad=True)
 
-dist_params = dict(backend='nccl', port=23119)
+dist_params = dict(backend='nccl')

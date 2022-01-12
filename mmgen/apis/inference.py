@@ -227,3 +227,71 @@ def sample_img2img_model(model, image_path, target_domain=None, **kwargs):
             **kwargs)
     output = results['target']
     return output
+
+
+@torch.no_grad()
+def sample_ddpm_model(model,
+                      num_samples=16,
+                      num_batches=4,
+                      sample_model='ema',
+                      same_noise=False,
+                      **kwargs):
+    """Sampling from ddpm models.
+
+    Args:
+        model (nn.Module): DDPM models in MMGeneration.
+        num_samples (int, optional): The total number of samples.
+            Defaults to 16.
+        num_batches (int, optional): The number of batch size for inference.
+            Defaults to 4.
+        sample_model (str, optional): Which model you want to use. ['ema',
+            'orig']. Defaults to 'ema'.
+        noise_batch (torch.Tensor): Noise batch used as denoising starting up.
+            Defaults to None.
+
+    Returns:
+        list[Tensor | dict]: Generated image tensor.
+    """
+    model.eval()
+
+    n_repeat = num_samples // num_batches
+    batches_list = [num_batches] * n_repeat
+
+    if num_samples % num_batches > 0:
+        batches_list.append(num_samples % num_batches)
+
+    noise_batch = torch.randn(model.image_shape) if same_noise else None
+
+    res_list = []
+    # inference
+    for idx, batches in enumerate(batches_list):
+        mmcv.print_log(
+            f'Start to sample batch [{idx+1} / '
+            f'{len(batches_list)}]', 'mmgen')
+        noise_batch_ = noise_batch[None, ...].expand(batches, -1, -1, -1) \
+            if same_noise else None
+
+        res = model.sample_from_noise(
+            noise_batch_,
+            num_batches=batches,
+            sample_model=sample_model,
+            show_pbar=True,
+            **kwargs)
+        if isinstance(res, dict):
+            res = {k: v.cpu() for k, v in res.items()}
+        elif isinstance(res, torch.Tensor):
+            res = res.cpu()
+        else:
+            raise ValueError('Sample results should be \'dict\' or '
+                             f'\'torch.Tensor\', but receive \'{type(res)}\'')
+        res_list.append(res)
+
+    # gather the res_list
+    if isinstance(res_list[0], dict):
+        res_dict = dict()
+        for t in res_list[0].keys():
+            # num_samples x 3 x H x W
+            res_dict[t] = torch.cat([res[t] for res in res_list], dim=0)
+        return res_dict
+    else:
+        return torch.cat(res_list, dim=0)

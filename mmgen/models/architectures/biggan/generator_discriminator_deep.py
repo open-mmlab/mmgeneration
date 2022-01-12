@@ -13,6 +13,7 @@ from torch.nn.utils import spectral_norm
 from mmgen.models.builder import MODULES, build_module
 from mmgen.utils import get_root_logger
 from ..common import get_module_device
+from .biggan_snmodule import SNEmbedding, SNLinear
 from .modules import SelfAttentionBlock, SNConvModule
 
 
@@ -71,6 +72,12 @@ class BigGANDeepGenerator(nn.Module):
             Defaults to 128.
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `ajbrock`, implementation by
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
+            Defaults to `ajbrock`.
         init_type (str, optional): The name of an initialization method:
             ortho | N02 | xavier. Defaults to 'ortho'.
         concat_noise (bool, optional): Whether to concat input noise vector
@@ -110,6 +117,7 @@ class BigGANDeepGenerator(nn.Module):
                  with_shared_embedding=True,
                  shared_dim=128,
                  sn_eps=1e-6,
+                 sn_style='ajbrock',
                  init_type='ortho',
                  concat_noise=True,
                  act_cfg=dict(type='ReLU', inplace=False),
@@ -135,6 +143,7 @@ class BigGANDeepGenerator(nn.Module):
         self.upsample_cfg = deepcopy(upsample_cfg)
         self.block_depth = block_depth
         self.rgb2bgr = rgb2bgr
+        self.sn_style = sn_style
 
         # Validity Check
         # If 'num_classes' equals to zero, we shall set 'with_shared_embedding'
@@ -159,7 +168,16 @@ class BigGANDeepGenerator(nn.Module):
                 self.arch['in_channels'][0] * (self.input_scale**2))
 
         if with_spectral_norm:
-            self.noise2feat = spectral_norm(self.noise2feat, eps=sn_eps)
+            if sn_style == 'torch':
+                self.noise2feat = spectral_norm(self.noise2feat, eps=sn_eps)
+            elif sn_style == 'ajbrock':
+                self.noise2feat = SNLinear(
+                    self.noise_size +
+                    (self.shared_dim if self.concat_noise else 0),
+                    self.arch['in_channels'][0] * (self.input_scale**2),
+                    eps=sn_eps)
+            else:
+                NotImplementedError(f'{sn_style} style SN is not supported')
 
         # If using 'shared_embedding', we will get an unified embedding of
         # label for all blocks. If not, we just pass the label to each
@@ -185,6 +203,7 @@ class BigGANDeepGenerator(nn.Module):
                 dim_after_concat=self.dim_after_concat,
                 act_cfg=act_cfg,
                 sn_eps=sn_eps,
+                sn_style=sn_style,
                 input_is_label=(num_classes > 0)
                 and (not with_shared_embedding),
                 with_spectral_norm=with_spectral_norm,
@@ -210,7 +229,8 @@ class BigGANDeepGenerator(nn.Module):
                     SelfAttentionBlock(
                         out_ch,
                         with_spectral_norm=with_spectral_norm,
-                        sn_eps=sn_eps))
+                        sn_eps=sn_eps,
+                        sn_style=sn_style))
 
         self.output_layer = SNConvModule(
             self.arch['out_channels'][-1],
@@ -218,7 +238,7 @@ class BigGANDeepGenerator(nn.Module):
             kernel_size=3,
             padding=1,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps),
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style),
             act_cfg=act_cfg,
             norm_cfg=out_norm_cfg,
             bias=True,
@@ -491,6 +511,12 @@ class BigGANDeepDiscriminator(nn.Module):
             each level of architecture. Defaults to 2.
         sn_eps (float, optional): Epsilon value for spectral normalization.
             Defaults to 1e-6.
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `ajbrock`, implementation by
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
+            Defaults to `ajbrock`.
         init_type (str, optional): The name of an initialization method:
             ortho | N02 | xavier. Defaults to 'ortho'.
         act_cfg (dict, optional): Config for the activation layer.
@@ -515,6 +541,7 @@ class BigGANDeepDiscriminator(nn.Module):
                  base_channels=96,
                  block_depth=2,
                  sn_eps=1e-6,
+                 sn_style='ajbrock',
                  init_type='ortho',
                  act_cfg=dict(type='ReLU', inplace=False),
                  with_spectral_norm=True,
@@ -535,6 +562,7 @@ class BigGANDeepDiscriminator(nn.Module):
             dict(
                 act_cfg=act_cfg,
                 sn_eps=sn_eps,
+                sn_style=sn_style,
                 with_spectral_norm=with_spectral_norm))
 
         self.input_conv = SNConvModule(
@@ -543,7 +571,7 @@ class BigGANDeepDiscriminator(nn.Module):
             kernel_size=3,
             padding=1,
             with_spectral_norm=with_spectral_norm,
-            spectral_norm_cfg=dict(eps=sn_eps),
+            spectral_norm_cfg=dict(eps=sn_eps, sn_style=sn_style),
             act_cfg=None)
 
         self.conv_blocks = nn.ModuleList()
@@ -564,19 +592,36 @@ class BigGANDeepDiscriminator(nn.Module):
                     SelfAttentionBlock(
                         out_ch,
                         with_spectral_norm=with_spectral_norm,
-                        sn_eps=sn_eps))
+                        sn_eps=sn_eps,
+                        sn_style=sn_style))
 
         self.activate = build_activation_layer(act_cfg)
 
         self.decision = nn.Linear(self.arch['out_channels'][-1], out_channels)
         if with_spectral_norm:
-            self.decision = spectral_norm(self.decision, eps=sn_eps)
+            if sn_style == 'torch':
+                self.decision = spectral_norm(self.decision, eps=sn_eps)
+            elif sn_style == 'ajbrock':
+                self.decision = SNLinear(
+                    self.arch['out_channels'][-1], out_channels, eps=sn_eps)
+            else:
+                raise NotImplementedError(
+                    f'{sn_style} style SN is not supported yet')
 
         if self.num_classes > 0:
             self.proj_y = nn.Embedding(self.num_classes,
                                        self.arch['out_channels'][-1])
             if with_spectral_norm:
-                self.proj_y = spectral_norm(self.proj_y, eps=sn_eps)
+                if sn_style == 'torch':
+                    self.proj_y = spectral_norm(self.proj_y, eps=sn_eps)
+                elif sn_style == 'ajbrock':
+                    self.proj_y = SNEmbedding(
+                        self.num_classes,
+                        self.arch['out_channels'][-1],
+                        eps=sn_eps)
+                else:
+                    raise NotImplementedError(
+                        f'{sn_style} style SN is not supported yet')
 
         self.init_weights(pretrained=pretrained, init_type=init_type)
 
