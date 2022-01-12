@@ -204,8 +204,6 @@ if __name__ == '__main__':
         author='MMGeneration Contributors',
         author_email='openmmlab@gmail.com',
         license='Apache License 2.0',
-        setup_requires=['pytest-runner', 'cython', 'numpy'],
-        tests_require=['pytest'],
         include_package_data=True,
         install_requires=parse_requirements('requirements.txt'),
         cmdclass={'build_ext': BuildExtension},
