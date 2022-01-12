@@ -163,7 +163,7 @@ class Resize:
             tuple: Tuple contains resized image and scale factor in resize
                 process.
         """
-        if self.keep_ratio:
+        if isinstance(scale, (float, int)):
             img, scale_factor = mmcv.imrescale(
                 img,
                 scale,
