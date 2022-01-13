@@ -122,14 +122,7 @@ class MappingNetwork(torch.nn.Module):
 
 class SynthesisInput(torch.nn.Module):
 
-    def __init__(
-            self,
-            w_dim,  # Intermediate latent (W) dimensionality.
-            channels,  # Number of output channels.
-            size,  # Output spatial size: int or [width, height].
-            sampling_rate,  # Output sampling rate.
-            bandwidth,  # Output bandwidth.
-    ):
+    def __init__(self, w_dim, channels, size, sampling_rate, bandwidth):
         super().__init__()
         self.w_dim = w_dim
         self.channels = channels
@@ -326,13 +319,12 @@ class SynthesisLayer(torch.nn.Module):
             int(pad_hi[1])
         ]
 
-    def forward(
-            self,
-            x,
-            w,
-            noise_mode='random',
-            force_fp32=True,  # TODO: notice
-            update_emas=False):
+    def forward(self,
+                x,
+                w,
+                noise_mode='random',
+                force_fp32=True,
+                update_emas=False):
         assert noise_mode in ['random', 'const', 'none']  # unused
 
         # Track input magnitude.
