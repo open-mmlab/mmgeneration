@@ -57,8 +57,7 @@ metrics = dict(
         type='FID',
         num_images=50000,
         inception_pkl='work_dirs/inception_pkl/afhqv2-512-rgb-pt.pkl',
-        # inception_args=dict(type='StyleGAN'),
-        inception_args=dict(type='pytorch'),
+        inception_args=dict(type='StyleGAN'),
         bgr2rgb=True))
 
 evaluation = dict(
