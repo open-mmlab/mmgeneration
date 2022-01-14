@@ -1478,3 +1478,94 @@ class GaussianKLD(Metric):
             kld_result = np.sum(kld_np) / kld_np.shape[0]
         self._result_str = (f'{kld_result:.4f}')
         return kld_result
+
+
+class EQSampler:
+
+    def __init__(self,
+                 generator,
+                 num_samples,
+                 batch_size,
+                 compute_eqt_int=False,
+                 compute_eqt_frac=False,
+                 compute_eqr=False,
+                 translate_max=0.125,
+                 rotate_max=1,
+                 **sample_kwargs):
+        self.generator = generator
+        # whether this generator can be teseted with equvarience
+        self.num_samples = num_samples
+        self.batch_size = batch_size
+
+        n_batch = num_samples // batch_size
+
+        resid = num_samples - (n_batch * batch_size)
+        self.batch_sizes = [batch_size] * n_batch + ([resid]
+                                                     if resid > 0 else [])
+        self.device = get_module_device(generator)
+
+        self.compute_eqt_int = compute_eqt_int
+        self.compute_eqt_frac = compute_eqt_frac
+        self.compute_eqr = compute_eqr
+        self.translate_max = 0.125
+        self.rotate_max = 1
+        self.sample_kwargs = sample_kwargs
+
+    def __iter__(self):
+        self.idx = 0
+        return self
+
+    @torch.no_grad()
+    def __next__(self):
+        if self.idx >= len(self.batch_sizes):
+            raise StopIteration
+
+        batch_size = self.batch_sizes[self.idx]
+        identity_matrix = torch.eye(3, device=self.device)
+        transform_matrix = getattr(
+            getattr(getattr(self.generator, 'synthesis', None), 'input', None),
+            'transform', None)
+        s = []
+
+        # Run mapping network.
+        z = torch.randn([batch_size, self.generator.z_dim], device=self.device)
+        ws = self.generator.mapping(z=z)
+
+        # Generate reference image.
+        transform_matrix[:] = identity_matrix
+        orig = self.generator.synthesis(ws=ws, **self.sample_kwargs)
+
+        # Integer translation (EQ-T).
+        if self.compute_eqt_int:
+            t = (torch.rand(2, device=self.device) * 2 -
+                 1) * self.translate_max
+            t = (t * self.generator.img_resolution
+                 ).round() / self.generator.img_resolution
+            transform_matrix[:] = identity_matrix
+            transform_matrix[:2, 2] = -t
+            img = self.generator.synthesis(ws=ws, **self.sample_kwargs)
+            ref, mask = apply_integer_translation(orig, t[0], t[1])
+            s += [(ref - img).square() * mask, mask]
+
+        # Fractional translation (EQ-T_frac).
+        if self.compute_eqt_frac:
+            t = (torch.rand(2, device=self.device) * 2 -
+                 1) * self.translate_max
+            transform_matrix[:] = identity_matrix
+            transform_matrix[:2, 2] = -t
+            img = self.generator.synthesis(ws=ws, **self.sample_kwargs)
+            ref, mask = apply_fractional_translation(orig, t[0], t[1])
+            s += [(ref - img).square() * mask, mask]
+
+        # Rotation (EQ-R).
+        if self.compute_eqr:
+            angle = (torch.rand([], device=self.device) * 2 - 1) * (
+                self.rotate_max * np.pi)
+            transform_matrix[:] = rotation_matrix(-angle)
+            img = self.generator.synthesis(ws=ws, **self.sample_kwargs)
+            ref, ref_mask = apply_fractional_rotation(orig, angle)
+            pseudo, pseudo_mask = apply_fractional_pseudo_rotation(img, angle)
+            mask = ref_mask * pseudo_mask
+            s += [(ref - pseudo).square() * mask, mask]
+        self.idx += 1
+        return batch_size, s
