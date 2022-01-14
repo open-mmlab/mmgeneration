@@ -23,10 +23,12 @@ from mmgen.models.losses import gaussian_kld
 from mmgen.utils import MMGEN_CACHE_DIR
 from mmgen.utils.io_utils import download_from_url
 from ..registry import METRICS
-from .metric_utils import (_f_special_gauss, _hox_downsample,
-                           compute_pr_distances, finalize_descriptors,
-                           get_descriptors_for_minibatch, get_gaussian_kernel,
-                           laplacian_pyramid, slerp)
+from .metric_utils import (
+    _f_special_gauss, _hox_downsample, compute_pr_distances,
+    finalize_descriptors, get_descriptors_for_minibatch, get_gaussian_kernel,
+    laplacian_pyramid, slerp, apply_fractional_pseudo_rotation,
+    apply_fractional_rotation, apply_fractional_translation,
+    apply_integer_translation, rotation_matrix)
 
 TERO_INCEPTION_URL = 'https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt'  # noqa
 
@@ -1478,6 +1480,66 @@ class GaussianKLD(Metric):
             kld_result = np.sum(kld_np) / kld_np.shape[0]
         self._result_str = (f'{kld_result:.4f}')
         return kld_result
+
+
+class Equivariance(Metric):
+
+    name = 'Equivariance'
+
+    def __init__(self, num_images, image_shape=None, eq_cfg=dict()):
+        self.num_images = num_images
+
+        # set default sampler config
+        self._eq_cfg = deepcopy(eq_cfg)
+        self._eq_cfg.setdefault('compute_eqt_int', False)
+        self._eq_cfg.setdefault('compute_eqt_frac', False)
+        self._eq_cfg.setdefault('compute_eqr', False)
+        self._eq_cfg.setdefault('translate_max', 0.125)
+        self._eq_cfg.setdefault('rotate_max', 1)
+
+        self.num_left = self.num_images
+
+    def prepare(self):
+        self.sums = None
+
+    def feed(self, batch, mode):
+        if mode == 'fakes':
+            self.num_left -= batch[0].shape[0]
+            s = torch.stack([x.to(torch.float64).sum() for x in batch])
+            self.sums = self.sums + s if self.sums is not None else s
+            return self.num_left
+
+    def summary(self):
+        sums = self.sums.cpu()
+        mses = sums[0::2] / sums[1::2]
+        psnrs = np.log10(2) * 20 - mses.log10() * 10
+        psnrs = tuple(psnrs.numpy())
+
+        self._result_str = ''
+        index = 0
+        if self._eq_cfg['compute_eqt_int']:
+            self._result_str += f"eqt_int: {psnrs[index]}; "
+            index += 1
+        if self._eq_cfg['compute_eqt_frac']:
+            self._result_str += f"eqt_frac: {psnrs[index]}; "
+            index += 1
+        if self._eq_cfg['compute_eqr']:
+            self._result_str += f"eqr: {psnrs[index]}"
+            index += 1
+        return psnrs[0] if len(psnrs) == 1 else psnrs
+
+    def get_sampler(self,
+                    model,
+                    batch_size,
+                    sample_model='ema',
+                    **sample_kwargs):
+        if sample_model == 'ema':
+            generator = model.generator_ema
+        else:
+            generator = model.generator
+        eq_sampler = EQSampler(generator, self.num_images, batch_size,
+                               **self._eq_cfg, **sample_kwargs)
+        return eq_sampler
 
 
 class EQSampler:
