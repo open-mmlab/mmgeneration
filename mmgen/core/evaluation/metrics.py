@@ -1555,7 +1555,7 @@ class EQSampler:
                  rotate_max=1,
                  **sample_kwargs):
         self.generator = generator
-        # whether this generator can be teseted with equvarience
+        #TODO: whether this generator can be teseted with equvarience
         self.num_samples = num_samples
         self.batch_size = batch_size
 
