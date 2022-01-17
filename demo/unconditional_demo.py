@@ -65,7 +65,7 @@ def main():
     if args.sample_cfg is None:
         args.sample_cfg = dict()
 
-    results = sample_uncoditional_model(model, args.num_samples,
+    results = sample_unconditional_model(model, args.num_samples,
                                         args.num_batches, args.sample_model,
                                         **args.sample_cfg)
     results = (results[:, [2, 1, 0]] + 1.) / 2.
