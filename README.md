@@ -123,7 +123,7 @@ This project is released under the [Apache 2.0 license](LICENSE). Some operation
 
 ## Installation
 
-Please refer to [get_started.md](docs/get_started.md) for installation.
+Please refer to [get_started.md](docs/en/get_started.md) for installation.
 
 ## Getting Started
 
