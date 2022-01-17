@@ -46,7 +46,7 @@ def init_model(config, checkpoint=None, device='cuda:0', cfg_options=None):
 
 
 @torch.no_grad()
-def sample_uncoditional_model(model,
+def sample_unconditional_model(model,
                               num_samples=16,
                               num_batches=4,
                               sample_model='ema',
