@@ -5,6 +5,7 @@ import os
 import os.path as osp
 import platform
 import time
+import warnings
 
 import cv2
 import mmcv
@@ -68,7 +69,6 @@ def parse_args():
     return args
 
 
-
 def setup_multi_processes(cfg):
     # set multi-process start method as `fork` to speed up the training
     if platform.system() != 'Windows':
@@ -100,15 +100,16 @@ def setup_multi_processes(cfg):
             f'performance in your application as needed.')
         os.environ['MKL_NUM_THREADS'] = str(mkl_num_threads)
 
+
 def main():
     args = parse_args()
 
     cfg = Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
-    
+
     setup_multi_processes(cfg)
-    
+
     # import modules from string list.
     if cfg.get('custom_imports', None):
         from mmcv.utils import import_modules_from_strings
