@@ -1,4 +1,6 @@
-# Improved Training of Wasserstein GANs
+# WGAN-GP
+
+> [Improved Training of Wasserstein GANs](https://arxiv.org/abs/1704.00028)
 
 ## Abstract
 
@@ -8,22 +10,6 @@ Generative Adversarial Networks (GANs) are powerful generative models, but suffe
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143154792-de359728-101b-4ad1-90c0-ef3c1572d184.png"/>
 </div>
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://arxiv.org/abs/1704.00028">WGAN-GP (arXiv'2017)</a></summary>
-
-```latex
-@article{gulrajani2017improved,
-  title={Improved Training of Wasserstein GANs},
-  author={Gulrajani, Ishaan and Ahmed, Faruk and Arjovsky, Martin and Dumoulin, Vincent and Courville, Aaron},
-  journal={arXiv preprint arXiv:1704.00028},
-  year={2017},
-  url={https://arxiv.org/abs/1704.00028},
-}
-```
 
 ## Results and models
 
@@ -37,3 +23,15 @@ Generative Adversarial Networks (GANs) are powerful generative models, but suffe
 | :---------: | :------------: | :----------------: | :---------------------------: | :-----: | :---------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------: |
 | WGAN-GP 128 | CelebA-Cropped |         GN         | 5.87, 9.76, 9.43, 18.84/10.97 | 0.2601  |   [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/wgan-gp/wgangp_GN_celeba-cropped_128_b64x1_160kiter.py)   |   [model](https://download.openmmlab.com/mmgen/wgangp/wgangp_GN_celeba-cropped_128_b64x1_160k_20210408_170611-f8a99336.pth)   |
 | WGAN-GP 128 |  LSUN-Bedroom  | GN, GP-lambda = 50 | 11.7, 7.87, 9.82, 25.36/13.69 |  0.059  | [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/wgan-gp/wgangp_GN_GP-50_lsun-bedroom_128_b64x1_160kiter.py) | [model](https://download.openmmlab.com/mmgen/wgangp/wgangp_GN_GP-50_lsun-bedroom_128_b64x1_130k_20210408_170509-56f2a37c.pth) |
+
+## Citation
+
+```latex
+@article{gulrajani2017improved,
+  title={Improved Training of Wasserstein GANs},
+  author={Gulrajani, Ishaan and Ahmed, Faruk and Arjovsky, Martin and Dumoulin, Vincent and Courville, Aaron},
+  journal={arXiv preprint arXiv:1704.00028},
+  year={2017},
+  url={https://arxiv.org/abs/1704.00028},
+}
+```

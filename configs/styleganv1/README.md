@@ -1,4 +1,6 @@
-# A Style-Based Generator Architecture for Generative Adversarial Networks (CVPR'2019)
+# StyleGANv1
+
+> [A Style-Based Generator Architecture for Generative Adversarial Networks](https://openaccess.thecvf.com/content_CVPR_2019/html/Karras_A_Style-Based_Generator_Architecture_for_Generative_Adversarial_Networks_CVPR_2019_paper.html)
 
 ## Abstract
 
@@ -8,23 +10,6 @@ We propose an alternative generator architecture for generative adversarial netw
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143055313-f4988870-2963-4a2f-916e-0de0e04eb474.JPG"/>
 </div>
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://openaccess.thecvf.com/content_CVPR_2019/html/Karras_A_Style-Based_Generator_Architecture_for_Generative_Adversarial_Networks_CVPR_2019_paper.html">StyleGANv1 (CVPR'2019)</a></summary>
-
-```latex
-@inproceedings{karras2019style,
-  title={A style-based generator architecture for generative adversarial networks},
-  author={Karras, Tero and Laine, Samuli and Aila, Timo},
-  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
-  pages={4401--4410},
-  year={2019},
-  url={https://openaccess.thecvf.com/content_CVPR_2019/html/Karras_A_Style-Based_Generator_Architecture_for_Generative_Adversarial_Networks_CVPR_2019_paper.html},
-}
-```
 
 ## Results and Models
 
@@ -38,3 +23,16 @@ We propose an alternative generator architecture for generative adversarial netw
 | :------------------: | :----: | :-----------: | :-------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------: |
 | styleganv1_ffhq_256  | 6.090  | 70.228/27.050 | [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv1/styleganv1_ffhq_256_g8_25Mimg.py)  | [model](https://download.openmmlab.com/mmgen/styleganv1/styleganv1_ffhq_256_g8_25Mimg_20210407_161748-0094da86.pth)  |
 | styleganv1_ffhq_1024 | 4.056  | 70.302/36.869 | [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv1/styleganv1_ffhq_1024_g8_25Mimg.py) | [model](https://download.openmmlab.com/mmgen/styleganv1/styleganv1_ffhq_1024_g8_25Mimg_20210407_161627-850a7234.pth) |
+
+## Citation
+
+```latex
+@inproceedings{karras2019style,
+  title={A style-based generator architecture for generative adversarial networks},
+  author={Karras, Tero and Laine, Samuli and Aila, Timo},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={4401--4410},
+  year={2019},
+  url={https://openaccess.thecvf.com/content_CVPR_2019/html/Karras_A_Style-Based_Generator_Architecture_for_Generative_Adversarial_Networks_CVPR_2019_paper.html},
+}
+```

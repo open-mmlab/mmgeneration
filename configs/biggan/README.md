@@ -1,4 +1,6 @@
-# Large Scale GAN Training for High Fidelity Natural Image Synthesis
+# BigGAN
+
+> [Large Scale GAN Training for High Fidelity Natural Image Synthesis](https://openreview.net/forum?id=B1xsqj09Fm)
 
 ## Abstract
 
@@ -8,23 +10,6 @@ Despite recent progress in generative image modeling, successfully generating hi
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143154280-4cb22e16-92c8-4b34-9e2c-6357ed0bdac8.png"/>
 </div>
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://openreview.net/forum?id=B1xsqj09Fm">BigGAN (ICLR'2019)</a></summary>
-
-```latex
-@inproceedings{
-    brock2018large,
-    title={Large Scale {GAN} Training for High Fidelity Natural Image Synthesis},
-    author={Andrew Brock and Jeff Donahue and Karen Simonyan},
-    booktitle={International Conference on Learning Representations},
-    year={2019},
-    url={https://openreview.net/forum?id=B1xsqj09Fm},
-}
-```
 
 ## Introduction
 
@@ -125,3 +110,16 @@ python apps/conditional_interpolate.py CONFIG_PATH  CKPT_PATH  --samples-path SA
   <br/>
   <img src="https://user-images.githubusercontent.com/22982797/128124596-421396f1-3f23-4098-b629-b00d29d710a9.png" width="800"/>
 </div>
+
+## Citation
+
+```latex
+@inproceedings{
+    brock2018large,
+    title={Large Scale {GAN} Training for High Fidelity Natural Image Synthesis},
+    author={Andrew Brock and Jeff Donahue and Karen Simonyan},
+    booktitle={International Conference on Learning Representations},
+    year={2019},
+    url={https://openreview.net/forum?id=B1xsqj09Fm},
+}
+```
