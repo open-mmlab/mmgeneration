@@ -61,7 +61,7 @@ class TestMappingNetwork:
         cls.default_cfg = dict(
             z_dim=4,
             c_dim=0,
-            w_dim=4,
+            style_channels=4,
             num_ws=2,
             num_layers=2,
             lr_multiplier=0.01,
@@ -106,7 +106,11 @@ class TestSynthesisInput:
     @classmethod
     def setup_class(cls):
         cls.default_cfg = dict(
-            w_dim=6, channels=4, size=8, sampling_rate=16, bandwidth=2)
+            style_channels=6,
+            channels=4,
+            size=8,
+            sampling_rate=16,
+            bandwidth=2)
 
     def test_cpu(self):
         module = SynthesisInput(**self.default_cfg)
@@ -127,7 +131,7 @@ class TestSynthesisLayer:
     @classmethod
     def setup_class(cls):
         cls.default_cfg = dict(
-            w_dim=6,
+            style_channels=6,
             is_torgb=False,
             is_critically_sampled=False,
             use_fp16=False,
@@ -164,7 +168,7 @@ class TestSynthesisNetwork:
     @classmethod
     def setup_class(cls):
         cls.default_cfg = dict(
-            w_dim=8, img_resolution=16, img_channels=3, num_layers=4)
+            style_channels=8, out_size=16, img_channels=3, num_layers=4)
 
     def test_cpu(self):
         module = SynthesisNetwork(**self.default_cfg)
@@ -188,8 +192,8 @@ class TestStyleGAN3Generator:
         cls.default_cfg = dict(
             z_dim=6,
             c_dim=0,
-            w_dim=8,
-            img_resolution=16,
+            style_channels=8,
+            out_size=16,
             img_channels=3,
             **synthesis_kwargs)
 

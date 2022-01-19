@@ -56,7 +56,7 @@ class MappingNetwork(torch.nn.Module):
         self,
         z_dim,
         c_dim,
-        w_dim,
+        style_channels,
         num_ws,
         num_layers=2,
         lr_multiplier=0.01,
@@ -65,16 +65,17 @@ class MappingNetwork(torch.nn.Module):
         super().__init__()
         self.z_dim = z_dim
         self.c_dim = c_dim
-        self.w_dim = w_dim
+        self.style_channels = style_channels
         self.num_ws = num_ws
         self.num_layers = num_layers
         self.w_avg_beta = w_avg_beta
 
         # Construct layers.
         self.embed = FullyConnectedLayer(
-            self.c_dim, self.w_dim) if self.c_dim > 0 else None
-        features = [self.z_dim + (self.w_dim if self.c_dim > 0 else 0)
-                    ] + [self.w_dim] * self.num_layers
+            self.c_dim, self.style_channels) if self.c_dim > 0 else None
+        features = [
+            self.z_dim + (self.style_channels if self.c_dim > 0 else 0)
+        ] + [self.style_channels] * self.num_layers
         for idx, in_features, out_features in zip(
                 range(num_layers), features[:-1], features[1:]):
             layer = FullyConnectedLayer(
@@ -83,13 +84,14 @@ class MappingNetwork(torch.nn.Module):
                 activation='lrelu',
                 lr_multiplier=lr_multiplier)
             setattr(self, f'fc{idx}', layer)
-        self.register_buffer('w_avg', torch.zeros([w_dim]))
+        self.register_buffer('w_avg', torch.zeros([style_channels]))
 
     def forward(self,
                 z,
                 c=None,
                 truncation_psi=1,
                 truncation_cutoff=None,
+                truncation_latent=None,
                 update_emas=False):
 
         if truncation_cutoff is None:
@@ -122,9 +124,10 @@ class MappingNetwork(torch.nn.Module):
 
 class SynthesisInput(torch.nn.Module):
 
-    def __init__(self, w_dim, channels, size, sampling_rate, bandwidth):
+    def __init__(self, style_channels, channels, size, sampling_rate,
+                 bandwidth):
         super().__init__()
-        self.w_dim = w_dim
+        self.style_channels = style_channels
         self.channels = channels
         self.size = np.broadcast_to(np.asarray(size), [2])
         self.sampling_rate = sampling_rate
@@ -141,7 +144,7 @@ class SynthesisInput(torch.nn.Module):
         self.weight = torch.nn.Parameter(
             torch.randn([self.channels, self.channels]))
         self.affine = FullyConnectedLayer(
-            w_dim, 4, weight_init=0, bias_init=[1, 0, 0, 0])
+            style_channels, 4, weight_init=0, bias_init=[1, 0, 0, 0])
         self.register_buffer('transform', torch.eye(
             3, 3))  # User-specified inverse transform wrt. resulting image.
         self.register_buffer('freqs', freqs)
@@ -213,7 +216,7 @@ class SynthesisLayer(torch.nn.Module):
 
     def __init__(
         self,
-        w_dim,
+        style_channels,
         is_torgb,
         is_critically_sampled,
         use_fp16,
@@ -235,7 +238,7 @@ class SynthesisLayer(torch.nn.Module):
         magnitude_ema_beta=0.999,
     ):
         super().__init__()
-        self.w_dim = w_dim
+        self.style_channels = style_channels
         self.is_torgb = is_torgb
         self.is_critically_sampled = is_critically_sampled
         self.use_fp16 = use_fp16
@@ -261,7 +264,7 @@ class SynthesisLayer(torch.nn.Module):
             self.in_channels,
             self.out_channels,
             self.conv_kernel,
-            self.w_dim,
+            self.style_channels,
             demodulate=(not self.is_torgb),
             padding=self.conv_kernel - 1,
         )
@@ -390,8 +393,8 @@ class SynthesisNetwork(torch.nn.Module):
 
     def __init__(
         self,
-        w_dim,
-        img_resolution,
+        style_channels,
+        out_size,
         img_channels,
         channel_base=32768,
         channel_max=512,
@@ -406,9 +409,9 @@ class SynthesisNetwork(torch.nn.Module):
         **layer_kwargs,
     ):
         super().__init__()
-        self.w_dim = w_dim
+        self.style_channels = style_channels
         self.num_ws = num_layers + 2
-        self.img_resolution = img_resolution
+        self.out_size = out_size
         self.img_channels = img_channels
         self.num_layers = num_layers
         self.num_critical = num_critical
@@ -417,7 +420,7 @@ class SynthesisNetwork(torch.nn.Module):
         self.num_fp16_res = num_fp16_res
 
         # Geometric progression of layer cutoffs and min. stopbands.
-        last_cutoff = self.img_resolution / 2  # f_{c,N}
+        last_cutoff = self.out_size / 2  # f_{c,N}
         last_stopband = last_cutoff * last_stopband_rel  # f_{t,N}
         exponents = np.minimum(
             np.arange(self.num_layers + 1) /
@@ -429,19 +432,18 @@ class SynthesisNetwork(torch.nn.Module):
 
         # Compute remaining layer parameters.
         sampling_rates = np.exp2(
-            np.ceil(np.log2(np.minimum(stopbands * 2,
-                                       self.img_resolution))))  # s[i]
+            np.ceil(np.log2(np.minimum(stopbands * 2, self.out_size))))  # s[i]
         half_widths = np.maximum(stopbands,
                                  sampling_rates / 2) - cutoffs  # f_h[i]
         sizes = sampling_rates + self.margin_size * 2
-        sizes[-2:] = self.img_resolution
+        sizes[-2:] = self.out_size
         channels = np.rint(
             np.minimum((channel_base / 2) / cutoffs, channel_max))
         channels[-1] = self.img_channels
 
         # Construct layers.
         self.input = SynthesisInput(
-            w_dim=self.w_dim,
+            style_channels=self.style_channels,
             channels=int(channels[0]),
             size=int(sizes[0]),
             sampling_rate=sampling_rates[0],
@@ -453,10 +455,9 @@ class SynthesisNetwork(torch.nn.Module):
             is_critically_sampled = (
                 idx >= self.num_layers - self.num_critical)
             use_fp16 = (
-                sampling_rates[idx] *
-                (2**self.num_fp16_res) > self.img_resolution)
+                sampling_rates[idx] * (2**self.num_fp16_res) > self.out_size)
             layer = SynthesisLayer(
-                w_dim=self.w_dim,
+                style_channels=self.style_channels,
                 is_torgb=is_torgb,
                 is_critically_sampled=is_critically_sampled,
                 use_fp16=use_fp16,

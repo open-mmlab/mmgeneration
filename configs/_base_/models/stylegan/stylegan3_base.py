@@ -12,8 +12,8 @@ model = dict(
         type='StyleGANv3Generator',
         z_dim=512,
         c_dim=0,
-        w_dim=512,
-        img_resolution=None,  # Need to be set.
+        style_channels=512,
+        out_size=None,  # Need to be set.
         img_channels=3,
     ),
     discriminator=dict(

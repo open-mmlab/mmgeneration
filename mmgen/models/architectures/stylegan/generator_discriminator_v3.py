@@ -4,6 +4,7 @@ import torch.nn as nn
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.builder import MODULES
 from .modules import MappingNetwork, SynthesisNetwork
+from .utils import get_mean_latent
 
 
 @MODULES.register_module()
@@ -13,8 +14,8 @@ class StyleGANv3Generator(nn.Module):
             self,
             z_dim,
             c_dim,
-            w_dim,
-            img_resolution,
+            style_channels,
+            out_size,
             img_channels,
             rgb2bgr=False,
             mapping_kwargs=dict(),
@@ -23,20 +24,20 @@ class StyleGANv3Generator(nn.Module):
         super().__init__()
         self.z_dim = z_dim
         self.c_dim = c_dim
-        self.w_dim = w_dim
-        self.img_resolution = img_resolution
+        self.style_channels = style_channels
+        self.out_size = out_size
         self.img_channels = img_channels
         self.rgb2bgr = rgb2bgr
         self.synthesis = SynthesisNetwork(
-            w_dim=w_dim,
-            img_resolution=img_resolution,
+            style_channels=style_channels,
+            out_size=out_size,
             img_channels=img_channels,
             **synthesis_kwargs)
         self.num_ws = self.synthesis.num_ws
-        self.mapping = MappingNetwork(
+        self.style_mapping = MappingNetwork(
             z_dim=z_dim,
             c_dim=c_dim,
-            w_dim=w_dim,
+            style_channels=style_channels,
             num_ws=self.num_ws,
             **mapping_kwargs)
 
@@ -47,6 +48,7 @@ class StyleGANv3Generator(nn.Module):
                 input_is_latent=False,
                 truncation_psi=1,
                 truncation_cutoff=None,
+                truncation_latent=None,
                 update_emas=False,
                 return_noise=False,
                 return_latent=False,
@@ -88,11 +90,12 @@ class StyleGANv3Generator(nn.Module):
         if label_batch:
             label_batch = label_batch.to(device)
 
-        ws = self.mapping(
+        ws = self.style_mapping(
             noise_batch,
             label_batch,
             truncation_psi=truncation_psi,
             truncation_cutoff=truncation_cutoff,
+            truncation_latent=truncation_latent,
             update_emas=update_emas)
         out_img = self.synthesis(
             ws, update_emas=update_emas, **synthesis_kwargs)
@@ -102,7 +105,22 @@ class StyleGANv3Generator(nn.Module):
 
         if return_noise or return_latent:
             output = dict(
-                fake_img=out_img, noise_batch=noise_batch, label=label_batch)
+                fake_img=out_img,
+                noise_batch=noise_batch,
+                label=label_batch,
+                latent=ws)
             return output
 
         return out_img
+
+    def get_mean_latent(self, num_samples=4096, **kwargs):
+        """Get mean latent of W space in this generator.
+
+        Args:
+            num_samples (int, optional): Number of sample times. Defaults
+                to 4096.
+
+        Returns:
+            Tensor: Mean latent of this generator.
+        """
+        return get_mean_latent(self, num_samples, **kwargs)

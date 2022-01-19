@@ -3,25 +3,21 @@ _base_ = [
     '../_base_/datasets/ffhq_flip.py', '../_base_/default_runtime.py'
 ]
 
+#
+# --cfg=stylegan3-r --gpus=8 --batch=64 --gamma=1 --mirror=1 --aug=noaug
+# --cbase=16384 --dlr=0.0025
 synthesis_kwargs = {
-    'channel_base': 65536,
+    'channel_base': 32768,
     'channel_max': 1024,
-    'magnitude_ema_beta': 0.9998613801725043,
+    'magnitude_ema_beta': 0.9997227795604651,
     'conv_kernel': 1,
     'use_radial_filters': True
 }
 model = dict(
     type='StaticUnconditionalGAN',
     generator=dict(
-        type='StyleGANv3Generator',
-        z_dim=512,
-        c_dim=0,
-        style_channels=512,
-        out_size=512,
-        img_channels=3,
-        rgb2bgr=True,
-        **synthesis_kwargs),
-    discriminator=dict(type='StyleGAN2Discriminator', in_size=512),
+        out_size=256, img_channels=3, rgb2bgr=True, **synthesis_kwargs),
+    discriminator=dict(in_size=256, channel_multiplier=1),
     gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'),
     disc_auxiliary_loss=[
         dict(
