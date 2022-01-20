@@ -4,54 +4,10 @@ import pytest
 import torch
 
 from mmgen.models.architectures.stylegan import StyleGANv3Generator
-from mmgen.models.architectures.stylegan.modules import (FullyConnectedLayer,
-                                                         MappingNetwork,
+from mmgen.models.architectures.stylegan.modules import (MappingNetwork,
                                                          SynthesisInput,
                                                          SynthesisLayer,
                                                          SynthesisNetwork)
-
-
-class TestFullyConnectedLayer:
-
-    @classmethod
-    def setup_class(cls):
-        cls.default_cfg = dict(
-            in_features=12,
-            out_features=12,
-            activation='linear',
-            bias=True,
-            lr_multiplier=1,
-            weight_init=1,
-            bias_init=0)
-
-    def test_cpu(self):
-        module = FullyConnectedLayer(**self.default_cfg)
-        x = torch.randn((2, 12))
-        y = module(x)
-        assert y.shape == (2, 12)
-
-        # test with lrelu
-        cfg = deepcopy(self.default_cfg)
-        cfg.update(activation='lrelu')
-        module = FullyConnectedLayer(**self.default_cfg)
-        x = torch.randn((2, 12))
-        y = module(x)
-        assert y.shape == (2, 12)
-
-    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
-    def test_cuda(self):
-        module = FullyConnectedLayer(**self.default_cfg).cuda()
-        x = torch.randn((2, 12)).cuda()
-        y = module(x)
-        assert y.shape == (2, 12)
-
-        # test with lrelu
-        cfg = deepcopy(self.default_cfg)
-        cfg.update(activation='lrelu')
-        module = FullyConnectedLayer(**self.default_cfg).cuda()
-        x = torch.randn((2, 12)).cuda()
-        y = module(x)
-        assert y.shape == (2, 12)
 
 
 class TestMappingNetwork:

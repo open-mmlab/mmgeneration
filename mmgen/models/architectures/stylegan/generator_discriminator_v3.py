@@ -1,5 +1,7 @@
+import mmcv
 import torch
 import torch.nn as nn
+from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
 
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.builder import MODULES
@@ -12,12 +14,16 @@ class StyleGANv3Generator(nn.Module):
 
     def __init__(
             self,
-            z_dim,
-            c_dim,
-            style_channels,
             out_size,
+            style_channels,
             img_channels,
+            z_dim=512,
+            c_dim=0,
+            default_style_mode='mix',
+            eval_style_mode='single',
+            mix_prob=0.9,
             rgb2bgr=False,
+            pretrained=None,
             mapping_kwargs=dict(),
             **synthesis_kwargs,
     ):
@@ -28,6 +34,9 @@ class StyleGANv3Generator(nn.Module):
         self.out_size = out_size
         self.img_channels = img_channels
         self.rgb2bgr = rgb2bgr
+        self._default_style_mode = default_style_mode
+        self.default_style_mode = default_style_mode
+        self.eval_style_mode = eval_style_mode
         self.synthesis = SynthesisNetwork(
             style_channels=style_channels,
             out_size=out_size,
@@ -40,6 +49,36 @@ class StyleGANv3Generator(nn.Module):
             style_channels=style_channels,
             num_ws=self.num_ws,
             **mapping_kwargs)
+
+        if pretrained is not None:
+            self._load_pretrained_model(**pretrained)
+
+    def _load_pretrained_model(self,
+                               ckpt_path,
+                               prefix='',
+                               map_location='cpu',
+                               strict=True):
+        state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
+                                                  map_location)
+        self.load_state_dict(state_dict, strict=strict)
+        mmcv.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
+
+    def train(self, mode=True):
+        if mode:
+            if self.default_style_mode != self._default_style_mode:
+                mmcv.print_log(
+                    f'Switch to train style mode: {self._default_style_mode}',
+                    'mmgen')
+            self.default_style_mode = self._default_style_mode
+
+        else:
+            if self.default_style_mode != self.eval_style_mode:
+                mmcv.print_log(
+                    f'Switch to evaluation style mode: {self.eval_style_mode}',
+                    'mmgen')
+            self.default_style_mode = self.eval_style_mode
+
+        return super(StyleGANv3Generator, self).train(mode)
 
     def forward(self,
                 noise,

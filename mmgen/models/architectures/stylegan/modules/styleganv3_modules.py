@@ -1,53 +1,9 @@
 import numpy as np
 import scipy
 import torch
-import torch.nn as nn
-from mmcv.ops.fused_bias_leakyrelu import fused_bias_leakyrelu
 
 from mmgen.ops import filtered_lrelu
-from .styleganv2_modules import ModulatedConv2d
-
-
-class FullyConnectedLayer(nn.Module):
-
-    def __init__(self,
-                 in_features,
-                 out_features,
-                 activation='linear',
-                 bias=True,
-                 lr_multiplier=1,
-                 weight_init=1,
-                 bias_init=0):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.activation = activation
-        self.weight = nn.Parameter(
-            torch.randn([out_features, in_features]) *
-            (weight_init / lr_multiplier))
-        bias_init = np.broadcast_to(
-            np.asarray(bias_init, dtype=np.float32), [out_features])
-        self.bias = nn.Parameter(torch.from_numpy(
-            bias_init / lr_multiplier)) if bias else None
-        self.weight_gain = lr_multiplier / np.sqrt(in_features)
-        self.bias_gain = lr_multiplier
-
-    def forward(self, x):
-        w = self.weight.to(x.dtype) * self.weight_gain
-        b = self.bias
-        if b is not None:
-            b = b.to(x.dtype)
-            if self.bias_gain != 1:
-                b = b * self.bias_gain
-        if self.activation == 'linear' and b is not None:
-            x = torch.addmm(b.unsqueeze(0), x, w.t())
-        elif self.activation == 'lrelu':
-            x = x.matmul(w.t())
-            x = fused_bias_leakyrelu(x, b)
-        else:
-            raise NotImplementedError(
-                f'fused bias {self.activation} has not been supported yet')
-        return x
+from .styleganv2_modules import EqualLinearActModule, ModulatedConv2d
 
 
 class MappingNetwork(torch.nn.Module):
@@ -71,18 +27,19 @@ class MappingNetwork(torch.nn.Module):
         self.w_avg_beta = w_avg_beta
 
         # Construct layers.
-        self.embed = FullyConnectedLayer(
+        # TODO: check initialization
+        self.embed = EqualLinearActModule(
             self.c_dim, self.style_channels) if self.c_dim > 0 else None
         features = [
             self.z_dim + (self.style_channels if self.c_dim > 0 else 0)
         ] + [self.style_channels] * self.num_layers
         for idx, in_features, out_features in zip(
                 range(num_layers), features[:-1], features[1:]):
-            layer = FullyConnectedLayer(
+            layer = EqualLinearActModule(
                 in_features,
                 out_features,
-                activation='lrelu',
-                lr_multiplier=lr_multiplier)
+                equalized_lr_cfg=dict(lr_mul=lr_multiplier, gain=1.),
+                act_cfg=dict(type='fused_bias'))
             setattr(self, f'fc{idx}', layer)
         self.register_buffer('w_avg', torch.zeros([style_channels]))
 
@@ -143,8 +100,8 @@ class SynthesisInput(torch.nn.Module):
         # Setup parameters and buffers.
         self.weight = torch.nn.Parameter(
             torch.randn([self.channels, self.channels]))
-        self.affine = FullyConnectedLayer(
-            style_channels, 4, weight_init=0, bias_init=[1, 0, 0, 0])
+        # TODO: check initialization
+        self.affine = EqualLinearActModule(style_channels, 4)
         self.register_buffer('transform', torch.eye(
             3, 3))  # User-specified inverse transform wrt. resulting image.
         self.register_buffer('freqs', freqs)

@@ -2,12 +2,11 @@
 from .styleganv2_modules import (Blur, ConstantInput, ModulatedConv2d,
                                  ModulatedStyleConv, ModulatedToRGB,
                                  NoiseInjection)
-from .styleganv3_modules import (FullyConnectedLayer, MappingNetwork,
-                                 SynthesisInput, SynthesisLayer,
-                                 SynthesisNetwork)
+from .styleganv3_modules import (MappingNetwork, SynthesisInput,
+                                 SynthesisLayer, SynthesisNetwork)
 
 __all__ = [
     'Blur', 'ModulatedStyleConv', 'ModulatedToRGB', 'NoiseInjection',
-    'ConstantInput', 'FullyConnectedLayer', 'MappingNetwork', 'SynthesisInput',
-    'SynthesisLayer', 'SynthesisNetwork', 'ModulatedConv2d'
+    'ConstantInput', 'MappingNetwork', 'SynthesisInput', 'SynthesisLayer',
+    'SynthesisNetwork', 'ModulatedConv2d'
 ]
