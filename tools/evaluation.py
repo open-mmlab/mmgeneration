@@ -13,7 +13,7 @@ from mmgen.datasets import build_dataloader, build_dataset
 from mmgen.models import build_model
 from mmgen.utils import get_root_logger
 
-_distributed_metrics = ['FID', 'IS']
+_distributed_metrics = ['FID', 'IS', 'KID']
 
 
 def parse_args():
@@ -113,8 +113,6 @@ def main():
         init_dist(args.launcher, **cfg.dist_params)
         rank, world_size = get_dist_info()
         cfg.gpu_ids = range(world_size)
-        assert args.online or world_size == 1, (
-            'We only support online mode for distrbuted evaluation.')
 
     dirname = os.path.dirname(args.checkpoint)
     ckpt = os.path.basename(args.checkpoint)
