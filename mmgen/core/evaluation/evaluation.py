@@ -62,6 +62,22 @@ def make_vanilla_dataloader(img_path, batch_size, dist=False):
     return dataloader
 
 
+# def get_required_images(metric, mode=None):
+#     """Get the number of the required images.
+#     Args:
+#         metric (Metric): The current metric.
+#         mode (str, optional): Real or fake nums. Ignored when
+#             ``metric.num_images`` is not None. Defaults to None.
+
+#     Returns:
+#         int: Number of samples.
+#     """
+#     if hasattr(metric, 'num_images'):
+#         return metric.num_images
+#     assert mode in ['real', 'fake']
+#     return getattr(metric, f'num_{mode}_need')
+
+
 @torch.no_grad()
 def offline_evaluation(model,
                        data_loader,
@@ -117,10 +133,10 @@ def offline_evaluation(model,
             mmcv.scandir(
                 samples_path, suffix=('.jpg', '.png', '.jpeg', '.JPEG'))))
     if basic_table_info['num_samples'] > 0:
-        max_num_images = basic_table_info['num_samples']
+        max_num_images_fake = basic_table_info['num_samples']
     else:
-        max_num_images = max(metric.num_images for metric in metrics)
-    num_needed = max(max_num_images - num_exist, 0)
+        max_num_images_fake = max(metric.num_fake_need for metric in metrics)
+    num_needed = max(max_num_images_fake - num_exist, 0)
 
     if num_needed > 0 and rank == 0:
         mmcv.print_log(f'Sample {num_needed} fake images for evaluation',
@@ -131,14 +147,14 @@ def offline_evaluation(model,
     # if no images, `num_needed` should be zero
     total_batch_size = batch_size * ws
     for begin in range(0, num_needed, total_batch_size):
-        end = min(begin + batch_size, max_num_images)
+        end = min(begin + batch_size, max_num_images_fake)
         fakes = model(
             None,
             num_batches=end - begin,
             return_loss=False,
             sample_model=basic_table_info['sample_model'],
             **kwargs)
-        global_end = min(begin + total_batch_size, max_num_images)
+        global_end = min(begin + total_batch_size, max_num_images_fake)
         if rank == 0:
             pbar.update(global_end - begin)
 
@@ -289,6 +305,7 @@ def online_evaluation(model, data_loader, metrics, logger, basic_table_info,
     max_num_images = 0
     for metric in vanilla_metrics + recon_metrics:
         metric.prepare()
+        # TODO: change this to get_required_images()
         max_num_images = max(max_num_images,
                              metric.num_real_need - metric.num_real_feeded)
     if rank == 0:
