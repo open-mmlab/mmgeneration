@@ -23,14 +23,17 @@ from mmgen.models.losses import gaussian_kld
 from mmgen.utils import MMGEN_CACHE_DIR
 from mmgen.utils.io_utils import download_from_url
 from ..registry import METRICS
+# yapf:disable
 from .metric_utils import (_f_special_gauss, _hox_downsample,
-                           compute_pr_distances, finalize_descriptors,
-                           get_descriptors_for_minibatch, get_gaussian_kernel,
-                           laplacian_pyramid, slerp, apply_integer_translation,
-                           apply_fractional_translation, rotation_matrix,
+                           apply_fractional_pseudo_rotation,
                            apply_fractional_rotation,
-                           apply_fractional_pseudo_rotation)
+                           apply_fractional_translation,
+                           apply_integer_translation, compute_pr_distances,
+                           finalize_descriptors, get_descriptors_for_minibatch,
+                           get_gaussian_kernel, laplacian_pyramid,
+                           rotation_matrix, slerp)
 
+# yapf:enable
 TERO_INCEPTION_URL = 'https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt'  # noqa
 
 
@@ -1536,13 +1539,13 @@ class Equivariance(Metric):
         self._result_str = ''
         index = 0
         if self._eq_cfg['compute_eqt_int']:
-            self._result_str += f"eqt_int: {psnrs[index]}; "
+            self._result_str += f'eqt_int: {psnrs[index]}; '
             index += 1
         if self._eq_cfg['compute_eqt_frac']:
-            self._result_str += f"eqt_frac: {psnrs[index]}; "
+            self._result_str += f'eqt_frac: {psnrs[index]}; '
             index += 1
         if self._eq_cfg['compute_eqr']:
-            self._result_str += f"eqr: {psnrs[index]}"
+            self._result_str += f'eqr: {psnrs[index]}'
             index += 1
         return psnrs[0] if len(psnrs) == 1 else psnrs
 

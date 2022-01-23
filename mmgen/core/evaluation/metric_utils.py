@@ -376,9 +376,9 @@ def construct_affine_bandlimit_filter(mat,
     xo, yo = (torch.stack([xi, yi], dim=2) @ mat[:2, :2].t()).unbind(2)
 
     # Convolution of two oriented 2D sinc filters.
-    fi = sinc(xi * cutoff_in) * sinc(yi * cutoff_in)
-    fo = sinc(xo * cutoff_out) * sinc(yo * cutoff_out)
-    f = torch.fft.ifftn(torch.fft.fftn(fi) * torch.fft.fftn(fo)).real
+    fin = sinc(xi * cutoff_in) * sinc(yi * cutoff_in)
+    fout = sinc(xo * cutoff_out) * sinc(yo * cutoff_out)
+    f = torch.fft.ifftn(torch.fft.fftn(fin) * torch.fft.fftn(fout)).real
 
     # Convolution of two oriented 2D Lanczos windows.
     wi = lanczos_window(xi, a) * lanczos_window(yi, a)
