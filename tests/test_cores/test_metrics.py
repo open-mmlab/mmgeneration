@@ -1,11 +1,12 @@
 import os.path as osp
+from copy import deepcopy
 
 import numpy as np
 import pytest
 import torch
 
 from mmgen.core.evaluation.metric_utils import extract_inception_features
-from mmgen.core.evaluation.metrics import (FID, IS, MS_SSIM, PPL, PR, SWD,
+from mmgen.core.evaluation.metrics import (FID, IS, KID, MS_SSIM, PPL, PR, SWD,
                                            GaussianKLD)
 from mmgen.datasets import UnconditionalImageDataset, build_dataloader
 from mmgen.models import build_model
@@ -327,3 +328,177 @@ def test_kld_gaussian():
     # test other reduction --> error
     with pytest.raises(AssertionError):
         metric = GaussianKLD(2, reduction='none')
+
+
+class TestKID(object):
+
+    @classmethod
+    def setup_class(cls):
+        cls.config = dict(num_real=-1, num_fake=10, num_subsets=1000)
+
+        cls.reals = [torch.randn(2, 3, 128, 128) for _ in range(5)]
+        cls.fakes = [torch.randn(2, 3, 128, 128) for _ in range(10)]
+
+    def test_kid(self):
+        kid = KID(**self.config)
+        kid.prepare()
+
+        assert kid.num_fake_need == 10
+        assert kid.num_real_need == -1
+
+        for real_batch in self.reals:
+            end = kid.feed(real_batch, mode='reals')
+            if end <= 0:
+                break
+
+        for fake_batch in self.fakes:
+            end = kid.feed(fake_batch, mode='fakes')
+            if end <= 0:
+                break
+
+        # test wrong mode
+        with pytest.raises(ValueError):
+            kid.feed(fake_batch, mode='wrong')
+
+        # test result_str
+        kid_str = kid.result_str
+        print(kid_str)
+        # test summary
+        kid_score = kid.summary()
+        print(kid_score)
+
+        # test clear
+        kid.clear()
+        assert kid.fake_feats == []
+        assert kid.num_fake_feeded == 0
+        assert kid.real_act.shape == (10, 2048)
+
+        # test clear_reals
+        kid.clear(clear_reals=True)
+        assert kid.real_feats == []
+        assert kid.real_act is None
+        assert kid.num_real_feeded == 0
+
+        # TODO: test prepare with given inception pkl
+        # download pkl from remote
+
+        # test not use the full dataset
+        config = deepcopy(self.config)
+        config['num_real'] = 7
+        kid = KID(**config)
+
+        for real_batch in self.reals:
+            end = kid.feed(real_batch, mode='reals')
+            if end <= 0:
+                break
+        for fake_batch in self.fakes:
+            end = kid.feed(fake_batch, mode='fakes')
+            if end <= 0:
+                break
+
+        kid.summary()
+        assert kid.real_act.shape == (7, 2048)
+
+        # test tero and bgr2rgb
+        config = deepcopy(self.config)
+        config['inception_args'] = dict(type='StyleGAN')
+        config['bgr2rgb'] = True
+
+        kid = KID(**self.config)
+        kid.prepare()
+
+        for real_batch in self.reals:
+            end = kid.feed(real_batch, mode='reals')
+            if end <= 0:
+                break
+
+        for fake_batch in self.fakes:
+            end = kid.feed(fake_batch, mode='fakes')
+            if end <= 0:
+                break
+
+        kid_score = kid.summary()
+        print(kid_score)
+
+    @torch.no_grad()
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
+    def test_kid_cuda(self):
+        kid = KID(**self.config)
+        kid.prepare()
+
+        assert kid.num_fake_need == 10
+        assert kid.num_real_need == -1
+
+        for real_batch in self.reals:
+            end = kid.feed(real_batch.cuda(), mode='reals')
+            if end <= 0:
+                break
+
+        for fake_batch in self.fakes:
+            end = kid.feed(fake_batch.cuda(), mode='fakes')
+            if end <= 0:
+                break
+
+        # test wrong mode
+        with pytest.raises(ValueError):
+            kid.feed(fake_batch, mode='wrong')
+
+        # test result_str
+        kid_str = kid.result_str
+        print(kid_str)
+        # test summary
+        kid_score = kid.summary()
+        print(kid_score)
+
+        # test clear
+        kid.clear()
+        assert kid.fake_feats == []
+        assert kid.num_fake_feeded == 0
+        assert kid.real_act.shape == (10, 2048)
+
+        # test clear_reals
+        kid.clear(clear_reals=True)
+        assert kid.real_feats == []
+        assert kid.real_act is None
+        assert kid.num_real_feeded == 0
+
+        # TODO: test prepare with given inception pkl
+        # download pkl from remote
+
+        # test not use the full dataset
+        config = deepcopy(self.config)
+        config['num_real'] = 7
+
+        kid = KID(**config)
+        for real_batch in self.reals:
+            end = kid.feed(real_batch.cuda(), mode='reals')
+            if end <= 0:
+                break
+        for fake_batch in self.fakes:
+            end = kid.feed(fake_batch.cuda(), mode='fakes')
+            if end <= 0:
+                break
+
+        kid.summary()
+        assert kid.real_act.shape == (7, 2048)
+
+        # test tero and bgr2rgb
+        config = deepcopy(self.config)
+        config['inception_args'] = dict(type='StyleGAN')
+        config['bgr2rgb'] = True
+
+        kid = KID(**self.config)
+        kid.prepare()
+
+        for real_batch in self.reals:
+            end = kid.feed(real_batch.cuda(), mode='reals')
+            if end <= 0:
+                break
+
+        for fake_batch in self.fakes:
+            end = kid.feed(fake_batch.cuda(), mode='fakes')
+            if end <= 0:
+                break
+
+        kid_score = kid.summary()
+        print(kid_score)
