@@ -22,7 +22,7 @@ results pave the way for generative models better suited for video and animation
 
 <!-- [ALGORITHM] -->
 
-<summary align="right"><a href="">StyleGANv3 ()</a></summary>
+<summary align="right"><a href="https://nvlabs-fi-cdn.nvidia.com/stylegan3/stylegan3-paper.pdf">StyleGANv3 (NeurIPS'2021)</a></summary>
 
 ```latex
 @inproceedings{Karras2021,
@@ -38,7 +38,7 @@ results pave the way for generative models better suited for video and animation
 <div align="center">
   <b> Results (compressed) from StyleGAN3 config-T converted by MMGeneration</b>
   <br/>
-  <img src="" width="800"/>
+  <img src="https://user-images.githubusercontent.com/22982797/150450502-c182834f-796f-4397-bd38-df1efe4a8a47.png" width="800"/>
 </div>
 
 |                Model                |     Comment     | FID50k |    EQ-T     | EQ-R     |                                                            Config                                                             |                                                                 Download                                                                 |
@@ -51,7 +51,6 @@ results pave the way for generative models better suited for video and animation
 
 
 ## Interpolation
-
 
 https://user-images.githubusercontent.com/22982797/150354820-638ce279-b548-492f-8a5e-e3faf5170a8a.mp4
 

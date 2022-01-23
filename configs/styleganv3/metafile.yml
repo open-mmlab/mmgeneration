@@ -4,7 +4,7 @@ Collections:
     - StyleGANv3
   Name: StyleGANv3
   Paper:
-  - ''
+  - https://nvlabs-fi-cdn.nvidia.com/stylegan3/stylegan3-paper.pdf
   README: configs/styleganv3/README.md
 Models:
 - Config: configs/styleganv3/stylegan3_t_afhqv2_512_b4x8_official.py
