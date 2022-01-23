@@ -30,8 +30,11 @@ def test_inception_download():
     for inception_args, metric, tar_style in zip(arg_list, metric_list,
                                                  tar_style_list):
         model, style = load_inception(inception_args, metric)
-        assert style == tar_style
-        assert style == tar_style
+
+        if torch.__version__ < '1.6.0':
+            assert style == 'pytorch'
+        else:
+            assert style == tar_style
 
     args_empty = ''
     with pytest.raises(TypeError):
