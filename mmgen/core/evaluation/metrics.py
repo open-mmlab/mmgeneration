@@ -505,15 +505,23 @@ class FID(Metric):
     def prepare(self):
         """Prepare for evaluating models with this metric."""
         # if `inception_pkl` is provided, read mean and cov stat
-        if self.inception_pkl is not None and mmcv.is_filepath(
-                self.inception_pkl):
-            with open(self.inception_pkl, 'rb') as f:
+        if self.inception_pkl is not None:
+            if self.inception_pkl[:4] == 'http':
+                inception_path = download_from_url(self.inception_pkl)
+            elif mmcv.is_filepath(self.inception_pkl):
+                inception_path = self.inception_pkl
+            else:
+                raise FileNotFoundError('Cannot load inception pkl from '
+                                        f'{self.inception_pkl}')
+
+            # load from path
+            with open(inception_path, 'rb') as f:
                 reference = pickle.load(f)
                 self.real_mean = reference['mean']
                 self.real_cov = reference['cov']
-                mmcv.print_log(
-                    f'Load reference inception pkl from {self.inception_pkl}',
-                    'mmgen')
+            mmcv.print_log(
+                f'Load reference inception pkl from {self.inception_pkl}',
+                'mmgen')
             self.num_real_feeded = self.num_images
 
     @torch.no_grad()
