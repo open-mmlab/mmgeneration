@@ -32,6 +32,7 @@ def test_inception_download():
         model, style = load_inception(inception_args, metric)
 
         if torch.__version__ < '1.6.0':
+            print(inception_args, metric, tar_style)
             assert style == 'pytorch'
         else:
             assert style == tar_style
@@ -174,6 +175,34 @@ class TestFID:
 
         fid_score, mean, cov = fid.summary()
         assert fid_score > 0 and mean > 0 and cov > 0
+
+        # test load
+        inception_pkl = osp.expanduser('~/.cache/openmmlab/mmgen/cifar10.pkl')
+        fid = FID(
+            3,
+            inception_args=dict(
+                normalize_input=False, load_fid_inception=False),
+            inception_pkl=inception_pkl)
+        fid.prepare()
+        assert fid.num_real_feeded == 3
+        for b in self.reals:
+            fid.feed(b, 'reals')
+
+        for b in self.fakes:
+            fid.feed(b, 'fakes')
+
+        fid_score, mean, cov = fid.summary()
+        assert fid_score > 0 and mean > 0 and cov > 0
+
+        # test raise load error
+        inception_pkl = 'wrong_path'
+        fid = FID(
+            3,
+            inception_args=dict(
+                normalize_input=False, load_fid_inception=False),
+            inception_pkl=inception_pkl)
+        with pytest.raises(FileNotFoundError):
+            fid.prepare()
 
 
 class TestPR:
