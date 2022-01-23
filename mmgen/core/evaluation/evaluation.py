@@ -90,7 +90,7 @@ def offline_evaluation(model,
         kwargs (dict): Other arguments.
     """
     # eval special and recon metric online only
-    online_metric_name = ['PPL', 'GaussianKLD']
+    online_metric_name = ['PPL', 'GaussianKLD', 'Equivariance']
     for metric in metrics:
         assert metric.name not in online_metric_name, 'Please eval '\
              f'{metric.name} online'
@@ -269,7 +269,7 @@ def online_evaluation(model, data_loader, metrics, logger, basic_table_info,
     special_metrics = []
     recon_metrics = []
     vanilla_metrics = []
-    special_metric_name = ['PPL']
+    special_metric_name = ['PPL', 'Equivariance']
     recon_metric_name = ['GaussianKLD']
     for metric in metrics:
         if ws > 1:
@@ -383,10 +383,10 @@ def online_evaluation(model, data_loader, metrics, logger, basic_table_info,
             f'Sample {metric.num_images} samples for evaluating {metric.name}',
             'mmgen')
         pbar = mmcv.ProgressBar(metric.num_images)
-        for fakes in fakedata_iterator:
-            num_left = metric.feed(fakes, 'fakes')
-            pbar.update(fakes.shape[0])
-            if num_left <= 0:
+        for progress, fakes in fakedata_iterator:
+            num_feed = metric.feed(fakes, 'fakes')
+            pbar.update(progress)
+            if num_feed <= 0:
                 break
 
         # finish the pbar stdout

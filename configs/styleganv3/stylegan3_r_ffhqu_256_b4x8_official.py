@@ -49,10 +49,15 @@ custom_hooks = [
 ]
 
 metrics = dict(
+    eqv=dict(
+        type='Equivariance',
+        num_images=50000,
+        eq_cfg=dict(
+            compute_eqt_int=True, compute_eqt_frac=True, compute_eqr=True)),
     fid50k=dict(
         type='FID',
         num_images=50000,
-        inception_pkl='work_dirs/inception_pkl/afhqv2-512-rgb-pt.pkl',
+        inception_pkl='work_dirs/inception_pkl/afhqv2-512.pkl',
         inception_args=dict(type='StyleGAN'),
         bgr2rgb=True))
 
