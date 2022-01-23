@@ -36,7 +36,8 @@ runner = dict(
     is_dynamic_ddp=False,  # Note that this flag should be False.
     pass_training_status=True)
 
-inception_pkl = './work_dirs/inception_pkl/imagenet_64x64.pkl'
+inception_pkl = ('https://download.openmmlab.com/mmgen/evaluation/'
+                 'fid_inception_pkl/imagenet_64x64.pkl')
 metrics = dict(
     fid50k=dict(
         type='FID',

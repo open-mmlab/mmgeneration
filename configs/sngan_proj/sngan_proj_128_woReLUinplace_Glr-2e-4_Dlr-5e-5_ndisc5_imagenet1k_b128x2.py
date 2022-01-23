@@ -24,7 +24,8 @@ custom_hooks = [
 
 log_config = dict(interval=100, hooks=[dict(type='TextLoggerHook')])
 
-inception_pkl = './work_dirs/inception_pkl/imagenet.pkl'
+inception_pkl = ('https://download.openmmlab.com/mmgen/evaluation/'
+                 'fid_inception_pkl/imagenet.pkl')
 
 evaluation = dict(
     type='GenerativeEvalHook',
