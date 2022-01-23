@@ -118,7 +118,7 @@ def _load_inception_torch(inception_args, metric):
     assert metric in ['FID', 'IS']
     if metric == 'FID':
         inception_model = InceptionV3([3], **inception_args)
-    elif metric == 'IS':
+    else:  # metric == 'IS'
         inception_model = inception_v3(pretrained=True, transform_input=False)
         mmcv.print_log(
             'Load Inception V3 Network from Pytorch Model Zoo '
