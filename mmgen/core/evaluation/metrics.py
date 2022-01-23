@@ -57,6 +57,11 @@ def load_inception(inception_args, metric):
     inceptoin_type = _inception_args.pop('type', None)
 
     if torch.__version__ < '1.6.0':
+        # reset inception_args for FID (Inception for IS do not use
+        # inception_args)
+        if metric == 'FID':
+            _inception_args = dict(normalize_input=False)
+
         mmcv.print_log(
             'Current Pytorch Version not support script module, load '
             'Inception Model from torch model zoo. If you want to use '

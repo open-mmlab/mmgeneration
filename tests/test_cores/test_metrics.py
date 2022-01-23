@@ -40,9 +40,12 @@ def test_inception_download():
     with pytest.raises(TypeError):
         load_inception(args_empty, 'FID')
 
-    args_error_path = dict(type='StyleGAN', inception_path='error-path')
-    with pytest.raises(RuntimeError):
-        load_inception(args_error_path, 'FID')
+    # pt lower than this version cannot load Tero's inception and direct use
+    # torch ones, only test this for pt >= 1.6
+    if torch.__version__ >= '1.6.0':
+        args_error_path = dict(type='StyleGAN', inception_path='error-path')
+        with pytest.raises(RuntimeError):
+            load_inception(args_error_path, 'FID')
 
     with pytest.raises(AssertionError):
         load_inception(dict(type='pytorch', normalize_input=False), 'PPL')
