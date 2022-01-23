@@ -31,7 +31,12 @@ def make_metrics_table(train_cfg, ckpt, eval_info, metrics):
     table.add_column('Checkpoint', [ckpt])
     table.add_column('Eval', [eval_info])
     for metric in metrics:
-        table.add_column(metric.name, [metric.result_str])
+        # distinguish metric such as 'kidx100' and 'kidx1000'
+        if hasattr(metric, 'scale_factor'):
+            metric_name = f'{metric.name}x{metric.scale_factor}'
+        else:
+            metric_name = metric.name
+        table.add_column(metric_name, [metric.result_str])
     return table.get_string()
 
 
@@ -58,24 +63,8 @@ def make_vanilla_dataloader(img_path, batch_size, dist=False):
         samples_per_gpu=batch_size,
         workers_per_gpu=4,
         dist=dist,
-        shuffle=True)
+        shuffle=False)
     return dataloader
-
-
-# def get_required_images(metric, mode=None):
-#     """Get the number of the required images.
-#     Args:
-#         metric (Metric): The current metric.
-#         mode (str, optional): Real or fake nums. Ignored when
-#             ``metric.num_images`` is not None. Defaults to None.
-
-#     Returns:
-#         int: Number of samples.
-#     """
-#     if hasattr(metric, 'num_images'):
-#         return metric.num_images
-#     assert mode in ['real', 'fake']
-#     return getattr(metric, f'num_{mode}_need')
 
 
 @torch.no_grad()
@@ -196,33 +185,47 @@ def offline_evaluation(model,
     for metric in metrics:
         mmcv.print_log(f'Evaluate with {metric.name} metric.', 'mmgen')
         metric.prepare()
+
+        # check whether need the entire dataset
+        need_entire_dataset = metric.num_real_need == -1
+
         if rank == 0:
             # prepare for pbar
-            total_need = (
-                metric.num_real_need + metric.num_fake_need -
-                metric.num_real_feeded - metric.num_fake_feeded)
-            pbar = mmcv.ProgressBar(total_need)
-        # feed in real images
-        for data in data_loader:
-            # key for unconditional GAN
-            if 'real_img' in data:
-                reals = data['real_img']
-            # key for conditional GAN
-            elif 'img' in data:
-                reals = data['img']
+            total_need = (metric.num_fake_need - metric.num_fake_feeded)
+            if need_entire_dataset:
+                # not equals to -1, need feed real data
+                if metric.num_real_feeded != -1:
+                    total_need += (
+                        len(data_loader.dataset) - metric.num_real_feeded)
             else:
-                raise KeyError('Cannot found key for images in data_dict. '
-                               'Only support `real_img` for unconditional '
-                               'datasets and `img` for conditional '
-                               'datasets.')
+                total_need += (metric.num_real_need - metric.num_real_feeded)
 
-            if reals.shape[1] == 1:
-                reals = torch.cat([reals] * 3, dim=1)
-            num_left = metric.feed(reals, 'reals')
-            if num_left <= 0:
-                break
-            if rank == 0:
-                pbar.update(reals.shape[0] * ws)
+            pbar = mmcv.ProgressBar(total_need)
+
+        # judge whether need sample real images
+        if not ((need_entire_dataset and metric.num_real_feeded == -1) or
+                (metric.num_real_need == metric.num_real_feeded)):
+            # feed in real images
+            for data in data_loader:
+                # key for unconditional GAN
+                if 'real_img' in data:
+                    reals = data['real_img']
+                # key for conditional GAN
+                elif 'img' in data:
+                    reals = data['img']
+                else:
+                    raise KeyError('Cannot found key for images in data_dict. '
+                                   'Only support `real_img` for unconditional '
+                                   'datasets and `img` for conditional '
+                                   'datasets.')
+
+                if reals.shape[1] == 1:
+                    reals = torch.cat([reals] * 3, dim=1)
+                num_left = metric.feed(reals, 'reals')
+                if not need_entire_dataset and num_left <= 0:
+                    break
+                if rank == 0:
+                    pbar.update(reals.shape[0] * ws)
         # feed in fake images
         for data in fake_dataloader:
             fakes = data['real_img']

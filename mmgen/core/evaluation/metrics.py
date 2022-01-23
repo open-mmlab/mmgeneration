@@ -402,6 +402,24 @@ class Metric(ABC):
 
         return self._result_str
 
+    def _calculate_end(self, batch_size, is_real):
+        """Calculate the end
+        Args:
+            batch_size (int)
+            is_real (bool)
+
+        Returns:
+            int:
+        """
+        mode = 'real' if is_real else 'fake'
+        fed = getattr(self, f'num_{mode}_feeded')
+        need = getattr(self, f'num_{mode}_need')
+        if need == -1:
+            end = batch_size
+        else:
+            end = min(batch_size, need - fed)
+        return end
+
     def feed(self, batch, mode):
         """Feed a image batch into metric calculator and perform intermediate
         operation in 'feed_op' function.
@@ -421,17 +439,14 @@ class Metric(ABC):
 
             if isinstance(batch, dict):
                 batch_size = [v for v in batch.values()][0].shape[0]
-                end = min(batch_size,
-                          self.num_real_need - self.num_real_feeded)
+                end = self._calculate_end(batch_size, True)
                 batch_to_feed = {k: v[:end, ...] for k, v in batch.items()}
             else:
                 batch_size = batch.shape[0]
-                end = min(batch_size,
-                          self.num_real_need - self.num_real_feeded)
+                end = self._calculate_end(batch_size, True)
                 batch_to_feed = batch[:end, ...]
 
-            global_end = min(batch_size * ws,
-                             self.num_real_need - self.num_real_feeded)
+            global_end = self._calculate_end(batch_size * ws, True)
             self.feed_op(batch_to_feed, mode)
             self.num_real_feeded += global_end
             return end
@@ -441,14 +456,13 @@ class Metric(ABC):
                 return 0
 
             batch_size = batch.shape[0]
-            end = min(batch_size, self.num_fake_need - self.num_fake_feeded)
+            end = self._calculate_end(batch_size, False)
             if isinstance(batch, dict):
                 batch_to_feed = {k: v[:end, ...] for k, v in batch.items()}
             else:
                 batch_to_feed = batch[:end, ...]
 
-            global_end = min(batch_size * ws,
-                             self.num_fake_need - self.num_fake_feeded)
+            global_end = self._calculate_end(batch_size * ws, False)
             self.feed_op(batch_to_feed, mode)
             self.num_fake_feeded += global_end
             return end
@@ -459,7 +473,9 @@ class Metric(ABC):
 
     def check(self):
         """Check the numbers of image."""
-        assert self.num_real_feeded == self.num_real_need
+        # only check num_real_feeded when not use the full dataset
+        if self.num_real_need != -1:
+            assert self.num_real_feeded == self.num_real_need
         assert self.num_fake_feeded == self.num_fake_need
 
     @abstractmethod
@@ -666,11 +682,37 @@ class FID(Metric):
 
 @METRICS.register_module()
 class KID(Metric):
-    """KID (Kernel Inception Distance) metric.
+    r"""KID (Kernel Inception Distance) metric.
 
-    Ref: https://github.com/NVlabs/stylegan2-ada-pytorch/blob/main/metrics/kernel_inception_distance.py#L18  # noqa
+    In this metric, we calculate the squared MMD (maximum mean discrepancy)
+    between Inception representation of real distributions and fake
+    distributions. In our implementation, follow
+    `MMD-GAN <https://github.com/mbinkowski/MMD-GAN/blob/master/gan/compute_scores.py>`
+    and
+    `StyleGAN-Ada<https://github.com/NVlabs/stylegan2-ada-pytorch/blob/main/metrics/kernel_inception_distance.py>`,  # noqa
+    we use the same polynomial kernel as scikit-learn's default ones.
+
+    .. math::
+        k(x, y) = (\frac{1}{d} x^{\intercal}y + 1) ^ 3
+
+    where `d` is the representation dimension.
+
     Args:
-        num_subset ()
+        num_real (int): The number of real images to be used. If ``-1`` is
+            passed, the full dataset will be used.
+        num_fake (int): The number of fake images to be tested.
+        num_subsets (int): The number of subset to be sampled. Defaults to
+            100.
+        max_subset_size (int): The maximum size of each subset. Defaults
+            to 1000.
+        scale_factor (int, optional): Factor to rescale the calculated KID
+            score. The output will be multiplied by ``scale_factor``, this
+            is useful because the value of KID score usually too small.
+            Defaults to 1000.
+        bgr2rgb (bool, optional): If True, reformat the BGR image to RGB
+            format. Defaults to True.
+        inception_args (dict, optional): Keyword args for inception net.
+            Defaults to `dict(normalize_input=False)`.
     """
     name = 'KID'
 
@@ -679,17 +721,18 @@ class KID(Metric):
                  num_fake,
                  num_subsets=100,
                  max_subset_size=1000,
-                 image_shape=None,
+                 scale_factor=1000,
                  inception_pkl=None,
                  bgr2rgb=True,
                  inception_args=dict(normalize_input=False)):
         super().__init__(
-            num_real=num_real, num_fake=num_fake, image_shape=image_shape)
+            num_real=num_real, num_fake=num_fake, image_shape=None)
         self.inception_pkl = inception_pkl
         self.real_act = None
         self.real_feats = []
         self.fake_feats = []
 
+        self.scale_factor = scale_factor
         self.num_subsets = num_subsets
         self.max_subset_size = max_subset_size
 
@@ -720,9 +763,15 @@ class KID(Metric):
                 mmcv.print_log(
                     f'Load reference inception pkl from {self.inception_pkl}',
                     'mmgen')
-            self.num_real_feeded = self.num_images
+            self.num_real_feeded = self.num_real_need
 
     def feed_op(self, batch, mode):
+        """Feed data to the metric.
+
+        Args:
+            batch (Tensor): Input tensor.
+            mode (str): The mode of current data batch. 'reals' or 'fakes'.
+        """
         if self.bgr2rgb:
             batch = batch[:, [2, 1, 0]]
         batch = batch.to(self.device)
@@ -784,21 +833,29 @@ class KID(Metric):
 
     @torch.no_grad()
     def summary(self):
+        """Summarize the results.
+
+        Returns:
+            float: Summarized results.
+        """
+
+        self.check()
         # calculate real feature
         if self.real_act is None:
             act = torch.cat(self.real_feats, dim=0)
             assert act.shape[0] >= self.num_real_need
-            act = act[:self.num_real_need]
+            # slice the real_act if not use the full dataset
+            if self.num_real_need != -1:
+                act = act[:self.num_real_need]
             act_np = act.numpy()
             self.real_act = act_np
 
-        # calculate fake feature
         fake_act = torch.cat(self.fake_feats, dim=0)
         assert fake_act.shape[0] >= self.num_fake_need
         fake_act = fake_act[:self.num_fake_need].numpy()
 
         kid = self._calc_kid(self.real_act, fake_act, self.num_subsets,
-                             self.max_subset_size) * 100
+                             self.max_subset_size) * self.scale_factor
 
         self._result_str = (f'{kid:.4f}')
         self._result_dict = dict(kid=kid)
@@ -898,7 +955,7 @@ class SWD(Metric):
     name = 'SWD'
 
     def __init__(self, num_images, image_shape):
-        super().__init__(num_images, image_shape)
+        super().__init__(num_images, image_shape=image_shape)
 
         self.nhood_size = 7  # height and width of the extracted patches
         self.nhoods_per_image = 128  # number of extracted patches per image
