@@ -1,4 +1,6 @@
-# Pix2Pix: Image-to-Image Translation with Conditional Adversarial Networks
+# Pix2Pix
+
+> [Pix2Pix: Image-to-Image Translation with Conditional Adversarial Networks](https://openaccess.thecvf.com/content_cvpr_2017/html/Isola_Image-To-Image_Translation_With_CVPR_2017_paper.html)
 
 ## Abstract
 
@@ -8,23 +10,6 @@ We investigate conditional adversarial networks as a general-purpose solution to
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143053385-1b03356d-43df-423b-88b2-7a82b73d2edd.JPG"/>
 </div>
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://openaccess.thecvf.com/content_cvpr_2017/html/Isola_Image-To-Image_Translation_With_CVPR_2017_paper.html">Pix2Pix (CVPR'2017)</a></summary>
-
-```latex
-@inproceedings{isola2017image,
-  title={Image-to-image translation with conditional adversarial networks},
-  author={Isola, Phillip and Zhu, Jun-Yan and Zhou, Tinghui and Efros, Alexei A},
-  booktitle={Proceedings of the IEEE conference on computer vision and pattern recognition},
-  pages={1125--1134},
-  year={2017},
-  url={https://openaccess.thecvf.com/content_cvpr_2017/html/Isola_Image-To-Image_Translation_With_CVPR_2017_paper.html},
-}
-```
 
 ## Results and Models
 <div align="center">
@@ -63,3 +48,16 @@ from the usual protocol in that we apply dropout at test time,
 and we apply batch normalization using the statistics of
 the test batch, rather than aggregated statistics of the training batch.*" (i.e., use model.train() mode), thus may lead to slightly different inference results every time.
 2. This is the training log before refactoring. Updated logs will be released soon.
+
+## Citation
+
+```latex
+@inproceedings{isola2017image,
+  title={Image-to-image translation with conditional adversarial networks},
+  author={Isola, Phillip and Zhu, Jun-Yan and Zhou, Tinghui and Efros, Alexei A},
+  booktitle={Proceedings of the IEEE conference on computer vision and pattern recognition},
+  pages={1125--1134},
+  year={2017},
+  url={https://openaccess.thecvf.com/content_cvpr_2017/html/Isola_Image-To-Image_Translation_With_CVPR_2017_paper.html},
+}
+```

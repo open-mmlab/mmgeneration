@@ -1,4 +1,6 @@
-# Improved Denoising Diffusion Probabilistic Models
+# Improved-DDPM
+
+> [Improved Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2102.09672)
 
 ## Abstract
 
@@ -8,21 +10,6 @@ Denoising diffusion probabilistic models (DDPM) are a class of generative models
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/147938745-a5ae5b6f-b0e1-4db6-9768-44c1c6c43755.png"/>
 </div>
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://arxiv.org/abs/2102.09672">Improve-DDPM (arXiv'2021)</a></summary>
-
-```latex
-@article{nichol2021improved,
-  title={Improved denoising diffusion probabilistic models},
-  author={Nichol, Alex and Dhariwal, Prafulla},
-  journal={arXiv preprint arXiv:2102.09672},
-  year={2021}
-}
-```
 
 ## Results and Models
 
@@ -59,4 +46,17 @@ python tools/utils/inception_stat.py --data-cfg configs/_base_/datasets/cifar10_
 
 # For ImageNet1k-64x64
 python tools/utils/inception_stat.py --data-cfg configs/_base_/datasets/imagenet_64x64_inception_stat.py --pklname imagenet_64x64.pkl --no-shuffle --inception-style stylegan --num-samples -1 --subset train
+```
+
+## Citation
+
+<summary align="right"><a href="https://arxiv.org/abs/2102.09672">Improve-DDPM (arXiv'2021)</a></summary>
+
+```latex
+@article{nichol2021improved,
+  title={Improved denoising diffusion probabilistic models},
+  author={Nichol, Alex and Dhariwal, Prafulla},
+  journal={arXiv preprint arXiv:2102.09672},
+  year={2021}
+}
 ```

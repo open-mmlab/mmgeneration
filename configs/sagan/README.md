@@ -1,4 +1,6 @@
-# Self-attention generative adversarial networks
+# SAGAN
+
+> [Self-attention generative adversarial networks](https://proceedings.mlr.press/v97/zhang19d.html)
 
 ## Abstract
 
@@ -9,23 +11,7 @@ In this paper, we propose the Self-Attention Generative Adversarial Network (SAG
 <img src="https://user-images.githubusercontent.com/28132635/143054130-8cc1d9b7-df13-4fdb-8dbf-af4b2c15ed28.JPG"/>
 </div>
 
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://proceedings.mlr.press/v97/zhang19d.html">SAGAN (ICML'2019)</a></summary>
-
-```latex
-@inproceedings{zhang2019self,
-  title={Self-attention generative adversarial networks},
-  author={Zhang, Han and Goodfellow, Ian and Metaxas, Dimitris and Odena, Augustus},
-  booktitle={International conference on machine learning},
-  pages={7354--7363},
-  year={2019},
-  organization={PMLR},
-  url={https://proceedings.mlr.press/v97/zhang19d.html},
-}
-```
+## Results and models
 
 <div align="center">
   <b> Results from our SAGAN trained in CIFAR10</b>
@@ -33,7 +19,6 @@ In this paper, we propose the Self-Attention Generative Adversarial Network (SAG
   <img src="https://user-images.githubusercontent.com/28132635/127619657-67f2e62d-52e4-43d2-931f-6d0e6e019813.png" width="400"/>
 </div>
 
-## Results and models
 
 |                 Models                 | Dataset  | Inplace ReLU | dist_step | Total Batchsize (BZ_PER_GPU \* NGPU) | Total Iters* |  Iter  |   IS    |   FID   |                                                                              Config                                                                              |                                                                            Download                                                                             |                                                                               Log                                                                               |
 |:--------------------------------------:|:--------:|:------------:|:---------:|:------------------------------------:|:------------:|:------:|:-------:|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------:|
@@ -80,4 +65,18 @@ python tools/utils/inception_stat.py --data-cfg configs/_base_/datasets/cifar10_
 
 # For ImageNet1k
 python tools/utils/inception_stat.py --data-cfg configs/_base_/datasets/imagenet_128x128_inception_stat.py --pklname imagenet.pkl --no-shuffle --inception-style stylegan --num-samples -1 --subset train
+```
+
+## Citation
+
+```latex
+@inproceedings{zhang2019self,
+  title={Self-attention generative adversarial networks},
+  author={Zhang, Han and Goodfellow, Ian and Metaxas, Dimitris and Odena, Augustus},
+  booktitle={International conference on machine learning},
+  pages={7354--7363},
+  year={2019},
+  organization={PMLR},
+  url={https://proceedings.mlr.press/v97/zhang19d.html},
+}
 ```
