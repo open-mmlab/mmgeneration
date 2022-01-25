@@ -1,3 +1,3 @@
-from .id_loss import IDLoss
+from .id_loss import IDLossModel
 
-__all__ = ['IDLoss']
+__all__ = ['IDLossModel']
