@@ -12,12 +12,25 @@ ArcFace implementation from [TreB1eN](https://github.com/TreB1eN/InsightFace_Pyt
 
 
 class Flatten(Module):
+    """
+    Flatten Module.
+    """
 
     def forward(self, input):
         return input.view(input.size(0), -1)
 
 
 def l2_norm(input, axis=1):
+    """ l2 normalization.
+
+    Args:
+        input (torch.Tensor): The input tensor.
+        axis (int, optional): Specifies which axis of input to calculate the 
+            norm across. Defaults to 1.
+
+    Returns:
+        Tensor: Tensor after L2 normalization per-instance.
+    """
     norm = torch.norm(input, 2, axis, True)
     output = torch.div(input, norm)
     return output
@@ -28,11 +41,33 @@ class Bottleneck(namedtuple('Block', ['in_channel', 'depth', 'stride'])):
 
 
 def get_block(in_channel, depth, num_units, stride=2):
+    """ Get a single block config.
+
+    Args:
+        in_channel (int): Input channels.
+        depth (int): Output channels.
+        num_units (int): Number of unit modules.
+        stride (int, optional): Conv2d stride. Defaults to 2.
+
+    Returns:
+        list: A list of unit modules' config.
+    """
     return [Bottleneck(in_channel, depth, stride)
             ] + [Bottleneck(depth, depth, 1) for i in range(num_units - 1)]
 
 
 def get_blocks(num_layers):
+    """Get block configs of backbone.
+
+    Args:
+        num_layers (int): Number of ConvBlock layers in backbone.
+
+    Raises:
+        ValueError: `num_layers` must be one of [50, 100, 152].
+
+    Returns:
+        list: A list of block configs.
+    """
     if num_layers == 50:
         blocks = [
             get_block(in_channel=64, depth=64, num_units=3),
@@ -62,6 +97,12 @@ def get_blocks(num_layers):
 
 
 class SEModule(Module):
+    """Squeeze-and-Excitation Modules.
+
+    Args:
+        channels (int): Input channels.
+        reduction (int): Intermediate channels reduction ratio.
+    """
 
     def __init__(self, channels, reduction):
         super(SEModule, self).__init__()
@@ -82,6 +123,7 @@ class SEModule(Module):
         self.sigmoid = Sigmoid()
 
     def forward(self, x):
+        '''Forward Function'''
         module_input = x
         x = self.avg_pool(x)
         x = self.fc1(x)
@@ -92,8 +134,22 @@ class SEModule(Module):
 
 
 class bottleneck_IR(Module):
+    """Intermediate Resblock of bottleneck.
+
+    Args:
+        in_channel (int): Input channels.
+        depth (int): Output channels.
+        stride (int): Conv2d stride.
+    """
 
     def __init__(self, in_channel, depth, stride):
+        """Intermediate Resblock of bottleneck.
+
+        Args:
+            in_channel (int): Input channels.
+            depth (int): Output channels.
+            stride (int): Conv2d stride.
+        """
         super(bottleneck_IR, self).__init__()
         if in_channel == depth:
             self.shortcut_layer = MaxPool2d(1, stride)
@@ -108,12 +164,20 @@ class bottleneck_IR(Module):
             BatchNorm2d(depth))
 
     def forward(self, x):
+        '''Forward function'''
         shortcut = self.shortcut_layer(x)
         res = self.res_layer(x)
         return res + shortcut
 
 
 class bottleneck_IR_SE(Module):
+    """Intermediate Resblock of bottleneck with SEModule.
+
+    Args:
+        in_channel (int): Input channels.
+        depth (int): Output channels.
+        stride (int): Conv2d stride.
+    """
 
     def __init__(self, in_channel, depth, stride):
         super(bottleneck_IR_SE, self).__init__()
@@ -130,6 +194,7 @@ class bottleneck_IR_SE(Module):
             BatchNorm2d(depth), SEModule(depth, 16))
 
     def forward(self, x):
+        '''Forward function'''
         shortcut = self.shortcut_layer(x)
         res = self.res_layer(x)
         return res + shortcut

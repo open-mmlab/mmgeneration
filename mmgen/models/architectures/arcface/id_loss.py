@@ -3,21 +3,26 @@ import torch
 from torch import nn
 
 from .model_irse import Backbone
+from mmgen.models.builder import MODULES
 
 
+@MODULES.register_module('ArcFace')
 class IDLoss(nn.Module):
+    # ir se50 weight download link
+    _ir_se50_url = 'https://gg0ltg.by.files.1drv.com/y4m3fNNszG03z9n8JQ7EhdtQKW8tQVQMFBisPVRgoXi_UfP8pKSSqv8RJNmHy2JampcPmEazo_Mx6NTFSqBpZmhPniROm9uNoghnzaavvYpxkCfiNmDH9YyIF3g-0nwt6bsjk2X80JDdL5z88OAblSDmB-kuQkWSWvA9BM3Xt8DHMCY8lO4HOQCZ5YWUtFyPAVwEyzTGDM-JRA5EJoN2bF1cg'  # noqa
 
-    def __init__(self, opts):
+    def __init__(self, ir_se50_weights=None, device='cuda'):
         super(IDLoss, self).__init__()
         mmcv.print_log('Loading ResNet ArcFace', 'mmgen')
         self.facenet = Backbone(
             input_size=112, num_layers=50, drop_ratio=0.6, mode='ir_se')
-        self.facenet.load_state_dict(torch.load(opts.ir_se50_weights))
+        if ir_se50_weights is None:
+            ir_se50_weights = self._ir_se50_url
+        self.facenet.load_state_dict(
+            torch.hub.load_state_dict_from_url(ir_se50_weights))
         self.pool = torch.nn.AdaptiveAvgPool2d((256, 256))
         self.face_pool = torch.nn.AdaptiveAvgPool2d((112, 112))
-        self.facenet.eval()
-        self.facenet.cuda()
-        self.opts = opts
+        self.facenet = self.facenet.eval().to(device)
 
     def extract_feats(self, x):
         if x.shape[2] != 256:
@@ -27,10 +32,11 @@ class IDLoss(nn.Module):
         x_feats = self.facenet(x)
         return x_feats
 
-    def forward(self, y_hat, y):
-        n_samples = y.shape[0]
-        y_feats = self.extract_feats(y)  # Otherwise use the feature from there
-        y_hat_feats = self.extract_feats(y_hat)
+    def forward(self, pred=None, gt=None):
+        n_samples = gt.shape[0]
+        y_feats = self.extract_feats(
+            gt)  # Otherwise use the feature from there
+        y_hat_feats = self.extract_feats(pred)
         y_feats = y_feats.detach()
         loss = 0
         sim_improvement = 0
