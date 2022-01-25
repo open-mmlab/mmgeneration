@@ -1,3 +1,4 @@
+git+https://github.com/openai/CLIP.git
 mmcls==0.18.0
 numpy
 prettytable
@@ -5,4 +6,3 @@ scikit-image
 scipy
 tqdm
 yapf
-git+https://github.com/openai/CLIP.git
