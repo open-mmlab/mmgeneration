@@ -3,9 +3,10 @@ from copy import deepcopy
 import pytest
 import torch
 
+from mmgen.models.architectures import IDLossModel
 # yapf:disable
 from mmgen.models.architectures.arcface.model_irse import Backbone
-from mmgen.models.architectures import IDLossModel
+
 # yapf:enable
 
 
