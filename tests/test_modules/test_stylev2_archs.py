@@ -177,9 +177,15 @@ class TestStyleGAN2Generator:
         res = g(None, num_batches=2)
         assert res.shape == (2, 3, 256, 256)
 
-        # set mix_prob as 1.0 to force cover lines
+        # set mix_prob as 1.0 and 0 to force cover lines
         cfg_ = deepcopy(self.default_cfg)
         cfg_['mix_prob'] = 1
+        g = StyleGANv2Generator(**cfg_)
+        res = g(None, num_batches=2)
+        assert res.shape == (2, 3, 64, 64)
+
+        cfg_ = deepcopy(self.default_cfg)
+        cfg_['mix_prob'] = 0
         g = StyleGANv2Generator(**cfg_)
         res = g(None, num_batches=2)
         assert res.shape == (2, 3, 64, 64)
