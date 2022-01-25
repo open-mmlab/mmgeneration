@@ -1,5 +1,22 @@
 <div align="center">
     <img src="https://user-images.githubusercontent.com/12726765/114528756-de55af80-9c7b-11eb-94d7-d3224ada1585.png" width="400"/>
+      <div>&nbsp;</div>
+   <div align="center">
+     <b><font size="5">OpenMMLab website</font></b>
+     <sup>
+       <a href="https://openmmlab.com">
+         <i><font size="4">HOT</font></i>
+       </a>
+     </sup>
+     &nbsp;&nbsp;&nbsp;&nbsp;
+     <b><font size="5">OpenMMLab platform</font></b>
+     <sup>
+       <a href="https://platform.openmmlab.com">
+         <i><font size="4">TRY IT OUT</font></i>
+       </a>
+     </sup>
+   </div>
+   <div>&nbsp;</div>
 </div>
 
 Documentation: https://mmgeneration.readthedocs.io/
@@ -61,7 +78,7 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 * Mixed-precision training (FP16) for StyleGAN2 has been supported. Please check [the comparison](configs/styleganv2/README.md) between different implementations.
 ## Changelog
 
-v0.4.0 was released on 03/11/2021. Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
+v0.5.0 was released on 12/01/2022. Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
 
 ## ModelZoo
 
@@ -74,7 +91,7 @@ These methods have been carefully studied and supported in our frameworks:
 - ✅ [DCGAN](configs/dcgan/README.md) (ICLR'2016)
 - ✅ [WGAN-GP](configs/wgan-gp/README.md) (NIPS'2017)
 - ✅ [LSGAN](configs/lsgan/README.md) (ICCV'2017)
-- ✅ [GGAN](configs/ggan/README.md) (Axiv'2017)
+- ✅ [GGAN](configs/ggan/README.md) (arXiv'2017)
 - ✅ [PGGAN](configs/pggan/README.md) (ICLR'2018)
 - ✅ [StyleGANV1](configs/styleganv1/README.md) (CVPR'2019)
 - ✅ [StyleGANV2](configs/styleganv2/README.md) (CVPR'2020)
@@ -107,6 +124,13 @@ These methods have been carefully studied and supported in our frameworks:
 
 </details>
 
+<details open>
+<summary>Denoising Diffusion Probabilistic Models (click to collapse)</summary>
+
+- ✅ [Improved DDPM](configs/improved_ddpm/README.md) (arXiv'2021)
+
+</details>
+
 ## Related-Applications
 - ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
@@ -116,7 +140,7 @@ This project is released under the [Apache 2.0 license](LICENSE). Some operation
 
 ## Installation
 
-Please refer to [get_started.md](docs/get_started.md) for installation.
+Please refer to [get_started.md](docs/en/get_started.md) for installation.
 
 ## Getting Started
 
@@ -156,3 +180,6 @@ If you find this project useful in your research, please consider cite:
 - [MMFlow](https://github.com/open-mmlab/mmflow): OpenMMLab optical flow toolbox and benchmark.
 - [MMFewShot](https://github.com/open-mmlab/mmfewshot): OpenMMLab FewShot Learning Toolbox and Benchmark.
 - [MMHuman3D](https://github.com/open-mmlab/mmhuman3d): OpenMMLab Human Pose and Shape Estimation Toolbox and Benchmark.
+- [MMSelfSup](https://github.com/open-mmlab/mmselfsup): OpenMMLab self-supervised learning toolbox and benchmark.
+- [MMRazor](https://github.com/open-mmlab/mmrazor): OpenMMLab Model Compression Toolbox and Benchmark.
+- [MMDeploy](https://github.com/open-mmlab/mmdeploy): OpenMMLab Model Deployment Framework.

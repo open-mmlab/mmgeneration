@@ -1,4 +1,6 @@
-# Spectral Normalization for Generative Adversarial Networks
+# SNGAN
+
+> [Spectral Normalization for Generative Adversarial Networks](https://openreview.net/forum?id=B1QRgziT-)
 
 ## Abstract
 
@@ -9,22 +11,6 @@ One of the challenges in the study of generative adversarial networks is the ins
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143154496-6a03def4-4507-4d80-a948-89a5b747d916.png"/>
 </div>
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://openreview.net/forum?id=B1QRgziT-">SNGAN (ICLR'2018)</a></summary>
-
-```latex
-@inproceedings{miyato2018spectral,
-  title={Spectral Normalization for Generative Adversarial Networks},
-  author={Miyato, Takeru and Kataoka, Toshiki and Koyama, Masanori and Yoshida, Yuichi},
-  booktitle={International Conference on Learning Representations},
-  year={2018},
-  url={https://openreview.net/forum?id=B1QRgziT-},
-}
-```
 
 ## Results and models
 
@@ -68,7 +54,7 @@ For IS metric, our implementation is different from PyTorch-Studio GAN in the fo
 1. We use [Tero's Inception](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt) for feature extraction.
 2. We use bicubic interpolation with PIL backend to resize image before feed them to Inception.
 
-For FID evaluation, differences between PyTorch Studio GAN and ours are mainly on the selection of real samples. In MMGen, we follow the pipeline of BigGAN, where the whole training set is adopted to extract inception statistics. Besides, we also use [Tero's Inception](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt) for feature extraction.
+For FID evaluation, we follow the pipeline of [BigGAN](https://github.com/ajbrock/BigGAN-PyTorch/blob/98459431a5d618d644d54cd1e9fceb1e5045648d/calculate_inception_moments.py#L52), where the whole training set is adopted to extract inception statistics, and Pytorch Studio GAN uses 50000 randomly selected samples. Besides, we also use [Tero's Inception](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt) for feature extraction.
 
 You can download the preprocessed inception state by the following url: [CIFAR10](https://download.openmmlab.com/mmgen/evaluation/fid_inception_pkl/cifar10.pkl) and [ImageNet1k](https://download.openmmlab.com/mmgen/evaluation/fid_inception_pkl/imagenet.pkl).
 
@@ -79,4 +65,16 @@ python tools/utils/inception_stat.py --data-cfg configs/_base_/datasets/cifar10_
 
 # For ImageNet1k
 python tools/utils/inception_stat.py --data-cfg configs/_base_/datasets/imagenet_128x128_inception_stat.py --pklname imagenet.pkl --no-shuffle --inception-style stylegan --num-samples -1 --subset train
+```
+
+## Citation
+
+```latex
+@inproceedings{miyato2018spectral,
+  title={Spectral Normalization for Generative Adversarial Networks},
+  author={Miyato, Takeru and Kataoka, Toshiki and Koyama, Masanori and Yoshida, Yuichi},
+  booktitle={International Conference on Learning Representations},
+  year={2018},
+  url={https://openreview.net/forum?id=B1QRgziT-},
+}
 ```

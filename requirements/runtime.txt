@@ -1,4 +1,4 @@
-mmcls==0.10.0
+mmcls==0.18.0
 numpy
 prettytable
 scikit-image

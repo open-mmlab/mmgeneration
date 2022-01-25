@@ -1,4 +1,6 @@
-# Analyzing and Improving the Image Quality of Stylegan (CVPR'2020)
+# StyleGANv2
+
+> [Analyzing and Improving the Image Quality of Stylegan](https://openaccess.thecvf.com/content_CVPR_2020/html/Karras_Analyzing_and_Improving_the_Image_Quality_of_StyleGAN_CVPR_2020_paper.html)
 
 ## Abstract
 
@@ -8,23 +10,6 @@ The style-based GAN architecture (StyleGAN) yields state-of-the-art results in d
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143055738-58b15493-ab87-436d-94fd-c4c19e4a0225.JPG"/>
 </div>
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://openaccess.thecvf.com/content_CVPR_2020/html/Karras_Analyzing_and_Improving_the_Image_Quality_of_StyleGAN_CVPR_2020_paper.html">StyleGANv2 (CVPR'2020)</a></summary>
-
-```latex
-@inproceedings{karras2020analyzing,
-  title={Analyzing and improving the image quality of stylegan},
-  author={Karras, Tero and Laine, Samuli and Aittala, Miika and Hellsten, Janne and Lehtinen, Jaakko and Aila, Timo},
-  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
-  pages={8110--8119},
-  year={2020},
-  url={https://openaccess.thecvf.com/content_CVPR_2020/html/Karras_Analyzing_and_Improving_the_Image_Quality_of_StyleGAN_CVPR_2020_paper.html},
-}
-```
 
 ## Results and Models
 
@@ -109,3 +94,16 @@ More precalculated inception pickle files are listed here:
 | stylegan2_config-f_ffhq_1024 (official weight) | use PyTorch's VGG16, P&R50k_full |  67.662   | 55.460 |
 
 As shown in this table, `P&R50k_full` is the metric used in StyleGANv1 and StyleGANv2. `full` indicates that we use the whole dataset for extracting the real distribution, e.g., 70000 images in FFHQ dataset. However, adopting the VGG16 provided from [Tero](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/vgg16.pt) requires that your PyTorch version must fulfill `>=1.6.0`. Be careful about using the PyTorch's VGG16 to extract features, which will cause higher precision and recall.
+
+## Citation
+
+```latex
+@inproceedings{karras2020analyzing,
+  title={Analyzing and improving the image quality of stylegan},
+  author={Karras, Tero and Laine, Samuli and Aittala, Miika and Hellsten, Janne and Lehtinen, Jaakko and Aila, Timo},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={8110--8119},
+  year={2020},
+  url={https://openaccess.thecvf.com/content_CVPR_2020/html/Karras_Analyzing_and_Improving_the_Image_Quality_of_StyleGAN_CVPR_2020_paper.html},
+}
+```

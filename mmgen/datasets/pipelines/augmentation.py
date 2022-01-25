@@ -149,23 +149,32 @@ class Resize:
         self.interpolation = interpolation
         self.backend = backend
 
-    def _resize(self, img):
+    def _resize(self, img, scale):
+        """Resize given image with corresponding scale.
+        Args:
+            img (np.array): Image to be resized.
+            scale (float | Tuple[int]): Scale used in resize process.
+
+        Returns:
+            tuple: Tuple contains resized image and scale factor in resize
+                process.
+        """
         if self.keep_ratio:
-            img, self.scale_factor = mmcv.imrescale(
+            img, scale_factor = mmcv.imrescale(
                 img,
-                self.scale,
+                scale,
                 return_scale=True,
                 interpolation=self.interpolation,
                 backend=self.backend)
         else:
             img, w_scale, h_scale = mmcv.imresize(
                 img,
-                self.scale,
+                scale,
                 return_scale=True,
                 interpolation=self.interpolation,
                 backend=self.backend)
-            self.scale_factor = np.array((w_scale, h_scale), dtype=np.float32)
-        return img
+            scale_factor = np.array((w_scale, h_scale), dtype=np.float32)
+        return img, scale_factor
 
     def __call__(self, results):
         """Call function.
@@ -186,13 +195,25 @@ class Resize:
                             new_h)
                 new_w = min(self.max_size - (self.max_size % self.size_factor),
                             new_w)
-            self.scale = (new_w, new_h)
+            scale = (new_w, new_h)
+        elif isinstance(self.scale, tuple) and (np.inf in self.scale):
+            # find inf in self.scale, calculate ``scale`` manually
+            h, w = results[self.keys[0]].shape[:2]
+            if h < w:
+                scale = (int(self.scale[-1] / h * w), self.scale[-1])
+            else:
+                scale = (self.scale[-1], int(self.scale[-1] / w * h))
+        else:
+            # direct use the given ones
+            scale = self.scale
+
+        # here we assume all images in self.keys have the same input size
         for key in self.keys:
-            results[key] = self._resize(results[key])
+            results[key], scale_factor = self._resize(results[key], scale)
             if len(results[key].shape) == 2:
                 results[key] = np.expand_dims(results[key], axis=2)
 
-        results['scale_factor'] = self.scale_factor
+        results['scale_factor'] = scale_factor
         results['keep_ratio'] = self.keep_ratio
         results['interpolation'] = self.interpolation
 

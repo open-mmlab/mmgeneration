@@ -17,6 +17,7 @@
 ## v0.2.0 (30/05/2021)
 
 #### Highlights
+
 - Support new methods: LSGAN, GGAN.
 - Support mixed-precision training (FP16): official PyTorch Implementation and APEX (#11, #20)
 
@@ -37,6 +38,7 @@
 ## v0.3.0 (02/08/2021)
 
 #### Highlights
+
 - Support conditional GANs: Projection GAN, SNGAN, SAGAN, and BigGAN
 
 #### New Features
@@ -54,6 +56,7 @@
 ## v0.4.0 (03/11/2021)
 
 #### Highlights
+
 - Add more experiments for conditional GANs: SNGAN, SAGAN, and BigGAN
 - Refact Translation Model (#88, #126, #127, #145)
 
@@ -67,3 +70,25 @@
 - Add CI for python3.9 #110
 - Add support for PyTorch1.9 #115
 - Add pre-commit hook for spell checking #135
+
+
+## v0.5.0 (12/01/2022)
+
+#### Highlights
+
+- Support BigGAN style's Spectral Norm and update BigGAN with best FID and IS (#159)
+- Support import projected latent and export video in interpolation (#167)
+- Support Improved-DDPM model (#205)
+- One face editing application build upon MMGen is released
+
+#### New Features
+
+- Support evaluation in distributed mode (#151)
+- Support `presistent_work` in validation dataloader (#179)
+- Support dockerfile (#200)
+- Support `mim` (#176)
+
+#### Fix bugs and Improvements
+
+- Fix bug in SinGAN dataset (#192)
+- Fix SAGAN, SNGAN and BigGAN's default `sn_style` (#199, #213)
