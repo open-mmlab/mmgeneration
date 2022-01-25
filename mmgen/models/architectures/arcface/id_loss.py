@@ -2,8 +2,8 @@ import mmcv
 import torch
 from torch import nn
 
-from .model_irse import Backbone
 from mmgen.models.builder import MODULES
+from .model_irse import Backbone
 
 
 @MODULES.register_module('ArcFace')

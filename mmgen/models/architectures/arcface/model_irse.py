@@ -13,14 +13,14 @@ Modified Backbone implementation from [TreB1eN](https://github.com/TreB1eN/Insig
 
 class Backbone(Module):
     ''' Arcface backbone.
-    There are many repos follow this codes for facial recognition, and we also 
+    There are many repos follow this codes for facial recognition, and we also
     follow this routine.
     Ref: https://github.com/orpatashnik/StyleCLIP/blob/main/models/facial_recognition/helpers.py # noqa
-    
+
     Args:
         input_size (int): Input size of image.
         num_layers (int): Number of layer in backbone.
-        mode (str, optional): Bottle neck mode. If set to 'ir_se', then 
+        mode (str, optional): Bottle neck mode. If set to 'ir_se', then
             semodule will be applied. Defaults to 'ir'.
         drop_ratio (float, optional): Drop out ratio. Defaults to 0.4.
         affine (bool, optional): Whether use affine in BatchNorm1d.
@@ -64,7 +64,7 @@ class Backbone(Module):
         self.body = Sequential(*modules)
 
     def forward(self, x):
-        '''Forward function'''
+        """Forward function."""
         x = self.input_layer(x)
         x = self.body(x)
         x = self.output_layer(x)

@@ -12,20 +12,18 @@ ArcFace implementation from [TreB1eN](https://github.com/TreB1eN/InsightFace_Pyt
 
 
 class Flatten(Module):
-    """
-    Flatten Module.
-    """
+    """Flatten Module."""
 
     def forward(self, input):
         return input.view(input.size(0), -1)
 
 
 def l2_norm(input, axis=1):
-    """ l2 normalization.
+    """l2 normalization.
 
     Args:
         input (torch.Tensor): The input tensor.
-        axis (int, optional): Specifies which axis of input to calculate the 
+        axis (int, optional): Specifies which axis of input to calculate the
             norm across. Defaults to 1.
 
     Returns:
@@ -41,7 +39,7 @@ class Bottleneck(namedtuple('Block', ['in_channel', 'depth', 'stride'])):
 
 
 def get_block(in_channel, depth, num_units, stride=2):
-    """ Get a single block config.
+    """Get a single block config.
 
     Args:
         in_channel (int): Input channels.
@@ -123,7 +121,7 @@ class SEModule(Module):
         self.sigmoid = Sigmoid()
 
     def forward(self, x):
-        '''Forward Function'''
+        """Forward Function."""
         module_input = x
         x = self.avg_pool(x)
         x = self.fc1(x)
@@ -164,7 +162,7 @@ class bottleneck_IR(Module):
             BatchNorm2d(depth))
 
     def forward(self, x):
-        '''Forward function'''
+        """Forward function."""
         shortcut = self.shortcut_layer(x)
         res = self.res_layer(x)
         return res + shortcut
@@ -194,7 +192,7 @@ class bottleneck_IR_SE(Module):
             BatchNorm2d(depth), SEModule(depth, 16))
 
     def forward(self, x):
-        '''Forward function'''
+        """Forward function."""
         shortcut = self.shortcut_layer(x)
         res = self.res_layer(x)
         return res + shortcut
