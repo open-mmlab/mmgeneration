@@ -5,3 +5,4 @@ scikit-image
 scipy
 tqdm
 yapf
+git+https://github.com/openai/CLIP.git
