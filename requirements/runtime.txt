@@ -1,4 +1,4 @@
-git+https://github.com/openai/CLIP.git
+-e git+https://github.com/openai/CLIP.git
 mmcls==0.18.0
 numpy
 prettytable
