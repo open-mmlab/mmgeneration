@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import clip
 import numpy as np
 import torch
 import torch.autograd as autograd
@@ -414,6 +413,10 @@ class CLIPLossModel(torch.nn.Module):
                  clip_type='ViT-B/32',
                  device='cuda'):
         super(CLIPLossModel, self).__init__()
+        try:
+            import clip
+        except ImportError:
+            raise "To use clip loss, openai clip need to be installed first"
         self.model, self.preprocess = clip.load(clip_type, device=device)
         self.upsample = torch.nn.Upsample(scale_factor=scale_factor)
         self.avg_pool = torch.nn.AvgPool2d(
