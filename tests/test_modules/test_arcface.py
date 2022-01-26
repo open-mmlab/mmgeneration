@@ -67,13 +67,6 @@ class TestArcFace:
         y = model(x)
         assert y.shape == (2, 512)
 
-        # test loss model
-        id_loss_model = IDLossModel(device='cpu')
-        x1 = torch.randn((2, 3, 224, 224))
-        x2 = torch.randn((2, 3, 224, 224))
-        y, _ = id_loss_model(pred=x1, gt=x2)
-        assert y >= 0
-
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_arcface_cuda(self):
         model = Backbone(**self.default_cfg).cuda()
