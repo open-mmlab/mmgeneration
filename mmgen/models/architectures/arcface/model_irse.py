@@ -21,7 +21,7 @@ class Backbone(Module):
         input_size (int): Input size of image.
         num_layers (int): Number of layer in backbone.
         mode (str, optional): Bottle neck mode. If set to 'ir_se', then
-            semodule will be applied. Defaults to 'ir'.
+            SEModule will be applied. Defaults to 'ir'.
         drop_ratio (float, optional): Drop out ratio. Defaults to 0.4.
         affine (bool, optional): Whether use affine in BatchNorm1d.
             Defaults to True.
