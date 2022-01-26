@@ -198,6 +198,21 @@ bash tools/slurm_train.sh openmmlab-platform stylegan2-1024 \
 
 During training, log files and checkpoints will be saved to the working directory. At the beginning of our development, we evaluate our model after the training finishes. However, the evaluation hook has been already supported to evaluate our models in the training procedure. More details can be found in our tutorial for running time configuration.
 
+## Training on CPU
+
+The process of training on the CPU is consistent with single GPU training. We just need to disable GPUs before the training process.
+
+```shell
+export CUDA_VISIBLE_DEVICES=-1
+```
+
+And then run this script.
+```shell
+python tools/train.py config --work-dir WORK_DIR
+```
+**Note**:
+
+We do not recommend users to use CPU for training because it is too slow. We support this feature to allow users to debug on machines without GPU for convenience. Also you cannot train Dynamic GANs on CPU. For more details, please refer to [ddp training](docs/en/tutorials/ddp_train_gans.md).
 
 # 4: Test existing models
 
