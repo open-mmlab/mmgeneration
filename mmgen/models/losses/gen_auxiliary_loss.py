@@ -416,7 +416,7 @@ class CLIPLossModel(torch.nn.Module):
         try:
             import clip
         except ImportError:
-            raise "To use clip loss, openai clip need to be installed first"
+            raise 'To use clip loss, openai clip need to be installed first'
         self.model, self.preprocess = clip.load(clip_type, device=device)
         self.upsample = torch.nn.Upsample(scale_factor=scale_factor)
         self.avg_pool = torch.nn.AvgPool2d(
