@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from .arcface import IDLossModel
 from .biggan import (BigGANDeepDiscriminator, BigGANDeepGenerator,
                      BigGANDiscriminator, BigGANGenerator, SNConvModule)
 from .cyclegan import ResnetGenerator
@@ -37,5 +38,5 @@ __all__ = [
     'LSGANDiscriminator', 'LSGANGenerator', 'ProjDiscriminator',
     'SNGANGenerator', 'BigGANGenerator', 'SNConvModule', 'BigGANDiscriminator',
     'BigGANDeepGenerator', 'BigGANDeepDiscriminator', 'DenoisingUnet',
-    'StyleGANv3Generator'
+    'StyleGANv3Generator', 'IDLossModel'
 ]

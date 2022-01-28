@@ -1,4 +1,6 @@
-# Spectral Normalization for Generative Adversarial Networks
+# SNGAN
+
+> [Spectral Normalization for Generative Adversarial Networks](https://openreview.net/forum?id=B1QRgziT-)
 
 ## Abstract
 
@@ -9,22 +11,6 @@ One of the challenges in the study of generative adversarial networks is the ins
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143154496-6a03def4-4507-4d80-a948-89a5b747d916.png"/>
 </div>
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://openreview.net/forum?id=B1QRgziT-">SNGAN (ICLR'2018)</a></summary>
-
-```latex
-@inproceedings{miyato2018spectral,
-  title={Spectral Normalization for Generative Adversarial Networks},
-  author={Miyato, Takeru and Kataoka, Toshiki and Koyama, Masanori and Yoshida, Yuichi},
-  booktitle={International Conference on Learning Representations},
-  year={2018},
-  url={https://openreview.net/forum?id=B1QRgziT-},
-}
-```
 
 ## Results and models
 
@@ -79,4 +65,16 @@ python tools/utils/inception_stat.py --data-cfg configs/_base_/datasets/cifar10_
 
 # For ImageNet1k
 python tools/utils/inception_stat.py --data-cfg configs/_base_/datasets/imagenet_128x128_inception_stat.py --pklname imagenet.pkl --no-shuffle --inception-style stylegan --num-samples -1 --subset train
+```
+
+## Citation
+
+```latex
+@inproceedings{miyato2018spectral,
+  title={Spectral Normalization for Generative Adversarial Networks},
+  author={Miyato, Takeru and Kataoka, Toshiki and Koyama, Masanori and Yoshida, Yuichi},
+  booktitle={International Conference on Learning Representations},
+  year={2018},
+  url={https://openreview.net/forum?id=B1QRgziT-},
+}
 ```
