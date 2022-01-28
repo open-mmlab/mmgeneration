@@ -6,7 +6,8 @@ _base_ = [
 #
 # --cfg=stylegan3-r --gpus=8 --batch=64 --gamma=1 --mirror=1 --aug=noaug
 # --cbase=16384 --dlr=0.0025
-synthesis_kwargs = {
+synthesis_cfg = {
+    'type': 'SynthesisNetwork',
     'channel_base': 32768,
     'channel_max': 1024,
     'magnitude_ema_beta': 0.9997227795604651,
@@ -16,7 +17,10 @@ synthesis_kwargs = {
 model = dict(
     type='StaticUnconditionalGAN',
     generator=dict(
-        out_size=256, img_channels=3, rgb2bgr=True, **synthesis_kwargs),
+        out_size=256,
+        img_channels=3,
+        rgb2bgr=True,
+        synthesis_cfg=synthesis_cfg),
     discriminator=dict(in_size=256, channel_multiplier=1),
     gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'),
     disc_auxiliary_loss=[

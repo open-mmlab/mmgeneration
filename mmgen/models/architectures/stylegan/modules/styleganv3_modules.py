@@ -1,16 +1,35 @@
 import numpy as np
 import scipy
 import torch
+import torch.nn as nn
 
+from mmgen.models.builder import MODULES
 from mmgen.ops import filtered_lrelu
 from .styleganv2_modules import EqualLinearActModule, ModulatedConv2d
 
 
-class MappingNetwork(torch.nn.Module):
+@MODULES.register_module()
+class MappingNetwork(nn.Module):
+    """Style mapping network used in StyleGAN3. The main difference between it
+    and styleganv1,v2 is that average w is registered as a buffer and dynamic
+    updated during training.
+
+    Args:
+        noise_size (int, optional): Size of the input noise vector.
+        c_dim (int, optional): Size of the input noise vector.
+        style_channels (int): The number of channels for style code.
+        num_ws (int): The repeat times of w latent.
+        num_layers (int, optional): The number of layers of mapping network.
+            Defaults to 2.
+        lr_multiplier (float, optional): Equalized learning rate.
+            Defaults to 0.01.
+        w_avg_beta (float, optional): The value used for update `w_avg`.
+            Defaults to 0.998.
+    """
 
     def __init__(
         self,
-        z_dim,
+        noise_size,
         c_dim,
         style_channels,
         num_ws,
@@ -19,7 +38,7 @@ class MappingNetwork(torch.nn.Module):
         w_avg_beta=0.998,
     ):
         super().__init__()
-        self.z_dim = z_dim
+        self.noise_size = noise_size
         self.c_dim = c_dim
         self.style_channels = style_channels
         self.num_ws = num_ws
@@ -31,7 +50,7 @@ class MappingNetwork(torch.nn.Module):
         self.embed = EqualLinearActModule(
             self.c_dim, self.style_channels) if self.c_dim > 0 else None
         features = [
-            self.z_dim + (self.style_channels if self.c_dim > 0 else 0)
+            self.noise_size + (self.style_channels if self.c_dim > 0 else 0)
         ] + [self.style_channels] * self.num_layers
         for idx, in_features, out_features in zip(
                 range(num_layers), features[:-1], features[1:]):
@@ -46,13 +65,27 @@ class MappingNetwork(torch.nn.Module):
     def forward(self,
                 z,
                 c=None,
-                truncation_psi=1,
-                truncation_cutoff=None,
-                truncation_latent=None,
+                truncation=1,
+                num_truncation_layer=None,
                 update_emas=False):
+        """Style mapping function.
 
-        if truncation_cutoff is None:
-            truncation_cutoff = self.num_ws
+        Args:
+            z (torch.Tensor): Input noise tensor.
+            c (torch.Tensor, optional): Input label tensor. Defaults to None.
+            truncation (float, optional): Truncation factor. Give value less
+                than 1., the truncation trick will be adopted. Defaults to 1.
+            num_truncation_layer (int, optional): Number of layers use
+                truncated latent. Defaults to None.
+            update_emas (bool, optional): Whether update moving average of
+                average w. Defaults to False.
+
+        Returns:
+            torch.Tensor: W-plus latent.
+        """
+
+        if num_truncation_layer is None:
+            num_truncation_layer = self.num_ws
 
         # Embed, normalize, and concatenate inputs.
         x = z.to(torch.float32)
@@ -73,13 +106,22 @@ class MappingNetwork(torch.nn.Module):
 
         # Broadcast and apply truncation.
         x = x.unsqueeze(1).repeat([1, self.num_ws, 1])
-        if truncation_psi != 1:
-            x[:, :truncation_cutoff] = self.w_avg.lerp(
-                x[:, :truncation_cutoff], truncation_psi)
+        if truncation != 1:
+            x[:, :num_truncation_layer] = self.w_avg.lerp(
+                x[:, :num_truncation_layer], truncation)
         return x
 
 
-class SynthesisInput(torch.nn.Module):
+class SynthesisInput(nn.Module):
+    """Module which generate input for synthesis layer.
+
+    Args:
+        style_channels (int): The number of channels for style code.
+        channels (int): The number of output channel.
+        size (int): The size of sampling grid.
+        sampling_rate (int): Sampling rate for construct sampling grid.
+        bandwidth (float): Bandwidth of random frequencies.
+    """
 
     def __init__(self, style_channels, channels, size, sampling_rate,
                  bandwidth):
@@ -108,6 +150,7 @@ class SynthesisInput(torch.nn.Module):
         self.register_buffer('phases', phases)
 
     def forward(self, w):
+        """Forward function."""
         # Introduce batch dimension.
         transforms = self.transform.unsqueeze(0)  # [batch, row, col]
         freqs = self.freqs.unsqueeze(0)  # [batch, channel, xy]
@@ -169,14 +212,48 @@ class SynthesisInput(torch.nn.Module):
         return x
 
 
-class SynthesisLayer(torch.nn.Module):
+class SynthesisLayer(nn.Module):
+    """Layer of Synthesis network for stylegan3.
+
+    Args:
+        style_channels (int): The number of channels for style code.
+        is_torgb (bool): Whether output of this layer is transformed to
+            rgb image.
+        is_critically_sampled (bool): []
+        fp16_enabled (bool, optional): Whether to use fp16 training in this
+            module. If this flag is `True`, the whole module will be wrapped
+            with ``auto_fp16``. Defaults to False.
+        in_channels (int): The channel number of the input feature map.
+        out_channels (int): The channel number of the output feature map.
+        in_size (int): The input size of feature map.
+        out_size (int): The output size of feature map.
+        in_sampling_rate (int): Sampling rate for upsampling filter.
+        out_sampling_rate (int): Sampling rate for downsampling filter.
+        in_cutoff (float): Cutoff frequency for upsampling filter.
+        out_cutoff (float): Cutoff frequency for downsampling filter.
+        in_half_width (float): The approximate width of the transition region
+            for upsampling filter.
+        out_half_width (float): The approximate width of the transition region
+            for downsampling filter.
+        conv_kernel (int, optional): The kernel of modulated convolution.
+            Defaults to 3.
+        filter_size (int, optional): Base filter size. Defaults to 6.
+        lrelu_upsampling (int, optional): Upsamling rate for `filtered_lrelu`.
+            Defaults to 2.
+        use_radial_filters (bool, optional): Whether use radially symmetric
+            jinc-based filter in downsamping filter. Defaults to False.
+        conv_clamp (int, optional): Clamp bound for convolution.
+            Defaults to 256.
+        magnitude_ema_beta (float, optional): Beta coefficient for calculating
+            input magnitude ema. Defaults to 0.999.
+    """
 
     def __init__(
         self,
         style_channels,
         is_torgb,
         is_critically_sampled,
-        use_fp16,
+        fp16_enabled,
         in_channels,
         out_channels,
         in_size,
@@ -198,7 +275,7 @@ class SynthesisLayer(torch.nn.Module):
         self.style_channels = style_channels
         self.is_torgb = is_torgb
         self.is_critically_sampled = is_critically_sampled
-        self.use_fp16 = use_fp16
+        self.use_fp16 = fp16_enabled
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.in_size = np.broadcast_to(np.asarray(in_size), [2])
@@ -279,14 +356,20 @@ class SynthesisLayer(torch.nn.Module):
             int(pad_hi[1])
         ]
 
-    def forward(self,
-                x,
-                w,
-                noise_mode='random',
-                force_fp32=True,
-                update_emas=False):
-        assert noise_mode in ['random', 'const', 'none']  # unused
+    def forward(self, x, w, force_fp32=True, update_emas=False):
+        """Forward function for synthesis layer.
 
+        Args:
+            x (torch.Tensor): Input feature map tensor.
+            w (torch.Tensor): Input style tensor.
+            force_fp32 (bool, optional): Force fp32 ignore the weights.
+                Defaults to True.
+            update_emas (bool, optional): Whether update moving average of
+                input magnitude. Defaults to False.
+
+        Returns:
+            torch.Tensor: Output feature map tensor map.
+        """
         # Track input magnitude.
         if update_emas:
             with torch.autograd.profiler.record_function(
@@ -322,6 +405,20 @@ class SynthesisLayer(torch.nn.Module):
 
     @staticmethod
     def design_lowpass_filter(numtaps, cutoff, width, fs, radial=False):
+        """Design lowpass filter giving related arguments.,
+
+        Args:
+            numtaps (int): Length of the filter. `numtaps` must be odd if a
+                passband includes the Nyquist frequency.
+            cutoff (float): Cutoff frequency of filter
+            width (float): The approximate width of the transition region.
+            fs (float): The sampling frequency of the signal.
+            radial (bool, optional):  Whether use radially symmetric jinc-based
+                filter. Defaults to False.
+
+        Returns:
+            torch.Tensor: Kernel of lowpass filter.
+        """
         assert numtaps >= 1
 
         # Identity filter.
@@ -346,7 +443,35 @@ class SynthesisLayer(torch.nn.Module):
         return torch.as_tensor(f, dtype=torch.float32)
 
 
-class SynthesisNetwork(torch.nn.Module):
+@MODULES.register_module()
+class SynthesisNetwork(nn.Module):
+    """[summary]
+
+    Args:
+        style_channels ([type]): The number of channels for style code.
+        out_size ([type]): The resolution of output image.
+        img_channels ([type]): The number of channels for output image.
+        channel_base (int, optional): Overall multiplier for the number of
+            channels. Defaults to 32768.
+        channel_max (int, optional): Maximum number of channels in any layer.
+            Defaults to 512.
+        num_layers (int, optional): Total number of layers, excluding Fourier
+            features and ToRGB. Defaults to 14.
+        num_critical (int, optional):  Number of critically sampled layers at
+            the end. Defaults to 2.
+        first_cutoff (int, optional): Cutoff frequency of the first layer.
+            Defaults to 2.
+        first_stopband ([type], optional): Minimum stopband of the first layer.
+            Defaults to 2**2.1.
+        last_stopband_rel ([type], optional): Minimum stopband of the last
+            layer, expressed relative to the cutoff. Defaults to 2**0.3.
+        margin_size (int, optional): Number of additional pixels outside the
+            image. Defaults to 10.
+        output_scale (float, optional): Scale factor for output value.
+            Defaults to 0.25.
+        num_fp16_res (int, optional): Number of first few layers use fp16.
+            Defaults to 4.
+    """
 
     def __init__(
         self,
@@ -417,7 +542,7 @@ class SynthesisNetwork(torch.nn.Module):
                 style_channels=self.style_channels,
                 is_torgb=is_torgb,
                 is_critically_sampled=is_critically_sampled,
-                use_fp16=use_fp16,
+                fp16_enabled=use_fp16,
                 in_channels=int(channels[prev]),
                 out_channels=int(channels[idx]),
                 in_size=int(sizes[prev]),

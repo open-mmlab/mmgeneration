@@ -2,13 +2,14 @@ import argparse
 import os
 import sys
 
-from mmgen.core.evaluation.metric_utils import rotation_matrix
 import imageio
 import mmcv
 import numpy as np
 import torch
 from mmcv import Config, DictAction
 from mmcv.runner import load_checkpoint
+
+from mmgen.core.evaluation.metric_utils import rotation_matrix
 
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
@@ -80,7 +81,7 @@ def sampling_images(generator, interval, translate_max=0.125, eq_type='x_t'):
         getattr(getattr(generator, 'synthesis', None), 'input', None),
         'transform', None)
 
-    z = torch.randn([1, generator.z_dim], device=device)
+    z = torch.randn([1, generator.noise_size], device=device)
     ws = generator.style_mapping(z=z)
 
     results = []

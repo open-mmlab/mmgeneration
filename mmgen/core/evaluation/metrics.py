@@ -1611,7 +1611,8 @@ class EQSampler:
         s = []
 
         # Run mapping network.
-        z = torch.randn([batch_size, self.generator.z_dim], device=self.device)
+        z = torch.randn([batch_size, self.generator.noise_size],
+                        device=self.device)
         ws = self.generator.style_mapping(z=z)
 
         # Generate reference image.

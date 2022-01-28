@@ -15,7 +15,7 @@ class TestMappingNetwork:
     @classmethod
     def setup_class(cls):
         cls.default_cfg = dict(
-            z_dim=4,
+            noise_size=4,
             c_dim=0,
             style_channels=4,
             num_ws=2,
@@ -90,7 +90,7 @@ class TestSynthesisLayer:
             style_channels=6,
             is_torgb=False,
             is_critically_sampled=False,
-            use_fp16=False,
+            fp16_enabled=False,
             conv_kernel=3,
             in_channels=3,
             out_channels=3,
@@ -146,7 +146,7 @@ class TestStyleGAN3Generator:
     def setup_class(cls):
         synthesis_kwargs = dict(num_layers=4)
         cls.default_cfg = dict(
-            z_dim=6,
+            noise_size=6,
             c_dim=0,
             style_channels=8,
             out_size=16,

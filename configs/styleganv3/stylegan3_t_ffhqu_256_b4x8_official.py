@@ -3,7 +3,8 @@ _base_ = [
     '../_base_/datasets/ffhq_flip.py', '../_base_/default_runtime.py'
 ]
 
-synthesis_kwargs = {
+synthesis_cfg = {
+    'type': 'SynthesisNetwork',
     'channel_base': 16384,
     'channel_max': 512,
     'magnitude_ema_beta': 0.9997227795604651
@@ -11,7 +12,10 @@ synthesis_kwargs = {
 model = dict(
     type='StaticUnconditionalGAN',
     generator=dict(
-        out_size=256, img_channels=3, rgb2bgr=True, **synthesis_kwargs),
+        out_size=256,
+        img_channels=3,
+        rgb2bgr=True,
+        synthesis_cfgsynthesis_cfg=synthesis_cfg),
     discriminator=dict(in_size=256, channel_multiplier=1),
     gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'),
     disc_auxiliary_loss=[

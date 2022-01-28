@@ -3,7 +3,8 @@ _base_ = [
     '../_base_/datasets/ffhq_flip.py', '../_base_/default_runtime.py'
 ]
 
-synthesis_kwargs = {
+synthesis_cfg = {
+    'type': 'SynthesisNetwork',
     'channel_base': 32768,
     'channel_max': 512,
     'magnitude_ema_beta': 0.9988915792636801
@@ -11,7 +12,10 @@ synthesis_kwargs = {
 model = dict(
     type='StaticUnconditionalGAN',
     generator=dict(
-        out_size=512, img_channels=3, rgb2bgr=True, **synthesis_kwargs),
+        out_size=512,
+        img_channels=3,
+        rgb2bgr=True,
+        synthesis_cfg=synthesis_cfg),
     discriminator=dict(in_size=512),
     gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'),
     disc_auxiliary_loss=[
@@ -47,7 +51,7 @@ metrics = dict(
     fid50k=dict(
         type='FID',
         num_images=50000,
-        inception_pkl='work_dirs/inception_pkl/afhqv2-512-rgb-pt.pkl',
+        inception_pkl=None,
         inception_args=dict(type='StyleGAN'),
         bgr2rgb=True))
 
@@ -55,10 +59,7 @@ evaluation = dict(
     type='GenerativeEvalHook',
     interval=10000,
     metrics=dict(
-        type='FID',
-        num_images=50000,
-        inception_pkl='work_dirs/inception_pkl/afhqv2-512-whole-rgb.pkl',
-        bgr2rgb=True),
+        type='FID', num_images=50000, inception_pkl=None, bgr2rgb=True),
     sample_kwargs=dict(sample_model='ema'))
 
 checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=30)
