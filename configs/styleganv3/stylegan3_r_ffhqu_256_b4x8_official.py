@@ -3,9 +3,6 @@ _base_ = [
     '../_base_/datasets/ffhq_flip.py', '../_base_/default_runtime.py'
 ]
 
-#
-# --cfg=stylegan3-r --gpus=8 --batch=64 --gamma=1 --mirror=1 --aug=noaug
-# --cbase=16384 --dlr=0.0025
 synthesis_cfg = {
     'type': 'SynthesisNetwork',
     'channel_base': 32768,
@@ -52,6 +49,7 @@ custom_hooks = [
         priority='VERY_HIGH')
 ]
 
+inception_pkl = None  # set by user
 metrics = dict(
     eqv=dict(
         type='Equivariance',
@@ -61,7 +59,7 @@ metrics = dict(
     fid50k=dict(
         type='FID',
         num_images=50000,
-        inception_pkl='work_dirs/inception_pkl/afhqv2-512.pkl',
+        inception_pkl=inception_pkl,
         inception_args=dict(type='StyleGAN'),
         bgr2rgb=True))
 
@@ -71,7 +69,7 @@ evaluation = dict(
     metrics=dict(
         type='FID',
         num_images=50000,
-        inception_pkl='work_dirs/inception_pkl/afhqv2-512-whole-rgb.pkl',
+        inception_pkl=inception_pkl,
         bgr2rgb=True),
     sample_kwargs=dict(sample_model='ema'))
 

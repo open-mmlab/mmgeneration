@@ -47,11 +47,12 @@ custom_hooks = [
         priority='VERY_HIGH')
 ]
 
+inception_pkl = None  # set by user
 metrics = dict(
     fid50k=dict(
         type='FID',
         num_images=50000,
-        inception_pkl=None,
+        inception_pkl=inception_pkl,
         inception_args=dict(type='StyleGAN'),
         bgr2rgb=True))
 
@@ -59,7 +60,10 @@ evaluation = dict(
     type='GenerativeEvalHook',
     interval=10000,
     metrics=dict(
-        type='FID', num_images=50000, inception_pkl=None, bgr2rgb=True),
+        type='FID',
+        num_images=50000,
+        inception_pkl=inception_pkl,
+        bgr2rgb=True),
     sample_kwargs=dict(sample_model='ema'))
 
 checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=30)

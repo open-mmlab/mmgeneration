@@ -53,11 +53,12 @@ custom_hooks = [
         priority='VERY_HIGH')
 ]
 
+inception_pkl = None
 metrics = dict(
     fid50k=dict(
         type='FID',
         num_images=50000,
-        inception_pkl='work_dirs/inception_pkl/afhqv2-512-rgb-pt.pkl',
+        inception_pkl=inception_pkl,
         inception_args=dict(type='StyleGAN'),
         bgr2rgb=True))
 
@@ -67,7 +68,7 @@ evaluation = dict(
     metrics=dict(
         type='FID',
         num_images=50000,
-        inception_pkl='work_dirs/inception_pkl/afhqv2-512-whole-rgb.pkl',
+        inception_pkl=inception_pkl,
         bgr2rgb=True),
     sample_kwargs=dict(sample_model='ema'))
 

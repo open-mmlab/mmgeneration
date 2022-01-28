@@ -1,4 +1,4 @@
-# Analyzing and Improving the Image Quality of Stylegan (CVPR'2020)
+# Alias-Free Generative Adversarial Networks (NeurIPS'2021)
 
 ## Abstract
 We observe that despite their hierarchical convolutional nature, the synthesis
@@ -38,25 +38,46 @@ results pave the way for generative models better suited for video and animation
 
 
 ## Interpolation
-
-https://user-images.githubusercontent.com/22982797/150354820-638ce279-b548-492f-8a5e-e3faf5170a8a.mp4
-
-https://user-images.githubusercontent.com/22982797/150354922-f5612775-f617-4ed2-8562-a06bbef0fbab.mp4
+We provide a tool to generate video by walking through GAN's latent space.
+Run this command to get the following video.
+```bash
+python apps/interpolate_sample.py configs/styleganv3/stylegan3_t_afhqv2_512_b4x8_official.py https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_t_afhqv2_512_b4x8_cvt_official.pkl --export-video --samples-path work_dirs/demos/ --endpoint 6 --interval 60 --space z --seed 2022 --sample-cfg truncation=0.8
+```
+https://user-images.githubusercontent.com/22982797/151506918-83da9ee3-0d63-4c5b-ad53-a41562b92075.mp4
 
 ## Equivarience Visualization && Evaluation
 
+We also provide a tool to visualize the equivarience properties for StyleGAN3.
+Run these commands to get the results below.
 
-https://user-images.githubusercontent.com/22982797/150293816-23a9ac23-ce07-487b-8fea-9303fab05658.mp4
+```bash
+python tools/utils/equivariance_viz.py configs/styleganv3/stylegan3_r_ffhqu_256_b4x8_official.py https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_r_ffhqu_256_b4x8_cvt_official.pkl --translate_max 0.5 --transform rotate --seed 5432
 
-https://user-images.githubusercontent.com/22982797/150293909-0887dd5a-18f3-423b-a06a-39a940e03b0a.mp4
+python tools/utils/equivariance_viz.py configs/styleganv3/stylegan3_r_ffhqu_256_b4x8_official.py https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_r_ffhqu_256_b4x8_cvt_official.pkl --translate_max 0.25 --transform x_t --seed 5432
 
-https://user-images.githubusercontent.com/22982797/150294018-cf9b151d-7b76-4cfd-9c05-f86f0a324ff5.mp4
+python tools/utils/equivariance_viz.py configs/styleganv3/stylegan3_r_ffhqu_256_b4x8_official.py https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_r_ffhqu_256_b4x8_cvt_official.pkl --translate_max 0.25 --transform y_t --seed 5432
+```
 
-https://user-images.githubusercontent.com/22982797/150294058-8a444653-1416-4997-bc16-61509f32e33f.mp4
 
-https://user-images.githubusercontent.com/22982797/150294118-0af818b8-7ad7-4ea6-a0eb-6e5f0d920b2e.mp4
+https://user-images.githubusercontent.com/22982797/151504902-f3cbfef5-9014-4607-bbe1-deaf48ec6d55.mp4
 
-https://user-images.githubusercontent.com/22982797/150294479-a0e33233-a16d-4521-bacd-2fffb68ef3d7.mp4
+
+https://user-images.githubusercontent.com/22982797/151504973-b96e1639-861d-434b-9d7c-411ebd4a653f.mp4
+
+
+https://user-images.githubusercontent.com/22982797/151505099-cde4999e-aab1-42d4-a458-3bb069db3d32.mp4
+
+If you want to EQ-Metric for StyleGAN3, just add following codes into config.
+```python
+metrics = dict(
+    eqv=dict(
+        type='Equivariance',
+        num_images=50000,
+        eq_cfg=dict(
+            compute_eqt_int=True, compute_eqt_frac=True, compute_eqr=True)))
+```
+And we highly recommend you to use [slurm_eval_multi_gpu](tools/slurm_eval_multi_gpu.sh) script to accelerate evaluation time.
+
 
 ## Citation
 
