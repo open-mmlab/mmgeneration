@@ -7,7 +7,7 @@ synthesis_cfg = {
     'type': 'SynthesisNetwork',
     'channel_base': 65536,
     'channel_max': 1024,
-    'magnitude_ema_beta': 0.9998613801725043,
+    'magnitude_ema_beta': 0.999,
     'conv_kernel': 1,
     'use_radial_filters': True
 }

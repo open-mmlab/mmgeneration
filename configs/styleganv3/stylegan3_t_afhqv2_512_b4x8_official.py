@@ -7,7 +7,7 @@ synthesis_cfg = {
     'type': 'SynthesisNetwork',
     'channel_base': 32768,
     'channel_max': 512,
-    'magnitude_ema_beta': 0.9988915792636801
+    'magnitude_ema_beta': 0.999
 }
 model = dict(
     type='StaticUnconditionalGAN',
