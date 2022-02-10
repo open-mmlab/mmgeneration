@@ -13,7 +13,7 @@ import numpy as np
 import torch
 
 from .. import custom_ops, misc
-from . import conv2d_gradfix
+from ... import conv2d
 
 _plugin = None
 
@@ -237,12 +237,10 @@ def _upfirdn2d_ref(x, f, up=1, down=1, padding=0, flip_filter=False, gain=1):
     # Convolve with the filter.
     f = f[np.newaxis, np.newaxis].repeat([num_channels, 1] + [1] * f.ndim)
     if f.ndim == 4:
-        x = conv2d_gradfix.conv2d(input=x, weight=f, groups=num_channels)
+        x = conv2d(input=x, weight=f, groups=num_channels)
     else:
-        x = conv2d_gradfix.conv2d(
-            input=x, weight=f.unsqueeze(2), groups=num_channels)
-        x = conv2d_gradfix.conv2d(
-            input=x, weight=f.unsqueeze(3), groups=num_channels)
+        x = conv2d(input=x, weight=f.unsqueeze(2), groups=num_channels)
+        x = conv2d(input=x, weight=f.unsqueeze(3), groups=num_channels)
 
     # Downsample by throwing away pixels.
     x = x[:, :, ::downy, ::downx]
