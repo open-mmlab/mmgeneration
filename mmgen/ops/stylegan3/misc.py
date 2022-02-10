@@ -61,10 +61,18 @@ except AttributeError:
 
 # Symbolic assert.
 
+
+def wrapped_assert(condition, msg):
+    assert condition, msg
+
+
 try:
     symbolic_assert = torch._assert  # 1.8.0a0
 except AttributeError:
-    symbolic_assert = torch.Assert  # 1.7.0
+    try:
+        symbolic_assert = torch.Assert  # 1.7.0
+    except AttributeError:
+        symbolic_assert = wrapped_assert  # old version
 
 # Context manager to temporarily suppress known warnings in torch.jit.trace().
 # Note: Cannot use catch_warnings because of https://bugs.python.org/issue29672

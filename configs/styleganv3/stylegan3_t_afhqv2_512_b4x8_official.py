@@ -18,14 +18,7 @@ model = dict(
         synthesis_cfg=synthesis_cfg),
     discriminator=dict(in_size=512),
     gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'),
-    disc_auxiliary_loss=[
-        dict(
-            type='R1GradientPenalty',
-            loss_weight=10,
-            norm_mode='HWC',
-            data_info=dict(
-                discriminator='disc_partial', real_data='real_imgs'))
-    ])
+    disc_auxiliary_loss=dict(loss_weight=10))
 
 data = dict(
     samples_per_gpu=4,
@@ -69,4 +62,4 @@ evaluation = dict(
 checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=30)
 lr_config = None
 
-total_iters = 800002  # TODO: fix it
+total_iters = 800002

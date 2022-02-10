@@ -144,14 +144,19 @@ class TestStyleGAN3Generator:
 
     @classmethod
     def setup_class(cls):
-        synthesis_kwargs = dict(num_layers=4)
+        synthesis_cfg = {
+            'type': 'SynthesisNetwork',
+            'channel_base': 1024,
+            'channel_max': 16,
+            'magnitude_ema_beta': 0.999
+        }
         cls.default_cfg = dict(
             noise_size=6,
             c_dim=0,
             style_channels=8,
             out_size=16,
             img_channels=3,
-            **synthesis_kwargs)
+            synthesis_cfg=synthesis_cfg)
 
     def test_cpu(self):
         generator = StyleGANv3Generator(**self.default_cfg)
