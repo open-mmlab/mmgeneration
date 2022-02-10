@@ -13,7 +13,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from .. import custom_ops, misc
+from .. import custom_ops
 
 
 class EasyDict(dict):
@@ -173,7 +173,6 @@ def bias_act(x,
         x=x, b=b, dim=dim, act=act, alpha=alpha, gain=gain, clamp=clamp)
 
 
-@misc.profiled_function
 def _bias_act_ref(x,
                   b=None,
                   dim=1,

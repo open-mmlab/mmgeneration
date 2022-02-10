@@ -12,7 +12,7 @@ import os
 import numpy as np
 import torch
 
-from .. import custom_ops, misc
+from .. import custom_ops
 from ... import conv2d
 
 _plugin = None
@@ -59,10 +59,8 @@ def _get_filter_size(f):
     assert isinstance(f, torch.Tensor) and f.ndim in [1, 2]
     fw = f.shape[-1]
     fh = f.shape[0]
-    with misc.suppress_tracer_warnings():
-        fw = int(fw)
-        fh = int(fh)
-    misc.assert_shape(f, [fh, fw][:f.ndim])
+    fw = int(fw)
+    fh = int(fh)
     assert fw >= 1 and fh >= 1
     return fw, fh
 
@@ -193,7 +191,6 @@ def upfirdn2d(x,
         gain=gain)
 
 
-@misc.profiled_function
 def _upfirdn2d_ref(x, f, up=1, down=1, padding=0, flip_filter=False, gain=1):
     """Slow reference implementation of `upfirdn2d()` using standard PyTorch
     ops."""
