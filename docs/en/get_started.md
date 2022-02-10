@@ -118,6 +118,7 @@ conda activate open-mmlab
 conda install pytorch==1.7.0 torchvision==0.8.0 cudatoolkit=10.1 -c pytorch -y
 
 # install the latest mmcv
+# pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/{cu_version}/{torch_version}/index.html
 pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu101/torch1.7.0/index.html
 
 # install mmgeneration
@@ -125,6 +126,13 @@ git clone https://github.com/open-mmlab/mmgeneration.git
 cd mmgeneration
 pip install -r requirements.txt
 pip install -v -e .
+```
+
+To be noted that, mmcv-full is only compiled on PyTorch 1.x.0 because the compatibility usually holds between 1.x.0 and 1.x.1. If your PyTorch version is 1.x.1, you can install mmcv-full compiled with PyTorch 1.x.0 and it usually works well.
+
+```shell
+# We can ignore the micro version of PyTorch
+pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.10/index.html
 ```
 
 ### Developing with multiple MMGeneration versions
