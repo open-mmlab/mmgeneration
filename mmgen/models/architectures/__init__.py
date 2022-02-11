@@ -19,8 +19,7 @@ from .singan import SinGANMultiScaleDiscriminator, SinGANMultiScaleGenerator
 from .sngan_proj import ProjDiscriminator, SNGANGenerator
 from .stylegan import (MSStyleGAN2Discriminator, MSStyleGANv2Generator,
                        StyleGAN1Discriminator, StyleGAN2Discriminator,
-                       StyleGANv1Generator, StyleGANv2Generator,
-                       StyleGANv3Generator)
+                       StyleGANv1Generator, StyleGANv2Generator)
 from .wgan_gp import WGANGPDiscriminator, WGANGPGenerator
 
 __all__ = [
@@ -38,5 +37,5 @@ __all__ = [
     'LSGANDiscriminator', 'LSGANGenerator', 'ProjDiscriminator',
     'SNGANGenerator', 'BigGANGenerator', 'SNConvModule', 'BigGANDiscriminator',
     'BigGANDeepGenerator', 'BigGANDeepDiscriminator', 'DenoisingUnet',
-    'StyleGANv3Generator', 'IDLossModel'
+    'IDLossModel'
 ]
