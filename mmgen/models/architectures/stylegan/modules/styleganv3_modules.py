@@ -559,7 +559,7 @@ class SynthesisNetwork(nn.Module):
             self.layer_names.append(name)
 
     def forward(self, ws, **layer_kwargs):
-        ''' Forward function '''
+        """Forward function."""
         ws = ws.to(torch.float32).unbind(dim=1)
 
         # Execute layers.

@@ -128,7 +128,7 @@ class StyleGANv3Generator(nn.Module):
                 num_truncation_layer=None,
                 update_emas=False,
                 return_noise=False,
-                return_latent=False,
+                return_latents=False,
                 **synthesis_kwargs):
         """Forward Function for stylegan3.
 
@@ -211,7 +211,7 @@ class StyleGANv3Generator(nn.Module):
         if self.rgb2bgr:
             out_img = out_img[:, [2, 1, 0], ...]
 
-        if return_noise or return_latent:
+        if return_noise or return_latents:
             output = dict(
                 fake_img=out_img,
                 noise_batch=noise_batch,

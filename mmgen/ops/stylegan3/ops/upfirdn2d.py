@@ -32,7 +32,7 @@ def _init():
 
 
 def _parse_scaling(scaling):
-    ''' parse scaling into list [x, y] '''
+    """parse scaling into list [x, y]"""
     if isinstance(scaling, int):
         scaling = [scaling, scaling]
     assert isinstance(scaling, (list, tuple))
@@ -43,7 +43,7 @@ def _parse_scaling(scaling):
 
 
 def _parse_padding(padding):
-    ''' parse padding into list [padx0, padx1, pady0, pady1] '''
+    """parse padding into list [padx0, padx1, pady0, pady1]"""
     if isinstance(padding, int):
         padding = [padding, padding]
     assert isinstance(padding, (list, tuple))
@@ -56,7 +56,7 @@ def _parse_padding(padding):
 
 
 def _get_filter_size(f):
-    ''' get width and height of filter kernel '''
+    """get width and height of filter kernel."""
     if f is None:
         return 1, 1
     assert isinstance(f, torch.Tensor) and f.ndim in [1, 2]
