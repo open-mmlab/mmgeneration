@@ -45,9 +45,9 @@ python apps/interpolate_sample.py configs/styleganv3/stylegan3_t_afhqv2_512_b4x8
 ```
 https://user-images.githubusercontent.com/22982797/151506918-83da9ee3-0d63-4c5b-ad53-a41562b92075.mp4
 
-## Equivarience Visualization && Evaluation
+## Equivariance Visualization && Evaluation
 
-We also provide a tool to visualize the equivarience properties for StyleGAN3.
+We also provide a tool to visualize the equivariance properties for StyleGAN3.
 Run these commands to get the results below.
 
 ```bash
