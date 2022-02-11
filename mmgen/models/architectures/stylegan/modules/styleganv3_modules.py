@@ -445,7 +445,7 @@ class SynthesisLayer(nn.Module):
 
 @MODULES.register_module()
 class SynthesisNetwork(nn.Module):
-    """[summary]
+    """Synthesis network for stylegan3.
 
     Args:
         style_channels ([type]): The number of channels for style code.
@@ -559,6 +559,7 @@ class SynthesisNetwork(nn.Module):
             self.layer_names.append(name)
 
     def forward(self, ws, **layer_kwargs):
+        ''' Forward function '''
         ws = ws.to(torch.float32).unbind(dim=1)
 
         # Execute layers.
