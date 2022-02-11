@@ -12,8 +12,8 @@ import os
 import numpy as np
 import torch
 
-from .. import custom_ops
 from ... import conv2d
+from .. import custom_ops
 
 _plugin = None
 
