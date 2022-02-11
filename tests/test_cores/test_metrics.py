@@ -248,7 +248,7 @@ class TestPPL:
         ppl = PPL(10)
         ppl_iterator = iter(ppl.get_sampler(self.model, 2, 'ema'))
         ppl.prepare()
-        for _, b in ppl_iterator:
+        for b in ppl_iterator:
             ppl.feed(b, 'fakes')
         score = ppl.summary()
         assert score >= 0
@@ -260,7 +260,7 @@ class TestPPL:
         ppl = PPL(10)
         ppl_iterator = iter(ppl.get_sampler(self.model, 2, 'ema'))
         ppl.prepare()
-        for _, b in ppl_iterator:
+        for b in ppl_iterator:
             ppl.feed(b, 'fakes')
         score = ppl.summary()
         assert score >= 0

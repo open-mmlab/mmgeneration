@@ -13,7 +13,7 @@ from mmgen.datasets import build_dataloader, build_dataset
 from mmgen.models import build_model
 from mmgen.utils import get_root_logger
 
-_distributed_metrics = ['FID', 'IS', 'Equivariance']
+_distributed_metrics = ['FID', 'IS']
 
 
 def parse_args():
