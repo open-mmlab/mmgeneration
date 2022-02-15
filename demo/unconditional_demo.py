@@ -9,7 +9,7 @@ from torchvision import utils
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
 
-from mmgen.apis import init_model, sample_uncoditional_model  # isort:skip  # noqa
+from mmgen.apis import init_model, sample_unconditional_model  # isort:skip  # noqa
 # yapf: enable
 
 
@@ -21,7 +21,7 @@ def parse_args():
         '--save-path',
         type=str,
         default='./work_dirs/demos/unconditional_samples.png',
-        help='path to save uncoditional samples')
+        help='path to save unconditional samples')
     parser.add_argument(
         '--device', type=str, default='cuda:0', help='CUDA device id')
 
@@ -65,9 +65,9 @@ def main():
     if args.sample_cfg is None:
         args.sample_cfg = dict()
 
-    results = sample_uncoditional_model(model, args.num_samples,
-                                        args.num_batches, args.sample_model,
-                                        **args.sample_cfg)
+    results = sample_unconditional_model(model, args.num_samples,
+                                         args.num_batches, args.sample_model,
+                                         **args.sample_cfg)
     results = (results[:, [2, 1, 0]] + 1.) / 2.
 
     # save images

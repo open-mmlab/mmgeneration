@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from mmgen.apis import (init_model, sample_ddpm_model, sample_img2img_model,
-                        sample_uncoditional_model)
+                        sample_unconditional_model)
 
 
 class TestSampleUnconditionalModel:
@@ -20,22 +20,22 @@ class TestSampleUnconditionalModel:
         cls.model = init_model(config, checkpoint=None, device='cpu')
 
     def test_sample_unconditional_model_cpu(self):
-        res = sample_uncoditional_model(
+        res = sample_unconditional_model(
             self.model, 5, num_batches=2, sample_model='orig')
         assert res.shape == (5, 3, 64, 64)
 
-        res = sample_uncoditional_model(
+        res = sample_unconditional_model(
             self.model, 4, num_batches=2, sample_model='orig')
         assert res.shape == (4, 3, 64, 64)
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_sample_unconditional_model_cuda(self):
         model = self.model.cuda()
-        res = sample_uncoditional_model(
+        res = sample_unconditional_model(
             model, 5, num_batches=2, sample_model='orig')
         assert res.shape == (5, 3, 64, 64)
 
-        res = sample_uncoditional_model(
+        res = sample_unconditional_model(
             model, 4, num_batches=2, sample_model='orig')
         assert res.shape == (4, 3, 64, 64)
 
