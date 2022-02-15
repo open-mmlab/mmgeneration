@@ -196,7 +196,7 @@ class StyleGANv3Generator(nn.Module):
         device = get_module_device(self)
         noise_batch = noise_batch.to(device)
 
-        if label_batch:
+        if label_batch is not None:
             label_batch = label_batch.to(device)
 
         ws = self.style_mapping(

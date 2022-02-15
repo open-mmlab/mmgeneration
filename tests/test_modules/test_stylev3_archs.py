@@ -186,10 +186,44 @@ class TestStyleGAN3Generator:
         y = generator(None, None, num_batches=2)
         assert y.shape == (2, 3, 16, 16)
 
+        res = generator(torch.randn, None, num_batches=1)
+        assert res.shape == (1, 3, 16, 16)
+
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(rgb2bgr=True))
+        generator = StyleGANv3Generator(**cfg)
+        y = generator(None, None, num_batches=2)
+        assert y.shape == (2, 3, 16, 16)
+
+        # test c_dim>0
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(c_dim=3))
+        generator = StyleGANv3Generator(**cfg)
+        c = torch.rand(2, 3)
+        y = generator(None, c, num_batches=2)
+        assert y.shape == (2, 3, 16, 16)
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_cuda(self):
         generator = StyleGANv3Generator(**self.default_cfg).cuda()
         z = torch.randn((2, 6)).cuda()
         c = None
         y = generator(z, c)
+        assert y.shape == (2, 3, 16, 16)
+
+        res = generator(torch.randn, None, num_batches=1)
+        assert res.shape == (1, 3, 16, 16)
+
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(rgb2bgr=True))
+        generator = StyleGANv3Generator(**cfg).cuda()
+        y = generator(None, None, num_batches=2)
+        assert y.shape == (2, 3, 16, 16)
+
+        # test c_dim>0
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(c_dim=3))
+        generator = StyleGANv3Generator(**cfg).cuda()
+        c = torch.rand(2, 3).cuda()
+        y = generator(None, c, num_batches=2)
         assert y.shape == (2, 3, 16, 16)
