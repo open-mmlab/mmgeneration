@@ -184,7 +184,7 @@ def _should_use_custom_op(input, enabled=True):
         return False
     if any(
             torch.__version__.startswith(x)
-            for x in ['1.5.', '1.6.', '1.7.', '1.8.', '1.9']):
+            for x in ['1.5.', '1.6.', '1.7.', '1.8.', '1.9', '1.10']):
         return True
     warnings.warn(
         f'conv2d_gradfix not supported on PyTorch {torch.__version__}. '

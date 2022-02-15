@@ -46,7 +46,6 @@ class MappingNetwork(nn.Module):
         self.w_avg_beta = w_avg_beta
 
         # Construct layers.
-        # TODO: check initialization
         self.embed = EqualLinearActModule(
             self.c_dim, self.style_channels) if self.c_dim > 0 else None
         features = [
@@ -142,7 +141,6 @@ class SynthesisInput(nn.Module):
         # Setup parameters and buffers.
         self.weight = torch.nn.Parameter(
             torch.randn([self.channels, self.channels]))
-        # TODO: check initialization
         self.affine = EqualLinearActModule(style_channels, 4)
         self.register_buffer('transform', torch.eye(
             3, 3))  # User-specified inverse transform wrt. resulting image.

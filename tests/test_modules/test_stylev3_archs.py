@@ -110,12 +110,30 @@ class TestSynthesisLayer:
         y = module(x, w)
         assert y.shape == (2, 3, 16, 16)
 
+        # test update_emas
+        y = module(x, w, update_emas=True)
+        assert y.shape == (2, 3, 16, 16)
+
+        # test force_fp32
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(fp16_enabled=True)
+        module = SynthesisLayer(**cfg)
+        x = torch.randn((2, 3, 16, 16))
+        w = torch.randn((2, 6))
+        y = module(x, w, force_fp32=False)
+        assert y.shape == (2, 3, 16, 16)
+        assert y.dtype == torch.float32
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_cuda(self):
         module = SynthesisLayer(**self.default_cfg).cuda()
         x = torch.randn((2, 3, 16, 16)).cuda()
         w = torch.randn((2, 6)).cuda()
         y = module(x, w)
+        assert y.shape == (2, 3, 16, 16)
+
+        # test update_emas
+        y = module(x, w, update_emas=True)
         assert y.shape == (2, 3, 16, 16)
 
 
