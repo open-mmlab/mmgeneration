@@ -150,7 +150,7 @@ PYTHONPATH="$(dirname $0)/..":$PYTHONPATH
 To verify whether MMGeneration and the required environment are installed correctly, we can run sample Python code to initialize an unconditional model and use it to generate random samples:
 
 ```python
-from mmgen.apis import init_model, sample_uncoditional_model
+from mmgen.apis import init_model, sample_unconditional_model
 
 config_file = 'configs/styleganv2/stylegan2_c2_lsun-church_256_b4x8_800k.py'
 # you can download this checkpoint in advance and use a local file path.
@@ -159,7 +159,7 @@ device = 'cuda:0'
 # init a generatvie
 model = init_model(config_file, checkpoint_file, device=device)
 # sample images
-fake_imgs = sample_uncoditional_model(model, 4)
+fake_imgs = sample_unconditional_model(model, 4)
 ```
 
 The above code is supposed to run successfully upon you finish the installation.
