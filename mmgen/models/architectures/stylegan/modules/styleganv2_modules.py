@@ -362,11 +362,11 @@ class ModulatedConv2d(nn.Module):
             demod = torch.rsqrt(weight.pow(2).sum([2, 3, 4]) + self.eps)
             weight = weight * demod.view(n, self.out_channels, 1, 1, 1)
 
-        # TODO: input gain added by yyf
         if input_gain is not None:
-            input_gain = input_gain.expand(n, self.in_channels)  # [NI]
-            weight = weight * input_gain.unsqueeze(1).unsqueeze(3).unsqueeze(
-                4)  # [NOIkk]
+            # input_gain shape [batch, in_ch]
+            input_gain = input_gain.expand(n, self.in_channels)
+            # weight shape [batch, out_ch, in_ch, kernel_size, kernel_size]
+            weight = weight * input_gain.unsqueeze(1).unsqueeze(3).unsqueeze(4)
 
         weight = weight.view(n * self.out_channels, c, self.kernel_size,
                              self.kernel_size)

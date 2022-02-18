@@ -27,14 +27,6 @@ class StyleGANv3Generator(nn.Module):
         img_channels (int): The number of output's channels.
         noise_size (int, optional): Size of the input noise vector.
             Defaults to 512.
-        c_dim (int, optional): Size of the input noise vector.
-            Defaults to 0.
-        default_style_mode (str, optional): The default mode of style mixing.
-            In training, we defaultly adopt mixing style mode. However, in the
-            evaluation, we use 'single' style mode. `['mix', 'single']` are
-            currently supported. Defaults to 'mix'.
-        eval_style_mode (str, optional): The evaluation mode of style mixing.
-            Defaults to 'single'.
         mix_prob (float, optional): Mixing probability. The value should be
             in range of [0, 1]. Defaults to 0.9.
         rgb2bgr (bool, optional): Whether to reformat the output channels
@@ -56,9 +48,6 @@ class StyleGANv3Generator(nn.Module):
                  style_channels,
                  img_channels,
                  noise_size=512,
-                 c_dim=0,
-                 default_style_mode='mix',
-                 eval_style_mode='single',
                  mix_prob=0.9,
                  rgb2bgr=False,
                  pretrained=None,
@@ -66,14 +55,10 @@ class StyleGANv3Generator(nn.Module):
                  mapping_cfg=dict(type='MappingNetwork')):
         super().__init__()
         self.noise_size = noise_size
-        self.c_dim = c_dim
         self.style_channels = style_channels
         self.out_size = out_size
         self.img_channels = img_channels
         self.rgb2bgr = rgb2bgr
-        self._default_style_mode = default_style_mode
-        self.default_style_mode = default_style_mode
-        self.eval_style_mode = eval_style_mode
 
         self._synthesis_cfg = deepcopy(synthesis_cfg)
         self._synthesis_cfg.setdefault('style_channels', style_channels)
@@ -84,7 +69,6 @@ class StyleGANv3Generator(nn.Module):
         self.num_ws = self.synthesis.num_ws
         self._mapping_cfg = deepcopy(mapping_cfg)
         self._mapping_cfg.setdefault('noise_size', noise_size)
-        self._mapping_cfg.setdefault('c_dim', c_dim)
         self._mapping_cfg.setdefault('style_channels', style_channels)
         self._mapping_cfg.setdefault('num_ws', self.num_ws)
         self.style_mapping = build_module(self._mapping_cfg)
@@ -101,23 +85,6 @@ class StyleGANv3Generator(nn.Module):
                                                   map_location)
         self.load_state_dict(state_dict, strict=strict)
         mmcv.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
-
-    def train(self, mode=True):
-        if mode:
-            if self.default_style_mode != self._default_style_mode:
-                mmcv.print_log(
-                    f'Switch to train style mode: {self._default_style_mode}',
-                    'mmgen')
-            self.default_style_mode = self._default_style_mode
-
-        else:
-            if self.default_style_mode != self.eval_style_mode:
-                mmcv.print_log(
-                    f'Switch to evaluation style mode: {self.eval_style_mode}',
-                    'mmgen')
-            self.default_style_mode = self.eval_style_mode
-
-        return super(StyleGANv3Generator, self).train(mode)
 
     def forward(self,
                 noise,
@@ -153,7 +120,7 @@ class StyleGANv3Generator(nn.Module):
             truncation_latent (torch.Tensor, optional): Mean truncation latent.
                 Defaults to None.
             update_emas (bool, optional): Whether update moving average of
-                average w and layer input. Defaults to False.
+                mean latent and layer input. Defaults to False.
             return_noise (bool, optional): If True, ``noise_batch`` will be
                 returned in a dict with ``fake_img``. Defaults to False.
             return_latents (bool, optional): If True, ``latent`` will be
@@ -180,28 +147,11 @@ class StyleGANv3Generator(nn.Module):
             assert num_batches > 0
             noise_batch = torch.randn((num_batches, self.noise_size))
 
-        if self.c_dim == 0:
-            label_batch = None
-
-        elif isinstance(label, torch.Tensor):
-            label_batch = label
-        elif callable(label):
-            label_generator = label
-            assert num_batches > 0
-            label_batch = label_generator((num_batches, ))
-        else:
-            assert num_batches > 0
-            label_batch = torch.randint(0, self.c_dim, (num_batches, ))
-
         device = get_module_device(self)
         noise_batch = noise_batch.to(device)
 
-        if label_batch is not None:
-            label_batch = label_batch.to(device)
-
         ws = self.style_mapping(
             noise_batch,
-            label_batch,
             truncation=truncation,
             num_truncation_layer=num_truncation_layer,
             update_emas=update_emas)
@@ -212,11 +162,7 @@ class StyleGANv3Generator(nn.Module):
             out_img = out_img[:, [2, 1, 0], ...]
 
         if return_noise or return_latents:
-            output = dict(
-                fake_img=out_img,
-                noise_batch=noise_batch,
-                label=label_batch,
-                latent=ws)
+            output = dict(fake_img=out_img, noise_batch=noise_batch, latent=ws)
             return output
 
         return out_img

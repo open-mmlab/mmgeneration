@@ -11,7 +11,7 @@ from .styleganv2_modules import EqualLinearActModule, ModulatedConv2d
 @MODULES.register_module()
 class MappingNetwork(nn.Module):
     """Style mapping network used in StyleGAN3. The main difference between it
-    and styleganv1,v2 is that average w is registered as a buffer and dynamic
+    and styleganv1,v2 is that mean latent is registered as a buffer and dynamic
     updated during training.
 
     Args:
@@ -27,16 +27,14 @@ class MappingNetwork(nn.Module):
             Defaults to 0.998.
     """
 
-    def __init__(
-        self,
-        noise_size,
-        c_dim,
-        style_channels,
-        num_ws,
-        num_layers=2,
-        lr_multiplier=0.01,
-        w_avg_beta=0.998,
-    ):
+    def __init__(self,
+                 noise_size,
+                 style_channels,
+                 num_ws,
+                 c_dim=0,
+                 num_layers=2,
+                 lr_multiplier=0.01,
+                 w_avg_beta=0.998):
         super().__init__()
         self.noise_size = noise_size
         self.c_dim = c_dim
@@ -77,7 +75,7 @@ class MappingNetwork(nn.Module):
             num_truncation_layer (int, optional): Number of layers use
                 truncated latent. Defaults to None.
             update_emas (bool, optional): Whether update moving average of
-                average w. Defaults to False.
+                mean latent. Defaults to False.
 
         Returns:
             torch.Tensor: W-plus latent.
@@ -217,10 +215,11 @@ class SynthesisLayer(nn.Module):
         style_channels (int): The number of channels for style code.
         is_torgb (bool): Whether output of this layer is transformed to
             rgb image.
-        is_critically_sampled (bool): []
+        is_critically_sampled (bool): Whether filter cutoff is set exactly
+            at the bandlimit.
         fp16_enabled (bool, optional): Whether to use fp16 training in this
             module. If this flag is `True`, the whole module will be wrapped
-            with ``auto_fp16``. Defaults to False.
+            with ``auto_fp16``.
         in_channels (int): The channel number of the input feature map.
         out_channels (int): The channel number of the output feature map.
         in_size (int): The input size of feature map.
@@ -446,9 +445,9 @@ class SynthesisNetwork(nn.Module):
     """Synthesis network for stylegan3.
 
     Args:
-        style_channels ([type]): The number of channels for style code.
-        out_size ([type]): The resolution of output image.
-        img_channels ([type]): The number of channels for output image.
+        style_channels (int): The number of channels for style code.
+        out_size (int): The resolution of output image.
+        img_channels (int): The number of channels for output image.
         channel_base (int, optional): Overall multiplier for the number of
             channels. Defaults to 32768.
         channel_max (int, optional): Maximum number of channels in any layer.
@@ -459,9 +458,9 @@ class SynthesisNetwork(nn.Module):
             the end. Defaults to 2.
         first_cutoff (int, optional): Cutoff frequency of the first layer.
             Defaults to 2.
-        first_stopband ([type], optional): Minimum stopband of the first layer.
+        first_stopband (int, optional): Minimum stopband of the first layer.
             Defaults to 2**2.1.
-        last_stopband_rel ([type], optional): Minimum stopband of the last
+        last_stopband_rel (float, optional): Minimum stopband of the last
             layer, expressed relative to the cutoff. Defaults to 2**0.3.
         margin_size (int, optional): Number of additional pixels outside the
             image. Defaults to 10.
@@ -556,14 +555,26 @@ class SynthesisNetwork(nn.Module):
             setattr(self, name, layer)
             self.layer_names.append(name)
 
-    def forward(self, ws, **layer_kwargs):
-        """Forward function."""
+    def forward(self, ws, force_fp32=True, update_emas=False):
+        """Forward function of synthesis network.
+
+        Args:
+            ws (tensor): Latent tensor of w-plus space.
+            force_fp32 (bool, optional): Force fp32 ignore the weights.
+                Defaults to True.
+            update_emas (bool, optional): Whether update moving average of
+                mean latent and layer input. Defaults to False.
+
+        Returns:
+            torch.Tensor : Result of synthesis network.
+        """
         ws = ws.to(torch.float32).unbind(dim=1)
 
         # Execute layers.
         x = self.input(ws[0])
         for name, w in zip(self.layer_names, ws[1:]):
-            x = getattr(self, name)(x, w, **layer_kwargs)
+            x = getattr(self, name)(
+                x, w, force_fp32=force_fp32, update_emas=update_emas)
         if self.output_scale != 1:
             x = x * self.output_scale
 

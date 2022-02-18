@@ -11,7 +11,6 @@ model = dict(
     generator=dict(
         type='StyleGANv3Generator',
         noise_size=512,
-        c_dim=0,
         style_channels=512,
         out_size=None,  # Need to be set.
         img_channels=3,

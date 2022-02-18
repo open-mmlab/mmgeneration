@@ -30,6 +30,14 @@ class TestMappingNetwork:
         y = module(z, c)
         assert y.shape == (1, 2, 4)
 
+        # test update_emas
+        y = module(z, c, update_emas=True)
+        assert y.shape == (1, 2, 4)
+
+        # test truncation
+        y = module(z, c, truncation=2)
+        assert y.shape == (1, 2, 4)
+
         # test with c_dim>0
         cfg = deepcopy(self.default_cfg)
         cfg.update(c_dim=2)
@@ -45,6 +53,14 @@ class TestMappingNetwork:
         z = torch.randn([1, 4]).cuda()
         c = None
         y = module(z, c)
+        assert y.shape == (1, 2, 4)
+
+        # test update_emas
+        y = module(z, c, update_emas=True).cuda()
+        assert y.shape == (1, 2, 4)
+
+        # test truncation
+        y = module(z, c, truncation=2).cuda()
         assert y.shape == (1, 2, 4)
 
         # test with c_dim>0
@@ -124,6 +140,15 @@ class TestSynthesisLayer:
         assert y.shape == (2, 3, 16, 16)
         assert y.dtype == torch.float32
 
+        # test critically_sampled
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(is_critically_sampled=True)
+        module = SynthesisLayer(**cfg)
+        x = torch.randn((2, 3, 16, 16))
+        w = torch.randn((2, 6))
+        y = module(x, w)
+        assert y.shape == (2, 3, 16, 16)
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_cuda(self):
         module = SynthesisLayer(**self.default_cfg).cuda()
@@ -133,7 +158,16 @@ class TestSynthesisLayer:
         assert y.shape == (2, 3, 16, 16)
 
         # test update_emas
-        y = module(x, w, update_emas=True)
+        y = module(x, w, update_emas=True).cuda()
+        assert y.shape == (2, 3, 16, 16)
+
+        # test critically_sampled
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(is_critically_sampled=True)
+        module = SynthesisLayer(**cfg).cuda()
+        x = torch.randn((2, 3, 16, 16)).cuda()
+        w = torch.randn((2, 6)).cuda()
+        y = module(x, w)
         assert y.shape == (2, 3, 16, 16)
 
 
@@ -170,7 +204,6 @@ class TestStyleGAN3Generator:
         }
         cls.default_cfg = dict(
             noise_size=6,
-            c_dim=0,
             style_channels=8,
             out_size=16,
             img_channels=3,
@@ -195,13 +228,12 @@ class TestStyleGAN3Generator:
         y = generator(None, None, num_batches=2)
         assert y.shape == (2, 3, 16, 16)
 
-        # test c_dim>0
-        cfg = deepcopy(self.default_cfg)
-        cfg.update(dict(c_dim=3))
-        generator = StyleGANv3Generator(**cfg)
-        c = torch.rand(2, 3)
-        y = generator(None, c, num_batches=2)
-        assert y.shape == (2, 3, 16, 16)
+        # test return latents
+        result = generator(None, None, num_batches=2, return_latents=True)
+        assert isinstance(result, dict)
+        assert result['fake_img'].shape == (2, 3, 16, 16)
+        assert result['noise_batch'].shape == (2, 6)
+        assert result['latent'].shape == (2, 16, 8)
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_cuda(self):
@@ -218,12 +250,4 @@ class TestStyleGAN3Generator:
         cfg.update(dict(rgb2bgr=True))
         generator = StyleGANv3Generator(**cfg).cuda()
         y = generator(None, None, num_batches=2)
-        assert y.shape == (2, 3, 16, 16)
-
-        # test c_dim>0
-        cfg = deepcopy(self.default_cfg)
-        cfg.update(dict(c_dim=3))
-        generator = StyleGANv3Generator(**cfg).cuda()
-        c = torch.rand(2, 3).cuda()
-        y = generator(None, c, num_batches=2)
         assert y.shape == (2, 3, 16, 16)
