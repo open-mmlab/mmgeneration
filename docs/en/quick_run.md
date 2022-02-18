@@ -16,7 +16,7 @@ MMGeneration provides high-level APIs for sampling images with unconditional GAN
 
 ```python
 import mmcv
-from mmgen.apis import init_model, sample_uncoditional_model
+from mmgen.apis import init_model, sample_unconditional_model
 
 # Specify the path to model config and checkpoint file
 config_file = 'configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py'

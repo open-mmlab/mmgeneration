@@ -10,7 +10,7 @@ from .pipelines import Compose
 
 @DATASETS.register_module()
 class GrowScaleImgDataset(Dataset):
-    """Grow Scale Uncoditional Image Dataset.
+    """Grow Scale Unconditional Image Dataset.
 
     This dataset is similar with ``UnconditionalImageDataset``, but offer
     more dynamic functionalities for the supporting complex algorithms, like

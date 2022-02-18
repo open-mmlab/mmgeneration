@@ -10,7 +10,7 @@ from .pipelines import Compose
 
 @DATASETS.register_module()
 class UnconditionalImageDataset(Dataset):
-    """Uncoditional Image Dataset.
+    """Unconditional Image Dataset.
 
     This dataset contains raw images for training unconditional GANs. Given
     a root dir, we will recursively find all images in this root. The
