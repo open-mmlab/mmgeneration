@@ -1,7 +1,8 @@
-from mmgen.ops.stylegan3.ops import bias_act, upfirdn2d
-import torch
 import pytest
+import torch
 import torch.nn as nn
+
+from mmgen.ops.stylegan3.ops import bias_act, upfirdn2d
 
 
 class TestStyleGAN3Ops:
