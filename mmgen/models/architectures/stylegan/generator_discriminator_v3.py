@@ -41,7 +41,13 @@ class StyleGANv3Generator(nn.Module):
             to dict(type='SynthesisNetwork').
         mapping_cfg (dict, optional): Config for mapping network. Defaults to
             dict(type='MappingNetwork').
+        training_kwargs(dict, optional): Keyword argument used to initialize
+            train mode. Defaults to None.
+        eval_kwargs(dict,optional): Keyword argument used to initialize eval
+            mode. Defaults to None.
     """
+    _default_training_kwargs = dict(force_fp32=False, update_emas=True)
+    _default_eval_kwargs = dict(force_fp32=True, update_emas=False)
 
     def __init__(self,
                  out_size,
@@ -52,7 +58,9 @@ class StyleGANv3Generator(nn.Module):
                  rgb2bgr=False,
                  pretrained=None,
                  synthesis_cfg=dict(type='SynthesisNetwork'),
-                 mapping_cfg=dict(type='MappingNetwork')):
+                 mapping_cfg=dict(type='MappingNetwork'),
+                 training_kwargs=None,
+                 eval_kwargs=None):
         super().__init__()
         self.noise_size = noise_size
         self.style_channels = style_channels
@@ -76,6 +84,33 @@ class StyleGANv3Generator(nn.Module):
         if pretrained is not None:
             self._load_pretrained_model(**pretrained)
 
+        self.training_kwargs = deepcopy(self._default_training_kwargs)
+        if training_kwargs is not None:
+            self.training_kwargs.update(training_kwargs)
+
+        self.eval_kwargs = deepcopy(self._default_eval_kwargs)
+        if eval_kwargs is not None:
+            self.eval_kwargs.update(eval_kwargs)
+
+        # general setting if mode is not set
+        self.update_emas = False
+        self.force_fp32 = True
+
+    def train(self, mode=True):
+        """Rewrite train function to set attributes in training and eval mode.
+
+        Args:
+            mode (bool, optional): If set to False, set model to eval mode.
+                Defaults to True.
+        """
+        if mode:
+            self.update_emas = self.training_kwargs.get('update_emas', True)
+            self.force_fp32 = self.training_kwargs.get('force_fp32', False)
+        else:
+            self.update_emas = self.eval_kwargs.get('update_emas', False)
+            self.force_fp32 = self.training_kwargs.get('force_fp32', True)
+        return super().train(mode)
+
     def _load_pretrained_model(self,
                                ckpt_path,
                                prefix='',
@@ -93,10 +128,8 @@ class StyleGANv3Generator(nn.Module):
                 input_is_latent=False,
                 truncation=1,
                 num_truncation_layer=None,
-                update_emas=False,
                 return_noise=False,
-                return_latents=False,
-                **synthesis_kwargs):
+                return_latents=False):
         """Forward Function for stylegan3.
 
         Args:
@@ -117,10 +150,6 @@ class StyleGANv3Generator(nn.Module):
                 than 1., the truncation trick will be adopted. Defaults to 1.
             num_truncation_layer (int, optional): Number of layers use
                 truncated latent. Defaults to None.
-            truncation_latent (torch.Tensor, optional): Mean truncation latent.
-                Defaults to None.
-            update_emas (bool, optional): Whether update moving average of
-                mean latent and layer input. Defaults to False.
             return_noise (bool, optional): If True, ``noise_batch`` will be
                 returned in a dict with ``fake_img``. Defaults to False.
             return_latents (bool, optional): If True, ``latent`` will be
@@ -154,9 +183,9 @@ class StyleGANv3Generator(nn.Module):
             noise_batch,
             truncation=truncation,
             num_truncation_layer=num_truncation_layer,
-            update_emas=update_emas)
+            update_emas=self.update_emas)
         out_img = self.synthesis(
-            ws, update_emas=update_emas, **synthesis_kwargs)
+            ws, update_emas=self.update_emas, force_fp32=self.force_fp32)
 
         if self.rgb2bgr:
             out_img = out_img[:, [2, 1, 0], ...]
