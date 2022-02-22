@@ -274,19 +274,21 @@ class ModulatedConv2d(nn.Module):
             Defaults to 1e-8.
     """
 
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 kernel_size,
-                 style_channels,
-                 demodulate=True,
-                 upsample=False,
-                 downsample=False,
-                 blur_kernel=[1, 3, 3, 1],
-                 equalized_lr_cfg=dict(mode='fan_in', lr_mul=1., gain=1.),
-                 style_mod_cfg=dict(bias_init=1.),
-                 style_bias=0.,
-                 eps=1e-8):
+    def __init__(
+            self,
+            in_channels,
+            out_channels,
+            kernel_size,
+            style_channels,
+            demodulate=True,
+            upsample=False,
+            downsample=False,
+            blur_kernel=[1, 3, 3, 1],
+            equalized_lr_cfg=dict(mode='fan_in', lr_mul=1., gain=1.),
+            style_mod_cfg=dict(bias_init=1.),
+            style_bias=0.,
+            padding=None,  # self define padding
+            eps=1e-8):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -335,9 +337,9 @@ class ModulatedConv2d(nn.Module):
         if equalized_lr_cfg is not None:
             equalized_lr(self, **equalized_lr_cfg)
 
-        self.padding = kernel_size // 2
+        self.padding = padding if padding else (kernel_size // 2)
 
-    def forward(self, x, style):
+    def forward(self, x, style, input_gain=None):
         n, c, h, w = x.shape
 
         weight = self.weight
@@ -354,12 +356,17 @@ class ModulatedConv2d(nn.Module):
         # process style code
         style = self.style_modulation(style).view(n, 1, c, 1,
                                                   1) + self.style_bias
-
         # combine weight and style
         weight = weight * style
         if self.demodulate:
             demod = torch.rsqrt(weight.pow(2).sum([2, 3, 4]) + self.eps)
             weight = weight * demod.view(n, self.out_channels, 1, 1, 1)
+
+        if input_gain is not None:
+            # input_gain shape [batch, in_ch]
+            input_gain = input_gain.expand(n, self.in_channels)
+            # weight shape [batch, out_ch, in_ch, kernel_size, kernel_size]
+            weight = weight * input_gain.unsqueeze(1).unsqueeze(3).unsqueeze(4)
 
         weight = weight.view(n * self.out_channels, c, self.kernel_size,
                              self.kernel_size)
@@ -382,10 +389,9 @@ class ModulatedConv2d(nn.Module):
             x = conv2d(x, weight, stride=2, padding=0, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
         else:
-            x = x.view(1, n * c, h, w)
+            x = x.reshape(1, n * c, h, w)
             x = conv2d(x, weight, stride=1, padding=self.padding, groups=n)
             x = x.view(n, self.out_channels, *x.shape[-2:])
-
         return x
 
 
