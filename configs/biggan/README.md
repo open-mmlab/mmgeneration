@@ -1,4 +1,6 @@
-# Large Scale GAN Training for High Fidelity Natural Image Synthesis
+# BigGAN
+
+> [Large Scale GAN Training for High Fidelity Natural Image Synthesis](https://openreview.net/forum?id=B1xsqj09Fm)
 
 ## Abstract
 
@@ -10,23 +12,6 @@ Despite recent progress in generative image modeling, successfully generating hi
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143154280-4cb22e16-92c8-4b34-9e2c-6357ed0bdac8.png"/>
 </div>
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://openreview.net/forum?id=B1xsqj09Fm">BigGAN (ICLR'2019)</a></summary>
-
-```latex
-@inproceedings{
-    brock2018large,
-    title={Large Scale {GAN} Training for High Fidelity Natural Image Synthesis},
-    author={Andrew Brock and Jeff Donahue and Karen Simonyan},
-    booktitle={International Conference on Learning Representations},
-    year={2019},
-    url={https://openreview.net/forum?id=B1xsqj09Fm},
-}
-```
 
 ## Introduction
 
@@ -45,13 +30,13 @@ We have finished training `BigGAN` in `Cifar10` (32x32) and are aligning trainin
   <img src="https://user-images.githubusercontent.com/22982797/127615534-6278ce1b-5cff-4189-83c6-9ecc8de08dfc.png" width="800"/>
 </div>
 
-Evaluation of our trained BIgGAN.
-|     Models     |  Dataset   | Best FID (Iter) | Best IS (Iter) |                                                          Config                                                          |                                                                                                                        Download                                                                                                                         |
+Evaluation of our trained BigGAN.
+|     Models     |  Dataset   | FID (Iter) | IS (Iter) |                                                          Config                                                          |                                                                                                                        Download                                                                                                                         |
 |:--------------:|:----------:|:---------------:|:--------------:|:------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
 |  BigGAN 32x32  |  CIFAR10   |  9.78(390000)   |  8.70(390000)  |    [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_cifar10_32x32_b25x2_500k.py)    |               [model](https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32x32_b25x2_500k_20210728_110906-08b61a44.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32_b25x2_500k_20210706_171051.log.json)               |
-| BigGAN 128x128 | ImageNet1k | 10.02(1449000)  | 86.8(1449000)  | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_imagenet1k_128x128_b32x8_1500k.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1449000_20210906_141519-f9128faf.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1449000_20210906_141519-f9128faf.log.json) |
-
-Note: This is an unfinished version (1150k iter) of BigGAN trained on `ImageNet1k`. The model with the best performance is still on the way.
+| BigGAN 128x128 Best FID| ImageNet1k | **8.69**(1232000)  | 101.15(1232000)  | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_best_fid_iter_1232000_20211111_122548-5315b13d.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1500k_20211111_122548-5315b13d.log.json) |
+| BigGAN 128x128 Best IS| ImageNet1k |  13.51(1328000) | **129.07**(1328000)  | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_best_is_iter_1328000_20211111_122911-28c688bc.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1500k_20211111_122548-5315b13d.log.json) |
+Note: `BigGAN-Deep` trained on `ImageNet1k` will come later.
 
 ## Converted weights
 Since we haven't finished training our models, we provide you with several pre-trained weights which have been evaluated. Here, we refer to [BigGAN-PyTorch](https://github.com/ajbrock/BigGAN-PyTorch) and [pytorch-pretrained-BigGAN](https://github.com/huggingface/pytorch-pretrained-BigGAN).
@@ -127,3 +112,16 @@ python apps/conditional_interpolate.py CONFIG_PATH  CKPT_PATH  --samples-path SA
   <br/>
   <img src="https://user-images.githubusercontent.com/22982797/128124596-421396f1-3f23-4098-b629-b00d29d710a9.png" width="800"/>
 </div>
+
+## Citation
+
+```latex
+@inproceedings{
+    brock2018large,
+    title={Large Scale {GAN} Training for High Fidelity Natural Image Synthesis},
+    author={Andrew Brock and Jeff Donahue and Karen Simonyan},
+    booktitle={International Conference on Learning Representations},
+    year={2019},
+    url={https://openreview.net/forum?id=B1xsqj09Fm},
+}
+```

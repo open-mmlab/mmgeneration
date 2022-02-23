@@ -1,5 +1,7 @@
 # Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks
 
+> [Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks](https://arxiv.org/abs/1511.06434)
+
 ## Abstract
 
 <!-- [ABSTRACT] -->
@@ -10,24 +12,6 @@ In recent years, supervised learning with convolutional networks (CNNs) has seen
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143050281-60808c3f-81d0-4fae-9071-f4c297116b2f.JPG"/>
 </div>
-
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://arxiv.org/abs/1511.06434">DCGAN (arXiv'2015)</a></summary>
-
-
-```latex
-@article{radford2015unsupervised,
-  title={Unsupervised representation learning with deep convolutional generative adversarial networks},
-  author={Radford, Alec and Metz, Luke and Chintala, Soumith},
-  journal={arXiv preprint arXiv:1511.06434},
-  year={2015},
-  url={https://arxiv.org/abs/1511.06434},
-}
-```
 
 ## Results and models
 
@@ -42,3 +26,15 @@ In recent years, supervised learning with convolutional networks (CNNs) has seen
 | DCGAN 64x64 | MNIST (64x64)  |  21.16, 4.4, 8.41/11.32  | 0.1395  | [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/dcgan/dcgan_mnist-64_b128x1_Glr4e-4_Dlr1e-4_5k.py) | [model](https://download.openmmlab.com//mmgen/dcgan/dcgan_mnist-64_b128x1_Glr4e-4_Dlr1e-4_5k_20210512_163926-207a1eaf.pth) &#124; [log](https://download.openmmlab.com//mmgen/dcgan/dcgan_mnist-64_b128x1_Glr4e-4_Dlr1e-4_5k_20210512_163926-207a1eaf.json) |
 | DCGAN 64x64 | CelebA-Cropped |  8.93,10.53,50.32/23.26  | 0.2899  |   [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/dcgan/dcgan_celeba-cropped_64_b128x1_300k.py)    |   [model](https://download.openmmlab.com/mmgen/dcgan/dcgan_celeba-cropped_64_b128x1_300kiter_20210408_161607-1f8a2277.pth) &#124; [log](https://download.openmmlab.com/mmgen/dcgan/dcgan_celeba-cropped_64_b128x1_300kiter_20210408_161607-1f8a2277.json)   |
 | DCGAN 64x64 |  LSUN-Bedroom  | 42.79, 34.55, 98.46/58.6 | 0.2095  |    [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/dcgan/dcgan_lsun-bedroom_64x64_b128x1_5e.py)    |           [model](https://download.openmmlab.com/mmgen/dcgan/dcgan_lsun-bedroom_64_b128x1_5e_20210408_161713-117c498b.pth) &#124; [log](https://download.openmmlab.com/mmgen/dcgan/dcgan_lsun-bedroom_64_b128x1_5e_20210408_161713-117c498b.json)           |
+
+## Citation
+
+```latex
+@article{radford2015unsupervised,
+  title={Unsupervised representation learning with deep convolutional generative adversarial networks},
+  author={Radford, Alec and Metz, Luke and Chintala, Soumith},
+  journal={arXiv preprint arXiv:1511.06434},
+  year={2015},
+  url={https://arxiv.org/abs/1511.06434},
+}
+```

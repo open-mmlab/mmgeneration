@@ -1,4 +1,6 @@
-# Geometric GAN
+# GGAN
+
+> [Geometric GAN](https://arxiv.org/abs/1705.02894)
 
 ## Abstract
 
@@ -10,22 +12,6 @@ Generative Adversarial Nets (GANs) represent an important milestone for effectiv
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143051600-6a3e5c37-259e-4b77-a847-c6ad1eafa65f.JPG"/>
 </div>
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://arxiv.org/abs/1705.02894">GGAN (arXiv'2017)</a></summary>
-
-```latex
-@article{lim2017geometric,
-  title={Geometric gan},
-  author={Lim, Jae Hyun and Ye, Jong Chul},
-  journal={arXiv preprint arXiv:1705.02894},
-  year={2017},
-  url={https://arxiv.org/abs/1705.02894},
-}
-```
 
 ## Results and models
 
@@ -49,3 +35,15 @@ Original settings and our settings:
 |  GGAN(ours) 64x64  | CelebA-Cropped | dcgan-archi  |   Adam    | 0.001  | 0.001  |    1    |    1    |
 | GGAN(origin) 64x64 |  LSUN-Bedroom  | dcgan-archi  |  RMSprop  | 0.0002 | 0.0002 |   10    |    1    |
 |  GGAN(ours) 64x64  |  LSUN-Bedroom  | lsgan-archi  |   Adam    | 0.0001 | 0.0001 |    1    |    1    |
+
+## Citation
+
+```latex
+@article{lim2017geometric,
+  title={Geometric gan},
+  author={Lim, Jae Hyun and Ye, Jong Chul},
+  journal={arXiv preprint arXiv:1705.02894},
+  year={2017},
+  url={https://arxiv.org/abs/1705.02894},
+}
+```

@@ -62,7 +62,7 @@ MMGeneration 是一个基于 PyTorch 和[MMCV](https://github.com/open-mmlab/mmc
 * 混合精度训练已经在 `StyleGAN2` 中进行了初步支持，请到[这里](configs/styleganv2/README.md)查看各种实现方式的详细比较。
 ## 更新日志
 
-v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changelog.md](docs/changelog.md)。
+v0.5.0 在 12/02/2022 发布。 关于细节和发布历史，请参考 [changelog.md](docs/zh_cn/changelog.md)。
 
 ## 模型库
 
@@ -75,7 +75,7 @@ v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changel
 - ✅ [DCGAN](configs/dcgan/README.md) (ICLR'2016)
 - ✅ [WGAN-GP](configs/wgan-gp/README.md) (NIPS'2017)
 - ✅ [LSGAN](configs/lsgan/README.md) (ICCV'2017)
-- ✅ [GGAN](configs/ggan/README.md) (Axiv'2017)
+- ✅ [GGAN](configs/ggan/README.md) (arXiv'2017)
 - ✅ [PGGAN](configs/pggan/README.md) (ICLR'2018)
 - ✅ [StyleGANV1](configs/styleganv1/README.md) (CVPR'2019)
 - ✅ [StyleGANV2](configs/styleganv2/README.md) (CVPR'2020)
@@ -109,6 +109,13 @@ v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changel
 
 </details>
 
+<details open>
+<summary>Denoising Diffusion Probabilistic Models (点击折叠)</summary>
+
+- ✅ [Improved DDPM](configs/improved_ddpm/README.md) (arXiv'2021)
+
+</details>
+
 ## 相关应用
 - ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
@@ -118,11 +125,11 @@ v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changel
 
 ## 安装
 
-请参考[快速入门](docs/get_started.md)进行安装。
+请参考[快速入门](docs/zh_cn/get_started.md)进行安装。
 
 ## 快速入门
 
-对于 `MMGeneration` 的基本使用请参考 [快速入门](docs/get_started.md)。其他细节和教程，请参考我们的[文档](https://mmgeneration.readthedocs.io/)。
+对于 `MMGeneration` 的基本使用请参考 [快速入门](docs/zh_cn/get_started.md)。其他细节和教程，请参考我们的[文档](https://mmgeneration.readthedocs.io/)。
 
 ## 贡献指南
 
@@ -158,6 +165,9 @@ v0.3.0 在 02/08/2021 发布。 关于细节和发布历史，请参考 [changel
 - [MMFlow](https://github.com/open-mmlab/mmflow): OpenMMLab 光流估计工具箱与测试基准
 - [MMFewShot](https://github.com/open-mmlab/mmfewshot): OpenMMLab 少样本学习工具箱与测试基准
 - [MMHuman3D](https://github.com/open-mmlab/mmhuman3d): OpenMMLab 人体参数化模型工具箱与测试基准
+- [MMSelfSup](https://github.com/open-mmlab/mmselfsup): OpenMMLab 自监督学习工具箱与测试基准
+- [MMRazor](https://github.com/open-mmlab/mmrazor): OpenMMLab 模型压缩工具箱与测试基准
+- [MMDeploy](https://github.com/open-mmlab/mmdeploy): OpenMMLab 模型部署框架
 
 ## 欢迎加入 OpenMMLab 社区
 

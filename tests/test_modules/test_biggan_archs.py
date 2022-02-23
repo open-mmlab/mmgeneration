@@ -43,6 +43,28 @@ class TestBigGANConditionBN:
         out = module(self.x, self.label)
         assert out.shape == (2, 64, 32, 32)
 
+        # test torch-sn
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(sn_style='torch'))
+        module = build_module(cfg)
+        out = module(self.x, self.y)
+        assert out.shape == (2, 64, 32, 32)
+
+        # test torch-sn
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(sn_style='torch'))
+        module = build_module(cfg)
+        out = module(self.x, self.y)
+        assert out.shape == (2, 64, 32, 32)
+
+        # test not-implemented sn-style
+        with pytest.raises(NotImplementedError):
+            cfg = deepcopy(self.default_cfg)
+            cfg.update(dict(sn_style='tero'))
+            module = build_module(cfg)
+            out = module(self.x, self.y)
+            assert out.shape == (2, 64, 32, 32)
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_biggan_condition_bn_cuda(self):
         # test default setting
@@ -57,6 +79,21 @@ class TestBigGANConditionBN:
         module = build_module(cfg).cuda()
         out = module(self.x.cuda(), self.label.cuda())
         assert out.shape == (2, 64, 32, 32)
+
+        # test torch-sn
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(sn_style='torch'))
+        module = build_module(cfg).cuda()
+        out = module(self.x.cuda(), self.y.cuda())
+        assert out.shape == (2, 64, 32, 32)
+
+        # test not-implemented sn-style
+        with pytest.raises(NotImplementedError):
+            cfg = deepcopy(self.default_cfg)
+            cfg.update(dict(sn_style='tero'))
+            module = build_module(cfg).cuda()
+            out = module(self.x.cuda(), self.y.cuda())
+            assert out.shape == (2, 64, 32, 32)
 
 
 class TestSelfAttentionBlock:
@@ -81,6 +118,13 @@ class TestSelfAttentionBlock:
         out = module(x)
         assert out.shape == (2, 10, 8, 8)
 
+        # test torch-sn
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(sn_style='torch'))
+        module = build_module(cfg)
+        out = module(self.x)
+        assert out.shape == (2, 16, 8, 8)
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_self_attention_block_cuda(self):
         # test default setting
@@ -96,6 +140,13 @@ class TestSelfAttentionBlock:
         x = torch.randn(2, 10, 8, 8).cuda()
         out = module(x)
         assert out.shape == (2, 10, 8, 8)
+
+        # test torch-sn
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(sn_style='torch'))
+        module = build_module(cfg).cuda()
+        out = module(self.x.cuda())
+        assert out.shape == (2, 16, 8, 8)
 
 
 class TestBigGANGenResBlock:
@@ -138,6 +189,13 @@ class TestBigGANGenResBlock:
         out = module(self.x, self.label)
         assert out.shape == (2, 16, 16, 16)
 
+        # test torch-sn
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(sn_style='torch'))
+        module = build_module(cfg)
+        out = module(self.x, self.y)
+        assert out.shape == (2, 16, 16, 16)
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_biggan_gen_res_block_cuda(self):
         # test default setting
@@ -158,6 +216,13 @@ class TestBigGANGenResBlock:
         cfg.update(dict(input_is_label=True))
         module = build_module(cfg).cuda()
         out = module(self.x.cuda(), self.label.cuda())
+        assert out.shape == (2, 16, 16, 16)
+
+        # test torch-sn
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(sn_style='torch'))
+        module = build_module(cfg).cuda()
+        out = module(self.x.cuda(), self.y.cuda())
         assert out.shape == (2, 16, 16, 16)
 
 
@@ -190,6 +255,13 @@ class TestBigGANDiscResBlock:
         out = module(self.x)
         assert out.shape == (2, 64, 16, 16)
 
+        # test torch-sn
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(sn_style='torch'))
+        module = build_module(cfg)
+        out = module(self.x)
+        assert out.shape == (2, 64, 8, 8)
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_biggan_disc_res_block_cuda(self):
         # test default setting
@@ -204,6 +276,13 @@ class TestBigGANDiscResBlock:
         module = build_module(cfg).cuda()
         out = module(self.x.cuda())
         assert out.shape == (2, 64, 16, 16)
+
+        # test torch-sn
+        cfg = deepcopy(self.default_cfg)
+        cfg.update(dict(sn_style='torch'))
+        module = build_module(cfg).cuda()
+        out = module(self.x.cuda())
+        assert out.shape == (2, 64, 8, 8)
 
 
 class TestBigGANGenerator(object):
@@ -300,6 +379,13 @@ class TestBigGANGenerator(object):
         res = g(None, None, num_batches=3)
         assert res.shape == (3, 3, 128, 128)
 
+        # test torch-sn
+        cfg = deepcopy(self.default_config)
+        cfg.update(dict(sn_style='torch'))
+        g = build_module(cfg)
+        res = g(None, None, num_batches=3)
+        assert res.shape == (3, 3, 128, 128)
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_biggan_generator_cuda(self):
 
@@ -382,6 +468,13 @@ class TestBigGANGenerator(object):
         res = g(None, None, num_batches=3)
         assert res.shape == (3, 3, 128, 128)
 
+        # test torch-sn
+        cfg = deepcopy(self.default_config)
+        cfg.update(dict(sn_style='torch'))
+        g = build_module(cfg)
+        res = g(None, None, num_batches=3)
+        assert res.shape == (3, 3, 128, 128)
+
 
 class TestBigGANDiscriminator(object):
 
@@ -430,6 +523,13 @@ class TestBigGANDiscriminator(object):
         y = d(self.x, self.label)
         assert y.shape == (2, 1)
 
+        # test torch-sn
+        cfg = deepcopy(self.default_config)
+        cfg.update(dict(sn_style='torch'))
+        d = build_module(cfg)
+        y = d(self.x, self.label)
+        assert y.shape == (2, 1)
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_biggan_discriminator_cuda(self):
         # test default settings
@@ -460,6 +560,13 @@ class TestBigGANDiscriminator(object):
         # test with `with_spectral_norm=False`
         cfg = deepcopy(self.default_config)
         cfg.update(dict(with_spectral_norm=False))
+        d = build_module(cfg).cuda()
+        y = d(self.x.cuda(), self.label.cuda())
+        assert y.shape == (2, 1)
+
+        # test torch-sn
+        cfg = deepcopy(self.default_config)
+        cfg.update(dict(sn_style='torch'))
         d = build_module(cfg).cuda()
         y = d(self.x.cuda(), self.label.cuda())
         assert y.shape == (2, 1)

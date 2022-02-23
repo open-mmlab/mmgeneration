@@ -175,7 +175,16 @@ class TestAugmentations(object):
         assert resize_results['alpha'].shape == (192, 192, 1)
 
         resize = Resize(['gt_img'], (-1, 200))
+        results = dict(gt_img=self.results['gt'].copy())
+        resize_results = resize(results)
         assert resize.scale == (np.inf, 200)
+        assert resize_results['gt_img'].shape == (400, 200, 3)
+
+        resize = Resize(['gt_img'], (-1, 200))
+        results = dict(gt_img=self.results['gt'].copy().transpose(1, 0, 2))
+        resize_results = resize(results)
+        assert resize.scale == (np.inf, 200)
+        assert resize_results['gt_img'].shape == (200, 400, 3)
 
         results = dict(gt_img=self.results['img'].copy())
         resize_keep_ratio = Resize(['gt_img'], scale=0.5, keep_ratio=True)

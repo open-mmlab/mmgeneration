@@ -90,6 +90,12 @@ class SNGANGenerator(nn.Module):
             specified (set as ``None``), ``with_embedding_spectral_norm`` would
             be set as the same value as ``with_spectral_norm``.
             Defaults to None.
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `ajbrock`, implementation by
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
+            Defaults to `torch`.
         norm_eps (float, optional): eps for Normalization layers (both
             conditional and non-conditional ones). Default to `1e-4`.
         sn_eps (float, optional): eps for spectral normalization operation.
@@ -125,6 +131,7 @@ class SNGANGenerator(nn.Module):
                  auto_sync_bn=True,
                  with_spectral_norm=False,
                  with_embedding_spectral_norm=None,
+                 sn_style='torch',
                  norm_eps=1e-4,
                  sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN'),
@@ -152,6 +159,7 @@ class SNGANGenerator(nn.Module):
         self.blocks_cfg.setdefault('with_embedding_spectral_norm',
                                    with_embedding_spectral_norm)
         self.blocks_cfg.setdefault('init_cfg', init_cfg)
+        self.blocks_cfg.setdefault('sn_style', sn_style)
         self.blocks_cfg.setdefault('norm_eps', norm_eps)
         self.blocks_cfg.setdefault('sn_eps', sn_eps)
 
@@ -201,6 +209,7 @@ class SNGANGenerator(nn.Module):
                 self.attention_block_idx.append(len(self.conv_blocks))
                 attn_cfg_ = deepcopy(attention_cfg)
                 attn_cfg_['in_channels'] = factor_output * base_channels
+                attn_cfg_['sn_style'] = sn_style
                 self.conv_blocks.append(build_module(attn_cfg_))
 
         to_rgb_norm_cfg = dict(type='BN', eps=norm_eps)
@@ -479,6 +488,14 @@ class ProjDiscriminator(nn.Module):
             layer. Defaults to ``dict(type='ReLU')``.
         with_spectral_norm (bool, optional): Whether use spectral norm for
             all conv blocks or not. Default to True.
+        sn_style (str, optional): The style of spectral normalization.
+            If set to `ajbrock`, implementation by
+            ajbrock(https://github.com/ajbrock/BigGAN-PyTorch/blob/master/layers.py)
+            will be adopted.
+            If set to `torch`, implementation by `PyTorch` will be adopted.
+            Defaults to `torch`.
+        sn_eps (float, optional): eps for spectral normalization operation.
+            Defaults to `1e-12`.
         init_cfg (dict, optional): Config for weight initialization.
             Default to ``dict(type='BigGAN')``.
         pretrained (str | dict , optional): Path for the pretrained model or
@@ -514,6 +531,7 @@ class ProjDiscriminator(nn.Module):
                  blocks_cfg=dict(type='SNGANDiscResBlock'),
                  act_cfg=dict(type='ReLU'),
                  with_spectral_norm=True,
+                 sn_style='torch',
                  sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN'),
                  pretrained=None):
@@ -526,12 +544,14 @@ class ProjDiscriminator(nn.Module):
         self.from_rgb_cfg = deepcopy(from_rgb_cfg)
         self.from_rgb_cfg.setdefault('act_cfg', act_cfg)
         self.from_rgb_cfg.setdefault('with_spectral_norm', with_spectral_norm)
+        self.from_rgb_cfg.setdefault('sn_style', sn_style)
         self.from_rgb_cfg.setdefault('init_cfg', init_cfg)
 
         # add SN options and activation function options to cfg
         self.blocks_cfg = deepcopy(blocks_cfg)
         self.blocks_cfg.setdefault('act_cfg', act_cfg)
         self.blocks_cfg.setdefault('with_spectral_norm', with_spectral_norm)
+        self.blocks_cfg.setdefault('sn_style', sn_style)
         self.blocks_cfg.setdefault('sn_eps', sn_eps)
         self.blocks_cfg.setdefault('init_cfg', init_cfg)
 
@@ -586,6 +606,7 @@ class ProjDiscriminator(nn.Module):
         if 1 in attention_after_nth_block:
             attn_cfg_ = deepcopy(attention_cfg)
             attn_cfg_['in_channels'] = base_channels
+            attn_cfg_['sn_style'] = sn_style
             self.conv_blocks.append(build_module(attn_cfg_))
 
         for idx in range(len(self.downsample_list)):

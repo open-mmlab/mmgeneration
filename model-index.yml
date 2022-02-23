@@ -3,6 +3,7 @@ Import:
 - configs/cyclegan/metafile.yml
 - configs/dcgan/metafile.yml
 - configs/ggan/metafile.yml
+- configs/improved_ddpm/metafile.yml
 - configs/lsgan/metafile.yml
 - configs/pggan/metafile.yml
 - configs/pix2pix/metafile.yml

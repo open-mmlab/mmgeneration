@@ -1,4 +1,6 @@
-# Least Squares Generative Adversarial Networks
+# LSGAN
+
+> [Least Squares Generative Adversarial Networks](https://openaccess.thecvf.com/content_iccv_2017/html/Mao_Least_Squares_Generative_ICCV_2017_paper.html)
 
 ## Abstract
 
@@ -10,23 +12,6 @@ Unsupervised learning with generative adversarial networks (GANs) has proven hug
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143052264-afd97b91-5fd1-4134-ad4d-529e364fdcc8.JPG"/>
 </div>
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://openaccess.thecvf.com/content_iccv_2017/html/Mao_Least_Squares_Generative_ICCV_2017_paper.html">LSGAN (ICCV'2017)</a></summary>
-
-```latex
-@inproceedings{mao2017least,
-  title={Least squares generative adversarial networks},
-  author={Mao, Xudong and Li, Qing and Xie, Haoran and Lau, Raymond YK and Wang, Zhen and Paul Smolley, Stephen},
-  booktitle={Proceedings of the IEEE international conference on computer vision},
-  pages={2794--2802},
-  year={2017},
-  url={https://openaccess.thecvf.com/content_iccv_2017/html/Mao_Least_Squares_Generative_ICCV_2017_paper.html},
-}
-```
 
 ## Results and models
 
@@ -43,3 +28,16 @@ Unsupervised learning with generative adversarial networks (GANs) has proven hug
 |  LSGAN 64x64  |  LSUN-Bedroom  |      5.66, 9.0, 18.6/11.09      | 0.0671  | 30.7390 |  [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/lsgan/lsgan_dcgan-archi_lr-1e-4_lsun-bedroom_64_b128x1_12m.py)  |   [model](https://download.openmmlab.com/mmgen/lsgan/lsgan_lsun-bedroom_dcgan-archi_lr-1e-4_64_b128x1_12m_20210429_144602-ec4ec6bb.pth)&#124; [log](https://download.openmmlab.com/mmgen/lsgan/lsgan_lsun-bedroom_dcgan-archi_lr-1e-4_64_b128x1_12m_20210423_005020.log.json)   |
 | LSGAN 128x128 | CelebA-Cropped | 21.66, 9.83, 16.06, 70.76/29.58 | 0.3691  | 38.3752 | [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/lsgan/lsgan_dcgan-archi_lr-1e-4_celeba-cropped_128_b64x1_10m.py) | [model](https://download.openmmlab.com/mmgen/lsgan/lsgan_celeba-cropped_dcgan-archi_lr-1e-4_128_b64x1_10m_20210429_144229-01ba67dc.pth)&#124; [log](https://download.openmmlab.com/mmgen/lsgan/lsgan_celeba-cropped_dcgan-archi_lr-1e-4_128_b64x1_10m_20210423_132126.log.json) |
 | LSGAN 128x128 |  LSUN-Bedroom  |  19.52, 9.99, 7.48, 14.3/12.82  | 0.0612  | 51.5500 |  [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/lsgan/lsgan_lsgan-archi_lr-1e-4_lsun-bedroom_128_b64x1_10m.py)  |   [model](https://download.openmmlab.com/mmgen/lsgan/lsgan_lsun-bedroom_lsgan-archi_lr-1e-4_128_b64x1_10m_20210429_155605-cf78c0a8.pth)&#124; [log](https://download.openmmlab.com/mmgen/lsgan/lsgan_lsun-bedroom_lsgan-archi_lr-1e-4_128_b64x1_10m_20210429_142302.log.json)   |
+
+## Citation
+
+```latex
+@inproceedings{mao2017least,
+  title={Least squares generative adversarial networks},
+  author={Mao, Xudong and Li, Qing and Xie, Haoran and Lau, Raymond YK and Wang, Zhen and Paul Smolley, Stephen},
+  booktitle={Proceedings of the IEEE international conference on computer vision},
+  pages={2794--2802},
+  year={2017},
+  url={https://openaccess.thecvf.com/content_iccv_2017/html/Mao_Least_Squares_Generative_ICCV_2017_paper.html},
+}
+```

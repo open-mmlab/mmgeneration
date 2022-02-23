@@ -26,6 +26,7 @@ class TestDDPM:
             num_timesteps=2000)
         cls.x_t = torch.randn(2, 3, 32, 32)
         cls.timesteps = torch.LongTensor([999, 1999])
+        cls.label = torch.randint(0, 10, (2, ))
 
     def test_denoising_cpu(self):
         # test default config
@@ -158,3 +159,12 @@ class TestDDPM:
         config = deepcopy(self.denoising_cfg)
         config['time_embedding_cfg'] = dict(max_period=1000)
         denoising = build_module(config)
+
+        # test class-conditional denoising
+        config = deepcopy(self.denoising_cfg)
+        config['num_classes'] = 10
+        denoising = build_module(config)
+        output_dict = denoising(
+            self.x_t, self.timesteps, self.label, return_noise=True)
+        assert 'label' in output_dict
+        assert (output_dict['label'] == self.label).all()

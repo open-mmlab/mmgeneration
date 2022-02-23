@@ -1,4 +1,6 @@
-# Singan: Learning a Generative Model from a Single Natural Image (ICCV'2019)
+# SinGAN
+
+> [Singan: Learning a Generative Model from a Single Natural Image](https://openaccess.thecvf.com/content_ICCV_2019/html/Shaham_SinGAN_Learning_a_Generative_Model_From_a_Single_Natural_Image_ICCV_2019_paper.html)
 
 ## Abstract
 
@@ -10,23 +12,6 @@ We introduce SinGAN, an unconditional generative model that can be learned from 
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143054395-000ceec1-3be9-4447-b4b9-effc9de94c62.JPG"/>
 </div>
-
-## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://openaccess.thecvf.com/content_ICCV_2019/html/Shaham_SinGAN_Learning_a_Generative_Model_From_a_Single_Natural_Image_ICCV_2019_paper.html">Singan (ICCV'2019)</a></summary>
-
-```latex
-@inproceedings{shaham2019singan,
-  title={Singan: Learning a generative model from a single natural image},
-  author={Shaham, Tamar Rott and Dekel, Tali and Michaeli, Tomer},
-  booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision},
-  pages={4570--4580},
-  year={2019},
-  url={https://openaccess.thecvf.com/content_ICCV_2019/html/Shaham_SinGAN_Learning_a_Generative_Model_From_a_Single_Natural_Image_ICCV_2019_paper.html},
-}
-```
 
 ## Results and Models
 
@@ -62,4 +47,17 @@ test_cfg = dict(
     _delete_ = True
     pkl_data = 'path to pkl data'
 )
+```
+
+## Citation
+
+```latex
+@inproceedings{shaham2019singan,
+  title={Singan: Learning a generative model from a single natural image},
+  author={Shaham, Tamar Rott and Dekel, Tali and Michaeli, Tomer},
+  booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision},
+  pages={4570--4580},
+  year={2019},
+  url={https://openaccess.thecvf.com/content_ICCV_2019/html/Shaham_SinGAN_Learning_a_Generative_Model_From_a_Single_Natural_Image_ICCV_2019_paper.html},
+}
 ```

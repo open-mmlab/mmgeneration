@@ -1,4 +1,5 @@
-mmcls==0.10.0
+-e git+https://github.com/openai/CLIP.git#egg=clip
+mmcls==0.18.0
 numpy
 prettytable
 scikit-image
