@@ -2,6 +2,8 @@
 
 > [Self-attention generative adversarial networks](https://proceedings.mlr.press/v97/zhang19d.html)
 
+<!-- [ALGORITHM] -->
+
 ## Abstract
 
 <!-- [ABSTRACT] -->

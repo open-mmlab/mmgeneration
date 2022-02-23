@@ -2,6 +2,8 @@
 
 > [Geometric GAN](https://arxiv.org/abs/1705.02894)
 
+<!-- [ALGORITHM] -->
+
 ## Abstract
 
 <!-- [ABSTRACT] -->
