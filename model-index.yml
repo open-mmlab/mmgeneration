@@ -13,4 +13,5 @@ Import:
 - configs/sngan_proj/metafile.yml
 - configs/styleganv1/metafile.yml
 - configs/styleganv2/metafile.yml
+- configs/styleganv3/metafile.yml
 - configs/wgan-gp/metafile.yml
