@@ -1,4 +1,8 @@
-# Alias-Free Generative Adversarial Networks (NeurIPS'2021)
+# StyleGANv3
+
+> [Alias-Free Generative Adversarial Networks](https://nvlabs-fi-cdn.nvidia.com/stylegan3/stylegan3-paper.pdf)
+
+<!-- [ALGORITHM] -->
 
 ## Abstract
 We observe that despite their hierarchical convolutional nature, the synthesis
@@ -30,10 +34,10 @@ results pave the way for generative models better suited for video and animation
 
 |                Model                |  Dataset  | Comment     | FID50k |    EQ-T     | EQ-R     |                                                            Config                                                             |                                                                 Download                                                                 |
 | :---------------------------------: | :-------------: |:-------------: | :----: | :-----------: | :-----------: |:---------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------: |
-|    stylegan3_config-T    |afhqv2 512x512 |official weight | 4.04 | 60.15 | 13.51   |  [config](configs/styleganv3/stylegan3_t_afhqv2_512_b4x8_official.py)       |  [model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_t_afhqv2_512_b4x8_cvt_official.pkl)  |
-|    stylegan3_config-T    | ffhqu 256x256|official weight | 4.62 | 63.01 | 13.12   |  [config](configs/styleganv3/stylegan3_t_ffhqu_256_b4x8_official.py)       |  [model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_t_ffhqu_256_b4x8_cvt_official.pkl)  |
-|    stylegan3_config-R     | afhqv2 512x512 |official weight |4.40    |64.89  | 40.34   |  [config](configs/styleganv3/stylegan3_r_afhqv2_512_b4x8_official.py)       |  [model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_r_afhqv2_512_b4x8_cvt_official.pkl)  |
-|    stylegan3_config-R    | ffhqu 256x256 |official weight |  4.50| 66.65 |  40.48  |  [config](configs/styleganv3/stylegan3_r_ffhqu_256_b4x8_official.py)       |  [model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_r_ffhqu_256_b4x8_cvt_official.pkl)  |
+|    stylegan3_config-T    |afhqv2 512x512 |official weight | 4.04 | 60.15 | 13.51   |  [config](configs/styleganv3/stylegan3_t_afhqv2_512_b4x8_official.py)       |  [model](https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_afhqv2_512_b4x8_cvt_official.pkl)  |
+|    stylegan3_config-T    | ffhqu 256x256|official weight | 4.62 | 63.01 | 13.12   |  [config](configs/styleganv3/stylegan3_t_ffhqu_256_b4x8_official.py)       |  [model](https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_ffhqu_256_b4x8_cvt_official.pkl)  |
+|    stylegan3_config-R     | afhqv2 512x512 |official weight |4.40    |64.89  | 40.34   |  [config](configs/styleganv3/stylegan3_r_afhqv2_512_b4x8_official.py)       |  [model](https://download.openmmlab.com/mmgen/stylegan3/stylegan3_r_afhqv2_512_b4x8_cvt_official.pkl)  |
+|    stylegan3_config-R    | ffhqu 256x256 |official weight |  4.50| 66.65 |  40.48  |  [config](configs/styleganv3/stylegan3_r_ffhqu_256_b4x8_official.py)       |  [model](https://download.openmmlab.com/mmgen/stylegan3/stylegan3_r_ffhqu_256_b4x8_cvt_official.pkl)  |
 
 
 
@@ -41,7 +45,7 @@ results pave the way for generative models better suited for video and animation
 We provide a tool to generate video by walking through GAN's latent space.
 Run this command to get the following video.
 ```bash
-python apps/interpolate_sample.py configs/styleganv3/stylegan3_t_afhqv2_512_b4x8_official.py https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_t_afhqv2_512_b4x8_cvt_official.pkl --export-video --samples-path work_dirs/demos/ --endpoint 6 --interval 60 --space z --seed 2022 --sample-cfg truncation=0.8
+python apps/interpolate_sample.py configs/styleganv3/stylegan3_t_afhqv2_512_b4x8_official.py https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_afhqv2_512_b4x8_cvt_official.pkl --export-video --samples-path work_dirs/demos/ --endpoint 6 --interval 60 --space z --seed 2022 --sample-cfg truncation=0.8
 ```
 https://user-images.githubusercontent.com/22982797/151506918-83da9ee3-0d63-4c5b-ad53-a41562b92075.mp4
 
@@ -51,7 +55,7 @@ We also provide a tool to visualize the equivarience properties for StyleGAN3.
 Run these commands to get the results below.
 
 ```bash
-python tools/utils/equivariance_viz.py configs/styleganv3/stylegan3_r_ffhqu_256_b4x8_official.py https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_r_ffhqu_256_b4x8_cvt_official.pkl --translate_max 0.5 --transform rotate --seed 5432
+python tools/utils/equivariance_viz.py configs/styleganv3/stylegan3_r_ffhqu_256_b4x8_official.py https://download.openmmlab.com/mmgen/stylegan3/stylegan3_r_ffhqu_256_b4x8_cvt_official.pkl --translate_max 0.5 --transform rotate --seed 5432
 
 python tools/utils/equivariance_viz.py configs/styleganv3/stylegan3_r_ffhqu_256_b4x8_official.py https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_r_ffhqu_256_b4x8_cvt_official.pkl --translate_max 0.25 --transform x_t --seed 5432
 
@@ -80,10 +84,6 @@ And we highly recommend you to use [slurm_eval_multi_gpu](tools/slurm_eval_multi
 
 
 ## Citation
-
-<!-- [ALGORITHM] -->
-
-<summary align="right"><a href="https://nvlabs-fi-cdn.nvidia.com/stylegan3/stylegan3-paper.pdf">StyleGANv3 (NeurIPS'2021)</a></summary>
 
 ```latex
 @inproceedings{Karras2021,

@@ -1,13 +1,14 @@
 Collections:
 - Metadata:
     Architecture:
-    - Alias-Free Generative Adversarial Networks (NeurIPS'2021)
-  Name: Alias-Free Generative Adversarial Networks (NeurIPS'2021)
-  Paper: []
+    - StyleGANv3
+  Name: StyleGANv3
+  Paper:
+  - https://nvlabs-fi-cdn.nvidia.com/stylegan3/stylegan3-paper.pdf
   README: configs/styleganv3/README.md
 Models:
 - Config: configs/styleganv3/stylegan3_t_afhqv2_512_b4x8_official.py
-  In Collection: Alias-Free Generative Adversarial Networks (NeurIPS'2021)
+  In Collection: StyleGANv3
   Metadata:
     Training Data: Others
   Name: stylegan3_512
@@ -21,7 +22,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_t_afhqv2_512_b4x8_cvt_official.pkl
 - Config: configs/styleganv3/stylegan3_t_ffhqu_256_b4x8_official.py
-  In Collection: Alias-Free Generative Adversarial Networks (NeurIPS'2021)
+  In Collection: StyleGANv3
   Metadata:
     Training Data: FFHQ
   Name: stylegan3_t
@@ -35,7 +36,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_t_ffhqu_256_b4x8_cvt_official.pkl
 - Config: configs/styleganv3/stylegan3_r_afhqv2_512_b4x8_official.py
-  In Collection: Alias-Free Generative Adversarial Networks (NeurIPS'2021)
+  In Collection: StyleGANv3
   Metadata:
     Training Data: Others
   Name: stylegan3_afhqv2
@@ -49,7 +50,7 @@ Models:
     Task: Unconditional GANs
   Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_r_afhqv2_512_b4x8_cvt_official.pkl
 - Config: configs/styleganv3/stylegan3_r_ffhqu_256_b4x8_official.py
-  In Collection: Alias-Free Generative Adversarial Networks (NeurIPS'2021)
+  In Collection: StyleGANv3
   Metadata:
     Training Data: FFHQ
   Name: stylegan3_r
