@@ -109,7 +109,7 @@ class StyleGANv3Generator(nn.Module):
             self.force_fp32 = self.training_kwargs.get('force_fp32', False)
         else:
             self.update_emas = self.eval_kwargs.get('update_emas', False)
-            self.force_fp32 = self.training_kwargs.get('force_fp32', True)
+            self.force_fp32 = self.eval_kwargs.get('force_fp32', True)
         return super().train(mode)
 
     def _load_pretrained_model(self,
