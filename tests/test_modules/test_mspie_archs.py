@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from copy import deepcopy
 
 from mmgen.models.architectures.stylegan import MSStyleGANv2Generator

@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from mmgen.datasets.quick_test_dataset import QuickTestImageDataset
 
 

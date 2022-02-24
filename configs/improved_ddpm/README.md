@@ -2,7 +2,11 @@
 
 > [Improved Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2102.09672)
 
+<!-- [ALGORITHM] -->
+
 ## Abstract
+
+<!-- [ABSTRACT] -->
 
 Denoising diffusion probabilistic models (DDPM) are a class of generative models which have recently been shown to produce excellent samples. We show that with a few simple modifications, DDPMs can also achieve competitive log-likelihoods while maintaining high sample quality. Additionally, we find that learning variances of the reverse diffusion process allows sampling with an order of magnitude fewer forward passes with a negligible difference in sample quality, which is important for the practical deployment of these models. We additionally use precision and recall to compare how well DDPMs and GANs cover the target distribution. Finally, we show that the sample quality and likelihood of these models scale smoothly with model capacity and training compute, making them easily scalable. We release our code at this https URL.
 
