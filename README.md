@@ -95,6 +95,7 @@ These methods have been carefully studied and supported in our frameworks:
 - ✅ [PGGAN](configs/pggan/README.md) (ICLR'2018)
 - ✅ [StyleGANV1](configs/styleganv1/README.md) (CVPR'2019)
 - ✅ [StyleGANV2](configs/styleganv2/README.md) (CVPR'2020)
+- ✅ [StyleGANV3](configs/styleganv3/README.md) (NeurIPS'2021)
 - ✅ [Positional Encoding in GANs](configs/positional_encoding_in_gans/README.md) (CVPR'2021)
 
 </details>
