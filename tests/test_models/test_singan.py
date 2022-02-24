@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 
 from mmgen.models.gans.singan import PESinGAN, SinGAN

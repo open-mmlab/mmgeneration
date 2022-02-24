@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
 
 from mmgen.datasets.builder import build_dataloader, build_dataset

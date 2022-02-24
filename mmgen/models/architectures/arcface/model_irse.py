@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from torch.nn import (BatchNorm1d, BatchNorm2d, Conv2d, Dropout, Linear,
                       Module, PReLU, Sequential)
 
