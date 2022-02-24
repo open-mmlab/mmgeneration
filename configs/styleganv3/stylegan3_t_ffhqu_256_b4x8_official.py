@@ -1,6 +1,7 @@
 _base_ = [
     '../_base_/models/stylegan/stylegan3_base.py',
-    '../_base_/datasets/ffhq_flip.py', '../_base_/default_runtime.py'
+    '../_base_/datasets/unconditional_imgs_flip_256x256.py',
+    '../_base_/default_runtime.py'
 ]
 
 synthesis_cfg = {
