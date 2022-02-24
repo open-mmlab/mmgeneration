@@ -18,7 +18,7 @@ model = dict(
         synthesis_cfg=synthesis_cfg),
     discriminator=dict(in_size=256, channel_multiplier=1),
     gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'),
-    disc_auxiliary_loss=dict(loss_weight=10))
+    disc_auxiliary_loss=dict(loss_weight=1))
 
 data = dict(
     samples_per_gpu=4,

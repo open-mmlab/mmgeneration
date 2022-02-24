@@ -20,7 +20,7 @@ Models:
       EQ-T: 60.15
       FID50k: 4.04
     Task: Unconditional GANs
-  Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_t_afhqv2_512_b4x8_cvt_official.pkl
+  Weights: https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_afhqv2_512_b4x8_cvt_official.pkl
 - Config: configs/styleganv3/stylegan3_t_ffhqu_256_b4x8_official.py
   In Collection: StyleGANv3
   Metadata:
@@ -34,7 +34,7 @@ Models:
       EQ-T: 63.01
       FID50k: 4.62
     Task: Unconditional GANs
-  Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_t_ffhqu_256_b4x8_cvt_official.pkl
+  Weights: https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_ffhqu_256_b4x8_cvt_official.pkl
 - Config: configs/styleganv3/stylegan3_r_afhqv2_512_b4x8_official.py
   In Collection: StyleGANv3
   Metadata:
@@ -48,7 +48,7 @@ Models:
       EQ-T: 64.89
       FID50k: 4.4
     Task: Unconditional GANs
-  Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_r_afhqv2_512_b4x8_cvt_official.pkl
+  Weights: https://download.openmmlab.com/mmgen/stylegan3/stylegan3_r_afhqv2_512_b4x8_cvt_official.pkl
 - Config: configs/styleganv3/stylegan3_r_ffhqu_256_b4x8_official.py
   In Collection: StyleGANv3
   Metadata:
@@ -62,4 +62,4 @@ Models:
       EQ-T: 66.65
       FID50k: 4.5
     Task: Unconditional GANs
-  Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmgen/stylegan3/stylegan3_r_ffhqu_256_b4x8_cvt_official.pkl
+  Weights: https://download.openmmlab.com/mmgen/stylegan3/stylegan3_r_ffhqu_256_b4x8_cvt_official.pkl
