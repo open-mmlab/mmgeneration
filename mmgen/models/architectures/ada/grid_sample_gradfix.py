@@ -30,11 +30,12 @@ enabled = True  # Enable the custom op by setting this to true.
 def grid_sample(input, grid):
     if _should_use_custom_op():
         return _GridSample2dForward.apply(input, grid)
-    return torch.nn.functional.grid_sample(input=input,
-                                           grid=grid,
-                                           mode='bilinear',
-                                           padding_mode='zeros',
-                                           align_corners=False)
+    return torch.nn.functional.grid_sample(
+        input=input,
+        grid=grid,
+        mode='bilinear',
+        padding_mode='zeros',
+        align_corners=False)
 
 
 # ----------------------------------------------------------------------------
@@ -57,15 +58,17 @@ def _should_use_custom_op():
 
 
 class _GridSample2dForward(torch.autograd.Function):
+
     @staticmethod
     def forward(ctx, input, grid):
         assert input.ndim == 4
         assert grid.ndim == 4
-        output = torch.nn.functional.grid_sample(input=input,
-                                                 grid=grid,
-                                                 mode='bilinear',
-                                                 padding_mode='zeros',
-                                                 align_corners=False)
+        output = torch.nn.functional.grid_sample(
+            input=input,
+            grid=grid,
+            mode='bilinear',
+            padding_mode='zeros',
+            align_corners=False)
         ctx.save_for_backward(input, grid)
         return output
 
@@ -81,6 +84,7 @@ class _GridSample2dForward(torch.autograd.Function):
 
 
 class _GridSample2dBackward(torch.autograd.Function):
+
     @staticmethod
     def forward(ctx, grad_output, input, grid):
         op = torch._C._jit_get_operation('aten::grid_sampler_2d_backward')
