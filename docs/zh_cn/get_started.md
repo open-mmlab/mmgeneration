@@ -95,8 +95,7 @@
 a. 依照上面的说明， MMGeneration 会以 `dev` 形式安装，
 对代码进行的任何本地修改都将生效，而不需要重新安装。
 
-b. 如果您想要使用 `opencv-python-headless` 而非 `opencv
--python`，
+b. 如果您想要使用 `opencv-python-headless` 而非 `opencv-python`，
 您可以在安装 MMCV 之前安装它。
 
 ### 安装CPU版本
@@ -158,4 +157,4 @@ model = init_model(config_file， checkpoint_file， device=device)
 fake_imgs = sample_unconditional_model(model， 4)
 ```
 
-当安装完成后，上面的代码应该会成功运行。
+当安装完成后，上面的代码可以成功运行。
