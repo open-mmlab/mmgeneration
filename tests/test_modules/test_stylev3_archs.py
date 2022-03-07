@@ -217,23 +217,31 @@ class TestStyleGAN3Generator:
         y = generator(z, c)
         assert y.shape == (2, 3, 16, 16)
 
-        y = generator(None, None, num_batches=2)
+        y = generator(None, num_batches=2)
         assert y.shape == (2, 3, 16, 16)
 
-        res = generator(torch.randn, None, num_batches=1)
+        res = generator(torch.randn, num_batches=1)
         assert res.shape == (1, 3, 16, 16)
 
         cfg = deepcopy(self.default_cfg)
         cfg.update(dict(rgb2bgr=True))
         generator = StyleGANv3Generator(**cfg)
-        y = generator(None, None, num_batches=2)
+        y = generator(None, num_batches=2)
         assert y.shape == (2, 3, 16, 16)
 
         # test return latents
-        result = generator(None, None, num_batches=2, return_latents=True)
+        result = generator(None, num_batches=2, return_latents=True)
         assert isinstance(result, dict)
         assert result['fake_img'].shape == (2, 3, 16, 16)
         assert result['noise_batch'].shape == (2, 6)
+        assert result['latent'].shape == (2, 16, 8)
+
+        # test input_is_latent
+        result = generator(
+            None, num_batches=2, input_is_latent=True, return_latents=True)
+        assert isinstance(result, dict)
+        assert result['fake_img'].shape == (2, 3, 16, 16)
+        assert result['noise_batch'].shape == (2, 8)
         assert result['latent'].shape == (2, 16, 8)
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
@@ -244,11 +252,11 @@ class TestStyleGAN3Generator:
         y = generator(z, c)
         assert y.shape == (2, 3, 16, 16)
 
-        res = generator(torch.randn, None, num_batches=1)
+        res = generator(torch.randn, num_batches=1)
         assert res.shape == (1, 3, 16, 16)
 
         cfg = deepcopy(self.default_cfg)
         cfg.update(dict(rgb2bgr=True))
         generator = StyleGANv3Generator(**cfg).cuda()
-        y = generator(None, None, num_batches=2)
+        y = generator(None, num_batches=2)
         assert y.shape == (2, 3, 16, 16)
