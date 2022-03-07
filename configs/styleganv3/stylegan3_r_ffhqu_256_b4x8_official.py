@@ -23,10 +23,12 @@ model = dict(
     gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'),
     disc_auxiliary_loss=dict(loss_weight=1))
 
+imgs_root = None  # set by user
+
 data = dict(
     samples_per_gpu=4,
-    train=dict(dataset=dict(imgs_root='data/afhq_v2/train/total')),
-    val=dict(imgs_root='data/afhq_v2/train/total'))
+    train=dict(dataset=dict(imgs_root=imgs_root)),
+    val=dict(imgs_root=imgs_root))
 
 ema_half_life = 10.  # G_smoothing_kimg
 
