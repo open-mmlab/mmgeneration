@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import argparse
 import os
+import warnings
 
 import mmcv
 import torch
@@ -32,12 +33,18 @@ def parse_args():
         type=int,
         help='number of gpus to use '
         '(only applicable to non-distributed training)')
-    group_gpus.add_argument(
+    parser.add_argument(
         '--gpu-ids',
         type=int,
         nargs='+',
-        help='ids of gpus to use '
+        help='(Deprecated, please use --gpu-id) ids of gpus to use '
         '(only applicable to non-distributed training)')
+    parser.add_argument(
+        '--gpu-id',
+        type=int,
+        default=0,
+        help='id of gpu to use '
+        '(only applicable to non-distributed testing)')
     parser.add_argument('--seed', type=int, default=2021, help='random seed')
     parser.add_argument(
         '--deterministic',
@@ -101,9 +108,13 @@ def main():
         torch.backends.cudnn.benchmark = True
 
     if args.gpu_ids is not None:
-        cfg.gpu_ids = args.gpu_ids
+        cfg.gpu_ids = args.gpu_ids[0:1]
+        warnings.warn('`--gpu-ids` is deprecated, please use `--gpu-id`. '
+                      'Because we only support single GPU mode in '
+                      'non-distributed testing. Use the first GPU '
+                      'in `gpu_ids` now.')
     else:
-        cfg.gpu_ids = range(1) if args.gpus is None else range(args.gpus)
+        cfg.gpu_ids = [args.gpu_id]
 
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
