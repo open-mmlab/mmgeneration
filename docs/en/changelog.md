@@ -102,11 +102,12 @@
 - Support StyleCLIP (#236)
 
 #### New Features
+
 - Support training on CPU (#238)
 - Speed up training (#231)
 
 
 #### Fix bugs and Improvements
 
-- Fix typos and invalid links (#249, #228, #226, #221)
-- Add part of Chinese documentation (#257, #250)
+- Fix typos and invalid links (#221, #226, #228, #244, #249)
+- Add part of Chinese documentation (#250, #257)
