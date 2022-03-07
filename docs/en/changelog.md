@@ -92,3 +92,23 @@
 
 - Fix bug in SinGAN dataset (#192)
 - Fix SAGAN, SNGAN and BigGAN's default `sn_style` (#199, #213)
+
+
+## v0.6.0 (07/03/2022)
+
+#### Highlights
+
+- Support StyleGANv3 (#247, #253, #258)
+- Support StyleCLIP (#236)
+
+#### New Features
+
+- Support training on CPU (#238)
+- Speed up training (#231)
+
+
+#### Fix bugs and Improvements
+
+- Fix bug in non-distributed training/testing (#239)
+- Fix typos and invalid links (#221, #226, #228, #244, #249)
+- Add part of Chinese documentation (#250, #257)
