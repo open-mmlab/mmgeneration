@@ -109,5 +109,6 @@
 
 #### Fix bugs and Improvements
 
+- Fix bug in non-distributed training/testing (#239)
 - Fix typos and invalid links (#221, #226, #228, #244, #249)
 - Add part of Chinese documentation (#250, #257)
