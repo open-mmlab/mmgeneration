@@ -106,6 +106,15 @@ wavelets = {
 
 
 def matrix(*rows, device=None):
+    """Constructing transformation matrices.
+
+    Args:
+        device (str|torch.device, optional): Matrix device. Defaults to None.
+
+    Returns:
+        ndarry | Tensor : Transformation matrices in np.ndarry or torch.Tensor
+            format.
+    """
     assert all(len(row) == len(rows[0]) for row in rows)
     elems = [x for row in rows for x in row]
     ref = [x for x in elems if isinstance(x, torch.Tensor)]
@@ -121,29 +130,91 @@ def matrix(*rows, device=None):
 
 
 def translate2d(tx, ty, **kwargs):
+    """Construct 2d translation matrix.
+
+    Args:
+        tx (float): X-direction translation amount.
+        ty (float): Y-direction translation amount.
+
+    Returns:
+        ndarry | Tensor : Transformation matrices in np.ndarry or torch.Tensor
+            format.
+    """
     return matrix([1, 0, tx], [0, 1, ty], [0, 0, 1], **kwargs)
 
 
 def translate3d(tx, ty, tz, **kwargs):
+    """Construct 3d translation matrix.
+
+    Args:
+        tx (float): X-direction translation amount.
+        ty (float): Y-direction translation amount.
+        tz (float): Z-direction translation amount.
+
+    Returns:
+        ndarry | Tensor : Transformation matrices in np.ndarry or torch.Tensor
+            format.
+    """
     return matrix([1, 0, 0, tx], [0, 1, 0, ty], [0, 0, 1, tz], [0, 0, 0, 1],
                   **kwargs)
 
 
 def scale2d(sx, sy, **kwargs):
+    """Construct 2d scaling matrix.
+
+    Args:
+        sx (float): X-direction scaling coefficient.
+        sy (float): Y-direction scaling coefficient.
+
+    Returns:
+        ndarry | Tensor : Transformation matrices in np.ndarry or torch.Tensor
+            format.
+    """
     return matrix([sx, 0, 0], [0, sy, 0], [0, 0, 1], **kwargs)
 
 
 def scale3d(sx, sy, sz, **kwargs):
+    """Construct 3d scaling matrix.
+
+    Args:
+        sx (float): X-direction scaling coefficient.
+        sy (float): Y-direction scaling coefficient.
+        sz (float): Z-direction scaling coefficient.
+
+    Returns:
+        ndarry | Tensor : Transformation matrices in np.ndarry or torch.Tensor
+            format.
+    """
     return matrix([sx, 0, 0, 0], [0, sy, 0, 0], [0, 0, sz, 0], [0, 0, 0, 1],
                   **kwargs)
 
 
 def rotate2d(theta, **kwargs):
+    """Construct 2d rotating matrix.
+
+    Args:
+        theta (float): Counter-clock wise rotation angle.
+
+    Returns:
+        ndarry | Tensor : Transformation matrices in np.ndarry or torch.Tensor
+            format.
+    """
     return matrix([torch.cos(theta), torch.sin(-theta), 0],
                   [torch.sin(theta), torch.cos(theta), 0], [0, 0, 1], **kwargs)
 
 
+# TODO: check the correctness of docstring
 def rotate3d(v, theta, **kwargs):
+    """Constructing 3d rotating matrix.
+
+    Args:
+        v (torch.Tensor): Luma axis.
+        theta (float): Rotate theta counter-clock wise with ``v`` as the axis.
+
+    Returns:
+        ndarry | Tensor : Transformation matrices in np.ndarry or torch.Tensor
+            format.
+    """
     vx = v[..., 0]
     vy = v[..., 1]
     vz = v[..., 2]
@@ -158,14 +229,43 @@ def rotate3d(v, theta, **kwargs):
 
 
 def translate2d_inv(tx, ty, **kwargs):
+    """Construct inverse matrix of 2d translation matrix.
+
+    Args:
+        tx (float): X-direction translation amount.
+        ty (float): Y-direction translation amount.
+
+    Returns:
+        ndarry | Tensor : Transformation matrices in np.ndarry or torch.Tensor
+            format.
+    """
     return translate2d(-tx, -ty, **kwargs)
 
 
 def scale2d_inv(sx, sy, **kwargs):
+    """Construct inverse matrix of 2d scaling matrix.
+
+    Args:
+        sx (float): X-direction scaling coefficient.
+        sy (float): Y-direction scaling coefficient.
+
+    Returns:
+        ndarry | Tensor : Transformation matrices in np.ndarry or torch.Tensor
+            format.
+    """
     return scale2d(1 / sx, 1 / sy, **kwargs)
 
 
 def rotate2d_inv(theta, **kwargs):
+    """Construct inverse matrix of 2d rotating matrix.
+
+    Args:
+        theta (float): Counter-clock wise rotation angle.
+
+    Returns:
+        ndarry | Tensor : Transformation matrices in np.ndarry or torch.Tensor
+            format.
+    """
     return rotate2d(-theta, **kwargs)
 
 
@@ -178,6 +278,12 @@ def rotate2d_inv(theta, **kwargs):
 
 
 class AugmentPipe(torch.nn.Module):
+    """Augmentation pipeline include multiple geometric and color
+    transformations.
+
+    Note: The meaning of arguments are written in the comments of
+    ``__init__`` function.
+    """
 
     def __init__(
         self,
@@ -301,6 +407,18 @@ class AugmentPipe(torch.nn.Module):
                              torch.as_tensor(Hz_fbank, dtype=torch.float32))
 
     def forward(self, images, debug_percentile=None):
+        """Transform images with augmentation pipeline.
+
+        Args:
+            images (torch.Tensor): Images tensor with shape [batch_size,
+                n_channels, H, W].
+            debug_percentile (float, optional): If not None, this number will
+                be used to fill the randomly generated tensor for debug usage.
+                Defaults to None.
+
+        Returns:
+            torch.Tensor: Augmented images.
+        """
         assert isinstance(images, torch.Tensor) and images.ndim == 4
         batch_size, num_channels, height, width = images.shape
         device = images.device

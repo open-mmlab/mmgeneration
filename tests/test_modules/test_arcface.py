@@ -119,5 +119,5 @@ class TestArcFace:
         id_loss_model = IDLossModel()
         x1 = torch.randn((2, 3, 224, 224)).cuda()
         x2 = torch.randn((2, 3, 224, 224)).cuda()
-        y, _ = id_loss_model(pred=x1, gt=x2)
+        y = id_loss_model(pred=x1, gt=x2)
         assert y >= 0

@@ -165,7 +165,7 @@ def main():
         c_loss = clip_loss(image=img_gen, text=text_inputs)
 
         if args.id_lambda > 0:
-            i_loss = id_loss(pred=img_gen, gt=img_orig)[0]
+            i_loss = id_loss(pred=img_gen, gt=img_orig)
         else:
             i_loss = 0
 

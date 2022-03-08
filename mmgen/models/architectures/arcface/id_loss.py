@@ -9,6 +9,12 @@ from .model_irse import Backbone
 
 @MODULES.register_module('ArcFace')
 class IDLossModel(nn.Module):
+    """Face identity loss calculating model based on Arcface.
+
+    Args:
+        ir_se50_weights (str, optional): Weight path of IR-SE50 model.
+            Defaults to None.
+    """
     # ir se50 weight download link
     _ir_se50_url = 'https://gg0ltg.by.files.1drv.com/y4m3fNNszG03z9n8JQ7EhdtQKW8tQVQMFBisPVRgoXi_UfP8pKSSqv8RJNmHy2JampcPmEazo_Mx6NTFSqBpZmhPniROm9uNoghnzaavvYpxkCfiNmDH9YyIF3g-0nwt6bsjk2X80JDdL5z88OAblSDmB-kuQkWSWvA9BM3Xt8DHMCY8lO4HOQCZ5YWUtFyPAVwEyzTGDM-JRA5EJoN2bF1cg'  # noqa
 
@@ -26,6 +32,14 @@ class IDLossModel(nn.Module):
         self.facenet = self.facenet.eval().to(device)
 
     def extract_feats(self, x):
+        """Extracting face features.
+
+        Args:
+            x (torch.Tensor): Images of faces.
+
+        Returns:
+            torch.Tensor: Features of faces.
+        """
         if x.shape[2] != 256:
             x = self.pool(x)
         x = x[:, :, 35:223, 32:220]  # Crop interesting region
@@ -34,17 +48,25 @@ class IDLossModel(nn.Module):
         return x_feats
 
     def forward(self, pred=None, gt=None):
+        """Calculating face identity loss.
+
+        Args:
+            pred (torch.Tensor, optional): Predicted faces. Defaults to None.
+            gt (torch.Tensor, optional): Ground truth faces. Defaults to None.
+
+        Returns:
+            torch.Tensor: A tuple contain face identity loss.
+        """
         n_samples = gt.shape[0]
         y_feats = self.extract_feats(
             gt)  # Otherwise use the feature from there
         y_hat_feats = self.extract_feats(pred)
         y_feats = y_feats.detach()
         loss = 0
-        sim_improvement = 0
         count = 0
         for i in range(n_samples):
             diff_target = y_hat_feats[i].dot(y_feats[i])
             loss += 1 - diff_target
             count += 1
 
-        return loss / count, sim_improvement / count
+        return loss / count
