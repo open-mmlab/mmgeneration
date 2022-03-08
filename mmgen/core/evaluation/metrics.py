@@ -23,11 +23,17 @@ from mmgen.models.losses import gaussian_kld
 from mmgen.utils import MMGEN_CACHE_DIR
 from mmgen.utils.io_utils import download_from_url
 from ..registry import METRICS
+# yapf:disable
 from .metric_utils import (_f_special_gauss, _hox_downsample,
-                           compute_pr_distances, finalize_descriptors,
-                           get_descriptors_for_minibatch, get_gaussian_kernel,
-                           laplacian_pyramid, slerp)
+                           apply_fractional_pseudo_rotation,
+                           apply_fractional_rotation,
+                           apply_fractional_translation,
+                           apply_integer_translation, compute_pr_distances,
+                           finalize_descriptors, get_descriptors_for_minibatch,
+                           get_gaussian_kernel, laplacian_pyramid,
+                           rotation_matrix, slerp)
 
+# yapf:enable
 TERO_INCEPTION_URL = 'https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt'  # noqa
 
 
@@ -418,11 +424,20 @@ class Metric(ABC):
             if self.num_fake_feeded == self.num_fake_need:
                 return 0
 
-            batch_size = batch.shape[0]
-            end = min(batch_size, self.num_fake_need - self.num_fake_feeded)
             if isinstance(batch, dict):
+                batch_size = [v for v in batch.values()][0].shape[0]
+                end = min(batch_size,
+                          self.num_fake_need - self.num_fake_feeded)
                 batch_to_feed = {k: v[:end, ...] for k, v in batch.items()}
+            elif isinstance(batch, list):
+                batch_size = batch[0].shape[0]
+                end = min(batch_size,
+                          self.num_fake_need - self.num_fake_feeded)
+                batch_to_feed = [x[:end, ...] for x in batch]
             else:
+                batch_size = batch.shape[0]
+                end = min(batch_size,
+                          self.num_fake_need - self.num_fake_feeded)
                 batch_to_feed = batch[:end, ...]
 
             global_end = min(batch_size * ws,
@@ -1366,7 +1381,7 @@ class PPLSampler:
                                    injected_noise=injected_noise)
 
         self.idx += 1
-        return image
+        return batch, image
 
 
 @METRICS.register_module()
@@ -1478,3 +1493,162 @@ class GaussianKLD(Metric):
             kld_result = np.sum(kld_np) / kld_np.shape[0]
         self._result_str = (f'{kld_result:.4f}')
         return kld_result
+
+
+@METRICS.register_module()
+class Equivariance(Metric):
+
+    name = 'Equivariance'
+
+    def __init__(self, num_images, image_shape=None, eq_cfg=dict()):
+        super().__init__(num_images, image_shape=image_shape)
+        # set default sampler config
+        self._eq_cfg = deepcopy(eq_cfg)
+        self._eq_cfg.setdefault('compute_eqt_int', False)
+        self._eq_cfg.setdefault('compute_eqt_frac', False)
+        self._eq_cfg.setdefault('compute_eqr', False)
+        self._eq_cfg.setdefault('translate_max', 0.125)
+        self._eq_cfg.setdefault('rotate_max', 1)
+        self.num_real_feeded = self.num_images
+
+    def prepare(self):
+        self.sums = None
+
+    @torch.no_grad()
+    def feed_op(self, batch, mode):
+        if mode == 'reals':
+            return
+
+        if mode == 'fakes':
+            item = torch.stack([x.to(torch.float64).sum() for x in batch])
+            if dist.is_initialized():
+                ws = dist.get_world_size()
+                placeholder = [torch.zeros_like(item) for _ in range(ws)]
+                dist.all_gather(placeholder, item)
+                s = torch.cat(placeholder, dim=0).cpu()
+            if (dist.is_initialized()
+                    and dist.get_rank() == 0) or not dist.is_initialized():
+                self.sums = self.sums + s if self.sums is not None else s
+
+    def summary(self):
+        sums = self.sums
+        mses = sums[0::2] / sums[1::2]
+        psnrs = np.log10(2) * 20 - mses.log10() * 10
+        psnrs = tuple(psnrs.numpy())
+
+        self._result_str = ''
+        index = 0
+        if self._eq_cfg['compute_eqt_int']:
+            self._result_str += f'eqt_int: {psnrs[index]}; '
+            index += 1
+        if self._eq_cfg['compute_eqt_frac']:
+            self._result_str += f'eqt_frac: {psnrs[index]}; '
+            index += 1
+        if self._eq_cfg['compute_eqr']:
+            self._result_str += f'eqr: {psnrs[index]}'
+            index += 1
+        return psnrs[0] if len(psnrs) == 1 else psnrs
+
+    def get_sampler(self,
+                    model,
+                    batch_size,
+                    sample_model='ema',
+                    **sample_kwargs):
+        if sample_model == 'ema':
+            generator = model.generator_ema
+        else:
+            generator = model.generator
+        eq_sampler = EQSampler(generator, self.num_images, batch_size,
+                               **self._eq_cfg, **sample_kwargs)
+        return eq_sampler
+
+
+class EQSampler:
+
+    def __init__(self,
+                 generator,
+                 num_samples,
+                 batch_size,
+                 compute_eqt_int=False,
+                 compute_eqt_frac=False,
+                 compute_eqr=False,
+                 translate_max=0.125,
+                 rotate_max=1,
+                 **sample_kwargs):
+        self.generator = generator
+        # whether this generator can be teseted with equvarience
+        self.num_samples = num_samples
+        self.batch_size = batch_size
+
+        n_batch = num_samples // batch_size
+
+        resid = num_samples - (n_batch * batch_size)
+        self.batch_sizes = [batch_size] * n_batch + ([resid]
+                                                     if resid > 0 else [])
+        self.device = get_module_device(generator)
+
+        self.compute_eqt_int = compute_eqt_int
+        self.compute_eqt_frac = compute_eqt_frac
+        self.compute_eqr = compute_eqr
+        self.translate_max = 0.125
+        self.rotate_max = 1
+        self.sample_kwargs = sample_kwargs
+
+    def __iter__(self):
+        self.idx = 0
+        return self
+
+    @torch.no_grad()
+    def __next__(self):
+        if self.idx >= len(self.batch_sizes):
+            raise StopIteration
+
+        batch_size = self.batch_sizes[self.idx]
+        identity_matrix = torch.eye(3, device=self.device)
+        transform_matrix = getattr(
+            getattr(getattr(self.generator, 'synthesis', None), 'input', None),
+            'transform', None)
+        s = []
+
+        # Run mapping network.
+        z = torch.randn([batch_size, self.generator.noise_size],
+                        device=self.device)
+        ws = self.generator.style_mapping(z=z)
+
+        # Generate reference image.
+        transform_matrix[:] = identity_matrix
+        orig = self.generator.synthesis(ws=ws, **self.sample_kwargs)
+
+        # Integer translation (EQ-T).
+        if self.compute_eqt_int:
+            t = (torch.rand(2, device=self.device) * 2 -
+                 1) * self.translate_max
+            t = (t * self.generator.out_size).round() / self.generator.out_size
+            transform_matrix[:] = identity_matrix
+            transform_matrix[:2, 2] = -t
+            img = self.generator.synthesis(ws=ws, **self.sample_kwargs)
+            ref, mask = apply_integer_translation(orig, t[0], t[1])
+            s += [(ref - img).square() * mask, mask]
+
+        # Fractional translation (EQ-T_frac).
+        if self.compute_eqt_frac:
+            t = (torch.rand(2, device=self.device) * 2 -
+                 1) * self.translate_max
+            transform_matrix[:] = identity_matrix
+            transform_matrix[:2, 2] = -t
+            img = self.generator.synthesis(ws=ws, **self.sample_kwargs)
+            ref, mask = apply_fractional_translation(orig, t[0], t[1])
+            s += [(ref - img).square() * mask, mask]
+
+        # Rotation (EQ-R).
+        if self.compute_eqr:
+            angle = (torch.rand([], device=self.device) * 2 - 1) * (
+                self.rotate_max * np.pi)
+            transform_matrix[:] = rotation_matrix(-angle)
+            img = self.generator.synthesis(ws=ws, **self.sample_kwargs)
+            ref, ref_mask = apply_fractional_rotation(orig, angle)
+            pseudo, pseudo_mask = apply_fractional_pseudo_rotation(img, angle)
+            mask = ref_mask * pseudo_mask
+            s += [(ref - pseudo).square() * mask, mask]
+        self.idx += 1
+        return batch_size, s
