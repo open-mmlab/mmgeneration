@@ -86,15 +86,18 @@ class ExponentialMovingAverageHook(Hook):
     def rampup(runner, ema_kimg=10, ema_rampup=0.05, batch_size=4, eps=1e-8):
         """Ramp up ema momentum.
 
-        # TODO:
-        Ref:
+        Ref: https://github.com/NVlabs/stylegan3/blob/a5a69f58294509598714d1e88c9646c3d7c6ec94/training/training_loop.py#L300-L308 # noqa
 
         Args:
             runner (_type_): _description_
-            ema_kimg (int, optional): _description_. Defaults to 10.
-            ema_rampup (float, optional): _description_. Defaults to 0.05.
-            batch_size (int, optional): _description_. Defaults to 4.
-            eps (_type_, optional): _description_. Defaults to 1e-8.
+            ema_kimg (int, optional): Half-life of the exponential moving 
+                average of generator weights. Defaults to 10.
+            ema_rampup (float, optional): EMA ramp-up coefficient.If set to 
+                None, then rampup will be disabled. Defaults to 0.05.
+            batch_size (int, optional): Total batch size for one training 
+                iteration. Defaults to 4.
+            eps (float, optional): Epsiolon to avoid ``batch_size`` divided by
+                zero. Defaults to 1e-8.
 
         Returns:
             dict: Updated momentum.
