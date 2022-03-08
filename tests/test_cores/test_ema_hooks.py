@@ -235,3 +235,110 @@ class TestEMA:
         assert torch.equal(runner.model.module_a.a,
                            torch.tensor([0.25, 0.5]).cuda())
         assert torch.equal(ema_states['a'], torch.tensor([0.375, 0.75]).cuda())
+
+    def test_dynamic_ema(self):
+        # test within rampup phase
+        cfg_ = dict(
+            module_keys=('module_a_ema', 'module_b_ema'),
+            interp_cfg=dict(momentum=0.9),
+            interval=1,
+            start_iter=0,
+            momentum_policy='rampup',
+            momentum_cfg=dict(
+                ema_kimg=10, ema_rampup=0.05, batch_size=4, eps=1e-8))
+        runner = SimpleRunner()
+
+        ema = ExponentialMovingAverageHook(**cfg_)
+        ema.before_run(runner)
+
+        module_a = runner.model.module_a
+        module_a_ema = runner.model.module_a_ema
+
+        ema_states = module_a_ema.state_dict()
+        assert torch.equal(ema_states['a'], torch.tensor([1., 2.]))
+
+        module_a.b /= 2.
+        module_a.a.data /= 2.
+        module_a.c /= 2.
+
+        runner.iter += 19
+        ema.after_train_iter(runner)
+        ema_states = module_a_ema.state_dict()
+        assert torch.equal(runner.model.module_a.a, torch.tensor([0.5, 1.]))
+        assert torch.equal(ema_states['a'], torch.tensor([0.75, 1.5]))
+        assert torch.equal(ema_states['b'], torch.tensor([1., 1.5]))
+        assert 'c' not in ema_states
+
+        # test exceeds rampup phase
+        cfg_ = dict(
+            module_keys=('module_a_ema', 'module_b_ema'),
+            interp_cfg=dict(momentum=0.9),
+            interval=1,
+            start_iter=0,
+            momentum_policy='rampup',
+            momentum_cfg=dict(
+                ema_kimg=10, ema_rampup=0.05, batch_size=4, eps=1e-8))
+        runner = SimpleRunner()
+        ema = ExponentialMovingAverageHook(**cfg_)
+        ema.before_run(runner)
+
+        # modify module data
+        module_a = runner.model.module_a
+        module_a_ema = runner.model.module_a_ema
+
+        ema_states = module_a_ema.state_dict()
+        assert torch.equal(ema_states['a'], torch.tensor([1., 2.]))
+
+        module_a.b /= 2.
+        module_a.a.data /= 2.
+        module_a.c /= 2.
+
+        runner.iter += 49999
+        ema.after_train_iter(runner)
+        ema_states = module_a_ema.state_dict()
+        assert torch.equal(runner.model.module_a.a, torch.tensor([0.5, 1.]))
+        expected_m = 0.5**(4 / 10000)
+
+        assert torch.equal(
+            ema_states['a'],
+            expected_m * torch.tensor([1.0, 2.0]) +
+            (1. - expected_m) * torch.tensor([0.5, 1.0]))
+        assert torch.equal(ema_states['b'], torch.tensor([1., 1.5]))
+        assert 'c' not in ema_states
+
+        # test exceeds rampup phase
+        cfg_ = dict(
+            module_keys=('module_a_ema', 'module_b_ema'),
+            interp_cfg=dict(momentum=0.9),
+            interval=1,
+            start_iter=0,
+            momentum_policy='rampup',
+            momentum_cfg=dict(
+                ema_kimg=10, ema_rampup=0.05, batch_size=4, eps=1e-8))
+        runner = SimpleRunner()
+        ema = ExponentialMovingAverageHook(**cfg_)
+        ema.before_run(runner)
+
+        # modify module data
+        module_a = runner.model.module_a
+        module_a_ema = runner.model.module_a_ema
+
+        ema_states = module_a_ema.state_dict()
+        assert torch.equal(ema_states['a'], torch.tensor([1., 2.]))
+
+        module_a.b /= 2.
+        module_a.a.data /= 2.
+        module_a.c /= 2.
+
+        runner.iter += 79999
+        ema.after_train_iter(runner)
+        ema_states = module_a_ema.state_dict()
+        assert torch.equal(runner.model.module_a.a, torch.tensor([0.5, 1.]))
+        expected_m = 0.5**(4 / 10000)
+
+        assert torch.equal(
+            ema_states['a'],
+            expected_m * torch.tensor([1.0, 2.0]) +
+            (1. - expected_m) * torch.tensor([0.5, 1.0]))
+        assert torch.equal(ema_states['b'], torch.tensor([1., 1.5]))
+        assert 'c' not in ema_states
