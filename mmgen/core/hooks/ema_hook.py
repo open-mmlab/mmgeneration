@@ -90,11 +90,11 @@ class ExponentialMovingAverageHook(Hook):
 
         Args:
             runner (_type_): _description_
-            ema_kimg (int, optional): Half-life of the exponential moving 
+            ema_kimg (int, optional): Half-life of the exponential moving
                 average of generator weights. Defaults to 10.
-            ema_rampup (float, optional): EMA ramp-up coefficient.If set to 
+            ema_rampup (float, optional): EMA ramp-up coefficient.If set to
                 None, then rampup will be disabled. Defaults to 0.05.
-            batch_size (int, optional): Total batch size for one training 
+            batch_size (int, optional): Total batch size for one training
                 iteration. Defaults to 4.
             eps (float, optional): Epsiolon to avoid ``batch_size`` divided by
                 zero. Defaults to 1e-8.
