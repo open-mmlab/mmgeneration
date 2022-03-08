@@ -40,6 +40,9 @@ class ExponentialMovingAverageHook(Hook):
             updater function. Defaults to None.
     """
 
+    _registered_interp_funcs = ['lerp']
+    _registered_momentum_updaters = ['rampup', 'fixed']
+
     def __init__(self,
                  module_keys,
                  interp_mode='lerp',
@@ -49,6 +52,17 @@ class ExponentialMovingAverageHook(Hook):
                  momentum_policy='fixed',
                  momentum_cfg=None):
         super().__init__()
+        # check args
+        assert interp_mode in self._registered_interp_funcs, (
+            'Supported '
+            f'interpolation functions are {self._registered_interp_funcs}, '
+            f'but got {interp_mode}')
+
+        assert momentum_policy in self._registered_momentum_updaters, (
+            'Supported momentum policy are'
+            f'{self._registered_momentum_updaters},'
+            f' but got {momentum_policy}')
+
         assert isinstance(module_keys, str) or mmcv.is_tuple_of(
             module_keys, str)
         self.module_keys = (module_keys, ) if isinstance(module_keys,
