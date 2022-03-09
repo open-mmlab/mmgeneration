@@ -54,6 +54,10 @@ def parse_args():
         '(only applicable to non-distributed training)')
     parser.add_argument('--seed', type=int, default=2021, help='random seed')
     parser.add_argument(
+        '--diff_seed',
+        action='store_true',
+        help='Whether or not set different seeds for different ranks')
+    parser.add_argument(
         '--deterministic',
         action='store_true',
         help='whether to set deterministic options for CUDNN backend.')
@@ -187,7 +191,10 @@ def main():
     if args.seed is not None:
         logger.info(f'Set random seed to {args.seed}, '
                     f'deterministic: {args.deterministic}')
-        set_random_seed(args.seed, deterministic=args.deterministic)
+        set_random_seed(
+            args.seed,
+            deterministic=args.deterministic,
+            use_rank_shift=args.diff_seed)
     cfg.seed = args.seed
     meta['seed'] = args.seed
     meta['exp_name'] = osp.basename(args.config)
