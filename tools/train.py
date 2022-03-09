@@ -190,7 +190,8 @@ def main():
     # set random seeds
     if args.seed is not None:
         logger.info(f'Set random seed to {args.seed}, '
-                    f'deterministic: {args.deterministic}')
+                    f'deterministic: {args.deterministic}, '
+                    f'use_rank_shift: {args.diff_seed}')
         set_random_seed(
             args.seed,
             deterministic=args.deterministic,
