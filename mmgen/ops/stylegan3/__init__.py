@@ -6,7 +6,6 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-# empty
-from .ops import filtered_lrelu
+from .ops import filtered_lrelu, upfirdn2d
 
-__all__ = ['filtered_lrelu']
+__all__ = ['filtered_lrelu', 'upfirdn2d']
