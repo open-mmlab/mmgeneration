@@ -107,6 +107,7 @@ wavelets = {
 
 def matrix(*rows, device=None):
     """Constructing transformation matrices.
+
     Args:
         device (str|torch.device, optional): Matrix device. Defaults to None.
     Returns:
@@ -129,6 +130,7 @@ def matrix(*rows, device=None):
 
 def translate2d(tx, ty, **kwargs):
     """Construct 2d translation matrix.
+
     Args:
         tx (float): X-direction translation amount.
         ty (float): Y-direction translation amount.
@@ -141,6 +143,7 @@ def translate2d(tx, ty, **kwargs):
 
 def translate3d(tx, ty, tz, **kwargs):
     """Construct 3d translation matrix.
+
     Args:
         tx (float): X-direction translation amount.
         ty (float): Y-direction translation amount.
@@ -155,6 +158,7 @@ def translate3d(tx, ty, tz, **kwargs):
 
 def scale2d(sx, sy, **kwargs):
     """Construct 2d scaling matrix.
+
     Args:
         sx (float): X-direction scaling coefficient.
         sy (float): Y-direction scaling coefficient.
@@ -167,6 +171,7 @@ def scale2d(sx, sy, **kwargs):
 
 def scale3d(sx, sy, sz, **kwargs):
     """Construct 3d scaling matrix.
+
     Args:
         sx (float): X-direction scaling coefficient.
         sy (float): Y-direction scaling coefficient.
@@ -181,6 +186,7 @@ def scale3d(sx, sy, sz, **kwargs):
 
 def rotate2d(theta, **kwargs):
     """Construct 2d rotating matrix.
+
     Args:
         theta (float): Counter-clock wise rotation angle.
     Returns:
@@ -194,6 +200,7 @@ def rotate2d(theta, **kwargs):
 # TODO: check the correctness of docstring
 def rotate3d(v, theta, **kwargs):
     """Constructing 3d rotating matrix.
+
     Args:
         v (torch.Tensor): Luma axis.
         theta (float): Rotate theta counter-clock wise with ``v`` as the axis.
@@ -216,6 +223,7 @@ def rotate3d(v, theta, **kwargs):
 
 def translate2d_inv(tx, ty, **kwargs):
     """Construct inverse matrix of 2d translation matrix.
+
     Args:
         tx (float): X-direction translation amount.
         ty (float): Y-direction translation amount.
@@ -228,6 +236,7 @@ def translate2d_inv(tx, ty, **kwargs):
 
 def scale2d_inv(sx, sy, **kwargs):
     """Construct inverse matrix of 2d scaling matrix.
+
     Args:
         sx (float): X-direction scaling coefficient.
         sy (float): Y-direction scaling coefficient.
@@ -240,6 +249,7 @@ def scale2d_inv(sx, sy, **kwargs):
 
 def rotate2d_inv(theta, **kwargs):
     """Construct inverse matrix of 2d rotating matrix.
+
     Args:
         theta (float): Counter-clock wise rotation angle.
     Returns:
@@ -260,6 +270,7 @@ def rotate2d_inv(theta, **kwargs):
 class AugmentPipe(torch.nn.Module):
     """Augmentation pipeline include multiple geometric and color
     transformations.
+
     Note: The meaning of arguments are written in the comments of
     ``__init__`` function.
     """
@@ -387,6 +398,7 @@ class AugmentPipe(torch.nn.Module):
 
     def forward(self, images, debug_percentile=None):
         """Transform images with augmentation pipeline.
+
         Args:
             images (torch.Tensor): Images tensor with shape [batch_size,
                 n_channels, H, W].

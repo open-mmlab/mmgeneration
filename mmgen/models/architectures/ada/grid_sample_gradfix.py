@@ -7,6 +7,7 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 """Custom replacement for `torch.nn.functional.grid_sample` that supports
 arbitrarily high order gradients between the input and output.
+
 Only works on 2D images and assumes `mode='bilinear'`, `padding_mode='zeros'`,
 `align_corners=False`.
 """
