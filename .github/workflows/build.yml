@@ -179,4 +179,3 @@ jobs:
         run: |
           coverage xml
           coverage report -m
-      - name: Upload coverage to Codecov
