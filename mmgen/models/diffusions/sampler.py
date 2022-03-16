@@ -30,7 +30,7 @@ class UniformTimeStepSampler:
         # official ones.
         return torch.from_numpy(
             np.random.choice(
-                self.num_timesteps, size=(batch_size, ), p=self.prob))
+                self.num_timesteps, size=(batch_size, ), p=self.prob)).long()
 
     def __call__(self, batch_size):
         """Return sampled results."""
