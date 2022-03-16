@@ -32,7 +32,7 @@ fake_imgs = sample_unconditional_model(model, 4)
 
 Indeed, we have already provided a more friendly demo script to users. You can use [demo/unconditional_demo.py](https://github.com/open-mmlab/mmgeneration/tree/master/mmgen/demo/unconditional_demo.py) with the following commands:
 
-```bash
+```shell
 python demo/unconditional_demo.py \
     ${CONFIG_FILE} \
     ${CHECKPOINT} \
@@ -69,7 +69,7 @@ fake_imgs = sample_conditional_model(model, 4, label=[0, 1, 2, 3])
 
 Indeed, we have already provided a more friendly demo script to users. You can use [demo/conditional_demo.py](https://github.com/open-mmlab/mmgeneration/tree/master/mmgen/demo/conditional_demo.py) with the following commands:
 
-```bash
+```shell
 python demo/conditional_demo.py \
     ${CONFIG_FILE} \
     ${CHECKPOINT} \
@@ -108,7 +108,7 @@ translated_image = sample_img2img_model(model, image_path, target_domain='photo'
 
 Indeed, we have already provided a more friendly demo script to users. You can use [demo/translation_demo.py](https://github.com/open-mmlab/mmgeneration/tree/master/mmgen/demo/translation_demo.py) with the following commands:
 
-```bash
+```shell
 python demo/translation_demo.py \
     ${CONFIG_FILE} \
     ${CHECKPOINT} \
@@ -126,7 +126,7 @@ This section details how to prepare the dataset for MMGeneration and provides a 
 
 It's much easier to prepare dataset for unconditional models. Firstly, please make a directory, named `data`, in the MMGeneration project. After that, all of datasets can be used by adopting the technology of symlink (soft link).
 
-```bash
+```shell
 mkdir data
 
 ln -s absolute_path_to_dataset ./data/dataset_name
@@ -174,7 +174,7 @@ Here, we provide download links of datasets used in [Pix2Pix](http://efrosgans.e
 Currently, we have tested all of the model on distributed training. Thus, we highly recommend to adopt distributed training with our scripts. The basic usage is as follows:
 
 ```shell
-bash tools/dist_train.sh ${CONFIG_FILE} ${GPUS_NUMBER} \
+sh tools/dist_train.sh ${CONFIG_FILE} ${GPUS_NUMBER} \
     --work-dir ./work_dirs/experiments/experiments_name \
     [optional arguments]
 ```
@@ -182,7 +182,7 @@ bash tools/dist_train.sh ${CONFIG_FILE} ${GPUS_NUMBER} \
 If you are using slurm system, the following commands can help you start training"
 
 ```shell
-bash tools/slurm_train.sh ${PARTITION} ${JOB_NAME} ${CONFIG} ${WORK_DIR} \
+sh tools/slurm_train.sh ${PARTITION} ${JOB_NAME} ${CONFIG} ${WORK_DIR} \
     [optional arguments]
 ```
 
@@ -191,12 +191,32 @@ There two scripts wrap [tools/train.py](https://github.com/open-mmlab/mmgenerati
 Note that the name of `work_dirs` has already been put into our `.gitignore` file. Users can put any files here without concern about changing git related files. Here is an example command that we use to train our `1024x1024 StyleGAN2 ` model.
 
 ```shell
-bash tools/slurm_train.sh openmmlab-platform stylegan2-1024 \
+sh tools/slurm_train.sh openmmlab-platform stylegan2-1024 \
     configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py \
     work_dirs/experiments/stylegan2_c2_ffhq_1024_b4x8
 ```
 
 During training, log files and checkpoints will be saved to the working directory. At the beginning of our development, we evaluate our model after the training finishes. However, the evaluation hook has been already supported to evaluate our models in the training procedure. More details can be found in our tutorial for running time configuration.
+
+## Training with multiple machines
+
+If you launch with multiple machines simply connected with ethernet, you can simply run following commands:
+
+On the first machine:
+
+```shell
+NNODES=2 NODE_RANK=0 PORT=$MASTER_PORT MASTER_ADDR=$MASTER_ADDR sh tools/dist_train.sh $CONFIG $GPUS
+```
+
+On the second machine:
+
+```shell
+NNODES=2 NODE_RANK=1 PORT=$MASTER_PORT MASTER_ADDR=$MASTER_ADDR sh tools/dist_train.sh $CONFIG $GPUS
+```
+
+Usually it is slow if you do not have high speed networking like InfiniBand.
+
+If you launch with slurm, the command is the same as that on single machine described above, but you need refer to [slurm_train.sh](https://github.com/open-mmlab/mmgeneration/blob/master/tools/slurm_train.sh) to set appropriate parameters and environment variables.
 
 ## Training on CPU
 
@@ -231,12 +251,12 @@ metrics = dict(
 Then, users can use the evaluation script with the following command:
 
 ```shell
-bash eval.sh ${CONFIG_FILE} ${CKPT_FILE} --batch-size 10 --online
+sh eval.sh ${CONFIG_FILE} ${CKPT_FILE} --batch-size 10 --online
 ```
 If you are in slurm environment, please switch to the [tools/slurm_eval.sh](https://github.com/open-mmlab/mmgeneration/tree/master/tools/slurm_eval.sh) by using the following commands:
 
 ```shell
-bash slurm_eval.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE} \
+sh slurm_eval.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE} \
     --batch-size 10
     --online
 ```
@@ -245,10 +265,10 @@ As you can see, we have provided two modes for evaluating your models, i.e., `on
 
 ```shell
 # for general envs
-bash eval.sh ${CONFIG_FILE} ${CKPT_FILE} --eval none
+sh eval.sh ${CONFIG_FILE} ${CKPT_FILE} --eval none
 
 # for slurm
-bash slurm_eval.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE} \
+sh slurm_eval.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE} \
     --eval none
 ```
 
@@ -260,19 +280,19 @@ python tools/utils/translation_eval.py ${CONFIG_FILE} ${CKPT_FILE} --t ${target-
 To be noted that, in current version of MMGeneration, we support multi GPUs for [FID](#fid) and [IS](#is) evaluation and image saving. You can use the following command to use this feature:
 ```shell
 # online evaluation
-bash dist_eval.sh ${CONFIG_FILE} ${CKPT_FILE} ${GPUS_NUMBER} --batch-size 10 --online
+sh dist_eval.sh ${CONFIG_FILE} ${CKPT_FILE} ${GPUS_NUMBER} --batch-size 10 --online
 # online evaluation with slurm
-bash slurm_eval_multi_gpu.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE} --batch-size 10 --online
+sh slurm_eval_multi_gpu.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE} --batch-size 10 --online
 
 # offline evaluation
-bash dist_eval.sh${CONFIG_FILE} ${CKPT_FILE} ${GPUS_NUMBER}
+sh dist_eval.sh${CONFIG_FILE} ${CKPT_FILE} ${GPUS_NUMBER}
 # offline evaluation with slurm
-bash slurm_eval_multi_gpu.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE}
+sh slurm_eval_multi_gpu.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE}
 
 # image saving
-bash dist_eval.sh${CONFIG_FILE} ${CKPT_FILE} ${GPUS_NUMBER} --eval none --samples-path ${SAMPLES_PATH}
+sh dist_eval.sh${CONFIG_FILE} ${CKPT_FILE} ${GPUS_NUMBER} --eval none --samples-path ${SAMPLES_PATH}
 # image saving with slurm
-bash slurm_eval_multi_gpu.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE} --eval none --samples-path ${SAMPLES_PATH}
+sh slurm_eval_multi_gpu.sh ${PLATFORM} ${JOBNAME} ${CONFIG_FILE} ${CKPT_FILE} --eval none --samples-path ${SAMPLES_PATH}
 ```
 In the subsequent version, multi GPUs evaluation for more metrics will be supported.
 
