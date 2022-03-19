@@ -111,6 +111,7 @@ class BasicConditionalGAN(BaseGAN):
         if self.use_ema:
             # use deepcopy to guarantee the consistency
             self.generator_ema = deepcopy(self.generator)
+        self.grad_clip = self.train_cfg.get('grad_clip', None)
 
     def _parse_test_cfg(self):
         """Parsing test config and set some attributes for testing."""
@@ -231,10 +232,11 @@ class BasicConditionalGAN(BaseGAN):
         if (curr_iter + 1) % self.batch_accumulation_steps == 0:
             if loss_scaler:
                 loss_scaler.unscale_(optimizer['discriminator'])
-                # note that we do not contain clip_grad procedure
+                self.clip_grads('discriminator')
                 loss_scaler.step(optimizer['discriminator'])
                 # loss_scaler.update will be called in runner.train()
             else:
+                self.clip_grads('discriminator')
                 optimizer['discriminator'].step()
 
         # skip generator training if only train discriminator for current
@@ -298,9 +300,11 @@ class BasicConditionalGAN(BaseGAN):
             if loss_scaler:
                 loss_scaler.unscale_(optimizer['generator'])
                 # note that we do not contain clip_grad procedure
+                self.clip_grads('generator')
                 loss_scaler.step(optimizer['generator'])
                 # loss_scaler.update will be called in runner.train()
             else:
+                self.clip_grads('generator')
                 optimizer['generator'].step()
 
         log_vars = {}

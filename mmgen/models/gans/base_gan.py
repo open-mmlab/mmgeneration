@@ -5,6 +5,7 @@ from collections import OrderedDict
 import torch
 import torch.distributed as dist
 import torch.nn as nn
+from torch.nn.utils import clip_grad
 
 
 class BaseGAN(nn.Module, metaclass=ABCMeta):
@@ -95,6 +96,25 @@ class BaseGAN(nn.Module, metaclass=ABCMeta):
         loss, log_var = self._parse_losses(losses_dict)
 
         return loss, log_var
+
+    def clip_grads(self, model):
+        """Apply gradient clip for the input model.
+        Args:
+            model (str): The name of the input model.
+
+        Returns:
+             float: Total norm value of the model.
+        """
+        if not hasattr(self, 'grad_clip') or self.grad_clip is None:
+            return None
+        clip_args = self.grad_clip[model] if model in self.grad_clip \
+            else self.grad_clip
+        params = getattr(self, model).parameters()
+        params = list(
+            filter(lambda p: p.requires_grad and p.grad is not None, params))
+        if len(params) > 0:
+            return clip_grad.clip_grad_norm_(params, **clip_args).item()
+        return None
 
     @abstractmethod
     def train_step(self, data, optimizer, ddp_reducer=None):
