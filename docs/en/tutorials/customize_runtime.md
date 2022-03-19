@@ -106,14 +106,28 @@ The default optimizer constructor is implemented [here](https://github.com/open-
 Tricks not implemented by the optimizer should be implemented through optimizer constructor (e.g., set parameter-wise learning rates) or hooks. We list some common settings that could stabilize the training or accelerate the training. Feel free to create PR, issue for more settings.
 
 - __Use gradient clip to stabilize training__:
-    Some models need gradient clip to clip the gradients to stabilize the training process. An example is as below:
+    MMGeneratiion direct optimize parameters in `train_step`, therefore we do not use `OptimizerHook` in `MMCV`.
+    If you want to use gradient clip to clip the gradients to stabilize the training process, please add config in `train_cfg`. An example is as below:
 
     ```python
-    optimizer_config = dict(
-        _delete_=True, grad_clip=dict(max_norm=35, norm_type=2))
+    train_cfg = dict(grad_clip=dict(max_norm=35, norm_type=2))
     ```
 
-    If your config inherits the base config which already sets the `optimizer_config`, you might need `_delete_=True` to override the unnecessary settings. See the [config documentation](https://mmgeneration.readthedocs.io/en/latest/config.html) for more details.
+    If you want to use different `max_norm` for generator and discriminator, you can follow the following example:
+
+    ```python
+    train_cfg = dict(
+        grad_clip=dict(
+            generator=dict(max_norm=35, norm_type=2),
+            discriminator=dict(max_norm=10, norm_type=2)))
+    ```
+
+    If you only want to apply gradient clip to the specific model, you can follow the following example:
+
+    ```python
+    train_cfg = dict(
+        grad_clip=dict(discriminator=dict(max_norm=10, norm_type=2)))
+    ```
 
 - __Use momentum schedule to accelerate model convergence__:
     We support momentum scheduler to modify model's momentum according to learning rate, which could make the model converge in a faster way.
