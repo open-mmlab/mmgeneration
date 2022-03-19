@@ -17,12 +17,12 @@ class TestBasicConditionalGAN(object):
             generator=dict(
                 type='SNGANGenerator',
                 output_scale=32,
-                base_channels=256,
+                base_channels=16,
                 num_classes=10),
             discriminator=dict(
                 type='ProjDiscriminator',
                 input_scale=32,
-                base_channels=128,
+                base_channels=16,
                 num_classes=10),
             gan_loss=dict(type='GANLoss', gan_type='hinge'),
             disc_auxiliary_loss=None,
@@ -34,14 +34,14 @@ class TestBasicConditionalGAN(object):
             type='SAGANGenerator',
             output_scale=32,
             num_classes=10,
-            base_channels=256,
+            base_channels=16,
             attention_after_nth_block=2,
             with_spectral_norm=True)
         cls.disc_cfg = dict(
             type='SAGANDiscriminator',
             input_scale=32,
             num_classes=10,
-            base_channels=128,
+            base_channels=16,
             attention_after_nth_block=1)
         cls.gan_loss = dict(type='GANLoss', gan_type='hinge')
         cls.disc_auxiliary_loss = [
@@ -137,6 +137,53 @@ class TestBasicConditionalGAN(object):
         assert isinstance(sagan.disc_auxiliary_losses, nn.ModuleList)
         assert isinstance(sagan.gen_auxiliary_losses, nn.ModuleList)
 
+        # test grad clip
+        train_cfg = dict(grad_clip=dict(max_norm=10, norm_type=2))
+        sagan = BasicConditionalGAN(
+            self.generator_cfg,
+            self.disc_cfg,
+            self.gan_loss,
+            self.disc_auxiliary_loss,
+            train_cfg=train_cfg)
+        # test train step
+        data = torch.randn((2, 3, 32, 32))
+        data_input = dict(img=data, gt_label=label)
+        optimizer_g = torch.optim.SGD(sngan.generator.parameters(), lr=0.01)
+        optimizer_d = torch.optim.SGD(
+            sngan.discriminator.parameters(), lr=0.01)
+        optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
+
+        model_outputs = sagan.train_step(data_input, optim_dict)
+        assert 'results' in model_outputs
+        assert 'log_vars' in model_outputs
+        assert model_outputs['num_samples'] == 2
+        assert 'grad_norm_generator' in model_outputs['log_vars']
+        assert 'grad_norm_discriminator' in model_outputs['log_vars']
+
+        # test specific grad clip
+        train_cfg = dict(
+            grad_clip=dict(discriminator=dict(max_norm=10, norm_type=2)))
+        sagan = BasicConditionalGAN(
+            self.generator_cfg,
+            self.disc_cfg,
+            self.gan_loss,
+            self.disc_auxiliary_loss,
+            train_cfg=train_cfg)
+        # test train step
+        data = torch.randn((2, 3, 32, 32))
+        data_input = dict(img=data, gt_label=label)
+        optimizer_g = torch.optim.SGD(sngan.generator.parameters(), lr=0.01)
+        optimizer_d = torch.optim.SGD(
+            sngan.discriminator.parameters(), lr=0.01)
+        optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
+
+        model_outputs = sagan.train_step(data_input, optim_dict)
+        assert 'results' in model_outputs
+        assert 'log_vars' in model_outputs
+        assert model_outputs['num_samples'] == 2
+        assert 'grad_norm_generator' not in model_outputs['log_vars']
+        assert 'grad_norm_discriminator' in model_outputs['log_vars']
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_default_dcgan_model_cuda(self):
         sngan = build_model(self.default_config).cuda()
@@ -179,3 +226,50 @@ class TestBasicConditionalGAN(object):
             data_input, optim_dict, running_status=dict(iteration=1))
         assert 'loss_disc_fake' in model_outputs['log_vars']
         assert 'loss_disc_fake_g' in model_outputs['log_vars']
+
+        # test grad clip
+        train_cfg = dict(grad_clip=dict(max_norm=10, norm_type=2))
+        sagan = BasicConditionalGAN(
+            self.generator_cfg,
+            self.disc_cfg,
+            self.gan_loss,
+            self.disc_auxiliary_loss,
+            train_cfg=train_cfg).cuda()
+        # test train step
+        data = torch.randn((2, 3, 32, 32)).cuda()
+        data_input = dict(img=data, gt_label=label)
+        optimizer_g = torch.optim.SGD(sngan.generator.parameters(), lr=0.01)
+        optimizer_d = torch.optim.SGD(
+            sngan.discriminator.parameters(), lr=0.01)
+        optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
+
+        model_outputs = sagan.train_step(data_input, optim_dict)
+        assert 'results' in model_outputs
+        assert 'log_vars' in model_outputs
+        assert model_outputs['num_samples'] == 2
+        assert 'grad_norm_generator' in model_outputs['log_vars']
+        assert 'grad_norm_discriminator' in model_outputs['log_vars']
+
+        # test specific grad clip
+        train_cfg = dict(
+            grad_clip=dict(discriminator=dict(max_norm=10, norm_type=2)))
+        sagan = BasicConditionalGAN(
+            self.generator_cfg,
+            self.disc_cfg,
+            self.gan_loss,
+            self.disc_auxiliary_loss,
+            train_cfg=train_cfg).cuda()
+        # test train step
+        data = torch.randn((2, 3, 32, 32)).cuda()
+        data_input = dict(img=data, gt_label=label)
+        optimizer_g = torch.optim.SGD(sngan.generator.parameters(), lr=0.01)
+        optimizer_d = torch.optim.SGD(
+            sngan.discriminator.parameters(), lr=0.01)
+        optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
+
+        model_outputs = sagan.train_step(data_input, optim_dict)
+        assert 'results' in model_outputs
+        assert 'log_vars' in model_outputs
+        assert model_outputs['num_samples'] == 2
+        assert 'grad_norm_generator' not in model_outputs['log_vars']
+        assert 'grad_norm_discriminator' in model_outputs['log_vars']
