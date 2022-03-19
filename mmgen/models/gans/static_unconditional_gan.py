@@ -208,11 +208,11 @@ class StaticUnconditionalGAN(BaseGAN):
 
         if loss_scaler:
             loss_scaler.unscale_(optimizer['discriminator'])
-            log_vars_disc['grad_norm_d'] = self.clip_grads('discriminator')
+            self.clip_grads('discriminator', log_vars_disc)
             loss_scaler.step(optimizer['discriminator'])
             # loss_scaler.update will be called in runner.train()
         else:
-            log_vars_disc['grad_norm_d'] = self.clip_grads('discriminator')
+            self.clip_grads('discriminator', log_vars_disc)
             optimizer['discriminator'].step()
 
         # skip generator training if only train discriminator for current
@@ -266,11 +266,11 @@ class StaticUnconditionalGAN(BaseGAN):
 
         if loss_scaler:
             loss_scaler.unscale_(optimizer['generator'])
-            log_vars_g['grad_norm_g'] = self.clip_grads('generator')
+            self.clip_grads('generator', log_vars_g)
             loss_scaler.step(optimizer['generator'])
             # loss_scaler.update will be called in runner.train()
         else:
-            log_vars_g['grad_norm_g'] = self.clip_grads('generator')
+            self.clip_grads('generator', log_vars_g)
             optimizer['generator'].step()
 
         log_vars = {}
