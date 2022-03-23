@@ -141,7 +141,36 @@ This project is released under the [Apache 2.0 license](LICENSE). Some operation
 
 ## Installation
 
-Please refer to [get_started.md](docs/en/get_started.md) for installation.
+MMGeneration depends on [PyTorch](https://pytorch.org/) and [MMCV](https://github.com/open-mmlab/mmcv).
+Below are quick steps for installation.
+
+**Step 1.**
+Install PyTorch following [official instructions](https://pytorch.org/get-started/locally/), e.g.
+
+```python
+conda create -n open-mmlab python=3.7 -y
+conda activate open-mmlab
+conda install cudatoolkit=11.0 pytorch=1.9 -c pytorch -y
+```
+
+**Step 2.**
+Install MMCV with [MIM](https://github.com/open-mmlab/mim).
+
+```
+pip3 install openmim
+mim install mmcv-full
+```
+
+**Step 3.**
+Install MMGeneration from source.
+
+```
+git clone https://github.com/open-mmlab/mmgeneration.git
+cd mmediting
+pip3 install -e .[all]
+```
+
+Please refer to [get_started.md](docs/en/get_started.md) for more detailed instruction.
 
 ## Getting Started
 
