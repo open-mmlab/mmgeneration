@@ -125,9 +125,7 @@ MMGeneration 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.co
 依照[官方教程](https://pytorch.org/get-started/locally/)安装PyTorch，例如
 
 ```python
-conda create -n open-mmlab python=3.7 -y
-conda activate open-mmlab
-conda install cudatoolkit=11.0 pytorch=1.9 -c pytorch -y
+pip3 install torch torchvision torchaudio
 ```
 
 **步骤 2.**

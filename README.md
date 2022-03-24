@@ -148,9 +148,8 @@ Below are quick steps for installation.
 Install PyTorch following [official instructions](https://pytorch.org/get-started/locally/), e.g.
 
 ```python
-conda create -n open-mmlab python=3.7 -y
-conda activate open-mmlab
-conda install cudatoolkit=11.0 pytorch=1.9 -c pytorch -y
+pip3 install torch torchvision torchaudio
+
 ```
 
 **Step 2.**
