@@ -166,7 +166,7 @@ Install MMGeneration from source.
 
 ```
 git clone https://github.com/open-mmlab/mmgeneration.git
-cd mmediting
+cd mmgeneration
 pip3 install -e .[all]
 ```
 
