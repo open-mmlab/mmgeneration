@@ -92,7 +92,7 @@ class TestExtractInceptionFeat:
         ]
         dataset = UnconditionalImageDataset(
             osp.join(osp.dirname(__file__), '..', 'data'), pipeline)
-        cls.data_loader = build_dataloader(dataset, 3, 1, dist=False)
+        cls.data_loader = build_dataloader(dataset, 3, 0, dist=False)
 
     def test_extr_inception_feat(self):
         feat = extract_inception_features(self.data_loader, self.inception, 5)
