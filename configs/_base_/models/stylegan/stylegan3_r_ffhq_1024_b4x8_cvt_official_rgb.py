@@ -14,5 +14,9 @@ d_reg_interval = 16
 
 model = dict(
     type='StaticUnconditionalGAN',
-    generator=dict(out_size=1024, img_channels=3, synthesis_cfg=synthesis_cfg,rgb2bgr=True),
+    generator=dict(
+        out_size=1024,
+        img_channels=3,
+        synthesis_cfg=synthesis_cfg,
+        rgb2bgr=True),
     discriminator=dict(type='StyleGAN2Discriminator', in_size=1024))

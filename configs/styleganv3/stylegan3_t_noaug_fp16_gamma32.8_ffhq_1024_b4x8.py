@@ -1,11 +1,10 @@
 _base_ = [
     '../_base_/models/stylegan/stylegan3_base.py',
-    '../_base_/datasets/ffhq_flip.py',
-    '../_base_/default_runtime.py'
+    '../_base_/datasets/ffhq_flip.py', '../_base_/default_runtime.py'
 ]
 
 batch_size = 32
-magnitude_ema_beta = 0.5 ** (batch_size / (20 * 1e3))
+magnitude_ema_beta = 0.5**(batch_size / (20 * 1e3))
 synthesis_cfg = {
     'type': 'SynthesisNetwork',
     'channel_base': 32768,
@@ -22,7 +21,8 @@ model = dict(
     gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'),
     disc_auxiliary_loss=dict(loss_weight=r1_gamma / 2.0 * d_reg_interval))
 
-imgs_root = None # set by user
+imgs_root = None  # set by user
+
 data = dict(
     samples_per_gpu=4,
     train=dict(dataset=dict(imgs_root=imgs_root)),
@@ -68,10 +68,7 @@ evaluation = dict(
         bgr2rgb=True),
     sample_kwargs=dict(sample_model='ema'))
 
-checkpoint_config = dict(
-    interval=10000,
-    by_epoch=False,
-    max_keep_ckpts=30)
+checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=30)
 lr_config = None
 
 total_iters = 800002

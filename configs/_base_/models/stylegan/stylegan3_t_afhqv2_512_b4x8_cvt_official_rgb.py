@@ -1,6 +1,4 @@
-_base_ = [
-    './stylegan3_base.py'
-]
+_base_ = ['./stylegan3_base.py']
 
 synthesis_cfg = {
     'type': 'SynthesisNetwork',

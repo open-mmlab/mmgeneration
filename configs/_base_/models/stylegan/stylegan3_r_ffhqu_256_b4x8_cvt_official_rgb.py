@@ -1,6 +1,4 @@
-_base_ = [
-    './stylegan3_base.py'
-]
+_base_ = ['./stylegan3_base.py']
 
 synthesis_cfg = {
     'type': 'SynthesisNetwork',
@@ -18,4 +16,3 @@ model = dict(
         rgb2bgr=True,
         synthesis_cfg=synthesis_cfg),
     discriminator=dict(in_size=256, channel_multiplier=1))
-
