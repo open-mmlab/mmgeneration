@@ -117,6 +117,36 @@ v0.6.0 在 07/03/2022 发布。 关于细节和发布历史，请参考 [changel
 
 </details>
 
+## 安装
+
+MMGeneration 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.com/open-mmlab/mmcv)，以下是安装的简要步骤。
+
+**步骤 1.**
+依照[官方教程](https://pytorch.org/get-started/locally/)安装PyTorch，例如
+
+```python
+pip3 install torch torchvision
+```
+
+**步骤 2.**
+使用 [MIM](https://github.com/open-mmlab/mim) 安装 MMCV
+
+```
+pip3 install openmim
+mim install mmcv-full
+```
+
+**步骤 3.**
+从源码安装 MMGeneration
+
+```
+git clone https://github.com/open-mmlab/mmgeneration.git
+cd mmgeneration
+pip3 install -e .[all]
+```
+
+更详细的安装指南请参考 [get_started.md](docs/zh/get_started.md) .
+
 ## 相关应用
 - ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
