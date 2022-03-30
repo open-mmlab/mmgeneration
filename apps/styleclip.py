@@ -180,8 +180,7 @@ def main():
         optimizer.step()
 
         pbar.set_description((f'loss: {loss.item():.4f};'))
-        if args.save_interval > 0 and (
-                i % args.save_interval == 0):
+        if args.save_interval > 0 and (i % args.save_interval == 0):
             with torch.no_grad():
                 img_gen = g_ema([latent],
                                 input_is_latent=True,
