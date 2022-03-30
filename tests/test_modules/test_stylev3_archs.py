@@ -107,7 +107,7 @@ class TestSynthesisLayer:
             style_channels=6,
             is_torgb=False,
             is_critically_sampled=False,
-            fp16_enabled=False,
+            use_fp16=False,
             conv_kernel=3,
             in_channels=3,
             out_channels=3,
@@ -133,7 +133,7 @@ class TestSynthesisLayer:
 
         # test force_fp32
         cfg = deepcopy(self.default_cfg)
-        cfg.update(fp16_enabled=True)
+        cfg.update(use_fp16=True)
         module = SynthesisLayer(**cfg)
         x = torch.randn((2, 3, 16, 16))
         w = torch.randn((2, 6))
