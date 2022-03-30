@@ -1,16 +1,18 @@
 _base_ = [
     '../_base_/models/stylegan/stylegan3_base.py',
-    '../_base_/datasets/unconditional_imgs_flip_lanczos_resize_1024x1024.py',
+    '../_base_/datasets/ffhq_flip.py',
     '../_base_/default_runtime.py'
 ]
 
+batch_size = 32
+magnitude_ema_beta = 0.5 ** (batch_size / (20 * 1e3))
 synthesis_cfg = {
     'type': 'SynthesisNetwork',
     'channel_base': 32768,
     'channel_max': 512,
     'magnitude_ema_beta': 0.999
 }
-r1_gamma = 32.8  # set by user
+r1_gamma = 32.8
 d_reg_interval = 16
 
 model = dict(
@@ -41,7 +43,7 @@ custom_hooks = [
         start_iter=0,
         momentum_policy='rampup',
         momentum_cfg=dict(
-            ema_kimg=10, ema_rampup=0.05, batch_size=32, eps=1e-8),
+            ema_kimg=10, ema_rampup=0.05, batch_size=batch_size, eps=1e-8),
         priority='VERY_HIGH')
 ]
 
