@@ -148,7 +148,7 @@ Below are quick steps for installation.
 Install PyTorch following [official instructions](https://pytorch.org/get-started/locally/), e.g.
 
 ```python
-pip3 install torch torchvision torchaudio
+pip3 install torch torchvision
 
 ```
 
