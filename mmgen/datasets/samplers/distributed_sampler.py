@@ -5,6 +5,8 @@ import numpy as np
 import torch
 from torch.utils.data import DistributedSampler as _DistributedSampler
 
+from mmgen.utils import sync_random_seed
+
 
 class DistributedSampler(_DistributedSampler):
     """DistributedSampler inheriting from
@@ -19,7 +21,8 @@ class DistributedSampler(_DistributedSampler):
                  num_replicas=None,
                  rank=None,
                  shuffle=True,
-                 samples_per_gpu=1):
+                 samples_per_gpu=1,
+                 seed=None):
         super().__init__(dataset, num_replicas=num_replicas, rank=rank)
 
         self.shuffle = shuffle
@@ -39,6 +42,13 @@ class DistributedSampler(_DistributedSampler):
                 'You may use too small dataset and our distributed '
                 'sampler cannot pad your dataset correctly. We highly '
                 'recommend you to use fewer GPUs to finish your work')
+        # In distributed sampling, different ranks should sample
+        # non-overlapped data in the dataset. Therefore, this function
+        # is used to make sure that each rank shuffles the data indices
+        # in the same order based on the same seed. Then different ranks
+        # could use different indices to select non-overlapped data from the
+        # same data list.
+        self.seed = sync_random_seed(seed)
 
     def update_sampler(self, dataset, samples_per_gpu=None):
         self.dataset = dataset
@@ -64,7 +74,11 @@ class DistributedSampler(_DistributedSampler):
         # deterministically shuffle based on epoch
         if self.shuffle:
             g = torch.Generator()
-            g.manual_seed(self.epoch)
+            # When :attr:`shuffle=True`, this ensures all replicas
+            # use a different random ordering for each epoch.
+            # Otherwise, the next iteration of this sampler will
+            # yield the same ordering.
+            g.manual_seed(self.seed + self.epoch)
             indices = torch.randperm(len(self.dataset), generator=g).tolist()
         else:
             indices = torch.arange(len(self.dataset)).tolist()

@@ -141,7 +141,35 @@ This project is released under the [Apache 2.0 license](LICENSE). Some operation
 
 ## Installation
 
-Please refer to [get_started.md](docs/en/get_started.md) for installation.
+MMGeneration depends on [PyTorch](https://pytorch.org/) and [MMCV](https://github.com/open-mmlab/mmcv).
+Below are quick steps for installation.
+
+**Step 1.**
+Install PyTorch following [official instructions](https://pytorch.org/get-started/locally/), e.g.
+
+```python
+pip3 install torch torchvision
+
+```
+
+**Step 2.**
+Install MMCV with [MIM](https://github.com/open-mmlab/mim).
+
+```
+pip3 install openmim
+mim install mmcv-full
+```
+
+**Step 3.**
+Install MMGeneration from source.
+
+```
+git clone https://github.com/open-mmlab/mmgeneration.git
+cd mmgeneration
+pip3 install -e .[all]
+```
+
+Please refer to [get_started.md](docs/en/get_started.md) for more detailed instruction.
 
 ## Getting Started
 
