@@ -95,7 +95,7 @@ if __name__ == '__main__':
     parser.add_argument('--ckpt', type=str, help='Path to the checkpoint')
     parser.add_argument('--config', type=str, help='Path to model config')
     parser.add_argument('--truncation', type=float, default=1)
-    parser.add_argument('--truncation_mean', type=int, default=4096)
+    parser.add_argument('--truncation-mean', type=int, default=4096)
     parser.add_argument('--noise-channels', type=int, default=512)
     parser.add_argument('--input-scale', type=int, default=4)
     parser.add_argument(

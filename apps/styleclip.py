@@ -75,12 +75,12 @@ def parse_args():
     parser.add_argument(
         '--step', type=int, default=2000, help='Optimization iterations')
     parser.add_argument(
-        '--save_intermediate_image_every',
+        '--save-interval',
         type=int,
         default=20,
         help='if > 0 then saves intermidate results during the optimization')
     parser.add_argument(
-        '--results_dir', type=str, default='work_dirs/styleclip/')
+        '--results-dir', type=str, default='work_dirs/styleclip/')
     parser.add_argument(
         '--sample-cfg',
         nargs='+',
@@ -180,8 +180,8 @@ def main():
         optimizer.step()
 
         pbar.set_description((f'loss: {loss.item():.4f};'))
-        if args.save_intermediate_image_every > 0 and (
-                i % args.save_intermediate_image_every == 0):
+        if args.save_interval > 0 and (
+                i % args.save_interval == 0):
             with torch.no_grad():
                 img_gen = g_ema([latent],
                                 input_is_latent=True,
