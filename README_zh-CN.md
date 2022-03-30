@@ -125,7 +125,7 @@ MMGeneration 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.co
 依照[官方教程](https://pytorch.org/get-started/locally/)安装PyTorch，例如
 
 ```python
-pip3 install torch torchvision torchaudio
+pip3 install torch torchvision
 ```
 
 **步骤 2.**
