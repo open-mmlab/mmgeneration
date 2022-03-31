@@ -472,7 +472,7 @@ class SynthesisLayer(nn.Module):
                 input magnitude. Defaults to False.
 
         Returns:
-            torch.Tensor: Output feature map tensor map.
+            torch.Tensor: Output feature map tensor.
         """
 
         # Track input magnitude.

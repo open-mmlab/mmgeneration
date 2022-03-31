@@ -665,8 +665,7 @@ class ADAAug(nn.Module):
                  update_interval=4,
                  augment_initial_p=0.,
                  ada_target=0.6,
-                 ada_kimg=500,
-                 use_slow_aug=False):
+                 ada_kimg=500):
         super().__init__()
         self.aug_pipeline = AugmentPipe(**aug_pipeline)
         self.update_interval = update_interval

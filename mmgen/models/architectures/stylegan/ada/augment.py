@@ -107,6 +107,7 @@ wavelets = {
 
 def matrix(*rows, device=None):
     """Constructing transformation matrices.
+
     Args:
         device (str|torch.device, optional): Matrix device. Defaults to None.
     Returns:
@@ -129,6 +130,7 @@ def matrix(*rows, device=None):
 
 def translate2d(tx, ty, **kwargs):
     """Construct 2d translation matrix.
+
     Args:
         tx (float): X-direction translation amount.
         ty (float): Y-direction translation amount.
@@ -141,6 +143,7 @@ def translate2d(tx, ty, **kwargs):
 
 def translate3d(tx, ty, tz, **kwargs):
     """Construct 3d translation matrix.
+
     Args:
         tx (float): X-direction translation amount.
         ty (float): Y-direction translation amount.
@@ -155,6 +158,7 @@ def translate3d(tx, ty, tz, **kwargs):
 
 def scale2d(sx, sy, **kwargs):
     """Construct 2d scaling matrix.
+
     Args:
         sx (float): X-direction scaling coefficient.
         sy (float): Y-direction scaling coefficient.
@@ -167,6 +171,7 @@ def scale2d(sx, sy, **kwargs):
 
 def scale3d(sx, sy, sz, **kwargs):
     """Construct 3d scaling matrix.
+
     Args:
         sx (float): X-direction scaling coefficient.
         sy (float): Y-direction scaling coefficient.
@@ -181,6 +186,7 @@ def scale3d(sx, sy, sz, **kwargs):
 
 def rotate2d(theta, **kwargs):
     """Construct 2d rotating matrix.
+
     Args:
         theta (float): Counter-clock wise rotation angle.
     Returns:
@@ -193,6 +199,7 @@ def rotate2d(theta, **kwargs):
 
 def rotate3d(v, theta, **kwargs):
     """Constructing 3d rotating matrix.
+
     Args:
         v (torch.Tensor): Luma axis.
         theta (float): Rotate theta counter-clock wise with ``v`` as the axis.
@@ -215,6 +222,7 @@ def rotate3d(v, theta, **kwargs):
 
 def translate2d_inv(tx, ty, **kwargs):
     """Construct inverse matrix of 2d translation matrix.
+
     Args:
         tx (float): X-direction translation amount.
         ty (float): Y-direction translation amount.
@@ -227,6 +235,7 @@ def translate2d_inv(tx, ty, **kwargs):
 
 def scale2d_inv(sx, sy, **kwargs):
     """Construct inverse matrix of 2d scaling matrix.
+
     Args:
         sx (float): X-direction scaling coefficient.
         sy (float): Y-direction scaling coefficient.
@@ -239,6 +248,7 @@ def scale2d_inv(sx, sy, **kwargs):
 
 def rotate2d_inv(theta, **kwargs):
     """Construct inverse matrix of 2d rotating matrix.
+
     Args:
         theta (float): Counter-clock wise rotation angle.
     Returns:
@@ -259,9 +269,11 @@ def rotate2d_inv(theta, **kwargs):
 class AugmentPipe(torch.nn.Module):
     """Augmentation pipeline include multiple geometric and color
     transformations.
+
     Note: The meaning of arguments are written in the comments of
     ``__init__`` function.
     """
+
     def __init__(
         self,
         xflip=0,
@@ -388,9 +400,8 @@ class AugmentPipe(torch.nn.Module):
         batch_size, num_channels, height, width = images.shape
         device = images.device
         if debug_percentile is not None:
-            debug_percentile = torch.as_tensor(debug_percentile,
-                                               dtype=torch.float32,
-                                               device=device)
+            debug_percentile = torch.as_tensor(
+                debug_percentile, dtype=torch.float32, device=device)
 
         # -------------------------------------
         # Select parameters for pixel blitting.
@@ -431,8 +442,8 @@ class AugmentPipe(torch.nn.Module):
             if debug_percentile is not None:
                 t = torch.full_like(t,
                                     (debug_percentile * 2 - 1) * self.xint_max)
-            G_inv = G_inv @ translate2d_inv(torch.round(t[:, 0] * width),
-                                            torch.round(t[:, 1] * height))
+            G_inv = G_inv @ translate2d_inv(
+                torch.round(t[:, 0] * width), torch.round(t[:, 1] * height))
 
         # --------------------------------------------------------
         # Select parameters for general geometric transformations.
@@ -537,40 +548,41 @@ class AugmentPipe(torch.nn.Module):
             mx0, my0, mx1, my1 = margin.ceil().to(torch.int32)
 
             # Pad image and adjust origin.
-            images = torch.nn.functional.pad(input=images,
-                                             pad=[mx0, mx1, my0, my1],
-                                             mode='reflect')
-            G_inv = translate2d(torch.true_divide(mx0 - mx1, 2),
-                                torch.true_divide(my0 - my1, 2)) @ G_inv
+            images = torch.nn.functional.pad(
+                input=images, pad=[mx0, mx1, my0, my1], mode='reflect')
+            G_inv = translate2d(
+                torch.true_divide(mx0 - mx1, 2), torch.true_divide(
+                    my0 - my1, 2)) @ G_inv
 
             # Upsample.
             images = upfirdn2d.upsample2d(x=images, f=self.Hz_geom, up=2)
-            G_inv = scale2d(2, 2, device=device) @ G_inv @ scale2d_inv(
-                2, 2, device=device)
-            G_inv = translate2d(-0.5, -0.5,
-                                device=device) @ G_inv @ translate2d_inv(
-                                    -0.5, -0.5, device=device)
+            G_inv = scale2d(
+                2, 2, device=device) @ G_inv @ scale2d_inv(
+                    2, 2, device=device)
+            G_inv = translate2d(
+                -0.5, -0.5, device=device) @ G_inv @ translate2d_inv(
+                    -0.5, -0.5, device=device)
 
             # Execute transformation.
             shape = [
                 batch_size, num_channels, (height + Hz_pad * 2) * 2,
                 (width + Hz_pad * 2) * 2
             ]
-            G_inv = scale2d(2 / images.shape[3],
-                            2 / images.shape[2],
-                            device=device) @ G_inv @ scale2d_inv(
-                                2 / shape[3], 2 / shape[2], device=device)
-            grid = torch.nn.functional.affine_grid(theta=G_inv[:, :2, :],
-                                                   size=shape,
-                                                   align_corners=False)
+            G_inv = scale2d(
+                2 / images.shape[3], 2 / images.shape[2],
+                device=device) @ G_inv @ scale2d_inv(
+                    2 / shape[3], 2 / shape[2], device=device)
+            grid = torch.nn.functional.affine_grid(
+                theta=G_inv[:, :2, :], size=shape, align_corners=False)
             images = grid_sample_gradfix.grid_sample(images, grid)
 
             # Downsample and crop.
-            images = upfirdn2d.downsample2d(x=images,
-                                            f=self.Hz_geom,
-                                            down=2,
-                                            padding=-Hz_pad * 2,
-                                            flip_filter=True)
+            images = upfirdn2d.downsample2d(
+                x=images,
+                f=self.Hz_geom,
+                down=2,
+                padding=-Hz_pad * 2,
+                flip_filter=True)
 
         # --------------------------------------------
         # Select parameters for color transformations.
@@ -611,8 +623,8 @@ class AugmentPipe(torch.nn.Module):
             C = scale3d(c, c, c) @ C
 
         # Apply luma flip with probability (lumaflip * strength).
-        v = misc.constant(np.asarray([1, 1, 1, 0]) / np.sqrt(3),
-                          device=device)  # Luma axis.
+        v = misc.constant(
+            np.asarray([1, 1, 1, 0]) / np.sqrt(3), device=device)  # Luma axis.
         if self.lumaflip > 0:
             i = torch.floor(torch.rand([batch_size, 1, 1], device=device) * 2)
             i = torch.where(
@@ -661,8 +673,8 @@ class AugmentPipe(torch.nn.Module):
                 images = C[:, :3, :3] @ images + C[:, :3, 3:]
             elif num_channels == 1:
                 C = C[:, :3, :].mean(dim=1, keepdims=True)
-                images = images * C[:, :, :3].sum(dim=2,
-                                                  keepdims=True) + C[:, :, 3:]
+                images = images * C[:, :, :3].sum(
+                    dim=2, keepdims=True) + C[:, :, 3:]
             else:
                 raise ValueError(
                     'Image must be RGB (3 channels) or L (1 channel)')
@@ -716,15 +728,16 @@ class AugmentPipe(torch.nn.Module):
             p = self.Hz_fbank.shape[1] // 2
             images = images.reshape(
                 [1, batch_size * num_channels, height, width])
-            images = torch.nn.functional.pad(input=images,
-                                             pad=[p, p, p, p],
-                                             mode='reflect')
-            images = conv2d_gradfix.conv2d(input=images,
-                                           weight=Hz_prime.unsqueeze(2),
-                                           groups=batch_size * num_channels)
-            images = conv2d_gradfix.conv2d(input=images,
-                                           weight=Hz_prime.unsqueeze(3),
-                                           groups=batch_size * num_channels)
+            images = torch.nn.functional.pad(
+                input=images, pad=[p, p, p, p], mode='reflect')
+            images = conv2d_gradfix.conv2d(
+                input=images,
+                weight=Hz_prime.unsqueeze(2),
+                groups=batch_size * num_channels)
+            images = conv2d_gradfix.conv2d(
+                input=images,
+                weight=Hz_prime.unsqueeze(3),
+                groups=batch_size * num_channels)
             images = images.reshape([batch_size, num_channels, height, width])
 
         # ------------------------
@@ -759,8 +772,8 @@ class AugmentPipe(torch.nn.Module):
                 size = torch.full_like(size, self.cutout_size)
                 center = torch.full_like(center, debug_percentile)
             coord_x = torch.arange(width, device=device).reshape([1, 1, 1, -1])
-            coord_y = torch.arange(height,
-                                   device=device).reshape([1, 1, -1, 1])
+            coord_y = torch.arange(
+                height, device=device).reshape([1, 1, -1, 1])
             mask_x = (((coord_x + 0.5) / width - center[:, 0]).abs() >=
                       size[:, 0] / 2)
             mask_y = (((coord_y + 0.5) / height - center[:, 1]).abs() >=
