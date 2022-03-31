@@ -14,7 +14,7 @@ synthesis_cfg = {
 r1_gamma = 3.3  # set by user
 d_reg_interval = 16
 
-load_from = 'https://download.openmmlab.com/mmgen/stylegan3/stylegan3_r_ffhq_1024_b4x8_cvt_official_rgb_20220329_234933-ac0500a1.pth' # noqa
+load_from = 'https://download.openmmlab.com/mmgen/stylegan3/stylegan3_r_ffhq_1024_b4x8_cvt_official_rgb_20220329_234933-ac0500a1.pth'  # noqa
 
 # ada settings
 aug_kwargs = {
@@ -57,7 +57,7 @@ ema_half_life = 10.  # G_smoothing_kimg
 
 ema_kimg = 10
 ema_nimg = ema_kimg * 1000
-ema_beta = 0.5 ** (32 / max(ema_nimg, 1e-8))
+ema_beta = 0.5**(32 / max(ema_nimg, 1e-8))
 
 custom_hooks = [
     dict(
@@ -86,7 +86,7 @@ metrics = dict(
 inception_path = None  # noqa
 evaluation = dict(
     type='GenerativeEvalHook',
-    interval=dict(milestones=[100000],interval=[10000, 5000]),
+    interval=dict(milestones=[100000], interval=[10000, 5000]),
     metrics=dict(
         type='FID',
         num_images=50000,

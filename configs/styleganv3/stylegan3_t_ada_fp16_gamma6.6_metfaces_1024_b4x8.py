@@ -12,7 +12,7 @@ synthesis_cfg = {
 r1_gamma = 6.6  # set by user
 d_reg_interval = 16
 
-load_from = 'https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_ffhq_1024_b4x8_cvt_official_rgb_20220329_235113-db6c6580.pth' # noqa
+load_from = 'https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_ffhq_1024_b4x8_cvt_official_rgb_20220329_235113-db6c6580.pth'  # noqa
 # ada settings
 aug_kwargs = {
     'xflip': 1,
@@ -54,13 +54,13 @@ ema_half_life = 10.  # G_smoothing_kimg
 
 ema_kimg = 10
 ema_nimg = ema_kimg * 1000
-ema_beta = 0.5 ** (32 / max(ema_nimg, 1e-8))
+ema_beta = 0.5**(32 / max(ema_nimg, 1e-8))
 
 custom_hooks = [
     dict(
-       type='VisualizeUnconditionalSamples',
-       output_dir='training_samples',
-       interval=5000),
+        type='VisualizeUnconditionalSamples',
+        output_dir='training_samples',
+        interval=5000),
     dict(
         type='ExponentialMovingAverageHook',
         module_keys=('generator_ema', ),
@@ -80,10 +80,10 @@ metrics = dict(
         inception_args=dict(type='StyleGAN'),
         bgr2rgb=True))
 
-inception_path = None # set by user
+inception_path = None  # set by user
 evaluation = dict(
     type='GenerativeEvalHook',
-    interval=dict(milestones=[80000],interval=[10000, 5000]),
+    interval=dict(milestones=[80000], interval=[10000, 5000]),
     metrics=dict(
         type='FID',
         num_images=50000,

@@ -490,7 +490,7 @@ class TestADAStyleGAN2Discriminator:
         assert d.ada_aug.aug_pipeline.p == 4.0000e-05
 
         # test with p=1.
-        d.aug_pipeline.p.copy_(torch.tensor(1.))
+        d.ada_aug.aug_pipeline.p.copy_(torch.tensor(1.))
         img = torch.randn((2, 3, 64, 64))
         score = d(img)
         assert score.shape == (2, 1)
@@ -517,7 +517,7 @@ class TestADAStyleGAN2Discriminator:
         assert d.ada_aug.aug_pipeline.p == 4.0000e-05
 
         # test with p=1.
-        d.aug_pipeline.p.copy_(torch.tensor(1.))
+        d.ada_aug.aug_pipeline.p.copy_(torch.tensor(1.))
         img = torch.randn((2, 3, 64, 64)).cuda()
         score = d(img)
         assert score.shape == (2, 1)
