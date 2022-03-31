@@ -953,6 +953,13 @@ class PR(Metric):
         return self._result_dict
 
     def extract_features(self, images):
+        """Extracting image features.
+
+        Args:
+            images (torch.Tensor): Images tensor.
+        Returns:
+            torch.Tensor: Vgg16 features of input images.
+        """
         if self.use_tero_scirpt:
             feature = self.vgg16(images, return_features=True)
         else:
@@ -1278,6 +1285,16 @@ class PPL(Metric):
         return ppl_score
 
     def get_sampler(self, model, batch_size, sample_model):
+        """Get sampler for sampling along the path.
+
+        Args:
+            model (nn.Module): Generative model.
+            batch_size (int): Sampling batch size.
+            sample_model (str): Which model you want to use. ['ema',
+            'orig']. Defaults to 'ema'.
+        Returns:
+            Object: A sampler for calculating path length regularization.
+        """
         if sample_model == 'ema':
             generator = model.generator_ema
         else:
