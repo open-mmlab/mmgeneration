@@ -495,6 +495,7 @@ class TestADAStyleGAN2Discriminator:
         score = d(img)
         assert score.shape == (2, 1)
 
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_ada_stylegan2_disc_cuda(self):
         d = ADAStyleGAN2Discriminator(**self.default_cfg).cuda()
         img = torch.randn((2, 3, 64, 64)).cuda()
