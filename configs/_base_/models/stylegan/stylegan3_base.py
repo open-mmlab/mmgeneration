@@ -39,6 +39,6 @@ test_cfg = None
 # define optimizer
 optimizer = dict(
     generator=dict(
-        type='Adam', lr=0.002 * g_reg_ratio, betas=(0, 0.99**g_reg_ratio)),
+        type='Adam', lr=0.0025 * g_reg_ratio, betas=(0, 0.99**g_reg_ratio)),
     discriminator=dict(
         type='Adam', lr=0.002 * d_reg_ratio, betas=(0, 0.99**d_reg_ratio)))

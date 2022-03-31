@@ -192,6 +192,11 @@ class GenerativeEvalHook(Hook):
                 self._curr_best_ckpt_path[name] = None
 
     def get_current_interval(self, runner):
+        """Get current evaluation interval.
+
+        Args:
+            runner (``mmcv.runner.BaseRunner``): The runner.
+        """
         if isinstance(self.interval, int):
             return self.interval
         else:
@@ -316,6 +321,13 @@ class GenerativeEvalHook(Hook):
             metric.clear()
 
     def _save_best_ckpt(self, runner, new_score, metric_name):
+        """Save checkpoint with best metric score.
+
+        Args:
+            runner (``mmcv.runner.BaseRunner``): The runner.
+            new_score (float): New metric score.
+            metric_name (str): Name of metric.
+        """
         curr_iter = f'iter_{runner.iter + 1}'
 
         if self.compare_func[metric_name](new_score,

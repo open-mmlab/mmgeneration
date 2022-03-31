@@ -1,27 +1,25 @@
 _base_ = [
     '../_base_/models/stylegan/stylegan3_base.py',
-    '../_base_/datasets/unconditional_imgs_flip_256x256.py',
-    '../_base_/default_runtime.py'
+    '../_base_/datasets/ffhq_flip.py', '../_base_/default_runtime.py'
 ]
 
+batch_size = 32
+magnitude_ema_beta = 0.5**(batch_size / (20 * 1e3))
 synthesis_cfg = {
     'type': 'SynthesisNetwork',
     'channel_base': 32768,
-    'channel_max': 1024,
-    'magnitude_ema_beta': 0.999,
-    'conv_kernel': 1,
-    'use_radial_filters': True
+    'channel_max': 512,
+    'magnitude_ema_beta': 0.999
 }
+r1_gamma = 32.8
+d_reg_interval = 16
+
 model = dict(
     type='StaticUnconditionalGAN',
-    generator=dict(
-        out_size=256,
-        img_channels=3,
-        rgb2bgr=True,
-        synthesis_cfg=synthesis_cfg),
-    discriminator=dict(in_size=256, channel_multiplier=1),
+    generator=dict(out_size=1024, img_channels=3, synthesis_cfg=synthesis_cfg),
+    discriminator=dict(in_size=1024),
     gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'),
-    disc_auxiliary_loss=dict(loss_weight=1))
+    disc_auxiliary_loss=dict(loss_weight=r1_gamma / 2.0 * d_reg_interval))
 
 imgs_root = None  # set by user
 
@@ -40,18 +38,17 @@ custom_hooks = [
     dict(
         type='ExponentialMovingAverageHook',
         module_keys=('generator_ema', ),
+        interp_mode='lerp',
         interval=1,
-        interp_cfg=dict(momentum=0.5**(32. / (ema_half_life * 1000.))),
+        start_iter=0,
+        momentum_policy='rampup',
+        momentum_cfg=dict(
+            ema_kimg=10, ema_rampup=0.05, batch_size=batch_size, eps=1e-8),
         priority='VERY_HIGH')
 ]
 
-inception_pkl = None  # set by user
+inception_pkl = 'work_dirs/inception_pkl/ffhq_noflip_1024x1024.pkl'
 metrics = dict(
-    eqv=dict(
-        type='Equivariance',
-        num_images=50000,
-        eq_cfg=dict(
-            compute_eqt_int=True, compute_eqt_frac=True, compute_eqr=True)),
     fid50k=dict(
         type='FID',
         num_images=50000,
@@ -59,6 +56,7 @@ metrics = dict(
         inception_args=dict(type='StyleGAN'),
         bgr2rgb=True))
 
+inception_path = '/mnt/lustre/yangyifei1/repos/fix-s3/work_dirs/cache/inception-2015-12-05.pt'  # noqa
 evaluation = dict(
     type='GenerativeEvalHook',
     interval=10000,
@@ -66,6 +64,7 @@ evaluation = dict(
         type='FID',
         num_images=50000,
         inception_pkl=inception_pkl,
+        inception_args=dict(type='StyleGAN', inception_path=inception_path),
         bgr2rgb=True),
     sample_kwargs=dict(sample_model='ema'))
 
@@ -73,3 +72,5 @@ checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=30)
 lr_config = None
 
 total_iters = 800002
+
+allow_tf32 = False

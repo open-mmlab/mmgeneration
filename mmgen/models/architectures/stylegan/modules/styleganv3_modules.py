@@ -5,8 +5,117 @@ import torch
 import torch.nn as nn
 
 from mmgen.models.builder import MODULES
-from mmgen.ops import filtered_lrelu
-from .styleganv2_modules import EqualLinearActModule, ModulatedConv2d
+from mmgen.ops import bias_act, conv2d_gradfix, filtered_lrelu
+
+
+def modulated_conv2d(
+    x,
+    w,
+    s,
+    demodulate=True,
+    padding=0,
+    input_gain=None,
+):
+    """Modulated Conv2d in StyleGANv3.
+
+    Args:
+        x (torch.Tensor): Input tensor with shape (batch_size, in_channels,
+            height, width).
+        w (torch.Tensor): Weight of modulated convolution with shape
+            (out_channels, in_channels, kernel_height, kernel_width).
+        s (torch.Tensor): Style tensor with shape (batch_size, in_channels).
+        demodulate (bool): Whether apply weight demodulation. Defaults to True.
+        padding (int or list[int]): Convolution padding. Defaults to 0.
+        input_gain (list[int]): Scaling factors for input. Defaults to None.
+
+    Returns:
+        torch.Tensor: Convolution Output.
+    """
+
+    batch_size = int(x.shape[0])
+    _, in_channels, kh, kw = w.shape
+
+    # Pre-normalize inputs.
+    if demodulate:
+        w = w * w.square().mean([1, 2, 3], keepdim=True).rsqrt()
+        s = s * s.square().mean().rsqrt()
+
+    # Modulate weights.
+    w = w.unsqueeze(0)  # [NOIkk]
+    w = w * s.unsqueeze(1).unsqueeze(3).unsqueeze(4)  # [NOIkk]
+
+    # Demodulate weights.
+    if demodulate:
+        dcoefs = (w.square().sum(dim=[2, 3, 4]) + 1e-8).rsqrt()  # [NO]
+        w = w * dcoefs.unsqueeze(2).unsqueeze(3).unsqueeze(4)  # [NOIkk]
+
+    # Apply input scaling.
+    if input_gain is not None:
+        input_gain = input_gain.expand(batch_size, in_channels)  # [NI]
+        w = w * input_gain.unsqueeze(1).unsqueeze(3).unsqueeze(4)  # [NOIkk]
+
+    # Execute as one fused op using grouped convolution.
+    x = x.reshape(1, -1, *x.shape[2:])
+    w = w.reshape(-1, in_channels, kh, kw)
+    x = conv2d_gradfix.conv2d(
+        input=x, weight=w.to(x.dtype), padding=padding, groups=batch_size)
+    x = x.reshape(batch_size, -1, *x.shape[2:])
+    return x
+
+
+class FullyConnectedLayer(nn.Module):
+    """Fully connected layer used in StyleGANv3.
+
+    Args:
+        in_features (int): Number of channels in the input feature.
+        out_features (int): Number of channels in the out feature.
+        activation (str, optional): Activation function with choices 'relu',
+            'lrelu', 'linear'. 'linear' means no extra activation.
+            Defaults to 'linear'.
+        bias (bool, optional): Whether to use additive bias. Defaults to True.
+        lr_multiplier (float, optional): Equalized learning rate multiplier.
+            Defaults to 1..
+        weight_init (float, optional): Weight multiplier for initialization.
+            Defaults to 1..
+        bias_init (float, optional): Initial bias. Defaults to 0..
+    """
+
+    def __init__(self,
+                 in_features,
+                 out_features,
+                 activation='linear',
+                 bias=True,
+                 lr_multiplier=1.,
+                 weight_init=1.,
+                 bias_init=0.):
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.activation = activation
+        self.weight = torch.nn.Parameter(
+            torch.randn([out_features, in_features]) *
+            (weight_init / lr_multiplier))
+        bias_init = np.broadcast_to(
+            np.asarray(bias_init, dtype=np.float32), [out_features])
+        self.bias = torch.nn.Parameter(
+            torch.from_numpy(bias_init / lr_multiplier)) if bias else None
+        self.weight_gain = lr_multiplier / np.sqrt(in_features)
+        self.bias_gain = lr_multiplier
+
+    def forward(self, x):
+        """Forward function."""
+        w = self.weight.to(x.dtype) * self.weight_gain
+        b = self.bias
+        if b is not None:
+            b = b.to(x.dtype)
+            if self.bias_gain != 1:
+                b = b * self.bias_gain
+        if self.activation == 'linear' and b is not None:
+            x = torch.addmm(b.unsqueeze(0), x, w.t())
+        else:
+            x = x.matmul(w.t())
+            x = bias_act.bias_act(x, b, act=self.activation)
+        return x
 
 
 @MODULES.register_module()
@@ -22,7 +131,7 @@ class MappingNetwork(nn.Module):
         num_ws (int): The repeat times of w latent.
         num_layers (int, optional): The number of layers of mapping network.
             Defaults to 2.
-        lr_multiplier (float, optional): Equalized learning rate.
+        lr_multiplier (float, optional): Equalized learning rate multiplier.
             Defaults to 0.01.
         w_avg_beta (float, optional): The value used for update `w_avg`.
             Defaults to 0.998.
@@ -45,18 +154,18 @@ class MappingNetwork(nn.Module):
         self.w_avg_beta = w_avg_beta
 
         # Construct layers.
-        self.embed = EqualLinearActModule(
+        self.embed = FullyConnectedLayer(
             self.c_dim, self.style_channels) if self.c_dim > 0 else None
         features = [
             self.noise_size + (self.style_channels if self.c_dim > 0 else 0)
         ] + [self.style_channels] * self.num_layers
         for idx, in_features, out_features in zip(
                 range(num_layers), features[:-1], features[1:]):
-            layer = EqualLinearActModule(
+            layer = FullyConnectedLayer(
                 in_features,
                 out_features,
-                equalized_lr_cfg=dict(lr_mul=lr_multiplier, gain=1.),
-                act_cfg=dict(type='fused_bias'))
+                activation='lrelu',
+                lr_multiplier=lr_multiplier)
             setattr(self, f'fc{idx}', layer)
         self.register_buffer('w_avg', torch.zeros([style_channels]))
 
@@ -140,7 +249,8 @@ class SynthesisInput(nn.Module):
         # Setup parameters and buffers.
         self.weight = torch.nn.Parameter(
             torch.randn([self.channels, self.channels]))
-        self.affine = EqualLinearActModule(style_channels, 4)
+        self.affine = FullyConnectedLayer(
+            style_channels, 4, weight_init=0, bias_init=[1, 0, 0, 0])
         self.register_buffer('transform', torch.eye(
             3, 3))  # User-specified inverse transform wrt. resulting image.
         self.register_buffer('freqs', freqs)
@@ -218,7 +328,7 @@ class SynthesisLayer(nn.Module):
             rgb image.
         is_critically_sampled (bool): Whether filter cutoff is set exactly
             at the bandlimit.
-        fp16_enabled (bool, optional): Whether to use fp16 training in this
+        use_fp16 (bool, optional): Whether to use fp16 training in this
             module. If this flag is `True`, the whole module will be wrapped
             with ``auto_fp16``.
         in_channels (int): The channel number of the input feature map.
@@ -251,7 +361,7 @@ class SynthesisLayer(nn.Module):
         style_channels,
         is_torgb,
         is_critically_sampled,
-        fp16_enabled,
+        use_fp16,
         in_channels,
         out_channels,
         in_size,
@@ -273,7 +383,7 @@ class SynthesisLayer(nn.Module):
         self.style_channels = style_channels
         self.is_torgb = is_torgb
         self.is_critically_sampled = is_critically_sampled
-        self.use_fp16 = fp16_enabled
+        self.use_fp16 = use_fp16
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.in_size = np.broadcast_to(np.asarray(in_size), [2])
@@ -290,25 +400,24 @@ class SynthesisLayer(nn.Module):
         self.conv_clamp = conv_clamp
         self.magnitude_ema_beta = magnitude_ema_beta
 
+        # Setup parameters and buffers.
+        self.affine = FullyConnectedLayer(
+            self.style_channels, self.in_channels, bias_init=1)
+        self.weight = torch.nn.Parameter(
+            torch.randn([
+                self.out_channels, self.in_channels, self.conv_kernel,
+                self.conv_kernel
+            ]))
         self.bias = torch.nn.Parameter(torch.zeros([self.out_channels]))
-
-        self.conv = ModulatedConv2d(
-            self.in_channels,
-            self.out_channels,
-            self.conv_kernel,
-            self.style_channels,
-            demodulate=(not self.is_torgb),
-            padding=self.conv_kernel - 1,
-        )
-
         self.register_buffer('magnitude_ema', torch.ones([]))
 
         # Design upsampling filter.
         self.up_factor = int(
             np.rint(self.tmp_sampling_rate / self.in_sampling_rate))
         assert self.in_sampling_rate * self.up_factor == self.tmp_sampling_rate
-        self.up_taps = filter_size * self.up_factor if (
-            self.up_factor > 1 and not self.is_torgb) else 1
+        self.up_taps = (
+            filter_size *
+            self.up_factor if self.up_factor > 1 and not self.is_torgb else 1)
         self.register_buffer(
             'up_filter',
             self.design_lowpass_filter(
@@ -322,8 +431,9 @@ class SynthesisLayer(nn.Module):
             np.rint(self.tmp_sampling_rate / self.out_sampling_rate))
         assert (self.out_sampling_rate *
                 self.down_factor == self.tmp_sampling_rate)
-        self.down_taps = filter_size * self.down_factor if (
-            self.down_factor > 1 and not self.is_torgb) else 1
+        self.down_taps = (
+            filter_size * self.down_factor
+            if self.down_factor > 1 and not self.is_torgb else 1)
         self.down_radial = (
             use_radial_filters and not self.is_critically_sampled)
         self.register_buffer(
@@ -341,10 +451,7 @@ class SynthesisLayer(nn.Module):
         ) * self.down_factor + 1  # Desired output size before downsampling.
         pad_total -= (self.in_size + self.conv_kernel -
                       1) * self.up_factor  # Input size after upsampling.
-        # Size reduction caused by the filters.
         pad_total += self.up_taps + self.down_taps - 2
-        # Shift sample locations according to
-        # the symmetric interpretation (Appendix C.3).
         pad_lo = (pad_total + self.up_factor) // 2
         pad_hi = pad_total - pad_lo
         self.padding = [
@@ -354,20 +461,14 @@ class SynthesisLayer(nn.Module):
             int(pad_hi[1])
         ]
 
-    def forward(self, x, w, force_fp32=True, update_emas=False):
-        """Forward function for synthesis layer.
+    def forward(self,
+                x,
+                w,
+                noise_mode='random',
+                force_fp32=False,
+                update_emas=False):
+        assert noise_mode in ['random', 'const', 'none']  # unused
 
-        Args:
-            x (torch.Tensor): Input feature map tensor.
-            w (torch.Tensor): Input style tensor.
-            force_fp32 (bool, optional): Force fp32 ignore the weights.
-                Defaults to True.
-            update_emas (bool, optional): Whether update moving average of
-                input magnitude. Defaults to False.
-
-        Returns:
-            torch.Tensor: Output feature map tensor map.
-        """
         # Track input magnitude.
         if update_emas:
             with torch.autograd.profiler.record_function(
@@ -378,11 +479,22 @@ class SynthesisLayer(nn.Module):
                                        self.magnitude_ema_beta))
         input_gain = self.magnitude_ema.rsqrt()
 
+        # Execute affine layer.
+        styles = self.affine(w)
+        if self.is_torgb:
+            weight_gain = 1 / np.sqrt(self.in_channels * (self.conv_kernel**2))
+            styles = styles * weight_gain
+
         # Execute modulated conv2d.
         dtype = torch.float16 if (self.use_fp16 and not force_fp32 and
                                   x.device.type == 'cuda') else torch.float32
-
-        x = self.conv(x, w, input_gain=input_gain)
+        x = modulated_conv2d(
+            x=x.to(dtype),
+            w=self.weight,
+            s=styles,
+            padding=self.conv_kernel - 1,
+            demodulate=(not self.is_torgb),
+            input_gain=input_gain)
 
         # Execute bias, filtered leaky ReLU, and clamping.
         gain = 1 if self.is_torgb else np.sqrt(2)
@@ -398,25 +510,13 @@ class SynthesisLayer(nn.Module):
             gain=gain,
             slope=slope,
             clamp=self.conv_clamp)
+
+        # Ensure correct shape and dtype.
         assert x.dtype == dtype
         return x
 
     @staticmethod
     def design_lowpass_filter(numtaps, cutoff, width, fs, radial=False):
-        """Design lowpass filter giving related arguments.,
-
-        Args:
-            numtaps (int): Length of the filter. `numtaps` must be odd if a
-                passband includes the Nyquist frequency.
-            cutoff (float): Cutoff frequency of filter
-            width (float): The approximate width of the transition region.
-            fs (float): The sampling frequency of the signal.
-            radial (bool, optional):  Whether use radially symmetric jinc-based
-                filter. Defaults to False.
-
-        Returns:
-            torch.Tensor: Kernel of lowpass filter.
-        """
         assert numtaps >= 1
 
         # Identity filter.
@@ -540,7 +640,7 @@ class SynthesisNetwork(nn.Module):
                 style_channels=self.style_channels,
                 is_torgb=is_torgb,
                 is_critically_sampled=is_critically_sampled,
-                fp16_enabled=use_fp16,
+                use_fp16=use_fp16,
                 in_channels=int(channels[prev]),
                 out_channels=int(channels[idx]),
                 in_size=int(sizes[prev]),
@@ -556,28 +656,16 @@ class SynthesisNetwork(nn.Module):
             setattr(self, name, layer)
             self.layer_names.append(name)
 
-    def forward(self, ws, force_fp32=True, update_emas=False):
-        """Forward function of synthesis network.
-
-        Args:
-            ws (tensor): Latent tensor of w-plus space.
-            force_fp32 (bool, optional): Force fp32 ignore the weights.
-                Defaults to True.
-            update_emas (bool, optional): Whether update moving average of
-                mean latent and layer input. Defaults to False.
-
-        Returns:
-            torch.Tensor : Result of synthesis network.
-        """
+    def forward(self, ws, **layer_kwargs):
         ws = ws.to(torch.float32).unbind(dim=1)
 
         # Execute layers.
         x = self.input(ws[0])
         for name, w in zip(self.layer_names, ws[1:]):
-            x = getattr(self, name)(
-                x, w, force_fp32=force_fp32, update_emas=update_emas)
+            x = getattr(self, name)(x, w, **layer_kwargs)
         if self.output_scale != 1:
             x = x * self.output_scale
 
+        # Ensure correct shape and dtype.
         x = x.to(torch.float32)
         return x

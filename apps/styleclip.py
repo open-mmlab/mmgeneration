@@ -2,7 +2,10 @@ import argparse
 import math
 import os
 
-import clip
+try:
+    import clip
+except ImportError:
+    raise 'To use styleclip, openai clip need to be installed first'
 import mmcv
 import torch
 import torchvision

@@ -93,6 +93,23 @@ class ExponentialMovingAverageHook(Hook):
 
     @staticmethod
     def lerp(a, b, momentum=0.999, momentum_nontrainable=0., trainable=True):
+        """Does a linear interpolation of two parameters/ buffers.
+
+        Args:
+            a (torch.Tensor): Interpolation start point, refer to orig state.
+            b (torch.Tensor): Interpolation end point, refer to ema state.
+            momentum (float, optional): The weight for the interpolation
+                formula. Defaults to 0.999.
+            momentum_nontrainable (float, optional): The weight for the
+                interpolation formula used for nontrainable parameters.
+                Defaults to 0..
+            trainable (bool, optional): Whether input parameters is trainable.
+                If set to False, momentum_nontrainable will be used.
+                Defaults to True.
+
+        Returns:
+            torch.Tensor: Interpolation result.
+        """
         m = momentum if trainable else momentum_nontrainable
         return a + (b - a) * m
 

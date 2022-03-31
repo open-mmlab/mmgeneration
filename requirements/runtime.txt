@@ -1,5 +1,5 @@
--e git+https://github.com/openai/CLIP.git#egg=clip
 mmcls==0.18.0
+ninja
 numpy
 prettytable
 scikit-image
