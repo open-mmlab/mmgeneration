@@ -463,6 +463,7 @@ class SynthesisLayer(nn.Module):
 
     def forward(self, x, w, force_fp32=False, update_emas=False):
         """Forward function for synthesis layer.
+
         Args:
             x (torch.Tensor): Input feature map tensor.
             w (torch.Tensor): Input style tensor.
@@ -523,7 +524,8 @@ class SynthesisLayer(nn.Module):
 
     @staticmethod
     def design_lowpass_filter(numtaps, cutoff, width, fs, radial=False):
-        """Design lowpass filter giving related arguments.,
+        """Design lowpass filter giving related arguments.
+
         Args:
             numtaps (int): Length of the filter. `numtaps` must be odd if a
                 passband includes the Nyquist frequency.
@@ -532,6 +534,7 @@ class SynthesisLayer(nn.Module):
             fs (float): The sampling frequency of the signal.
             radial (bool, optional):  Whether use radially symmetric jinc-based
                 filter. Defaults to False.
+
         Returns:
             torch.Tensor: Kernel of lowpass filter.
         """
