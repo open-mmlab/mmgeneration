@@ -56,7 +56,7 @@ metrics = dict(
         inception_args=dict(type='StyleGAN'),
         bgr2rgb=True))
 
-inception_path = '/mnt/lustre/yangyifei1/repos/fix-s3/work_dirs/cache/inception-2015-12-05.pt'  # noqa
+inception_path = None
 evaluation = dict(
     type='GenerativeEvalHook',
     interval=10000,
@@ -72,5 +72,3 @@ checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=30)
 lr_config = None
 
 total_iters = 800002
-
-allow_tf32 = False
