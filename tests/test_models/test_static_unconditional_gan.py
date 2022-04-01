@@ -180,11 +180,11 @@ class TestStaticUnconditionalGAN(object):
             type='StaticUnconditionalGAN',
             generator=dict(
                 type='StyleGANv3Generator',
-                out_size=32,
+                out_size=16,
                 style_channels=8,
                 img_channels=3,
                 synthesis_cfg=synthesis_cfg),
-            discriminator=dict(type='StyleGAN2Discriminator', in_size=32),
+            discriminator=dict(type='StyleGAN2Discriminator', in_size=16),
             gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'))
 
         s3gan = build_model(default_config)
@@ -197,16 +197,13 @@ class TestStaticUnconditionalGAN(object):
             _ = s3gan(None, return_loss=True)
         # test forward test
         imgs = s3gan(None, return_loss=False, mode='sampling', num_batches=2)
-        assert imgs.shape == (2, 3, 32, 32)
+        assert imgs.shape == (2, 3, 16, 16)
 
         # test train step
-        data = torch.randn((2, 3, 32, 32))
+        data = torch.randn((2, 3, 16, 16))
         data_input = dict(real_img=data)
         optimizer_g = torch.optim.SGD(s3gan.generator.parameters(), lr=0.01)
         optimizer_d = torch.optim.SGD(
             s3gan.discriminator.parameters(), lr=0.01)
         optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
-
-        _ = s3gan.train_step(
-            data_input, optim_dict, running_status=dict(iteration=1))
         _ = s3gan.train_step(data_input, optim_dict)
