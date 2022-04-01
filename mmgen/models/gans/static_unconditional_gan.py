@@ -99,6 +99,7 @@ class StaticUnconditionalGAN(BaseGAN):
             self.generator_ema = deepcopy(self.generator)
 
         self.real_img_key = self.train_cfg.get('real_img_key', 'real_img')
+        self.grad_clip = self.train_cfg.get('grad_clip', None)
 
     def _parse_test_cfg(self):
         """Parsing test config and set some attributes for testing."""
@@ -207,10 +208,11 @@ class StaticUnconditionalGAN(BaseGAN):
 
         if loss_scaler:
             loss_scaler.unscale_(optimizer['discriminator'])
-            # note that we do not contain clip_grad procedure
+            self.clip_grads('discriminator', log_vars_disc)
             loss_scaler.step(optimizer['discriminator'])
             # loss_scaler.update will be called in runner.train()
         else:
+            self.clip_grads('discriminator', log_vars_disc)
             optimizer['discriminator'].step()
 
         # skip generator training if only train discriminator for current
@@ -264,10 +266,11 @@ class StaticUnconditionalGAN(BaseGAN):
 
         if loss_scaler:
             loss_scaler.unscale_(optimizer['generator'])
-            # note that we do not contain clip_grad procedure
+            self.clip_grads('generator', log_vars_g)
             loss_scaler.step(optimizer['generator'])
             # loss_scaler.update will be called in runner.train()
         else:
+            self.clip_grads('generator', log_vars_g)
             optimizer['generator'].step()
 
         log_vars = {}

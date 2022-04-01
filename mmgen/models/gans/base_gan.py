@@ -5,6 +5,8 @@ from collections import OrderedDict
 import torch
 import torch.distributed as dist
 import torch.nn as nn
+from mmcv.utils import is_list_of
+from torch.nn.utils import clip_grad
 
 
 class BaseGAN(nn.Module, metaclass=ABCMeta):
@@ -95,6 +97,35 @@ class BaseGAN(nn.Module, metaclass=ABCMeta):
         loss, log_var = self._parse_losses(losses_dict)
 
         return loss, log_var
+
+    def clip_grads(self, model, log_vars=None):
+        """Apply gradient clip for the input model.
+        Args:
+            model (str): The name of the input model.
+            log_vars (dict, optional): The dict that contains variables to be
+                logged. Defaults to None.
+
+        Returns:
+             float: Total norm value of the model.
+        """
+        if not hasattr(self, 'grad_clip') or self.grad_clip is None:
+            return None
+        if is_list_of(list(self.grad_clip.values()), dict):
+            # use different grad clip config to different models
+            if model not in self.grad_clip:
+                return None
+            clip_args = self.grad_clip[model]
+        else:
+            # use same grad clip config for all models
+            clip_args = self.grad_clip
+        params = getattr(self, model).parameters()
+        params = list(
+            filter(lambda p: p.requires_grad and p.grad is not None, params))
+        if len(params) > 0:
+            total_norm = clip_grad.clip_grad_norm_(params, **clip_args).item()
+        if log_vars is not None:
+            log_vars[f'grad_norm_{model}'] = total_norm
+        return total_norm
 
     @abstractmethod
     def train_step(self, data, optimizer, ddp_reducer=None):

@@ -5,7 +5,7 @@ from copy import deepcopy
 import mmcv
 import torch
 from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
-from mmcv.runner import HOOKS, IterBasedRunner, OptimizerHook, build_runner
+from mmcv.runner import HOOKS, IterBasedRunner, build_runner
 from mmcv.runner import set_random_seed as set_random_seed_mmcv
 from mmcv.utils import build_from_cfg
 
@@ -127,20 +127,14 @@ def train_model(model,
     runner.timestamp = timestamp
 
     # fp16 setting
-    fp16_cfg = cfg.get('fp16', None)
+    assert cfg.get('fp16', None) is None, 'Fp16 has not been supported.'
 
     # In GANs, we can directly optimize parameter in `train_step` function.
-    if cfg.get('optimizer_cfg', None) is None:
-        optimizer_config = None
-    elif fp16_cfg is not None:
-        raise NotImplementedError('Fp16 has not been supported.')
-        # optimizer_config = Fp16OptimizerHook(
-        #     **cfg.optimizer_config, **fp16_cfg, distributed=distributed)
-    # default to use OptimizerHook
-    elif distributed and 'type' not in cfg.optimizer_config:
-        optimizer_config = OptimizerHook(**cfg.optimizer_config)
-    else:
-        optimizer_config = cfg.optimizer_config
+    # Therefore, we do not support OptimizerHook.
+    assert cfg.get('optimizer_config', None) is None, (
+        'MMGen direct optimize parameters in the `train_step` function. If '
+        'you want to apply gradient clip operation, please add config to '
+        '`train_cfg`')
 
     # update `out_dir` in  ckpt hook
     if cfg.checkpoint_config is not None:
@@ -148,8 +142,8 @@ def train_model(model,
             cfg.work_dir, cfg.checkpoint_config.get('out_dir', 'ckpt'))
 
     # register hooks
-    runner.register_training_hooks(cfg.lr_config, optimizer_config,
-                                   cfg.checkpoint_config, cfg.log_config,
+    runner.register_training_hooks(cfg.lr_config, None, cfg.checkpoint_config,
+                                   cfg.log_config,
                                    cfg.get('momentum_config', None))
 
     # # DistSamplerSeedHook should be used with EpochBasedRunner

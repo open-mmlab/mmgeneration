@@ -127,6 +127,49 @@ class TestStaticUnconditionalGAN(object):
         assert isinstance(dcgan.disc_auxiliary_losses, nn.ModuleList)
         assert isinstance(dcgan.gen_auxiliary_losses, nn.ModuleList)
 
+        # test grad clip
+        train_cfg = dict(grad_clip=dict(max_norm=10, norm_type=2))
+        dcgan = StaticUnconditionalGAN(
+            self.generator_cfg,
+            self.disc_cfg,
+            self.gan_loss,
+            train_cfg=train_cfg)
+        data = torch.randn((2, 3, 16, 16))
+        data_input = dict(real_img=data)
+        optimizer_g = torch.optim.SGD(dcgan.generator.parameters(), lr=0.01)
+        optimizer_d = torch.optim.SGD(
+            dcgan.discriminator.parameters(), lr=0.01)
+        optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
+
+        model_outputs = dcgan.train_step(data_input, optim_dict)
+        assert 'results' in model_outputs
+        assert 'log_vars' in model_outputs
+        assert model_outputs['num_samples'] == 2
+        assert 'grad_norm_generator' in model_outputs['log_vars']
+        assert 'grad_norm_discriminator' in model_outputs['log_vars']
+
+        # test model specific grad clip
+        train_cfg = dict(
+            grad_clip=dict(generator=dict(max_norm=10, norm_type=2)))
+        dcgan = StaticUnconditionalGAN(
+            self.generator_cfg,
+            self.disc_cfg,
+            self.gan_loss,
+            train_cfg=train_cfg)
+        data = torch.randn((2, 3, 16, 16))
+        data_input = dict(real_img=data)
+        optimizer_g = torch.optim.SGD(dcgan.generator.parameters(), lr=0.01)
+        optimizer_d = torch.optim.SGD(
+            dcgan.discriminator.parameters(), lr=0.01)
+        optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
+
+        model_outputs = dcgan.train_step(data_input, optim_dict)
+        assert 'results' in model_outputs
+        assert 'log_vars' in model_outputs
+        assert model_outputs['num_samples'] == 2
+        assert 'grad_norm_generator' in model_outputs['log_vars']
+        assert 'grad_norm_discriminator' not in model_outputs['log_vars']
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_default_dcgan_model_cuda(self):
         dcgan = build_model(self.default_config).cuda()
@@ -168,3 +211,46 @@ class TestStaticUnconditionalGAN(object):
             data_input, optim_dict, running_status=dict(iteration=1))
         assert 'loss_disc_fake' in model_outputs['log_vars']
         assert 'loss_disc_fake_g' in model_outputs['log_vars']
+
+        # test grad clip
+        train_cfg = dict(grad_clip=dict(max_norm=10, norm_type=2))
+        dcgan = StaticUnconditionalGAN(
+            self.generator_cfg,
+            self.disc_cfg,
+            self.gan_loss,
+            train_cfg=train_cfg).cuda()
+        data = torch.randn((2, 3, 16, 16)).cuda()
+        data_input = dict(real_img=data)
+        optimizer_g = torch.optim.SGD(dcgan.generator.parameters(), lr=0.01)
+        optimizer_d = torch.optim.SGD(
+            dcgan.discriminator.parameters(), lr=0.01)
+        optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
+
+        model_outputs = dcgan.train_step(data_input, optim_dict)
+        assert 'results' in model_outputs
+        assert 'log_vars' in model_outputs
+        assert model_outputs['num_samples'] == 2
+        assert 'grad_norm_generator' in model_outputs['log_vars']
+        assert 'grad_norm_discriminator' in model_outputs['log_vars']
+
+        # test model specific grad clip
+        train_cfg = dict(
+            grad_clip=dict(generator=dict(max_norm=10, norm_type=2)))
+        dcgan = StaticUnconditionalGAN(
+            self.generator_cfg,
+            self.disc_cfg,
+            self.gan_loss,
+            train_cfg=train_cfg).cuda()
+        data = torch.randn((2, 3, 16, 16)).cuda()
+        data_input = dict(real_img=data)
+        optimizer_g = torch.optim.SGD(dcgan.generator.parameters(), lr=0.01)
+        optimizer_d = torch.optim.SGD(
+            dcgan.discriminator.parameters(), lr=0.01)
+        optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
+
+        model_outputs = dcgan.train_step(data_input, optim_dict)
+        assert 'results' in model_outputs
+        assert 'log_vars' in model_outputs
+        assert model_outputs['num_samples'] == 2
+        assert 'grad_norm_generator' in model_outputs['log_vars']
+        assert 'grad_norm_discriminator' not in model_outputs['log_vars']
