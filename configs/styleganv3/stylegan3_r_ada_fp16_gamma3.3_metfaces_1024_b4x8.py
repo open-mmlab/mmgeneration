@@ -83,7 +83,6 @@ metrics = dict(
         inception_args=dict(type='StyleGAN'),
         bgr2rgb=True))
 
-inception_path = None  # noqa
 evaluation = dict(
     type='GenerativeEvalHook',
     interval=dict(milestones=[100000], interval=[10000, 5000]),
@@ -91,7 +90,7 @@ evaluation = dict(
         type='FID',
         num_images=50000,
         inception_pkl=inception_pkl,
-        inception_args=dict(type='StyleGAN', inception_path=inception_path),
+        inception_args=dict(type='StyleGAN'),
         bgr2rgb=True),
     sample_kwargs=dict(sample_model='ema'))
 

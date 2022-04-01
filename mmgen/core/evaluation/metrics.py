@@ -1291,7 +1291,8 @@ class PPL(Metric):
             model (nn.Module): Generative model.
             batch_size (int): Sampling batch size.
             sample_model (str): Which model you want to use. ['ema',
-            'orig']. Defaults to 'ema'.
+                'orig']. Defaults to 'ema'.
+
         Returns:
             Object: A sampler for calculating path length regularization.
         """
