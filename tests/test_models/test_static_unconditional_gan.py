@@ -169,8 +169,7 @@ class TestStaticUnconditionalGAN(object):
         assert 'loss_disc_fake' in model_outputs['log_vars']
         assert 'loss_disc_fake_g' in model_outputs['log_vars']
 
-    @pytest.mark.skipif(
-        torch.__version__ in ['1.5.1', '1.7.0'], reason='avoid killing')
+    @pytest.mark.skipif(torch.__version__ in ['1.5.1'], reason='avoid killing')
     def test_pass_training_kwargs_cpu(self):
         synthesis_cfg = {
             'type': 'SynthesisNetwork',
