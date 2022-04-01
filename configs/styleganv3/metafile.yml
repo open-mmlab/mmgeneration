@@ -7,6 +7,45 @@ Collections:
   - https://nvlabs-fi-cdn.nvidia.com/stylegan3/stylegan3-paper.pdf
   README: configs/styleganv3/README.md
 Models:
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv3/stylegan3_t_noaug_fp16_gamma32.8_ffhq_1024_b4x8.py
+  In Collection: StyleGANv3
+  Metadata:
+    Training Data: FFHQ
+  Name: stylegan3_gamma32.8
+  Results:
+  - Dataset: FFHQ
+    Metrics:
+      FID50k: 3.37<sup></sup>
+      Iter: 490000.0
+      Log: '[log]'
+    Task: Unconditional GANs
+  Weights: https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_noaug_fp16_gamma32.8_ffhq_1024_b4x8_best_fid_iter_490000_20220401_120733-4ff83434.pth
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv3/stylegan3_t_ada_fp16_gamma6.6_metfaces_1024_b4x8.py
+  In Collection: StyleGANv3
+  Metadata:
+    Training Data: Others
+  Name: stylegan3_t_ada_fp16_gamma6.6_metfaces_1024_b4x8
+  Results:
+  - Dataset: Others
+    Metrics:
+      FID50k: 15.09
+      Iter: 130000.0
+      Log: '[log]'
+    Task: Unconditional GANs
+  Weights: https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_ada_fp16_gamma6.6_metfaces_1024_b4x8_best_fid_iter_130000_20220401_115101-f2ef498e.pth
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv3/stylegan3_t_noaug_fp16_gamma2.0_ffhq_256_b4x8.py
+  In Collection: StyleGANv3
+  Metadata:
+    Training Data: FFHQ
+  Name: stylegan3_gamma2.0
+  Results:
+  - Dataset: FFHQ
+    Metrics:
+      FID50k: 7.65
+      Iter: 740000.0
+      Log: '[log]'
+    Task: Unconditional GANs
+  Weights: https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_noaug_fp16_gamma2.0_ffhq_256_b4x8_best_fid_iter_740000_20220401_122456-730e1fba.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/_base_/models/stylegan/stylegan3_t_ffhqu_256_b4x8_cvt_official_rgb.py
   In Collection: StyleGANv3
   Metadata:
