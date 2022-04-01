@@ -168,3 +168,45 @@ class TestStaticUnconditionalGAN(object):
             data_input, optim_dict, running_status=dict(iteration=1))
         assert 'loss_disc_fake' in model_outputs['log_vars']
         assert 'loss_disc_fake_g' in model_outputs['log_vars']
+
+    def test_pass_training_kwargs_cpu(self):
+        synthesis_cfg = {
+            'type': 'SynthesisNetwork',
+            'channel_base': 32768,
+            'channel_max': 512,
+            'magnitude_ema_beta': 0.999
+        }
+        default_config = dict(
+            type='StaticUnconditionalGAN',
+            generator=dict(
+                type='StyleGANv3Generator',
+                out_size=32,
+                style_channels=8,
+                img_channels=3,
+                synthesis_cfg=synthesis_cfg),
+            discriminator=dict(type='StyleGAN2Discriminator', in_size=32),
+            gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'))
+
+        s3gan = build_model(default_config)
+        assert isinstance(s3gan, StaticUnconditionalGAN)
+        assert not s3gan.with_disc_auxiliary_loss
+        assert s3gan.with_disc
+
+        # test forward train
+        with pytest.raises(NotImplementedError):
+            _ = s3gan(None, return_loss=True)
+        # test forward test
+        imgs = s3gan(None, return_loss=False, mode='sampling', num_batches=2)
+        assert imgs.shape == (2, 3, 32, 32)
+
+        # test train step
+        data = torch.randn((2, 3, 32, 32))
+        data_input = dict(real_img=data)
+        optimizer_g = torch.optim.SGD(s3gan.generator.parameters(), lr=0.01)
+        optimizer_d = torch.optim.SGD(
+            s3gan.discriminator.parameters(), lr=0.01)
+        optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
+
+        _ = s3gan.train_step(
+            data_input, optim_dict, running_status=dict(iteration=1))
+        _ = s3gan.train_step(data_input, optim_dict)
