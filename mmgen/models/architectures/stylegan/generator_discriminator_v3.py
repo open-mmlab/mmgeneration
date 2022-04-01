@@ -178,3 +178,20 @@ class StyleGANv3Generator(nn.Module):
         if hasattr(self.style_mapping, 'w_avg'):
             return self.style_mapping.w_avg
         return get_mean_latent(self, num_samples, **kwargs)
+
+    def get_training_kwargs(self, phase):
+        """Get training kwargs. In StyleGANv3, we enable fp16, and update
+        mangitude ema during training of discriminator. This function is used
+        to pass related arguments.
+
+        Args:
+            phase (str): Current training phase.
+
+        Returns:
+            dict: Training kwargs.
+        """
+        if phase == 'disc':
+            return dict(update_emas=True, force_fp32=False)
+        if phase == 'gen':
+            return dict(force_fp32=False)
+        return {}
