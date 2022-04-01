@@ -169,22 +169,24 @@ class TestStaticUnconditionalGAN(object):
         assert 'loss_disc_fake' in model_outputs['log_vars']
         assert 'loss_disc_fake_g' in model_outputs['log_vars']
 
+    @pytest.mark.skipif(
+        torch.__version__ in ['1.5.1', '1.7.0'], reason='avoid killing')
     def test_pass_training_kwargs_cpu(self):
         synthesis_cfg = {
             'type': 'SynthesisNetwork',
-            'channel_base': 32768,
-            'channel_max': 512,
+            'channel_base': 1024,
+            'channel_max': 16,
             'magnitude_ema_beta': 0.999
         }
         default_config = dict(
             type='StaticUnconditionalGAN',
             generator=dict(
                 type='StyleGANv3Generator',
-                out_size=16,
+                out_size=8,
                 style_channels=8,
                 img_channels=3,
                 synthesis_cfg=synthesis_cfg),
-            discriminator=dict(type='StyleGAN2Discriminator', in_size=16),
+            discriminator=dict(type='StyleGAN2Discriminator', in_size=8),
             gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'))
 
         s3gan = build_model(default_config)
@@ -197,10 +199,10 @@ class TestStaticUnconditionalGAN(object):
             _ = s3gan(None, return_loss=True)
         # test forward test
         imgs = s3gan(None, return_loss=False, mode='sampling', num_batches=2)
-        assert imgs.shape == (2, 3, 16, 16)
+        assert imgs.shape == (2, 3, 8, 8)
 
         # test train step
-        data = torch.randn((2, 3, 16, 16))
+        data = torch.randn((2, 3, 8, 8))
         data_input = dict(real_img=data)
         optimizer_g = torch.optim.SGD(s3gan.generator.parameters(), lr=0.01)
         optimizer_d = torch.optim.SGD(
