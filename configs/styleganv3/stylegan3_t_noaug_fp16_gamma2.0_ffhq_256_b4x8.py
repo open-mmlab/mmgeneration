@@ -44,7 +44,7 @@ custom_hooks = [
         priority='VERY_HIGH')
 ]
 
-inception_pkl = 'work_dirs/inception_pkl/ffhq-lanczos-256x256.pkl'  # set by user
+inception_pkl = 'work_dirs/inception_pkl/ffhq-lanczos-256x256.pkl'
 metrics = dict(
     fid50k=dict(
         type='FID',
@@ -65,10 +65,7 @@ evaluation = dict(
         bgr2rgb=True),
     sample_kwargs=dict(sample_model='ema'))
 
-checkpoint_config = dict(
-    interval=10000,
-    by_epoch=False,
-    max_keep_ckpts=30)
+checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=30)
 
 lr_config = None
 
