@@ -112,3 +112,22 @@
 - Fix bug in non-distributed training/testing (#239)
 - Fix typos and invalid links (#221, #226, #228, #244, #249)
 - Add part of Chinese documentation (#250, #257)
+
+
+## v0.7.0 (02/04/2022)
+
+#### Highlights
+
+- Support training of StyleGANv3 (#275, #277)
+- Support adaptive discriminator augmentation (#276)
+
+#### New Features
+
+- Support passing training arguments in static unconditional gan (#275)
+- Support dynamic EMA, now you can define momentum updating policy (#261)
+- Add multi machine distribute train (#267)
+
+#### Fix bugs and Improvements
+- Add brief installation steps in README (#270)
+- Support random seed for distributed sampler (#271)
+- Use hyphen for command line args in apps (#273)
