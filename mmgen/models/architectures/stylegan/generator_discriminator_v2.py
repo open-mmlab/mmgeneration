@@ -10,7 +10,9 @@ from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
 from mmgen.core.runners.fp16_utils import auto_fp16
 from mmgen.models.architectures import PixelNorm
 from mmgen.models.architectures.common import get_module_device
-from mmgen.models.builder import MODULES
+from mmgen.models.builder import MODULES, build_module
+from .ada.augment import AugmentPipe
+from .ada.misc import constant
 from .modules.styleganv2_modules import (ConstantInput, ConvDownLayer,
                                          EqualLinearActModule,
                                          ModMBStddevLayer, ModulatedStyleConv,
@@ -501,6 +503,10 @@ class StyleGAN2Discriminator(nn.Module):
             fp32 if not `fp16_enabled`. This argument is designed to deal with
             the cases where some modules are run in FP16 and others in FP32.
             Defaults to True.
+        input_bgr2rgb (bool, optional): Whether to reformat the input channels
+            with order `rgb`. Since we provide several converted weights,
+            whose input order is `rgb`. You can set this argument to True if
+            you want to finetune on converted weights. Defaults to False.
         pretrained (dict | None, optional): Information for pretained models.
             The necessary key is 'ckpt_path'. Besides, you can also provide
             'prefix' to load the generator part from the whole state dict.
@@ -516,6 +522,7 @@ class StyleGAN2Discriminator(nn.Module):
                  fp16_enabled=False,
                  out_fp32=True,
                  convert_input_fp32=True,
+                 input_bgr2rgb=False,
                  pretrained=None):
         super().__init__()
         self.num_fp16_scale = num_fp16_scales
@@ -572,6 +579,8 @@ class StyleGAN2Discriminator(nn.Module):
                 act_cfg=dict(type='fused_bias')),
             EqualLinearActModule(channels[4], 1),
         )
+
+        self.input_bgr2rgb = input_bgr2rgb
         if pretrained is not None:
             self._load_pretrained_model(**pretrained)
 
@@ -595,6 +604,10 @@ class StyleGAN2Discriminator(nn.Module):
         Returns:
             torch.Tensor: Predict score for the input image.
         """
+        # This setting was used to finetune on converted weights
+        if self.input_bgr2rgb:
+            x = x[:, [2, 1, 0], ...]
+
         x = self.convs(x)
 
         x = self.mbstd_layer(x)
@@ -605,3 +618,87 @@ class StyleGAN2Discriminator(nn.Module):
         x = self.final_linear(x)
 
         return x
+
+
+@MODULES.register_module()
+class ADAStyleGAN2Discriminator(StyleGAN2Discriminator):
+
+    def __init__(self, in_size, *args, data_aug=None, **kwargs):
+        """StyleGANv2 Discriminator with adaptive augmentation.
+
+        Args:
+            in_size (int): The input size of images.
+            data_aug (dict, optional): Config for data
+                augmentation. Defaults to None.
+        """
+        super().__init__(in_size, *args, **kwargs)
+        self.with_ada = data_aug is not None
+        if self.with_ada:
+            self.ada_aug = build_module(data_aug)
+        self.ada_aug.requires_grad = False
+        self.log_size = int(np.log2(in_size))
+
+    def forward(self, x):
+        """Forward function."""
+        if self.with_ada:
+            x = self.ada_aug.aug_pipeline(x)
+        return super().forward(x)
+
+
+@MODULES.register_module()
+class ADAAug(nn.Module):
+    """Data Augmentation Module for Adaptive Discriminator augmentation.
+
+    Args:
+        aug_pipeline (dict, optional): Config for augmentation pipeline.
+            Defaults to None.
+        update_interval (int, optional): Interval for updating
+            augmentation probability. Defaults to 4.
+        augment_initial_p (float, optional): Initial augmentation
+            probability. Defaults to 0..
+        ada_target (float, optional): ADA target. Defaults to 0.6.
+        ada_kimg (int, optional): ADA training duration. Defaults to 500.
+    """
+
+    def __init__(self,
+                 aug_pipeline=None,
+                 update_interval=4,
+                 augment_initial_p=0.,
+                 ada_target=0.6,
+                 ada_kimg=500):
+        super().__init__()
+        self.aug_pipeline = AugmentPipe(**aug_pipeline)
+        self.update_interval = update_interval
+        self.ada_kimg = ada_kimg
+        self.ada_target = ada_target
+
+        self.aug_pipeline.p.copy_(torch.tensor(augment_initial_p))
+
+        # this log buffer stores two numbers: num_scalars, sum_scalars.
+        self.register_buffer('log_buffer', torch.zeros((2, )))
+
+    def update(self, iteration=0, num_batches=0):
+        """Update Augment probability.
+
+        Args:
+            iteration (int, optional): Training iteration.
+                Defaults to 0.
+            num_batches (int, optional): The number of reals batches.
+                Defaults to 0.
+        """
+
+        if (iteration + 1) % self.update_interval == 0:
+
+            adjust_step = float(num_batches * self.update_interval) / float(
+                self.ada_kimg * 1000.)
+
+            # get the mean value as the ada heuristic
+            ada_heuristic = self.log_buffer[1] / self.log_buffer[0]
+            adjust = np.sign(ada_heuristic.item() -
+                             self.ada_target) * adjust_step
+            # update the augment p
+            # Note that p may be bigger than 1.0
+            self.aug_pipeline.p.copy_((self.aug_pipeline.p + adjust).max(
+                constant(0, device=self.log_buffer.device)))
+
+            self.log_buffer = self.log_buffer * 0.

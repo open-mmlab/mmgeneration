@@ -286,6 +286,17 @@ class StaticUnconditionalGAN(BaseGAN):
         else:
             optimizer['generator'].step()
 
+        # update ada p
+        if hasattr(self.discriminator,
+                   'with_ada') and self.discriminator.with_ada:
+            self.discriminator.ada_aug.log_buffer[0] += batch_size
+            self.discriminator.ada_aug.log_buffer[1] += disc_pred_real.sign(
+            ).sum()
+            self.discriminator.ada_aug.update(
+                iteration=curr_iter, num_batches=batch_size)
+            log_vars_disc['augment'] = (
+                self.discriminator.ada_aug.aug_pipeline.p.data.cpu())
+
         log_vars = {}
         log_vars.update(log_vars_g)
         log_vars.update(log_vars_disc)

@@ -461,13 +461,20 @@ class SynthesisLayer(nn.Module):
             int(pad_hi[1])
         ]
 
-    def forward(self,
-                x,
-                w,
-                noise_mode='random',
-                force_fp32=False,
-                update_emas=False):
-        assert noise_mode in ['random', 'const', 'none']  # unused
+    def forward(self, x, w, force_fp32=False, update_emas=False):
+        """Forward function for synthesis layer.
+
+        Args:
+            x (torch.Tensor): Input feature map tensor.
+            w (torch.Tensor): Input style tensor.
+            force_fp32 (bool, optional): Force fp32 ignore the weights.
+                Defaults to True.
+            update_emas (bool, optional): Whether update moving average of
+                input magnitude. Defaults to False.
+
+        Returns:
+            torch.Tensor: Output feature map tensor.
+        """
 
         # Track input magnitude.
         if update_emas:
@@ -517,6 +524,20 @@ class SynthesisLayer(nn.Module):
 
     @staticmethod
     def design_lowpass_filter(numtaps, cutoff, width, fs, radial=False):
+        """Design lowpass filter giving related arguments.
+
+        Args:
+            numtaps (int): Length of the filter. `numtaps` must be odd if a
+                passband includes the Nyquist frequency.
+            cutoff (float): Cutoff frequency of filter
+            width (float): The approximate width of the transition region.
+            fs (float): The sampling frequency of the signal.
+            radial (bool, optional):  Whether use radially symmetric jinc-based
+                filter. Defaults to False.
+
+        Returns:
+            torch.Tensor: Kernel of lowpass filter.
+        """
         assert numtaps >= 1
 
         # Identity filter.
@@ -657,6 +678,7 @@ class SynthesisNetwork(nn.Module):
             self.layer_names.append(name)
 
     def forward(self, ws, **layer_kwargs):
+        """Forward function."""
         ws = ws.to(torch.float32).unbind(dim=1)
 
         # Execute layers.

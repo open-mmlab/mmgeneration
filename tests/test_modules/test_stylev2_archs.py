@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from mmgen.models.architectures.stylegan.generator_discriminator_v2 import (
-    StyleGAN2Discriminator, StyleGANv2Generator)
+    ADAStyleGAN2Discriminator, StyleGAN2Discriminator, StyleGANv2Generator)
 from mmgen.models.architectures.stylegan.modules import (Blur,
                                                          ModulatedStyleConv,
                                                          ModulatedToRGB)
@@ -439,6 +439,89 @@ class TestStyleGANv2Disc:
         score = d(img)
         assert score.shape == (2, 1)
         assert score.dtype == torch.float32
+
+
+class TestADAStyleGAN2Discriminator:
+
+    @classmethod
+    def setup_class(cls):
+        aug_kwargs = {
+            'xflip': 1,
+            'rotate90': 1,
+            'xint': 1,
+            'scale': 1,
+            'rotate': 1,
+            'aniso': 1,
+            'xfrac': 1,
+            'brightness': 1,
+            'contrast': 1,
+            'lumaflip': 1,
+            'hue': 1,
+            'saturation': 1
+        }
+        cls.default_cfg = dict(
+            in_size=64,
+            input_bgr2rgb=True,
+            data_aug=dict(
+                type='ADAAug',
+                update_interval=2,
+                aug_pipeline=aug_kwargs,
+                ada_kimg=100))
+
+    def test_ada_stylegan2_disc_cpu(self):
+        d = ADAStyleGAN2Discriminator(**self.default_cfg)
+        img = torch.randn((2, 3, 64, 64))
+        score = d(img)
+        assert score.shape == (2, 1)
+
+        # test ada p update
+        curr_iter = 0
+        batch_size = 2
+        score = torch.tensor([1., 1.])
+        d.ada_aug.log_buffer[0] += 2
+        d.ada_aug.log_buffer[1] += score.sign().sum()
+        d.ada_aug.update(iteration=curr_iter, num_batches=batch_size)
+        assert d.ada_aug.aug_pipeline.p == 0.
+
+        curr_iter += 1
+        d.ada_aug.log_buffer[0] += 2
+        d.ada_aug.log_buffer[1] += score.sign().sum()
+        d.ada_aug.update(iteration=curr_iter, num_batches=batch_size)
+        assert d.ada_aug.aug_pipeline.p == 4.0000e-05
+
+        # test with p=1.
+        d.ada_aug.aug_pipeline.p.copy_(torch.tensor(1.))
+        img = torch.randn((2, 3, 64, 64))
+        score = d(img)
+        assert score.shape == (2, 1)
+
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
+    def test_ada_stylegan2_disc_cuda(self):
+        d = ADAStyleGAN2Discriminator(**self.default_cfg).cuda()
+        img = torch.randn((2, 3, 64, 64)).cuda()
+        score = d(img)
+        assert score.shape == (2, 1)
+
+        # test ada p update
+        curr_iter = 0
+        batch_size = 2
+        score = torch.tensor([1., 1.]).cuda()
+        d.ada_aug.log_buffer[0] += 2
+        d.ada_aug.log_buffer[1] += score.sign().sum()
+        d.ada_aug.update(iteration=curr_iter, num_batches=batch_size)
+        assert d.ada_aug.aug_pipeline.p == 0.
+
+        curr_iter += 1
+        d.ada_aug.log_buffer[0] += 2
+        d.ada_aug.log_buffer[1] += score.sign().sum()
+        d.ada_aug.update(iteration=curr_iter, num_batches=batch_size)
+        assert d.ada_aug.aug_pipeline.p == 4.0000e-05
+
+        # test with p=1.
+        d.ada_aug.aug_pipeline.p.copy_(torch.tensor(1.))
+        img = torch.randn((2, 3, 64, 64)).cuda()
+        score = d(img)
+        assert score.shape == (2, 1)
 
 
 class TestMSStyleGANv2Disc:

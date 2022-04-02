@@ -170,12 +170,26 @@ class TestStaticUnconditionalGAN(object):
         assert 'loss_disc_fake_g' in model_outputs['log_vars']
 
     @pytest.mark.skipif(torch.__version__ in ['1.5.1'], reason='avoid killing')
-    def test_pass_training_kwargs_cpu(self):
+    def test_ada_stylegan2_model_cpu(self):
         synthesis_cfg = {
             'type': 'SynthesisNetwork',
             'channel_base': 1024,
             'channel_max': 16,
             'magnitude_ema_beta': 0.999
+        }
+        aug_kwargs = {
+            'xflip': 1,
+            'rotate90': 1,
+            'xint': 1,
+            'scale': 1,
+            'rotate': 1,
+            'aniso': 1,
+            'xfrac': 1,
+            'brightness': 1,
+            'contrast': 1,
+            'lumaflip': 1,
+            'hue': 1,
+            'saturation': 1
         }
         default_config = dict(
             type='StaticUnconditionalGAN',
@@ -184,8 +198,17 @@ class TestStaticUnconditionalGAN(object):
                 out_size=8,
                 style_channels=8,
                 img_channels=3,
+                rgb2bgr=True,
                 synthesis_cfg=synthesis_cfg),
-            discriminator=dict(type='StyleGAN2Discriminator', in_size=8),
+            discriminator=dict(
+                type='ADAStyleGAN2Discriminator',
+                in_size=8,
+                input_bgr2rgb=True,
+                data_aug=dict(
+                    type='ADAAug',
+                    update_interval=2,
+                    aug_pipeline=aug_kwargs,
+                    ada_kimg=100)),
             gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'))
 
         s3gan = build_model(default_config)
@@ -207,4 +230,7 @@ class TestStaticUnconditionalGAN(object):
         optimizer_d = torch.optim.SGD(
             s3gan.discriminator.parameters(), lr=0.01)
         optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
-        _ = s3gan.train_step(data_input, optim_dict)
+
+        _ = s3gan.train_step(
+            data_input, optim_dict, running_status=dict(iteration=1))
+        s3gan.discriminator.ada_aug.aug_pipeline.p.dtype == torch.float32
