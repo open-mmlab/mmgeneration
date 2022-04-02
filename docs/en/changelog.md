@@ -114,7 +114,7 @@
 - Add part of Chinese documentation (#250, #257)
 
 
-## v0.7.0 (01/04/2022)
+## v0.7.0 (02/04/2022)
 
 #### Highlights
 
