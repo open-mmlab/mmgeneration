@@ -84,6 +84,12 @@ def parse_args():
         nargs='+',
         action=DictAction,
         help='Other customized kwargs for sampling function')
+    
+    parser.add_argument(
+        '--samples_path',
+        type=str,
+        default='.',
+        help='The output folder for generate video')
     args = parser.parse_args()
     return args
 
