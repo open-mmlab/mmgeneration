@@ -201,15 +201,27 @@ def main():
             raise RuntimeError('There is no valid dataset config to run, '
                                'please check your dataset configs.')
 
-        data_loader = build_dataloader(
-            dataset,
+        # The default loader config
+        loader_cfg = dict(
             samples_per_gpu=args.batch_size,
             workers_per_gpu=cfg.data.get('val_workers_per_gpu',
                                          cfg.data.workers_per_gpu),
             num_gpus=len(cfg.gpu_ids),
             dist=distributed,
             shuffle=True)
+        # The overall dataloader settings
+        loader_cfg.update({
+            k: v
+            for k, v in cfg.data.items() if k not in [
+                'train', 'val', 'test', 'train_dataloader', 'val_dataloader',
+                'test_dataloader'
+            ]
+        })
 
+        # specific config for test loader
+        test_loader_cfg = {**loader_cfg, **cfg.data.get('test_dataloader', {})}
+
+        data_loader = build_dataloader(dataset, **test_loader_cfg)
     if args.sample_cfg is None:
         args.sample_cfg = dict()
 

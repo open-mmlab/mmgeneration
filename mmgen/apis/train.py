@@ -47,17 +47,29 @@ def train_model(model,
     # prepare data loaders
     dataset = dataset if isinstance(dataset, (list, tuple)) else [dataset]
 
-    data_loaders = [
-        build_dataloader(
-            ds,
-            cfg.data.samples_per_gpu,
-            cfg.data.workers_per_gpu,
-            # cfg.gpus will be ignored if distributed
-            len(cfg.gpu_ids),
-            dist=distributed,
-            persistent_workers=cfg.data.get('persistent_workers', False),
-            seed=cfg.seed) for ds in dataset
-    ]
+    # default loader config
+    loader_cfg = dict(
+        samples_per_gpu=cfg.data.samples_per_gpu,
+        workers_per_gpu=cfg.data.workers_per_gpu,
+        # cfg.gpus will be ignored if distributed
+        num_gpus=len(cfg.gpu_ids),
+        dist=distributed,
+        persistent_workers=cfg.data.get('persistent_workers', False),
+        seed=cfg.seed)
+
+    # The overall dataloader settings
+    loader_cfg.update({
+        k: v
+        for k, v in cfg.data.items() if k not in [
+            'train', 'val', 'test', 'train_dataloader', 'val_dataloader',
+            'test_dataloader'
+        ]
+    })
+
+    # The specific datalaoder settings
+    train_loader_cfg = {**loader_cfg, **cfg.data.get('train_dataloader', {})}
+
+    data_loaders = [build_dataloader(ds, **train_loader_cfg) for ds in dataset]
 
     # dirty code for use apex amp
     # apex.amp request that models should be in cuda device before
@@ -164,10 +176,7 @@ def train_model(model,
         val_dataset = build_dataset(cfg.data.val, dict(test_mode=True))
         # Support batch_size > 1 in validation
         val_loader_cfg = {
-            'samples_per_gpu': 1,
-            'shuffle': False,
-            'workers_per_gpu': cfg.data.workers_per_gpu,
-            'persistent_workers': cfg.data.get('persistent_workers', False),
+            **loader_cfg, 'shuffle': False,
             **cfg.data.get('val_data_loader', {})
         }
         val_dataloader = build_dataloader(
