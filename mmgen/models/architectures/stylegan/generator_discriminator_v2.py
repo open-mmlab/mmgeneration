@@ -635,7 +635,7 @@ class ADAStyleGAN2Discriminator(StyleGAN2Discriminator):
         self.with_ada = data_aug is not None
         if self.with_ada:
             self.ada_aug = build_module(data_aug)
-        self.ada_aug.requires_grad = False
+            self.ada_aug.requires_grad = False
         self.log_size = int(np.log2(in_size))
 
     def forward(self, x):
