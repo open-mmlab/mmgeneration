@@ -78,7 +78,7 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 * Mixed-precision training (FP16) for StyleGAN2 has been supported. Please check [the comparison](configs/styleganv2/README.md) between different implementations.
 ## Changelog
 
-v0.7.0 was released on 02/04/2022. Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
+v0.7.1 was released on 29/04/2022. Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
 
 ## ModelZoo
 
