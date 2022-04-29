@@ -96,6 +96,13 @@ v0.7.0 在 02/04/2022 发布。 关于细节和发布历史，请参考 [changel
 </details>
 
 <details open>
+<summary>Tricks for GANs (点击折叠)</summary>
+
+- ✅ [ADA](configs/ada/README.md) (NeurIPS'2020)
+
+</details>
+
+<details open>
 <summary>Image2Image Translation (点击折叠)</summary>
 
 - ✅ [Pix2Pix](configs/pix2pix/README.md) (CVPR'2017)

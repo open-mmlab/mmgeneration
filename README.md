@@ -111,6 +111,13 @@ These methods have been carefully studied and supported in our frameworks:
 </details>
 
 <details open>
+<summary>Tricks for GANs (click to collapse)</summary>
+
+- ✅ [ADA](configs/ada/README.md) (NeurIPS'2020)
+
+</details>
+
+<details open>
 <summary>Image2Image Translation (click to collapse)</summary>
 
 - ✅ [Pix2Pix](configs/pix2pix/README.md) (CVPR'2017)
