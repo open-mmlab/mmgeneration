@@ -12,9 +12,9 @@
 |            DDP Wrapper             |          True          | **No Bugs** | **No Bugs**  |
 | MMDDP/PyTorch DDP + Dynamic Runner |          True          | **No Bugs** | **No Bugs**  |
 
-在这个表格中，我们总结了生成对抗网络(GANs)的 DDP 训练方式。[`MMDDP/PyTorch DDP`](https://github.com/open-mmlab/mmcv/blob/master/mmcv/parallel/distributed.py)表示用 `MMDistributedDataPrarallel` 直接包裹 GAN 模型（包含生成器、判别器和损失模块）。然而，在这种方式下，我们不能用对抗性的训练模式来训练 GAN 模型。主要原因是我们总是需要在 `train_step` 函数中对部分模型（只对判别器或生成器）的损失进行反向传播。
+在这个表格中，我们总结了生成对抗网络(GANs)的 DDP 训练方式。[`MMDDP/PyTorch DDP`](https://github.com/open-mmlab/mmcv/blob/master/mmcv/parallel/distributed.py)表示用 `MMDistributedDataPrarallel` 直接封装 GAN 模型（包含生成器、判别器和损失模块）。然而，在这种方式下，我们无法对 GAN 模型应用对抗训练。主要原因是我们总是需要在 `train_step` 函数中对部分模型（只对判别器或生成器）的损失进行反向传播。
 
-另一种使用 DDP 的方式是采用 [DDP Wrapper](https://github.com/open-mmlab/mmgeneration/tree/master/mmgen/core/ddp_wrapper.py)，用 `MMDDP` 包裹 GAN 模型中的每个模块，这在目前的实践中被广泛使用，例如，`MMEditing` 和 [StyleGAN2-ADA-PyTorch](https://github.com/NVlabs/stylegan2-ada-pytorch)。这样一来，就有了一个重要的参数，`find_unused_parameters`。如表所示，对于训练动态架构的模型，如 PGGAN 和 StyleGANv1，用户必须设置这个参数为 `True`。 然而，一旦 `find_unused_parameters` 设置为 `True`，模型将在每个前向传播后重建 `bucket` 以同步梯度和信息。这一步将帮助反向传播跟踪当前计算图中需要的张量。
+另一种使用 DDP 的方式是采用 [DDP Wrapper](https://github.com/open-mmlab/mmgeneration/tree/master/mmgen/core/ddp_wrapper.py)，用 `MMDDP` 封装 GAN 模型中的每个模块，这在目前的实践中被广泛使用，例如，`MMEditing` 和 [StyleGAN2-ADA-PyTorch](https://github.com/NVlabs/stylegan2-ada-pytorch)。这样一来，就有了一个重要的参数，`find_unused_parameters`。如表所示，对于训练动态架构的模型，如 PGGAN 和 StyleGANv1，用户必须设置这个参数为 `True`。 然而，一旦 `find_unused_parameters` 设置为 `True`，模型将在每个前向传播后重建 `bucket` 以同步梯度和信息，从而在反向传播过程中追踪计算图所需的张量。
 
 在 `MMGeneration` 中，我们为用户设计了另一种采用 `DDP` 训练的方式，即 `MMDDP/PyTorch DDP + Dynamic Runner`。在具体说明这个新设计的细节之前，我们首先解释为什么用户应该使用它。尽管通过 `DDP Wrapper` 实现了动态 GAN 的训练，我们仍然发现了一些不便和缺点。
 
@@ -34,8 +34,8 @@ if self.is_dynamic_ddp:
     kwargs.update(dict(ddp_reducer=self.model.reducer))
 outputs = self.model.train_step(data_batch, self.optimizer, **kwargs)
 ```
-The reducer can help us to rebuild the bucket for current backward path by just adding this line in the `train_step` function:
 
+通过如下对 train_step 的修改，reducer 可以帮助我们在当前反传中重建桶：
 ```python
 if ddp_reducer is not None:
     ddp_reducer.prepare_for_backward(_find_tensors(loss_disc))
