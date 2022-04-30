@@ -62,7 +62,7 @@ MMGeneration 是一个基于 PyTorch 和[MMCV](https://github.com/open-mmlab/mmc
 * 混合精度训练已经在 `StyleGAN2` 中进行了初步支持，请到[这里](configs/styleganv2/README.md)查看各种实现方式的详细比较。
 ## 更新日志
 
-v0.7.1 在 29/04/2022 发布。 关于细节和发布历史，请参考 [changelog.md](docs/zh_cn/changelog.md)。
+v0.7.1 在 30/04/2022 发布。 关于细节和发布历史，请参考 [changelog.md](docs/zh_cn/changelog.md)。
 
 ## 模型库
 

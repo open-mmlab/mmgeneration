@@ -133,7 +133,7 @@
 - Use hyphen for command line args in apps (#273)
 
 
-## v0.7.1 (29/04/2022)
+## v0.7.1 (30/04/2022)
 
 #### Fix bugs and Improvements
 - Support train_dataloader, val_dataloader and test_dataloader settings (#281)
