@@ -131,3 +131,12 @@
 - Add brief installation steps in README (#270)
 - Support random seed for distributed sampler (#271)
 - Use hyphen for command line args in apps (#273)
+
+
+## v0.7.1 (30/04/2022)
+
+#### Fix bugs and Improvements
+- Support train_dataloader, val_dataloader and test_dataloader settings (#281)
+- Fix ada typo (#283)
+- Add chinese application tutorial (#284)
+- Add chinese document of ddp training (#286)
