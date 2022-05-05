@@ -59,6 +59,8 @@ jobs:
           rm -rf /var/lib/apt/lists/*
       - name: Upgrade pip
         run: python -m pip install pip --upgrade
+      - name: Install OpenCV
+        run: pip install opencv-python>=3
       - name: Install Pillow
         run: python -m pip install Pillow==6.2.2
         if: ${{matrix.torchvision < 0.5}}
