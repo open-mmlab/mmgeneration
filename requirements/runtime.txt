@@ -1,7 +1,7 @@
 mmcls==0.18.0
 ninja
 numpy
-opencv=python<=4.5.4.60
+opencv-python<=4.5.4.60
 prettytable
 scikit-image
 scipy
