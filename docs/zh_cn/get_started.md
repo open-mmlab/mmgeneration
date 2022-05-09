@@ -17,78 +17,78 @@
 
 ## 安装
 
-1. 创建conda虚拟环境并激活。 (这里假设新环境叫 ``open-mmlab``)
+1. 创建conda虚拟环境并激活。 (这里假设新环境叫 `open-mmlab`)
 
-    ```shell
-    conda create -n open-mmlab python=3.7 -y
-    conda activate open-mmlab
-    ```
+   ```shell
+   conda create -n open-mmlab python=3.7 -y
+   conda activate open-mmlab
+   ```
 
 2. 安装 PyTorch 和 torchvision，参考[官方安装指令](https://pytorch.org/)，比如，
 
-    ```shell
-    conda install pytorch torchvision -c pytorch
-    ```
+   ```shell
+   conda install pytorch torchvision -c pytorch
+   ```
 
-    注：确保您编译的CUDA版本和运行时CUDA版本相匹配。您可以在[PyTorch官网](https://pytorch.org/)检查预编译库支持的CUDA版本。
+   注：确保您编译的CUDA版本和运行时CUDA版本相匹配。您可以在[PyTorch官网](https://pytorch.org/)检查预编译库支持的CUDA版本。
 
-    `示例1` 如果您在`/usr/local/cuda`下安装了 CUDA 10.1 并想要安装
-    PyTorch 1.5，您需要安装支持CUDA 10.1的PyTorch预编译版本。
+   `示例1` 如果您在`/usr/local/cuda`下安装了 CUDA 10.1 并想要安装
+   PyTorch 1.5，您需要安装支持CUDA 10.1的PyTorch预编译版本。
 
-    ```shell
-    conda install pytorch cudatoolkit=10.1 torchvision -c pytorch
-    ```
+   ```shell
+   conda install pytorch cudatoolkit=10.1 torchvision -c pytorch
+   ```
 
-    `示例2`如果您在`/usr/local/cuda`下安装了 CUDA 9.2 并想要安装
-    PyTorch 1.5.1，您需要安装支持CUDA 9.2的PyTorch预编译版本。
+   `示例2`如果您在`/usr/local/cuda`下安装了 CUDA 9.2 并想要安装
+   PyTorch 1.5.1，您需要安装支持CUDA 9.2的PyTorch预编译版本。
 
-    ```shell
-    conda install pytorch=1.5.1 cudatoolkit=9.2 torchvision=0.6.1 -c pytorch
-    ```
+   ```shell
+   conda install pytorch=1.5.1 cudatoolkit=9.2 torchvision=0.6.1 -c pytorch
+   ```
 
-    如果您从源码编译PyTorch 而非安装预编译库， 您可以使用更多CUDA版本如9.0。
+   如果您从源码编译PyTorch 而非安装预编译库， 您可以使用更多CUDA版本如9.0。
 
 3. 安装 mmcv-full， 我们建议您按照下述方法安装预编译库。
 
-    ```shell
-    pip install mmcv-full={mmcv_version} -f https://download.openmmlab.com/mmcv/dist/{cu_version}/{torch_version}/index.html
-    ```
+   ```shell
+   pip install mmcv-full={mmcv_version} -f https://download.openmmlab.com/mmcv/dist/{cu_version}/{torch_version}/index.html
+   ```
 
-    请替换链接中的 `{cu_version}` 和 `{torch_version}` 为您想要的版本。 比如， 要安装支持 `CUDA 11` 和 `PyTorch 1.7.0`的 `mmcv-full`， 使用下面命令:
+   请替换链接中的 `{cu_version}` 和 `{torch_version}` 为您想要的版本。 比如， 要安装支持 `CUDA 11` 和 `PyTorch 1.7.0`的 `mmcv-full`， 使用下面命令:
 
-    ```shell
-    pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu110/torch1.7.0/index.html
-    ```
+   ```shell
+   pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu110/torch1.7.0/index.html
+   ```
 
-    可在[这里](https://github.com/open-mmlab/mmcv#install-with-pip)查看兼容了不同PyTorch和CUDA的MMCV版本信息。
-    您也可以选择按照下方命令从源码编译mmcv
+   可在[这里](https://github.com/open-mmlab/mmcv#install-with-pip)查看兼容了不同PyTorch和CUDA的MMCV版本信息。
+   您也可以选择按照下方命令从源码编译mmcv
 
-    ```shell
-    git clone https://github.com/open-mmlab/mmcv.git
-    cd mmcv
-    MMCV_WITH_OPS=1 pip install -e .  # package mmcv-full will be installed after this step
-    cd ..
-    ```
+   ```shell
+   git clone https://github.com/open-mmlab/mmcv.git
+   cd mmcv
+   MMCV_WITH_OPS=1 pip install -e .  # package mmcv-full will be installed after this step
+   cd ..
+   ```
 
-    或者直接运行
+   或者直接运行
 
-    ```shell
-    pip install mmcv-full
-    ```
+   ```shell
+   pip install mmcv-full
+   ```
 
 4. 克隆MMGeneration仓库。
 
-    ```shell
-    git clone https://github.com/open-mmlab/mmgeneration.git
-    cd mmgeneration
-    ```
+   ```shell
+   git clone https://github.com/open-mmlab/mmgeneration.git
+   cd mmgeneration
+   ```
 
 5. 安装构建依赖项并安装MMGeneration。
 
-    ```shell
-    pip install -r requirements.txt
-    pip install -v -e .  # or "python setup.py develop"
-    ```
+   ```shell
+   pip install -r requirements.txt
+   pip install -v -e .  # or "python setup.py develop"
+   ```
 
 注:
 
