@@ -1,6 +1,7 @@
 # Tutorial 8: Applications with Generative Models
 
 ## Interpolation
+
 The generative model in the GAN architecture learns to map points in the latent space to generated images. The latent space has no meaning other than the meaning applied to it via the generative model. Generally, we want to explore the structure of latent space, one thing we can do is to interpolate a sequence of points between two endpoints in the latent space, and see the results these points yield. (Eg. we believe that features that are absent in either endpoint appear in the middle of a linear interpolation path is a sign that the latent space is entangled and the factors of variation are not properly separated.)
 
 Indeed, we have provided a application script to users. You can use [apps/interpolate_sample.py](https://github.com/open-mmlab/mmgeneration/tree/master/apps/interpolate_sample.py) with the following commands for unconditional models' interpolation:
@@ -16,6 +17,7 @@ python apps/interpolate_sample.py \
     [--samples-path ${SAMPLES_PATH}] \
     [--batch-size ${BATCH_SIZE}] \
 ```
+
 Here, we provide two kinds of `show-mode`, `sequence`, and `group`. In `sequence` mode, we sample a sequence of endpoints first, then interpolate points between two endpoints in order, generated images will be saved individually. In `group` mode, we sample several pairs of endpoints, then interpolate points between two endpoints in a pair, generated images will be saved in a single picture. What's more, `space` refers to the latent code space, you can choose 'z' or 'w' (especially refer to style space in StyleGAN series), `endpoint` indicates the number of endpoints you want to sample (should be set to even number in `group` mode), `interval` means the number of points (include endpoints) you interpolate between two endpoints.
 
 Note that more customized arguments are also offered to customizing your interpolating procedure.
@@ -36,9 +38,11 @@ python apps/conditional_interpolate.py \
     [--samples-path ${SAMPLES_PATH}] \
     [--batch-size ${BATCH_SIZE}] \
 ```
+
 Here, unlike unconditional models, you need to provide the name of the embedding layer if the label embedding is shared among conv_blocks. Otherwise, you can set the `embedding-name` to 'NULL'. Considering that conditional models have noise and label as inputs, we provide `fix-z` to fix the noise and `fix-y` to fix the label when performing image interpolation.
 
 ## Projection
+
 Inverting the synthesis network g is an interesting problem that has many applications. For example, manipulating a given image in the latent feature space requires finding a matching latent code for it first. Generally, you can reconstruct a target image by optimizing over the latent vector, using lpips and pixel-wise loss as the objective function.
 
 Indeed, we have provided an application script to users to find the matching latent vector w of StyleGAN series synthesis network for given images. You can use [apps/stylegan_projector.py](https://github.com/open-mmlab/mmgeneration/tree/master/apps/stylegan_projector.py) with the following commands:
@@ -50,11 +54,13 @@ python apps/stylegan_projector.py \
     ${FILES}
     [--results-path ${RESULTS_PATH}]
 ```
+
 Here, `FILES` refer to the images' path, and the projection latent and reconstructed images will be saved in `results-path`.
 Note that more customized arguments are also offered to customizing your projection procedure.
 Please use `python apps/stylegan_projector.py --help` to check more details.
 
 ## Manipulation
+
 A general application of StyleGAN based models is manipulating the latent space to control the attributes of the synthesized images. Here, we provide a simple but popular algorithm based on [SeFa](https://arxiv.org/pdf/2007.06600.pdf) to users. Of course, we modify the original version in calculating eigenvectors and offer a more flexible interface.
 
 To manipulate your generator, you can run the script [apps/modified_sefa.py](https://github.com/open-mmlab/mmgeneration/tree/master/apps/modified_sefa.py) with the following command:

@@ -8,15 +8,16 @@
 
 <!-- [ABSTRACT] -->
 
-Image-to-image translation is a class of vision and graphics problems where the goal is to learn the mapping between an input image and an output image using a training set of aligned image pairs. However, for many tasks, paired training data will not be available. We present an approach for learning to translate an image from a source domain X to a target domain Y in the absence of paired examples. Our goal is to learn a mapping G: X \rightarrow Y such that the distribution of images from G(X) is indistinguishable from the distribution Y using an adversarial loss. Because this mapping is highly under-constrained, we couple it with an inverse mapping F: Y \rightarrow X and introduce a cycle consistency loss to push F(G(X)) \approx X (and vice versa). Qualitative results are presented on several tasks where paired training data does not exist, including collection style transfer, object transfiguration, season transfer, photo enhancement, etc. Quantitative comparisons against several prior methods demonstrate the superiority of our approach.
+Image-to-image translation is a class of vision and graphics problems where the goal is to learn the mapping between an input image and an output image using a training set of aligned image pairs. However, for many tasks, paired training data will not be available. We present an approach for learning to translate an image from a source domain X to a target domain Y in the absence of paired examples. Our goal is to learn a mapping G: X \\rightarrow Y such that the distribution of images from G(X) is indistinguishable from the distribution Y using an adversarial loss. Because this mapping is highly under-constrained, we couple it with an inverse mapping F: Y \\rightarrow X and introduce a cycle consistency loss to push F(G(X)) \\approx X (and vice versa). Qualitative results are presented on several tasks where paired training data does not exist, including collection style transfer, object transfiguration, season transfer, photo enhancement, etc. Quantitative comparisons against several prior methods demonstrate the superiority of our approach.
 
 <!-- [IMAGE] -->
+
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143049598-23c24d98-7a64-4ab3-a9ba-351db6a0a53d.JPG" />
 </div>
 
-
 ## Results and Models
+
 <div align="center">
   <b> Results from CycleGAN trained by MMGeneration</b>
   <br/>
@@ -26,7 +27,7 @@ Image-to-image translation is a class of vision and graphics problems where the 
 We use `FID` and `IS` metrics to evaluate the generation performance of CycleGAN.<sup>1</sup>
 
 | Models |      Dataset      |   FID    |  IS   |                                                                  Config                                                                   |                                                                                                                                   Download                                                                                                                                   |
-|:------:|:-----------------:|:--------:|:-----:|:-----------------------------------------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| :----: | :---------------: | :------: | :---: | :---------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
 |  Ours  |      facades      | 124.8033 | 1.792 |      [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_resnet_in_facades_b1x1_80k.py)       | [model](https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_resnet_in_1x1_80k_facades_20210902_165905-5e2c0876.pth) \| [log](https://download.openmmlab.com/mmgen/cyclegan/cyclegan_lsgan_resnet_in_1x1_80k_facades_20210317_160938.log.json) <sup>2</sup> |
 |  Ours  |    facades-id0    | 125.1694 | 1.905 |    [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_id0_resnet_in_facades_b1x1_80k.py)     |                                                            [model](https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_id0_resnet_in_1x1_80k_facades_convert-bgr_20210902_164411-d8e72b45.pth)                                                             |
 |  Ours  |   summer2winter   | 83.7177  | 2.771 |   [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/cyclegan/cyclegan_lsgan_resnet_in_summer2winter_b1x1_250k.py)   |                                                          [model](https://download.openmmlab.com/mmgen/cyclegan/refactor/cyclegan_lsgan_resnet_in_1x1_246200_summer2winter_convert-bgr_20210902_165932-fcf08dc1.pth)                                                          |
@@ -41,18 +42,19 @@ We use `FID` and `IS` metrics to evaluate the generation performance of CycleGAN
 `FID` comparison with official:
 
 | Dataset  |   facades   | facades-id0 | summer2winter | summer2winter-id0 | winter2summer | winter2summer-id0 | horse2zebra | horse2zebra-id0 | zebra2horse | zebra2horse-id0 |  average   |
-|:--------:|:-----------:|:-----------:|:-------------:|:-----------------:|:-------------:|:-----------------:|:-----------:|:---------------:|:-----------:|:---------------:|:----------:|
+| :------: | :---------: | :---------: | :-----------: | :---------------: | :-----------: | :---------------: | :---------: | :-------------: | :---------: | :-------------: | :--------: |
 | official | **123.626** | **119.726** |  **77.342**   |    **76.773**     |  **72.631**   |      74.239       | **62.111**  |     77.202      | **138.646** |   **137.050**   | **95.935** |
 |   ours   |  124.8033   |  125.1694   |    83.7177    |      83.1418      |    72.8025    |    **73.5001**    |   64.5225   |   **74.7770**   |  141.1571   |  **134.3728**   |   97.79    |
 
 `IS` comparison with evaluation:
 
 | Dataset  |  facades  | facades-id0 | summer2winter | summer2winter-id0 | winter2summer | winter2summer-id0 | horse2zebra | horse2zebra-id0 | zebra2horse | zebra2horse-id0 |  average  |
-|:--------:|:---------:|:-----------:|:-------------:|:-----------------:|:-------------:|:-----------------:|:-----------:|:---------------:|:-----------:|:---------------:|:---------:|
+| :------: | :-------: | :---------: | :-----------: | :---------------: | :-----------: | :---------------: | :---------: | :-------------: | :---------: | :-------------: | :-------: |
 | official |   1.638   |    1.697    |     2.762     |     **2.750**     |   **3.293**   |     **3.110**     |    1.375    |    **1.584**    |  **3.186**  |      3.047      |   2.444   |
 |   ours   | **1.792** |  **1.905**  |   **2.771**   |       2.720       |     3.129     |       3.107       |  **1.418**  |      1.542      |    3.154    |    **3.091**    | **2.462** |
 
 Note:
+
 1. With a larger identity loss, the image-to-image translation becomes more conservative, which makes less changes. The original authors did not say what is the best weight for identity loss. Thus, in addition to the default setting, we also set the weight of identity loss to 0 (denoting `id0`) to make a more comprehensive comparison.
 2. This is the training log before refactoring. Updated logs will be released soon.
 
