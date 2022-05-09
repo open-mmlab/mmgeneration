@@ -34,6 +34,7 @@ if self.is_dynamic_ddp:
     kwargs.update(dict(ddp_reducer=self.model.reducer))
 outputs = self.model.train_step(data_batch, self.optimizer, **kwargs)
 ```
+
 The reducer can help us to rebuild the bucket for current backward path by just adding this line in the `train_step` function:
 
 ```python
@@ -54,6 +55,7 @@ if ddp_reducer is not None:
 
 loss_disc.backward()
 ```
+
 That is, users should add reducer preparation in between the loss calculation and loss backward.
 
 In our `MMGeneration`, this feature is adoptted as the default way to train DDP model. In configs, users should only add the following configuration to use dynamic ddp runner:
@@ -67,8 +69,6 @@ runner = dict(
 ```
 
 *We have to admit that this implementation will use the private interface in PyTorch and will keep maintaining this feature.*
-
-
 
 ## DDP Wrapper
 

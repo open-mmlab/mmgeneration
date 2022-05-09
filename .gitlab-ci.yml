@@ -1,0 +1,38 @@
+variables:
+  PYTORCH_IMAGE: registry.sensetime.com/openmmlab/pytorch18-cu102-mmcv-transforms:latest
+
+stages:
+  - linting
+  - test
+  - deploy
+
+before_script:
+  - echo $PATH
+  - gcc --version
+  - nvcc --version
+  - python --version
+  - pip --version
+  - python -c "import torch; print(torch.__version__)"
+  - python -c "import mmcv; print(mmcv.__version__)"
+
+linting:
+  image: $PYTORCH_IMAGE
+  stage: linting
+  script:
+    - HTTPS_PROXY=http://172.16.1.135:3128 pre-commit run --all-files
+
+.test_template: &test_template_def
+  stage: test
+  script:
+    - echo "Start building..."
+    - pip install -r requirements.txt
+    - pip install -e .[all] -i https://pypi.tuna.tsinghua.edu.cn/simple/
+    - python -c "import mmgen; print(mmgen.__version__)"
+    - echo "Start testing..."
+    - coverage run --branch --source mmgen -m pytest tests/
+    - coverage report -m
+    - interrogate -v --ignore-init-method --ignore-module --ignore-nested-functions --ignore-regex "__repr__" --fail-under 70 mmgen
+
+test:pytorch1.8-cuda10:
+  image: $PYTORCH_IMAGE
+  <<: *test_template_def
