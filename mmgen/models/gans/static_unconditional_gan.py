@@ -9,6 +9,8 @@ from mmgen.registry import MODELS
 from ..builder import build_module
 from ..common import set_requires_grad
 from .base_gan import BaseGAN
+from mmgen.models.architectures.common import get_module_device  # isort:skip  # noqa
+from mmgen.models.misc import stack_batch
 
 # _SUPPORT_METHODS_ = ['DCGAN', 'STYLEGANv2']
 
@@ -113,13 +115,14 @@ class StaticUnconditionalGAN(BaseGAN):
         self.use_ema = self.test_cfg.get('use_ema', False)
         # TODO: finish ema part
 
-    def train_step(self,
-                   data_batch,
-                   optimizer,
-                   ddp_reducer=None,
-                   loss_scaler=None,
-                   use_apex_amp=False,
-                   running_status=None):
+    def forward_train(self,
+                      inputs,
+                      data_samples,
+                      optimizer=None,
+                      ddp_reducer=None,
+                      loss_scaler=None,
+                      use_apex_amp=False,
+                      running_status=None):
         """Train step function.
 
         This function implements the standard training iteration for
@@ -150,7 +153,7 @@ class StaticUnconditionalGAN(BaseGAN):
             dict: Contains 'log_vars', 'num_samples', and 'results'.
         """
         # get data from data_batch
-        real_imgs = data_batch[self.real_img_key]
+        real_imgs = inputs
         # If you adopt ddp, this batch size is local batch size for each GPU.
         # If you adopt dp, this batch size is the global batch size as usual.
         batch_size = real_imgs.shape[0]
@@ -309,3 +312,38 @@ class StaticUnconditionalGAN(BaseGAN):
         if hasattr(self, 'iteration'):
             self.iteration += 1
         return outputs
+
+    def preprocss_training_data(self, data):
+        """ Process input data during training and testing phases.
+        Args:
+            data (list[dict]): The data to be processed, which
+                comes from dataloader.
+
+        Returns:
+            tuple:  It should contain 2 item.
+                 - img (Tensor): The batch image tensor.
+                 - data_samples (list[:obj:`GeneralData`], Optional): The Data
+                   Samples. It usually includes information such as
+                   `gt_instance`. Return None If the input data does not
+                   contain `data_sample`.
+        """
+        images = [data_['inputs'] for data_ in data]
+        data_samples = [data_['data_sample'] for data_ in data]
+
+        device = get_module_device(self)
+        data_samples = [data_sample.to(device) for data_sample in data_samples]
+        images = [img.to(device) for img in images]
+        if self.to_rgb and images[0].size(0) == 3:
+            images = [image[[2, 1, 0], ...] for image in images]
+        images = [(x - self.pixel_mean) / self.pixel_std for x in images]
+        batch_image = stack_batch(images, self.size_divisor)
+
+        return batch_image, data_samples
+
+    def preprocss_test_data(self, data):
+        data_samples = [data_['data_sample'] for data_ in data]
+
+        device = get_module_device(self)
+        data_samples = [data_sample.to(device) for data_sample in data_samples]
+
+        return None, data_samples
