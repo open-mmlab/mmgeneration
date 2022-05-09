@@ -106,7 +106,7 @@ venv.bak/
 
 # custom
 data
-!tests/data
+!tests_old/data
 .vscode
 .idea
 *.pkl
