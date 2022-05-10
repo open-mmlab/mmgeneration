@@ -3,8 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from mmgen.models.builder import MODULES
-
+from mmgen.registry import MODULES
 
 @MODULES.register_module('SPE')
 @MODULES.register_module('SPE2d')

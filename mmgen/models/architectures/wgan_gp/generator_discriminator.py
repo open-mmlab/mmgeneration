@@ -7,7 +7,7 @@ import torch.nn as nn
 from mmcv.cnn import ConvModule
 from mmcv.cnn.bricks.upsample import build_upsample_layer
 
-from mmgen.models.builder import MODULES
+from mmgen.registry import MODULES
 from ..common import get_module_device
 from .modules import ConvLNModule, WGANDecisionHead, WGANNoiseTo2DFeat
 

@@ -4,10 +4,9 @@ from copy import deepcopy
 
 from mmcv.utils import build_from_cfg
 
-from ..builder import PIPELINES
+from mmgen.registry import TRANSFORMS
 
-
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class Compose:
     """Compose a data pipeline with a sequence of transforms.
 

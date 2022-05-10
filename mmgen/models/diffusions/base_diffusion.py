@@ -14,7 +14,8 @@ import torch.nn as nn
 from torch.nn.parallel.distributed import _find_tensors
 
 from ..architectures.common import get_module_device
-from ..builder import MODELS, build_module
+from mmgen.registry import MODELS
+from ..builder import build_module
 from .utils import _get_label_batch, _get_noise_batch, var_to_tensor
 
 

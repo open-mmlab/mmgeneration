@@ -22,7 +22,7 @@ from mmgen.models.architectures.lpips import PerceptualLoss
 from mmgen.models.losses import gaussian_kld
 from mmgen.utils import MMGEN_CACHE_DIR
 from mmgen.utils.io_utils import download_from_url
-from ..registry import METRICS
+from mmgen.registry import METRICS
 from .metric_utils import (_f_special_gauss, _hox_downsample,
                            compute_pr_distances, finalize_descriptors,
                            get_descriptors_for_minibatch, get_gaussian_kernel,

@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from mmcv.utils import Registry, build_from_cfg
-
-METRICS = Registry('metric')
+from mmengine.registry import build_from_cfg
+from mmgen.registry import METRICS
 
 
 def build(cfg, registry, default_args=None):

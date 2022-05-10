@@ -4,7 +4,7 @@ import scipy
 import torch
 import torch.nn as nn
 
-from mmgen.models.builder import MODULES
+from mmgen.registry import MODULES
 from mmgen.ops import bias_act, conv2d_gradfix, filtered_lrelu
 
 

@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import torch.nn as nn
 
-from ..builder import MODELS
+from mmgen.registry import MODELS
 
 
 @MODELS.register_module()

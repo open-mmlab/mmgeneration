@@ -10,7 +10,7 @@ from torch.nn.utils import spectral_norm
 
 from mmgen.models.architectures.biggan.biggan_snmodule import SNEmbedding
 from mmgen.models.architectures.biggan.modules import SNConvModule
-from mmgen.models.builder import MODULES
+from mmgen.registry import MODULES
 from mmgen.utils import check_dist_init
 
 

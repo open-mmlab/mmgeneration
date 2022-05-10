@@ -6,7 +6,7 @@ import numpy as np
 from mmcv import scandir
 from torch.utils.data import Dataset
 
-from .builder import DATASETS
+from mmgen.registry import DATASETS
 from .pipelines import Compose
 
 IMG_EXTENSIONS = ('.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm',

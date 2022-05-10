@@ -1,12 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
-from mmcv.parallel import MODULE_WRAPPERS, MMDistributedDataParallel
+from mmgen.registry import MODEL_WRAPPERS
+from mmengine.model import MMDistributedDataParallel
 from mmcv.parallel.scatter_gather import scatter_kwargs
 from torch.cuda._utils import _get_device_index
 
 
-@MODULE_WRAPPERS.register_module('mmgen.DDPWrapper')
+@MODEL_WRAPPERS.register_module('mmgen.DDPWrapper')
 class DistributedDataParallelWrapper(nn.Module):
     """A DistributedDataParallel wrapper for models in MMGeneration.
 

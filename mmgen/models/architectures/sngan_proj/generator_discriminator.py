@@ -12,7 +12,8 @@ from mmcv.utils import is_list_of
 from torch.nn.init import xavier_uniform_
 from torch.nn.utils import spectral_norm
 
-from mmgen.models.builder import MODULES, build_module
+from mmgen.models.builder import build_module
+from mmgen.registry import MODULES
 from mmgen.utils import check_dist_init
 from mmgen.utils.logger import get_root_logger
 from ..common import get_module_device

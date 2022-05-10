@@ -1,8 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
 from mmcv.parallel import is_module_wrapper
-from mmcv.runner import HOOKS, Hook
-
+from mmengine.hooks import Hook
+from mmgen.registry import HOOKS
 
 @HOOKS.register_module()
 class PGGANFetchDataHook(Hook):
