@@ -9,7 +9,7 @@ import torch.distributed as dist
 import torch.nn.functional as F
 from torch.nn.parallel.distributed import _find_tensors
 
-from ..builder import MODELS
+from mmgen.registry import MODELS
 from ..common import set_requires_grad
 from .static_unconditional_gan import StaticUnconditionalGAN
 

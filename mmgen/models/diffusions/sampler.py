@@ -2,7 +2,7 @@
 import numpy as np
 import torch
 
-from ..builder import MODULES
+from mmgen.registry import MODULES
 
 
 @MODULES.register_module()

@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .builder import DATASETS
-
+from mmgen.registry import DATASETS
 
 @DATASETS.register_module()
 class RepeatDataset:

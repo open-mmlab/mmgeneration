@@ -4,7 +4,7 @@ import os.path as osp
 import mmcv
 from torch.utils.data import Dataset
 
-from .builder import DATASETS
+from mmgen.registry import DATASETS
 from .pipelines import Compose
 
 

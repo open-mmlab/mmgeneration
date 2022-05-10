@@ -12,7 +12,8 @@ from torch.nn.parallel import DataParallel, DistributedDataParallel
 from torch.nn.parallel.distributed import _find_tensors
 
 from mmgen.models.architectures.common import get_module_device
-from mmgen.models.builder import MODELS, build_module
+from mmgen.registry import MODELS
+from mmgen.models.builder import build_module
 from mmgen.models.gans.base_gan import BaseGAN
 from ..common import set_requires_grad
 

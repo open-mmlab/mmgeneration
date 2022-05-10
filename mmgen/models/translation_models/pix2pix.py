@@ -2,7 +2,7 @@
 import torch
 from torch.nn.parallel.distributed import _find_tensors
 
-from mmgen.models.builder import MODELS
+from mmgen.registry import MODELS
 from ..common import set_requires_grad
 from .static_translation_gan import StaticTranslationGAN
 

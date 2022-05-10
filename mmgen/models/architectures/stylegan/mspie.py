@@ -10,7 +10,8 @@ import torch.nn.functional as F
 
 from mmgen.models.architectures import PixelNorm
 from mmgen.models.architectures.common import get_module_device
-from mmgen.models.builder import MODULES, build_module
+from mmgen.models.builder import build_module
+from mmgen.registry import MODULES
 from .modules.styleganv2_modules import (ConstantInput, ConvDownLayer,
                                          EqualLinearActModule,
                                          ModMBStddevLayer,

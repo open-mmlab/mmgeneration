@@ -2,8 +2,9 @@
 import os
 
 import mmcv
-from mmcv.runner import HOOKS, Hook, master_only
-
+from mmengine.dist import master_only
+from mmengine.hooks import Hook
+from mmgen.registry import HOOKS
 
 @HOOKS.register_module()
 class PetrelUploadHook(Hook):

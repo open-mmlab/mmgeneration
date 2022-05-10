@@ -5,7 +5,8 @@ import torch.autograd as autograd
 import torch.distributed as dist
 import torch.nn as nn
 
-from mmgen.models.builder import MODULES, build_module
+from mmgen.models.builder import build_module
+from mmgen.registry import MODULES
 
 
 def gen_path_regularizer(generator,

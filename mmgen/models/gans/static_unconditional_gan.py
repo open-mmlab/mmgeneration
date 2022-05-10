@@ -5,7 +5,8 @@ import torch
 import torch.nn as nn
 from torch.nn.parallel.distributed import _find_tensors
 
-from ..builder import MODELS, build_module
+from mmgen.registry import MODELS
+from ..builder import build_module
 from ..common import set_requires_grad
 from .base_gan import BaseGAN
 

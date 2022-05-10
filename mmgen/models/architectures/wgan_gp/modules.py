@@ -6,7 +6,7 @@ import torch.nn as nn
 from mmcv.cnn import (PLUGIN_LAYERS, ConvModule, build_activation_layer,
                       build_norm_layer, constant_init)
 
-from mmgen.models.builder import MODULES
+from mmgen.registry import MODULES
 
 
 @MODULES.register_module()

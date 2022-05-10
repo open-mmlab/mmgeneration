@@ -2,10 +2,9 @@
 import mmcv
 import numpy as np
 
-from ..builder import PIPELINES
+from mmgen.registry import TRANSFORMS
 
-
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class Normalize:
     """Normalize images with the given mean and std value.
 
@@ -56,7 +55,7 @@ class Normalize:
         return repr_str
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class RescaleToZeroOne:
     """Transform the images into a range between 0 and 1.
 

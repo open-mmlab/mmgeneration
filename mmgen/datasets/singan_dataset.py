@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from .builder import DATASETS
+from mmgen.registry import DATASETS
 
 
 def create_real_pyramid(real, min_size, max_size, scale_factor_init):

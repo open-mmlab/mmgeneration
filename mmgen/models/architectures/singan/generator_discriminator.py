@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from mmcv.runner import load_state_dict
 from mmcv.utils import print_log
 
-from mmgen.models.builder import MODULES
+from mmgen.registry import MODULES
 from mmgen.utils import get_root_logger
 from .modules import DiscriminatorBlock, GeneratorBlock
 

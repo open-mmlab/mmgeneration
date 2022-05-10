@@ -13,7 +13,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from mmgen.models.builder import MODULES, build_module
+from mmgen.models.builder import build_module
+from mmgen.registry import MODULES
 from .generator_discriminator import SinGANMultiScaleGenerator
 from .modules import GeneratorBlock
 

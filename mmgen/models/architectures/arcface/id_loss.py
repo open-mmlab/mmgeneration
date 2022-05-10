@@ -3,7 +3,7 @@ import mmcv
 import torch
 from torch import nn
 
-from mmgen.models.builder import MODULES
+from mmgen.registry import MODULES
 from .model_irse import Backbone
 
 

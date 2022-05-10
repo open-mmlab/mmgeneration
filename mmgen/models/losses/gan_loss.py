@@ -2,7 +2,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..builder import MODULES
+from mmgen.registry import MODULES
 
 
 @MODULES.register_module()
