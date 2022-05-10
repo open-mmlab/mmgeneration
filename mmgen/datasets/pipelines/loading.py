@@ -1,12 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import numpy as np
-from mmcv.fileio import FileClient
 
-from ..builder import PIPELINES
+from mmengine import FileClient
+from mmgen.registry import TRANSFORMS
 
-
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class LoadImageFromFile:
     """Load image from file.
 
@@ -78,7 +77,7 @@ class LoadImageFromFile:
         return repr_str
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class LoadPairedImageFromFile(LoadImageFromFile):
     """Load a pair of images from file.
 
