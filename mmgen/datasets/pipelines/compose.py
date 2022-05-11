@@ -2,8 +2,6 @@
 from collections.abc import Sequence
 from copy import deepcopy
 
-from mmcv.utils import build_from_cfg
-
 from mmgen.registry import TRANSFORMS
 
 @TRANSFORMS.register_module()
@@ -23,18 +21,18 @@ class Compose:
                 # add support for using pipelines from `MMClassification`
                 if transform['type'].startswith('mmcls.'):
                     try:
-                        from mmcls.datasets import PIPELINES as MMCLSPIPELINE
+                        from mmcls.datasets import TRANSFORMS as MMCLSTRANSFORMS
                     except ImportError:
                         raise ImportError('Please install mmcls to use '
                                           f'{transform["type"]} dataset.')
-                    pipeline_source = MMCLSPIPELINE
+                    transform_source = MMCLSTRANSFORMS
                     # remove prefix
                     transform_cfg = deepcopy(transform)
                     transform_cfg['type'] = transform_cfg['type'][6:]
                 else:
-                    pipeline_source = PIPELINES
+                    transform_source = TRANSFORMS
                     transform_cfg = deepcopy(transform)
-                transform = build_from_cfg(transform_cfg, pipeline_source)
+                transform = transform_source.build(transform_cfg)
                 self.transforms.append(transform)
             elif callable(transform):
                 self.transforms.append(transform)
