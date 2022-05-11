@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from mmengine.data import BaseDataElement
 import torch
+from mmengine.data import BaseDataElement
+
 
 class GenDataSample(BaseDataElement):
 
