@@ -6,7 +6,6 @@ from mmcv.cnn import ConvModule
 from mmcv.cnn.bricks import build_activation_layer
 
 from mmgen.registry import MODULES
-
 from ..common import get_module_device
 
 

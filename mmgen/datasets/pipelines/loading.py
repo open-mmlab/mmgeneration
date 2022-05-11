@@ -5,6 +5,7 @@ from mmcv.fileio import FileClient
 
 from mmgen.registry import TRANSFORMS
 
+
 @TRANSFORMS.register_module()
 class LoadImageFromFile:
     """Load image from file.

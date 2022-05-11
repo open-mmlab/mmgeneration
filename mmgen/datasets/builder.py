@@ -11,8 +11,8 @@ from mmcv.parallel import collate
 from mmcv.runner import get_dist_info
 from mmcv.utils import TORCH_VERSION, digit_version
 from torch.utils.data import DataLoader
-from mmgen.registry import DATASETS
 
+from mmgen.registry import DATASETS
 from .samplers import DistributedSampler
 
 if platform.system() != 'Windows':

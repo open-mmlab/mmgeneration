@@ -7,7 +7,10 @@ import mmcv
 import torch
 from mmengine.dist import master_only
 from mmengine.hooks import Hook
+
 from mmgen.registry import HOOKS
+
+
 @HOOKS.register_module()
 class PickleDataHook(Hook):
     """Pickle Useful Data Hook.
