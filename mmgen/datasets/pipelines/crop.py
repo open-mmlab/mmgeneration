@@ -4,6 +4,7 @@ import numpy as np
 
 from mmgen.registry import TRANSFORMS
 
+
 @TRANSFORMS.register_module()
 class Crop:
     """Crop data to specific size for training.

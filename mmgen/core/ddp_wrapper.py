@@ -1,10 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
-from mmgen.registry import MODEL_WRAPPERS
-from mmengine.model import MMDistributedDataParallel
 from mmcv.parallel.scatter_gather import scatter_kwargs
+from mmengine.model import MMDistributedDataParallel
 from torch.cuda._utils import _get_device_index
+
+from mmgen.registry import MODEL_WRAPPERS
 
 
 @MODEL_WRAPPERS.register_module('mmgen.DDPWrapper')

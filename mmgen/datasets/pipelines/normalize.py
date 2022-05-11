@@ -4,6 +4,7 @@ import numpy as np
 
 from mmgen.registry import TRANSFORMS
 
+
 @TRANSFORMS.register_module()
 class Normalize:
     """Normalize images with the given mean and std value.

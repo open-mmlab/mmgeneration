@@ -5,6 +5,7 @@ import torch.nn as nn
 
 from mmgen.registry import MODULES
 
+
 @MODULES.register_module('SPE')
 @MODULES.register_module('SPE2d')
 class SinusoidalPositionalEmbedding(nn.Module):

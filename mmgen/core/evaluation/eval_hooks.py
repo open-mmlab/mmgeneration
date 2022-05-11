@@ -10,6 +10,7 @@ import mmcv
 import torch
 from mmcv.runner import get_dist_info
 from mmengine.hooks import Hook
+
 from mmgen.registry import HOOKS
 from ..registry import build_metric
 

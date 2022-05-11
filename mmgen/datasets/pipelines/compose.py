@@ -4,6 +4,7 @@ from copy import deepcopy
 
 from mmgen.registry import TRANSFORMS
 
+
 @TRANSFORMS.register_module()
 class Compose:
     """Compose a data pipeline with a sequence of transforms.
@@ -21,7 +22,8 @@ class Compose:
                 # add support for using pipelines from `MMClassification`
                 if transform['type'].startswith('mmcls.'):
                     try:
-                        from mmcls.datasets import TRANSFORMS as MMCLSTRANSFORMS
+                        from mmcls.datasets import \
+                            TRANSFORMS as MMCLSTRANSFORMS
                     except ImportError:
                         raise ImportError('Please install mmcls to use '
                                           f'{transform["type"]} dataset.')

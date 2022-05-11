@@ -9,7 +9,6 @@ from mmcv.runner import load_checkpoint
 
 from mmgen.models.builder import build_module
 from mmgen.registry import MODULES
-
 from mmgen.utils import get_root_logger
 from .modules import EmbedSequential, TimeEmbedding
 

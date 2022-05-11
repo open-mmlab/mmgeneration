@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from mmengine.registry import build_from_cfg
+
 from mmgen.registry import METRICS
 
 
