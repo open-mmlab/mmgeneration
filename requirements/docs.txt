@@ -3,7 +3,7 @@ docutils==0.16.0
 m2r
 mmcls==0.18.0
 myst-parser
-opencv-python
+opencv-python-headless
 prettytable
 -e git+https://github.com/open-mmlab/pytorch_sphinx_theme.git#egg=pytorch_sphinx_theme
 scipy
