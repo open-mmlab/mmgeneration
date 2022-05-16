@@ -2,10 +2,10 @@
 import mmcv
 import numpy as np
 from mmcls.datasets import PIPELINES as CLS_PIPELINE
+from mmcv.transforms import BaseTransform
 from mmcv.transforms import Resize as MMCV_Resize
 
 from mmgen.registry import TRANSFORMS
-from mmcv.transforms import BaseTransform
 
 
 # TODO: remove the item since mmcv.transforms already contain
@@ -285,6 +285,7 @@ class CenterCropLongEdge(BaseTransform):
         repr_str = self.__class__.__name__
         repr_str += (f'(keys={self.keys})')
         return repr_str
+
 
 @TRANSFORMS.register_module()
 class Crop:
