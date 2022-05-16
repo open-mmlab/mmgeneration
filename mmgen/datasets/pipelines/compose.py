@@ -2,11 +2,13 @@
 from collections.abc import Sequence
 from copy import deepcopy
 
+from mmcv.transforms import BaseTransform
+
 from mmgen.registry import TRANSFORMS
 
 
 @TRANSFORMS.register_module()
-class Compose:
+class Compose(BaseTransform):
     """Compose a data pipeline with a sequence of transforms.
 
     Args:
@@ -42,7 +44,7 @@ class Compose:
                 raise TypeError(f'transform must be callable or a dict, '
                                 f'but got {type(transform)}')
 
-    def __call__(self, data):
+    def transform(self, data):
         """Call function.
 
         Args:

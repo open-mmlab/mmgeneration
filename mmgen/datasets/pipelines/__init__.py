@@ -1,25 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .augmentation import (CenterCropLongEdge, Flip, NumpyPad,
-                           RandomCropLongEdge, RandomImgNoise, Resize)
 from .compose import Compose
-from .crop import Crop, FixedCrop
-from .formatting import Collect, ImageToTensor, ToTensor
+from .formatting import PackGenInputs
 from .loading import LoadImageFromFile
-from .normalize import Normalize
+from .processing import (CenterCropLongEdge, Crop, FixedCrop, Flip, NumpyPad,
+                         RandomCropLongEdge, RandomImgNoise, Resize)
 
 __all__ = [
-    'LoadImageFromFile',
-    'Compose',
-    'ImageToTensor',
-    'Collect',
-    'ToTensor',
-    'Flip',
-    'Resize',
-    'RandomImgNoise',
-    'RandomCropLongEdge',
-    'CenterCropLongEdge',
-    'Normalize',
-    'NumpyPad',
-    'Crop',
-    'FixedCrop',
+    'LoadImageFromFile', 'Compose', 'Flip', 'Resize', 'RandomImgNoise',
+    'RandomCropLongEdge', 'CenterCropLongEdge', 'NumpyPad', 'Crop',
+    'FixedCrop', 'PackGenInputs'
 ]
