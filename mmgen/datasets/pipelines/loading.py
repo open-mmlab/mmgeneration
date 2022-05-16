@@ -9,6 +9,7 @@ from mmgen.registry import TRANSFORMS
 from ..utils import infer_io_backend
 
 
+
 @TRANSFORMS.register_module()
 class LoadImageFromFile:
     """Load image from file.
