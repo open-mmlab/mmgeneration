@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from collections import OrderedDict
 
 import torch
@@ -181,12 +181,12 @@ class BaseGAN(nn.Module, metaclass=ABCMeta):
             return self.forward_test(inputs, data_sample, **kwargs)
 
     def preprocess_training_data(self, data):
-        raise NotImplementedError("preprocess_training_data should \
-            be implemented in sub-class")
-    
+        raise NotImplementedError('preprocess_training_data should \
+            be implemented in sub-class')
+
     def preprocess_test_data(self, data):
-        raise NotImplementedError("preprocess_test_data should \
-            be implemented in sub-class")
+        raise NotImplementedError('preprocess_test_data should \
+            be implemented in sub-class')
 
     def _parse_losses(self, losses):
         """Parse the raw outputs (losses) of the network.

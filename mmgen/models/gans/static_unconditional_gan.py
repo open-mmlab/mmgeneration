@@ -5,12 +5,13 @@ import torch
 import torch.nn as nn
 from torch.nn.parallel.distributed import _find_tensors
 
+from mmgen.models.misc import stack_batch
 from mmgen.registry import MODELS
 from ..builder import build_module
 from ..common import set_requires_grad
 from .base_gan import BaseGAN
+
 from mmgen.models.architectures.common import get_module_device  # isort:skip  # noqa
-from mmgen.models.misc import stack_batch
 
 # _SUPPORT_METHODS_ = ['DCGAN', 'STYLEGANv2']
 
