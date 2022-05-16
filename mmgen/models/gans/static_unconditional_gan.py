@@ -38,6 +38,10 @@ class StaticUnconditionalGAN(BaseGAN):
             to generator. Defaults to None.
         train_cfg (dict | None, optional): Config for training schedule.
             Defaults to None.
+        preprocess_cfg (dict, optional): Model preprocessing config
+            for processing the input data. it usually includes
+            ``to_rgb``, ``pad_size_divisor``, ``pad_value``,
+            ``mean`` and ``std``. Default to None.
         test_cfg (dict | None, optional): Config for testing schedule. Defaults
             to None.
     """
@@ -48,6 +52,7 @@ class StaticUnconditionalGAN(BaseGAN):
                  gan_loss,
                  disc_auxiliary_loss=None,
                  gen_auxiliary_loss=None,
+                 preprocess_cfg=None,
                  train_cfg=None,
                  test_cfg=None):
         super().__init__()
@@ -88,6 +93,17 @@ class StaticUnconditionalGAN(BaseGAN):
         self._parse_train_cfg()
         if test_cfg is not None:
             self._parse_test_cfg()
+
+        self.preprocess_cfg = preprocess_cfg
+        if self.preprocess_cfg is not None:
+            self.to_rgb = preprocess_cfg.get('to_rgb', False)
+            self.size_divisor = preprocess_cfg.get('size_divisor', 0)
+            self.register_buffer(
+                'pixel_mean',
+                torch.tensor(preprocess_cfg['mean']).view(-1, 1, 1), False)
+            self.register_buffer(
+                'pixel_std',
+                torch.tensor(preprocess_cfg['std']).view(-1, 1, 1), False)
 
     def _parse_train_cfg(self):
         """Parsing train config and set some attributes for training."""
@@ -328,26 +344,26 @@ class StaticUnconditionalGAN(BaseGAN):
                    `gt_instance`. Return None If the input data does not
                    contain `data_sample`.
         """
-        if data is None:
-            return None, None
-
         images = [data_['inputs'] for data_ in data]
         data_samples = [data_['data_sample'] for data_ in data]
 
         device = get_module_device(self)
         data_samples = [data_sample.to(device) for data_sample in data_samples]
         images = [img.to(device) for img in images]
-        if self.to_rgb and images[0].size(0) == 3:
-            images = [image[[2, 1, 0], ...] for image in images]
-        images = [(x - self.pixel_mean) / self.pixel_std for x in images]
-        batch_image = stack_batch(images, self.size_divisor)
 
+        if self.preprocess_cfg is not None:
+            if self.to_rgb and images[0].size(0) == 3:
+                images = [image[[2, 1, 0], ...] for image in images]
+            images = [(x - self.pixel_mean) / self.pixel_std for x in images]
+            batch_image = stack_batch(images, self.size_divisor)
+        else:
+            batch_image = stack_batch(images)
         return batch_image, data_samples
 
     def preprocess_test_data(self, data):
         if data is None:
             return None, None
-            
+
         data_samples = [data_['data_sample'] for data_ in data]
 
         device = get_module_device(self)

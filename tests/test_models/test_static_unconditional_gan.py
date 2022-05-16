@@ -5,8 +5,9 @@ import pytest
 import torch
 import torch.nn as nn
 
-from mmgen.models import StaticUnconditionalGAN, build_model
 from mmgen.core import GenDataSample
+from mmgen.models import StaticUnconditionalGAN, build_model
+
 
 class TestStaticUnconditionalGAN(object):
 
@@ -56,15 +57,20 @@ class TestStaticUnconditionalGAN(object):
         imgs = dcgan(None, return_loss=False, mode='sampling', num_batches=2)
         assert imgs.shape == (2, 3, 16, 16)
 
-        # test train step
-        data = torch.randn((2, 3, 16, 16))
-        data_input = dict(real_img=data)
+        # test forward train
+        data_input = []
+        for i in range(2):
+            data_input.append(
+                dict(
+                    inputs=torch.randn(3, 16, 16),
+                    data_sample=GenDataSample()))
         optimizer_g = torch.optim.SGD(dcgan.generator.parameters(), lr=0.01)
         optimizer_d = torch.optim.SGD(
             dcgan.discriminator.parameters(), lr=0.01)
         optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
 
-        model_outputs = dcgan(data_input, optim_dict)
+        model_outputs = dcgan(
+            data_input, return_loss=True, optimizer=optim_dict)
         assert 'results' in model_outputs
         assert 'log_vars' in model_outputs
         assert model_outputs['num_samples'] == 2
@@ -74,13 +80,17 @@ class TestStaticUnconditionalGAN(object):
         config_ = deepcopy(self.default_config)
         config_['train_cfg'] = dict(disc_steps=2)
         dcgan = build_model(config_)
-        model_outputs = dcgan(data_input, optim_dict)
+        model_outputs = dcgan(
+            data_input, return_loss=True, optimizer=optim_dict)
         assert 'loss_disc_fake' in model_outputs['log_vars']
         assert 'loss_disc_fake_g' not in model_outputs['log_vars']
         assert dcgan.disc_steps == 2
 
         model_outputs = dcgan(
-            data_input, optim_dict, running_status=dict(iteration=1))
+            data_input,
+            return_loss=True,
+            optimizer=optim_dict,
+            running_status=dict(iteration=1))
         assert 'loss_disc_fake' in model_outputs['log_vars']
         assert 'loss_disc_fake_g' in model_outputs['log_vars']
 
@@ -91,15 +101,20 @@ class TestStaticUnconditionalGAN(object):
             self.gan_loss,
             self.disc_auxiliary_loss,
         )
-        # test train step
-        data = torch.randn((2, 3, 16, 16))
-        data_input = dict(real_img=data)
+        # test forward train
+        data_input = []
+        for i in range(2):
+            data_input.append(
+                dict(
+                    inputs=torch.randn(3, 16, 16),
+                    data_sample=GenDataSample()))
         optimizer_g = torch.optim.SGD(dcgan.generator.parameters(), lr=0.01)
         optimizer_d = torch.optim.SGD(
             dcgan.discriminator.parameters(), lr=0.01)
         optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
 
-        model_outputs = dcgan(data_input, optim_dict)
+        model_outputs = dcgan(
+            data_input, return_loss=True, optimizer=optim_dict)
         assert 'results' in model_outputs
         assert 'log_vars' in model_outputs
         assert model_outputs['num_samples'] == 2
@@ -135,7 +150,7 @@ class TestStaticUnconditionalGAN(object):
         imgs = dcgan(None, return_loss=False, mode='sampling', num_batches=2)
         assert imgs.shape == (2, 3, 16, 16)
 
-        # test train step
+        # test forward train
         data = torch.randn((2, 3, 16, 16)).cuda()
         data_input = dict(real_img=data)
         optimizer_g = torch.optim.SGD(dcgan.generator.parameters(), lr=0.01)
@@ -203,6 +218,11 @@ class TestStaticUnconditionalGAN(object):
                     update_interval=2,
                     aug_pipeline=aug_kwargs,
                     ada_kimg=100)),
+            preprocess_cfg=dict(
+                mean=[127.5, 127.5, 127.5],
+                std=[127.5, 127.5, 127.5],
+                to_rgb=False,
+                size_divisor=0),
             gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'))
 
         s3gan = build_model(default_config)
@@ -214,15 +234,19 @@ class TestStaticUnconditionalGAN(object):
         imgs = s3gan(None, return_loss=False, mode='sampling', num_batches=2)
         assert imgs.shape == (2, 3, 8, 8)
 
-        # test train step
-        data = torch.randn((2, 3, 8, 8))
-        data_input = GenDataSample()
-        data_input = dict(real_img=data)
+        # test forward train
+        data_input = []
+        for i in range(2):
+            data_input.append(
+                dict(inputs=torch.randn(3, 8, 8), data_sample=GenDataSample()))
         optimizer_g = torch.optim.SGD(s3gan.generator.parameters(), lr=0.01)
         optimizer_d = torch.optim.SGD(
             s3gan.discriminator.parameters(), lr=0.01)
         optim_dict = dict(generator=optimizer_g, discriminator=optimizer_d)
 
         _ = s3gan(
-            data_input, optim_dict, running_status=dict(iteration=1))
+            data_input,
+            optimizer=optim_dict,
+            return_loss=True,
+            running_status=dict(iteration=1))
         s3gan.discriminator.ada_aug.aug_pipeline.p.dtype == torch.float32
