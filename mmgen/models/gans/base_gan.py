@@ -96,46 +96,6 @@ class BaseGAN(nn.Module, metaclass=ABCMeta):
 
         return loss, log_var
 
-    @abstractmethod
-    def train_step(self, data, optimizer, ddp_reducer=None):
-        """The iteration step during training.
-
-        This method defines an iteration step during training. Different from
-        other repo in **MM** series, we allow the back propagation and
-        optimizer updating to directly follow the iterative training schedule
-        of GAN. Of course, we will show that you can also move the back
-        propagation outside of this method, and then optimize the parameters
-        in the optimizer hook. But this will cause extra GPU memory cost as a
-        result of retaining computational graph. Otherwise, the training
-        schedule should be modified in the detailed implementation.
-
-        TODO: Give an example of removing bp outside ``train_step``.
-        TODO: Try the synchronized back propagation.
-
-        Args:
-            data (dict): The output of dataloader.
-            optimizer (:obj:`torch.optim.Optimizer` | dict): The optimizer of
-                runner is passed to ``train_step()``. This argument is unused
-                and reserved.
-            ddp_reducer (:obj:`Reducer` | None, optional): This reducer is used
-                to dynamically collect used parameters in the distributed
-                training. If given an initialized ``Reducer``, we will call its
-                ``prepare_for_backward()`` function just before calling
-                ``.backward()``.
-
-        Returns:
-            dict: It should contain at least 3 keys: ``loss``, ``log_vars``, \
-                ``num_samples``.
-
-                - ``loss`` is a tensor for back propagation, which can be a \
-                weighted sum of multiple losses.
-                - ``log_vars`` contains all the variables to be sent to the
-                logger.
-                - ``num_samples`` indicates the batch size (when the model is \
-                DDP, it means the batch size on each GPU), which is used for \
-                averaging the logs.
-        """
-
     def sample_from_noise(self,
                           noise,
                           num_batches=0,
@@ -214,9 +174,19 @@ class BaseGAN(nn.Module, metaclass=ABCMeta):
             dict: Output dictionary.
         """
         if return_loss:
-            return self.forward_train(data, **kwargs)
+            inputs, data_sample = self.preprocess_training_data(data)
+            return self.forward_train(inputs, data_sample, **kwargs)
+        else:
+            inputs, data_sample = self.preprocess_test_data(data)
+            return self.forward_test(inputs, data_sample, **kwargs)
 
-        return self.forward_test(data, **kwargs)
+    def preprocess_training_data(self, data):
+        raise NotImplementedError("preprocess_training_data should \
+            be implemented in sub-class")
+    
+    def preprocess_test_data(self, data):
+        raise NotImplementedError("preprocess_test_data should \
+            be implemented in sub-class")
 
     def _parse_losses(self, losses):
         """Parse the raw outputs (losses) of the network.
