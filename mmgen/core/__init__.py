@@ -6,4 +6,3 @@ from .optimizer import *  # noqa: F401, F403
 from .registry import *  # noqa: F401, F403
 from .runners import *  # noqa: F401, F403
 from .scheduler import *  # noqa: F401, F403
-from .data_structures import * # noqa: F401, F403
