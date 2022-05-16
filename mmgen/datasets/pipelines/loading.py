@@ -1,8 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import numpy as np
-
 from mmengine import FileClient
+
 from mmgen.registry import TRANSFORMS
 
 
