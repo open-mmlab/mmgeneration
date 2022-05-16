@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
-from mmcv.transforms import to_tensor
-from mmcv.transforms import BaseTransform
+from mmcv.transforms import BaseTransform, to_tensor
 
 from mmgen.core.data_structures import GenDataSample
 from mmgen.registry import TRANSFORMS

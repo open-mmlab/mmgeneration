@@ -7,6 +7,7 @@ from mmcv.transforms import Resize as MMCV_Resize
 from mmgen.registry import TRANSFORMS
 from .base import BaseTransform
 
+
 # TODO: remove the item since mmcv.transforms already contain
 @TRANSFORMS.register_module()
 class Flip:
