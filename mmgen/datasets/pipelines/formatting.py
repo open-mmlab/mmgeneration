@@ -46,4 +46,4 @@ class PackGenInputs(BaseTransform):
 
     def __repr__(self):
         return self.__class__.__name__ + (
-            f'(keys={self.keys}, meta_keys={self.meta_keys})')
+            f'(key={self.key}, meta_keys={self.meta_keys})')
