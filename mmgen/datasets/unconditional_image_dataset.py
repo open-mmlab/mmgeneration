@@ -26,21 +26,18 @@ class UnconditionalImageDataset(BaseDataset):
 
     def __init__(self, data_root, pipeline, test_mode=False):
         super().__init__(
-            data_root=data_root,
-            pipeline=pipeline,
-            test_mode=test_mode,
-            lazy_init=True)
-        # print basic dataset information to check the validity
-        # self.load_data_list()
-        # mmcv.print_log(repr(self), 'mmgen')
+            data_root=data_root, pipeline=pipeline, test_mode=test_mode)
 
     def load_data_list(self):
         """Load annotations."""
         # recursively find all of the valid images from data_root
+        data_list = []
         imgs_list = mmcv.scandir(
             self.data_root, self._VALID_IMG_SUFFIX, recursive=True)
-        imgs_list = [osp.join(self.data_root, x) for x in imgs_list]
-        return imgs_list
+        data_list = [
+            dict(real_img_path=osp.join(self.data_root, x)) for x in imgs_list
+        ]
+        return data_list
 
     def __repr__(self):
         dataset_name = self.__class__

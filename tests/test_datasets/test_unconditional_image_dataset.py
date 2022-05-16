@@ -10,7 +10,10 @@ class TestUnconditionalImageDataset(object):
     def setup_class(cls):
         cls.imgs_root = osp.join(osp.dirname(__file__), '..', 'data/image')
         cls.default_pipeline = [
-            dict(type='LoadImageFromFile', io_backend='disk', key='real_img')
+            dict(
+                type='mmgen.LoadImageFromFile',
+                io_backend='disk',
+                key='real_img')
         ]
 
     def test_unconditional_imgs_dataset(self):

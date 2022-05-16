@@ -105,7 +105,8 @@ venv.bak/
 .mypy_cache/
 
 # custom
-data
+data/
+!tests/data
 !tests_old/data
 .vscode
 .idea
