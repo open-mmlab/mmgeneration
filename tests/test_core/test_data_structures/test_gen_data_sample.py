@@ -7,6 +7,7 @@ from mmengine.data import LabelData
 
 from mmgen.core import GenDataSample
 
+
 class TestGenDataSample(TestCase):
 
     def _test_set_label(self, key):
