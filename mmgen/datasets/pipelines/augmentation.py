@@ -3,10 +3,10 @@ import mmcv
 import numpy as np
 from mmcls.datasets import PIPELINES as CLS_PIPELINE
 
-from ..builder import PIPELINES
+from mmgen.registry import TRANSFORMS
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class Flip:
     """Flip the input data with a probability.
 
@@ -64,7 +64,7 @@ class Flip:
         return repr_str
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class Resize:
     """Resize data to a specific size for training or resize the images to fit
     the network input regulation for testing.
@@ -228,7 +228,7 @@ class Resize:
         return repr_str
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class NumpyPad:
     """Numpy Padding.
 
@@ -282,7 +282,7 @@ class NumpyPad:
 
 
 @CLS_PIPELINE.register_module()
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class RandomImgNoise:
     """Add random noise with specific distribution and range to the input
     image.
@@ -348,7 +348,7 @@ class RandomImgNoise:
 
 
 @CLS_PIPELINE.register_module()
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class RandomCropLongEdge:
     """Random crop the given image by the long edge.
 
@@ -393,7 +393,7 @@ class RandomCropLongEdge:
 
 
 @CLS_PIPELINE.register_module()
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class CenterCropLongEdge:
     """Center crop the given image by the long edge.
 

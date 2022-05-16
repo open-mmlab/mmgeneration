@@ -5,8 +5,10 @@ import pickle
 
 import mmcv
 import torch
-from mmcv.runner import HOOKS, Hook
-from mmcv.runner.dist_utils import master_only
+from mmengine.dist import master_only
+from mmengine.hooks import Hook
+
+from mmgen.registry import HOOKS
 
 
 @HOOKS.register_module()

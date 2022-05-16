@@ -3,7 +3,7 @@ import torch.nn as nn
 from mmcv.cnn import ConvModule, build_conv_layer
 from mmcv.runner import load_checkpoint
 
-from mmgen.models.builder import MODULES
+from mmgen.registry import MODULES
 from mmgen.utils import get_root_logger
 from .modules import UnetSkipConnectionBlock, generation_init_weights
 

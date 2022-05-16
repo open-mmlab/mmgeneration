@@ -7,7 +7,8 @@ from mmcv.cnn import constant_init
 from mmcv.cnn.bricks.conv_module import ConvModule
 from mmcv.runner import load_checkpoint
 
-from mmgen.models.builder import MODULES, build_module
+from mmgen.models.builder import build_module
+from mmgen.registry import MODULES
 from mmgen.utils import get_root_logger
 from .modules import EmbedSequential, TimeEmbedding
 

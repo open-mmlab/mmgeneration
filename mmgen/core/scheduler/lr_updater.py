@@ -1,5 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from mmcv.runner import HOOKS, LrUpdaterHook
+from mmcv.runner import LrUpdaterHook
+
+from mmgen.registry import HOOKS
 
 
 @HOOKS.register_module()

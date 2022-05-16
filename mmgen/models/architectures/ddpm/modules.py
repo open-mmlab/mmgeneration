@@ -11,7 +11,8 @@ from mmcv.cnn import ACTIVATION_LAYERS
 from mmcv.cnn.bricks import build_activation_layer, build_norm_layer
 from mmcv.cnn.utils import constant_init
 
-from mmgen.models.builder import MODULES, build_module
+from mmgen.models.builder import build_module
+from mmgen.registry import MODULES
 
 
 class EmbedSequential(nn.Sequential):

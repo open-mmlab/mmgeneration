@@ -11,8 +11,8 @@ from mmcv.cnn.bricks import (NORM_LAYERS, PLUGIN_LAYERS, ConvModule,
 from mmcv.cnn.utils import normal_init
 from torch.nn.init import _calculate_correct_fan
 
-from mmgen.models.builder import MODULES
 from mmgen.models.common import AllGatherLayer
+from mmgen.registry import MODULES
 
 
 class EqualizedLR:

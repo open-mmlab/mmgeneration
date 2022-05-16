@@ -1,9 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
-from mmcv.utils import Registry, build_from_cfg
+from mmengine.registry import build_from_cfg
 
-MODELS = Registry('model')
-MODULES = Registry('module')
+from mmgen.registry import MODELS, MODULES
 
 
 def build(cfg, registry, default_args=None):

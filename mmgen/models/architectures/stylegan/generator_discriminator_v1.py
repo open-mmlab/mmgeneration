@@ -12,7 +12,7 @@ from mmgen.models.architectures.common import get_module_device
 from mmgen.models.architectures.pggan import (EqualizedLRConvDownModule,
                                               EqualizedLRConvModule)
 from mmgen.models.architectures.stylegan.modules import Blur
-from mmgen.models.builder import MODULES
+from mmgen.registry import MODULES
 from .. import MiniBatchStddevLayer
 from .modules.styleganv1_modules import StyleConv
 from .modules.styleganv2_modules import EqualLinearActModule

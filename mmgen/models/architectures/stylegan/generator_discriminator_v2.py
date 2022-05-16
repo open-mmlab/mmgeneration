@@ -10,7 +10,8 @@ from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
 from mmgen.core.runners.fp16_utils import auto_fp16
 from mmgen.models.architectures import PixelNorm
 from mmgen.models.architectures.common import get_module_device
-from mmgen.models.builder import MODULES, build_module
+from mmgen.models.builder import build_module
+from mmgen.registry import MODULES
 from .ada.augment import AugmentPipe
 from .ada.misc import constant
 from .modules.styleganv2_modules import (ConstantInput, ConvDownLayer,

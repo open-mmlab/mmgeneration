@@ -2,7 +2,7 @@
 import torch
 from torch.utils.data import Dataset
 
-from .builder import DATASETS
+from mmgen.registry import DATASETS
 
 
 @DATASETS.register_module()

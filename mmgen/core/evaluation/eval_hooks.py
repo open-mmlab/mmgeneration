@@ -8,8 +8,10 @@ from bisect import bisect_right
 
 import mmcv
 import torch
-from mmcv.runner import HOOKS, Hook, get_dist_info
+from mmcv.runner import get_dist_info
+from mmengine.hooks import Hook
 
+from mmgen.registry import HOOKS
 from ..registry import build_metric
 
 

@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from mmcv.parallel import DataContainer as DC
 
-from ..builder import PIPELINES
+from mmgen.registry import TRANSFORMS
 
 
 def to_tensor(data):
@@ -29,7 +29,7 @@ def to_tensor(data):
     raise TypeError(f'type {type(data)} cannot be converted to tensor.')
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class ToTensor:
     """Convert some values in results dict to `torch.Tensor` type in data
     loader pipeline.
@@ -59,7 +59,7 @@ class ToTensor:
         return self.__class__.__name__ + f'(keys={self.keys})'
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class ImageToTensor:
     """Convert image type to `torch.Tensor` type.
 
@@ -97,7 +97,7 @@ class ImageToTensor:
             f'(keys={self.keys}, to_float32={self.to_float32})')
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class Collect:
     """Collect data from the loader relevant to the specific task.
 

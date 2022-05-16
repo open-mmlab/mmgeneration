@@ -4,7 +4,8 @@ from copy import deepcopy
 import torch.nn as nn
 from mmcv.parallel import MMDistributedDataParallel
 
-from ..builder import MODELS, build_module
+from mmgen.registry import MODELS
+from ..builder import build_module
 from ..gans import BaseGAN
 from .base_translation_model import BaseTranslationModel
 

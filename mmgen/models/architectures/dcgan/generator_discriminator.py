@@ -6,7 +6,7 @@ from mmcv.cnn import ConvModule, normal_init
 from mmcv.runner import load_checkpoint
 from mmcv.utils.parrots_wrapper import _BatchNorm
 
-from mmgen.models.builder import MODULES
+from mmgen.registry import MODULES
 from mmgen.utils import get_root_logger
 from ..common import get_module_device
 

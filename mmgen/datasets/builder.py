@@ -9,9 +9,10 @@ import numpy as np
 import torch
 from mmcv.parallel import collate
 from mmcv.runner import get_dist_info
-from mmcv.utils import TORCH_VERSION, Registry, build_from_cfg, digit_version
+from mmcv.utils import TORCH_VERSION, digit_version
 from torch.utils.data import DataLoader
 
+from mmgen.registry import DATASETS
 from .samplers import DistributedSampler
 
 if platform.system() != 'Windows':
@@ -22,9 +23,6 @@ if platform.system() != 'Windows':
     hard_limit = rlimit[1]
     soft_limit = min(max(4096, base_soft_limit), hard_limit)
     resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))
-
-DATASETS = Registry('dataset')
-PIPELINES = Registry('pipeline')
 
 
 def build_dataset(cfg, default_args=None):
@@ -57,7 +55,7 @@ def build_dataset(cfg, default_args=None):
         _cfg['type'] = _cfg['type'][6:]
         dataset = build_dataset_mmcls(_cfg, default_args)
     else:
-        dataset = build_from_cfg(cfg, DATASETS, default_args)
+        dataset = DATASETS.build(cfg, default_args)
 
     return dataset
 

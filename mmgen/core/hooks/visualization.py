@@ -3,9 +3,11 @@ import os.path as osp
 
 import mmcv
 import torch
-from mmcv.runner import HOOKS, Hook
-from mmcv.runner.dist_utils import master_only
+from mmengine.dist import master_only
+from mmengine.hooks import Hook
 from torchvision.utils import save_image
+
+from mmgen.registry import HOOKS
 
 
 @HOOKS.register_module('MMGenVisualizationHook')
