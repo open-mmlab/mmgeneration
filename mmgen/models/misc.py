@@ -72,6 +72,7 @@ def tensor2img(tensor, out_type=np.uint8, min_max=(0, 1)):
     result = result[0] if len(result) == 1 else result
     return result
 
+
 def stack_batch(tensors, size_divisor=0, pad_value=0):
     """Stack multiple tensors to form a batch and pad the images to the max
     shape use the right bottom padding mode in these images.
