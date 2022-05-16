@@ -314,7 +314,7 @@ class StaticUnconditionalGAN(BaseGAN):
             self.iteration += 1
         return outputs
 
-    def preprocss_training_data(self, data):
+    def preprocess_training_data(self, data):
         """ Process input data during training and testing phases.
         Args:
             data (list[dict]): The data to be processed, which
@@ -328,6 +328,9 @@ class StaticUnconditionalGAN(BaseGAN):
                    `gt_instance`. Return None If the input data does not
                    contain `data_sample`.
         """
+        if data is None:
+            return None, None
+
         images = [data_['inputs'] for data_ in data]
         data_samples = [data_['data_sample'] for data_ in data]
 
@@ -341,7 +344,10 @@ class StaticUnconditionalGAN(BaseGAN):
 
         return batch_image, data_samples
 
-    def preprocss_test_data(self, data):
+    def preprocess_test_data(self, data):
+        if data is None:
+            return None, None
+            
         data_samples = [data_['data_sample'] for data_ in data]
 
         device = get_module_device(self)

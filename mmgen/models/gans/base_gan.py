@@ -141,14 +141,14 @@ class BaseGAN(nn.Module, metaclass=ABCMeta):
 
         return outputs
 
-    def forward_train(self, data, **kwargs):
+    def forward_train(self, data, data_sample, **kwargs):
         """Deprecated forward function in training."""
         raise NotImplementedError(
             'In MMGeneration, we do NOT recommend users to call'
             'this function, because the train_step function is designed for '
             'the training process.')
 
-    def forward_test(self, data, **kwargs):
+    def forward_test(self, data, data_sample, **kwargs):
         """Testing function for GANs.
 
         Args:
