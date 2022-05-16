@@ -5,7 +5,6 @@ import mmcv
 from mmengine.dataset import BaseDataset
 
 from mmgen.registry import DATASETS
-from .pipelines import Compose
 
 
 @DATASETS.register_module()
@@ -26,7 +25,11 @@ class UnconditionalImageDataset(BaseDataset):
     _VALID_IMG_SUFFIX = ('.jpg', '.png', '.jpeg', '.JPEG')
 
     def __init__(self, data_root, pipeline, test_mode=False):
-        super().__init__(data_root=data_root, pipeline=pipeline, test_mode=test_mode, lazy_init=True)
+        super().__init__(
+            data_root=data_root,
+            pipeline=pipeline,
+            test_mode=test_mode,
+            lazy_init=True)
         # print basic dataset information to check the validity
         # self.load_data_list()
         # mmcv.print_log(repr(self), 'mmgen')
