@@ -154,6 +154,7 @@ class TestAugmentations(object):
         resize_results = resize(results)
         assert resize_results['img'].shape == (32, 8, 1)
 
+
 def test_random_img_noise():
     img = np.random.randn(256, 128, 3).astype(np.float32)
     results = dict(img=copy.deepcopy(img))

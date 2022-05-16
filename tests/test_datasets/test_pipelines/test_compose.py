@@ -2,9 +2,8 @@
 import numpy as np
 import pytest
 
-from mmgen.datasets.pipelines import Compose
-from mmgen.datasets.pipelines import Resize
-from mmgen.datasets.pipelines import PackGenInputs
+from mmgen.datasets.pipelines import Compose, PackGenInputs, Resize
+
 
 def test_compose():
     with pytest.raises(TypeError):
@@ -13,7 +12,7 @@ def test_compose():
     img = np.random.randn(256, 256, 3)
     results = dict(img=img, img_name='test_image.png')
     test_pipeline = [
-        dict(type='Resize', scale=(64,64)),
+        dict(type='Resize', scale=(64, 64)),
         dict(type='PackGenInputs', meta_keys=['img_name'])
     ]
     compose = Compose(test_pipeline)
