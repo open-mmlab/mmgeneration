@@ -2,10 +2,12 @@
 import mmcv
 import numpy as np
 from mmcls.datasets import PIPELINES as CLS_PIPELINE
+from mmcv.transforms import Resize as MMCV_Resize
 
 from mmgen.registry import TRANSFORMS
+from .base import BaseTransform
 
-
+# TODO: remove the item since mmcv.transforms already contain
 @TRANSFORMS.register_module()
 class Flip:
     """Flip the input data with a probability.
@@ -32,7 +34,7 @@ class Flip:
         self.flip_ratio = flip_ratio
         self.direction = direction
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function.
 
         Args:
@@ -65,7 +67,7 @@ class Flip:
 
 
 @TRANSFORMS.register_module()
-class Resize:
+class Resize(MMCV_Resize):
     """Resize data to a specific size for training or resize the images to fit
     the network input regulation for testing.
 
@@ -89,19 +91,19 @@ class Resize:
         scale (float | Tuple[int]): If scale is Tuple(int), target spatial
             size (h, w). Otherwise, target spatial size is scaled by input
             size. If any of scale is -1, we will rescale short edge.
-            Note that when it is used, `size_factor` and `max_size` are
+            Note that when it is used, `scale_factor` and `max_size` are
             useless. Default: None
         keep_ratio (bool): If set to True, images will be resized without
             changing the aspect ratio. Otherwise, it will resize images to a
             given size. Default: False.
             Note that it is used togher with `scale`.
-        size_factor (int): Let the output shape be a multiple of size_factor.
+        scale_factor (int): Let the output shape be a multiple of scale_factor.
             Default:None.
             Note that when it is used, `scale` should be set to None and
             `keep_ratio` should be set to False.
         max_size (int): The maximum size of the longest side of the output.
             Default:None.
-            Note that it is used togher with `size_factor`.
+            Note that it is used togher with `scale_factor`.
         interpolation (str): Algorithm used for interpolation:
             "nearest" | "bilinear" | "bicubic" | "area" | "lanczos".
             Default: "bilinear".
@@ -110,126 +112,15 @@ class Resize:
             specified by ``mmcv.use_backend()`` will be used. Default: None.
     """
 
-    def __init__(self,
-                 keys,
-                 scale=None,
-                 keep_ratio=False,
-                 size_factor=None,
-                 max_size=None,
-                 interpolation='bilinear',
-                 backend=None):
-        assert keys, 'Keys should not be empty.'
-        if size_factor:
-            assert scale is None, ('When size_factor is used, scale should ',
-                                   f'be None. But received {scale}.')
-            assert keep_ratio is False, ('When size_factor is used, '
-                                         'keep_ratio should be False.')
-        if max_size:
-            assert size_factor is not None, (
-                'When max_size is used, '
-                f'size_factor should also be set. But received {size_factor}.')
-        if isinstance(scale, float):
-            if scale <= 0:
-                raise ValueError(f'Invalid scale {scale}, must be positive.')
-        elif mmcv.is_tuple_of(scale, int):
-            max_long_edge = max(scale)
-            max_short_edge = min(scale)
-            if max_short_edge == -1:
-                # assign np.inf to long edge for rescaling short edge later.
-                scale = (np.inf, max_long_edge)
-        elif scale is not None:
-            raise TypeError(
-                f'Scale must be None, float or tuple of int, but got '
-                f'{type(scale)}.')
-        self.keys = keys
-        self.scale = scale
-        self.size_factor = size_factor
-        self.max_size = max_size
-        self.keep_ratio = keep_ratio
-        self.interpolation = interpolation
-        self.backend = backend
-
-    def _resize(self, img, scale):
-        """Resize given image with corresponding scale.
-        Args:
-            img (np.array): Image to be resized.
-            scale (float | Tuple[int]): Scale used in resize process.
-
-        Returns:
-            tuple: Tuple contains resized image and scale factor in resize
-                process.
-        """
-        if self.keep_ratio:
-            img, scale_factor = mmcv.imrescale(
-                img,
-                scale,
-                return_scale=True,
-                interpolation=self.interpolation,
-                backend=self.backend)
-        else:
-            img, w_scale, h_scale = mmcv.imresize(
-                img,
-                scale,
-                return_scale=True,
-                interpolation=self.interpolation,
-                backend=self.backend)
-            scale_factor = np.array((w_scale, h_scale), dtype=np.float32)
-        return img, scale_factor
-
-    def __call__(self, results):
-        """Call function.
-
-        Args:
-            results (dict): A dict containing the necessary information and
-                data for augmentation.
-
-        Returns:
-            dict: A dict containing the processed data and information.
-        """
-        if self.size_factor:
-            h, w = results[self.keys[0]].shape[:2]
-            new_h = h - (h % self.size_factor)
-            new_w = w - (w % self.size_factor)
-            if self.max_size:
-                new_h = min(self.max_size - (self.max_size % self.size_factor),
-                            new_h)
-                new_w = min(self.max_size - (self.max_size % self.size_factor),
-                            new_w)
-            scale = (new_w, new_h)
-        elif isinstance(self.scale, tuple) and (np.inf in self.scale):
-            # find inf in self.scale, calculate ``scale`` manually
-            h, w = results[self.keys[0]].shape[:2]
-            if h < w:
-                scale = (int(self.scale[-1] / h * w), self.scale[-1])
-            else:
-                scale = (self.scale[-1], int(self.scale[-1] / w * h))
-        else:
-            # direct use the given ones
-            scale = self.scale
-
-        # here we assume all images in self.keys have the same input size
-        for key in self.keys:
-            results[key], scale_factor = self._resize(results[key], scale)
-            if len(results[key].shape) == 2:
-                results[key] = np.expand_dims(results[key], axis=2)
-
-        results['scale_factor'] = scale_factor
-        results['keep_ratio'] = self.keep_ratio
-        results['interpolation'] = self.interpolation
-
+    def transform(self, results: dict) -> dict:
+        results = super().transform(results)
+        if len(results['img'].shape) == 2:
+            results['img'] = np.expand_dims(results['img'], axis=2)
         return results
-
-    def __repr__(self):
-        repr_str = self.__class__.__name__
-        repr_str += (
-            f'(keys={self.keys}, scale={self.scale}, '
-            f'keep_ratio={self.keep_ratio}, size_factor={self.size_factor}, '
-            f'max_size={self.max_size},interpolation={self.interpolation})')
-        return repr_str
 
 
 @TRANSFORMS.register_module()
-class NumpyPad:
+class NumpyPad(BaseTransform):
     """Numpy Padding.
 
     In this augmentation, numpy padding is adopted to customize padding
@@ -257,7 +148,7 @@ class NumpyPad:
         self.padding = padding
         self.kwargs = kwargs
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function.
 
         Args:
@@ -283,7 +174,7 @@ class NumpyPad:
 
 @CLS_PIPELINE.register_module()
 @TRANSFORMS.register_module()
-class RandomImgNoise:
+class RandomImgNoise(BaseTransform):
     """Add random noise with specific distribution and range to the input
     image.
 
@@ -314,7 +205,7 @@ class RandomImgNoise:
                            f'{distribution}.')
         self.distribution = distribution
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function.
 
         Args:
@@ -349,7 +240,7 @@ class RandomImgNoise:
 
 @CLS_PIPELINE.register_module()
 @TRANSFORMS.register_module()
-class RandomCropLongEdge:
+class RandomCropLongEdge(BaseTransform):
     """Random crop the given image by the long edge.
 
     Args:
@@ -360,7 +251,7 @@ class RandomCropLongEdge:
         assert keys, 'Keys should not be empty.'
         self.keys = keys
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function.
 
         Args:
@@ -394,7 +285,7 @@ class RandomCropLongEdge:
 
 @CLS_PIPELINE.register_module()
 @TRANSFORMS.register_module()
-class CenterCropLongEdge:
+class CenterCropLongEdge(BaseTransform):
     """Center crop the given image by the long edge.
 
     Args:
@@ -405,7 +296,7 @@ class CenterCropLongEdge:
         assert keys, 'Keys should not be empty.'
         self.keys = keys
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function.
 
         Args:

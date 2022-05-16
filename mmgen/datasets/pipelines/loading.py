@@ -1,10 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import numpy as np
-from mmcv.fileio import FileClient
 
+from mmengine import FileClient
 from mmgen.registry import TRANSFORMS
-
 
 @TRANSFORMS.register_module()
 class LoadImageFromFile:
