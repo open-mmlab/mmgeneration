@@ -288,7 +288,7 @@ class CenterCropLongEdge(BaseTransform):
 
 
 @TRANSFORMS.register_module()
-class Crop:
+class Crop(BaseTransform):
     """Crop data to specific size for training.
 
     Args:
@@ -340,7 +340,7 @@ class Crop:
             return data_list_[0], crop_bbox_list[0]
         return data_list_, crop_bbox_list
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function.
 
         Args:
@@ -366,7 +366,7 @@ class Crop:
 
 
 @TRANSFORMS.register_module()
-class FixedCrop:
+class FixedCrop(BaseTransform):
     """Crop paired data (at a specific position) to specific size for training.
 
     Args:
@@ -397,7 +397,7 @@ class FixedCrop:
                      ...]
         return data_, crop_bbox
 
-    def __call__(self, results):
+    def transform(self, results):
         """Call function.
 
         Args:
