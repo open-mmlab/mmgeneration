@@ -2,10 +2,10 @@
 import torch.nn as nn
 from mmcv.cnn import ConvModule
 from mmcv.runner import load_checkpoint
+from mmengine.logging import MMLogger
 
 from mmgen.models.architectures.pix2pix import generation_init_weights
-from mmgen.registry import MODULES
-from mmgen.utils import get_root_logger
+from mmgen.models.builder import MODULES
 from .modules import ResidualBlockWithDropout
 
 
@@ -142,7 +142,7 @@ class ResnetGenerator(nn.Module):
                 model and checkpoint. Default: True.
         """
         if isinstance(pretrained, str):
-            logger = get_root_logger()
+            logger = MMLogger.get_instance(name='mmgen')
             load_checkpoint(self, pretrained, strict=strict, logger=logger)
         elif pretrained is None:
             generation_init_weights(

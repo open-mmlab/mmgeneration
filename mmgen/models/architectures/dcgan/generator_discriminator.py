@@ -5,9 +5,9 @@ import torch.nn as nn
 from mmcv.cnn import ConvModule, normal_init
 from mmcv.runner import load_checkpoint
 from mmcv.utils.parrots_wrapper import _BatchNorm
+from mmengine.logging import MMLogger
 
-from mmgen.registry import MODULES
-from mmgen.utils import get_root_logger
+from mmgen.models.builder import MODULES
 from ..common import get_module_device
 
 
@@ -176,7 +176,7 @@ class DCGANGenerator(nn.Module):
                 None, pretrained weights will not be loaded. Defaults to None.
         """
         if isinstance(pretrained, str):
-            logger = get_root_logger()
+            logger = MMLogger.get_instance(name='mmgen')
             load_checkpoint(self, pretrained, strict=False, logger=logger)
         elif pretrained is None:
             for m in self.modules():
@@ -301,7 +301,7 @@ class DCGANDiscriminator(nn.Module):
                 None, pretrained weights will not be loaded. Defaults to None.
         """
         if isinstance(pretrained, str):
-            logger = get_root_logger()
+            logger = MMLogger.get_instance(name='mmgen')
             load_checkpoint(self, pretrained, strict=False, logger=logger)
         elif pretrained is None:
             for m in self.modules():
