@@ -3,8 +3,7 @@ import torch.nn as nn
 from mmcv.cnn import ConvModule, constant_init, normal_init
 from mmcv.runner import load_checkpoint
 from mmcv.utils.parrots_wrapper import _BatchNorm
-
-from mmgen.utils import get_root_logger
+from mmengine.logging import MMLogger
 
 
 class GeneratorBlock(nn.Module):
@@ -113,7 +112,7 @@ class GeneratorBlock(nn.Module):
 
     def init_weights(self, pretrained=None):
         if isinstance(pretrained, str):
-            logger = get_root_logger()
+            logger = MMLogger.get_instance(name='mmgen')
             load_checkpoint(self, pretrained, strict=False, logger=logger)
         elif pretrained is None:
             for m in self.modules():
@@ -217,7 +216,7 @@ class DiscriminatorBlock(nn.Module):
     # TODO: study the effects of init functions
     def init_weights(self, pretrained=None):
         if isinstance(pretrained, str):
-            logger = get_root_logger()
+            logger = MMLogger.get_instance(name='mmgen')
             load_checkpoint(self, pretrained, strict=False, logger=logger)
         elif pretrained is None:
             for m in self.modules():

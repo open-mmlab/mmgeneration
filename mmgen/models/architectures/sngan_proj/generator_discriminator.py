@@ -9,13 +9,13 @@ from mmcv.cnn import (ConvModule, build_activation_layer, constant_init,
 from mmcv.runner import load_checkpoint
 from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
 from mmcv.utils import is_list_of
+from mmengine.logging import MMLogger
 from torch.nn.init import xavier_uniform_
 from torch.nn.utils import spectral_norm
 
 from mmgen.models.builder import build_module
 from mmgen.registry import MODULES
 from mmgen.utils import check_dist_init
-from mmgen.utils.logger import get_root_logger
 from ..common import get_module_device
 
 
@@ -334,7 +334,7 @@ class SNGANGenerator(nn.Module):
                 Defaults to None.
         """
         if isinstance(pretrained, str):
-            logger = get_root_logger()
+            logger = MMLogger.get_instance(name='mmgen')
             load_checkpoint(self, pretrained, strict=strict, logger=logger)
         elif isinstance(pretrained, dict):
             ckpt_path = pretrained.get('ckpt_path', None)
@@ -699,7 +699,7 @@ class ProjDiscriminator(nn.Module):
                 Defaults to None.
         """
         if isinstance(pretrained, str):
-            logger = get_root_logger()
+            logger = MMLogger.get_instance(name='mmgen')
             load_checkpoint(self, pretrained, strict=strict, logger=logger)
         elif isinstance(pretrained, dict):
             ckpt_path = pretrained.get('ckpt_path', None)

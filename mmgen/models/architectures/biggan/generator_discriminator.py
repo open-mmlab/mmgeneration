@@ -8,11 +8,10 @@ from mmcv.cnn import normal_init, xavier_init
 from mmcv.cnn.bricks import build_activation_layer
 from mmcv.runner import load_checkpoint
 from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
+from mmengine.logging import MMLogger
 from torch.nn.utils import spectral_norm
 
-from mmgen.models.builder import build_module
-from mmgen.registry import MODULES
-from mmgen.utils import get_root_logger
+from mmgen.models.builder import MODULES, build_module
 from ..common import get_module_device
 from .biggan_snmodule import SNEmbedding, SNLinear
 from .modules import SelfAttentionBlock, SNConvModule
@@ -420,7 +419,7 @@ class BigGANGenerator(nn.Module):
                 ortho | N02 | xavier. Defaults to 'ortho'.
         """
         if isinstance(pretrained, str):
-            logger = get_root_logger()
+            logger = MMLogger.get_instance(name='mmgen')
             load_checkpoint(self, pretrained, strict=False, logger=logger)
         elif isinstance(pretrained, dict):
             ckpt_path = pretrained.get('ckpt_path', None)
@@ -678,7 +677,7 @@ class BigGANDiscriminator(nn.Module):
         """
 
         if isinstance(pretrained, str):
-            logger = get_root_logger()
+            logger = MMLogger.get_instance(name='mmgen')
             load_checkpoint(self, pretrained, strict=False, logger=logger)
         elif isinstance(pretrained, dict):
             ckpt_path = pretrained.get('ckpt_path', None)

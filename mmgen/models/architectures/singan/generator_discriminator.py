@@ -7,9 +7,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.runner import load_state_dict
 from mmcv.utils import print_log
+from mmengine.logging import MMLogger
 
-from mmgen.registry import MODULES
-from mmgen.utils import get_root_logger
+from mmgen.models.builder import MODULES
 from .modules import DiscriminatorBlock, GeneratorBlock
 
 
@@ -175,7 +175,7 @@ class SinGANMultiScaleGenerator(nn.Module):
             load_state_dict(
                 self.blocks[curr_scale],
                 self.blocks[curr_scale - 1].state_dict(),
-                logger=get_root_logger())
+                logger=MMLogger.get_instance(name='mmgen'))
             print_log('Successfully load pretrianed model from last scale.')
         else:
             print_log(
