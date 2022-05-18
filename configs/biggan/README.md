@@ -11,6 +11,7 @@
 Despite recent progress in generative image modeling, successfully generating high-resolution, diverse samples from complex datasets such as ImageNet remains an elusive goal. To this end, we train Generative Adversarial Networks at the largest scale yet attempted, and study the instabilities specific to such scale. We find that applying orthogonal regularization to the generator renders it amenable to a simple "truncation trick," allowing fine control over the trade-off between sample fidelity and variety by reducing the variance of the Generator's input. Our modifications lead to models which set the new state of the art in class-conditional image synthesis. When trained on ImageNet at 128x128 resolution, our models (BigGANs) achieve an Inception Score (IS) of 166.5 and Frechet Inception Distance (FID) of 7.4, improving over the previous best IS of 52.52 and FID of 18.6.
 
 <!-- [IMAGE] -->
+
 <div align=center>
 <img src="https://user-images.githubusercontent.com/28132635/143154280-4cb22e16-92c8-4b34-9e2c-6357ed0bdac8.png"/>
 </div>
@@ -20,6 +21,7 @@ Despite recent progress in generative image modeling, successfully generating hi
 The `BigGAN/BigGAN-Deep` is a conditional generation model that can generate both high-resolution and high-quality images by scaling up the batch size and the number of model parameters.
 
 We have finished training `BigGAN` in `Cifar10` (32x32) and are aligning training performance in `ImageNet1k` (128x128). Some sampled results are shown below for your reference.
+
 <div align="center">
   <b> Results from our BigGAN trained in CIFAR10</b>
   <br/>
@@ -33,26 +35,29 @@ We have finished training `BigGAN` in `Cifar10` (32x32) and are aligning trainin
 </div>
 
 Evaluation of our trained BigGAN.
-|     Models     |  Dataset   | FID (Iter) | IS (Iter) |                                                          Config                                                          |                                                                                                                        Download                                                                                                                         |
-|:--------------:|:----------:|:---------------:|:--------------:|:------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-|  BigGAN 32x32  |  CIFAR10   |  9.78(390000)   |  8.70(390000)  |    [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_cifar10_32x32_b25x2_500k.py)    |               [model](https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32x32_b25x2_500k_20210728_110906-08b61a44.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32_b25x2_500k_20210706_171051.log.json)               |
-| BigGAN 128x128 Best FID| ImageNet1k | **8.69**(1232000)  | 101.15(1232000)  | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_best_fid_iter_1232000_20211111_122548-5315b13d.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1500k_20211111_122548-5315b13d.log.json) |
-| BigGAN 128x128 Best IS| ImageNet1k |  13.51(1328000) | **129.07**(1328000)  | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_best_is_iter_1328000_20211111_122911-28c688bc.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1500k_20211111_122548-5315b13d.log.json) |
-Note: `BigGAN-Deep` trained on `ImageNet1k` will come later.
+
+|                            Models                            |  Dataset   |    FID (Iter)     |      IS (Iter)      |                                                               Config                                                                |                                                                                                                              Download                                                                                                                               |
+| :----------------------------------------------------------: | :--------: | :---------------: | :-----------------: | :---------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|                         BigGAN 32x32                         |  CIFAR10   |   9.78(390000)    |    8.70(390000)     |         [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_cifar10_32x32_b25x2_500k.py)          |                     [model](https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32x32_b25x2_500k_20210728_110906-08b61a44.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_cifar10_32_b25x2_500k_20210706_171051.log.json)                     |
+|                   BigGAN 128x128 Best FID                    | ImageNet1k | **8.69**(1232000) |   101.15(1232000)   | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_best_fid_iter_1232000_20211111_122548-5315b13d.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1500k_20211111_122548-5315b13d.log.json) |
+|                    BigGAN 128x128 Best IS                    | ImageNet1k |  13.51(1328000)   | **129.07**(1328000) | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_best_is_iter_1328000_20211111_122911-28c688bc.pth)\|[log](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_1500k_20211111_122548-5315b13d.log.json)  |
+| Note: `BigGAN-Deep` trained on `ImageNet1k` will come later. |            |                   |                     |                                                                                                                                     |                                                                                                                                                                                                                                                                     |
 
 ## Converted weights
+
 Since we haven't finished training our models, we provide you with several pre-trained weights which have been evaluated. Here, we refer to [BigGAN-PyTorch](https://github.com/ajbrock/BigGAN-PyTorch) and [pytorch-pretrained-BigGAN](https://github.com/huggingface/pytorch-pretrained-BigGAN).
 
 Evaluation results and download links are provided below.
 
 |       Models        |  Dataset   |   FID   |   IS    |                                                                  Config                                                                   |                                                               Download                                                                |                                     Original Download link                                      |
-|:-------------------:|:----------:|:-------:|:-------:|:-----------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
+| :-----------------: | :--------: | :-----: | :-----: | :---------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------: |
 |   BigGAN 128x128    | ImageNet1k | 10.1414 | 96.728  |  [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan_128x128_cvt_BigGAN-PyTorch_rgb.py)   |  [model](https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_cvt_BigGAN-PyTorch_rgb_20210730_125223-3e353fef.pth)   |           [link](https://drive.google.com/open?id=1nAle7FCVFZdix2--ks0r5JBkFnKw8ctW)            |
 | BigGAN-Deep 128x128 | ImageNet1k | 5.9471  | 107.161 | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan-deep_128x128_cvt_hugging-face_rgb.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan-deep_imagenet1k_128x128_cvt_hugging-face_rgb_20210728_111659-099e96f9.pth) | [link](https://s3.amazonaws.com/models.huggingface.co/biggan/biggan-deep-128-pytorch_model.bin) |
 | BigGAN-Deep 256x256 | ImageNet1k | 11.3151 | 135.107 | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan-deep_256x256_cvt_hugging-face_rgb.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan-deep_imagenet1k_256x256_cvt_hugging-face_rgb_20210728_111735-28651569.pth) | [link](https://s3.amazonaws.com/models.huggingface.co/biggan/biggan-deep-256-pytorch_model.bin) |
 | BigGAN-Deep 512x512 | ImageNet1k | 16.8728 | 124.368 | [config](https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan-deep_512x512_cvt_hugging-face_rgb.py) | [model](https://download.openmmlab.com/mmgen/biggan/biggan-deep_imagenet1k_512x512_cvt_hugging-face_rgb_20210728_112346-a42585f2.pth) | [link](https://s3.amazonaws.com/models.huggingface.co/biggan/biggan-deep-512-pytorch_model.bin) |
 
 Sampling results are shown below.
+
 <div align="center">
   <b> Results from our BigGAN-Deep with Pre-trained weights in ImageNet 128x128 with truncation factor 0.4</b>
   <br/>
@@ -75,19 +80,24 @@ Sampling with truncation trick above can be performed by command below.
 ```bash
 python demo/conditional_demo.py CONFIG_PATH CKPT_PATH --sample-cfg truncation=0.4 # set truncation value as you want
 ```
+
 For converted weights, we provide model configs under `configs/_base_/models` listed as follows:
+
 ```bash
 # biggan_128x128_cvt_BigGAN-PyTorch_rgb.py
 # biggan-deep_128x128_cvt_hugging-face_rgb.py
 # biggan-deep_256x256_cvt_hugging-face_rgb.py
 # biggan-deep_512x512_cvt_hugging-face_rgb.py
 ```
+
 ## Interpolation
 
 To perform image Interpolation on BigGAN(or other conditional models), run
+
 ```bash
 python apps/conditional_interpolate.py CONFIG_PATH  CKPT_PATH  --samples-path SAMPLES_PATH
 ```
+
 <div align="center">
   <b> Image interpolating Results of our BigGAN-Deep</b>
   <br/>
@@ -95,9 +105,11 @@ python apps/conditional_interpolate.py CONFIG_PATH  CKPT_PATH  --samples-path SA
 </div>
 
 To perform image Interpolation on BigGAN with fixed noise, run
+
 ```bash
 python apps/conditional_interpolate.py CONFIG_PATH  CKPT_PATH  --samples-path SAMPLES_PATH --fix-z
 ```
+
 <div align="center">
   <b> Image interpolating Results of our BigGAN-Deep with fixed noise</b>
   <br/>

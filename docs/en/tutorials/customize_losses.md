@@ -22,7 +22,6 @@ class DiscShiftLoss(nn.Module):
         # codes can be found in ``mmgen/models/losses/disc_auxiliary_loss.py``
 ```
 
-
 The goal of this design for loss modules is to allow for using it automatically in the generative models (`MODELS`), without other complex codes to define the mapping between data and keyword arguments. Thus, different from other frameworks in `OpenMMLab`, our loss modules contain a special keyword, `data_info`, which is a dictionary defining the mapping between the input arguments and data from the generative models. Taking the `DiscShiftLoss` as an example, when writing the config file, users may use this loss as follows:
 
 ```python
@@ -30,6 +29,7 @@ dict(type='DiscShiftLoss',
     loss_weight=0.001 * 0.5,
     data_info=dict(pred='disc_pred_real')
 ```
+
 The information in `data_info` tells the module to use the `disc_pred_real` data as the input tensor for `pred` arguments. Once the `data_info` is not `None`, our loss module will automatically build up the computational graph.
 
 ```python

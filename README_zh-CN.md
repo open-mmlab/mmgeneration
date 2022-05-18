@@ -15,14 +15,12 @@ MMGeneration 是一个基于 PyTorch 和[MMCV](https://github.com/open-mmlab/mmc
     <img src="https://user-images.githubusercontent.com/12726765/114534478-9a65a900-9c81-11eb-8087-de8b6816eed8.png" width="800"/>
 </div>
 
-
 ## 主要特性
 
 - **高质量高性能的训练:** 我们目前支持 Unconditional GANs, Internal GANs, 以及 Image Translation Models 的训练。很快将会支持 conditional models 的训练。
 - **强有力的应用工具箱:** 为用户提供了丰富的工具箱，包含 GANs 中的多种应用。我们的框架集成了 GANs 的插值，投影和编辑。请用你的 GANs 尽情尝试！([应用教程](docs/tutorials/applications.md))
 - **生成模型的高效分布式训练:** 对于生成模型中的高度动态训练，我们采用 `MMDDP` 的新方法来训练动态模型。([DDP教程](docs/tutorials/ddp_train_gans.md))
 - **灵活组合的新型模块化设计:** 针对复杂的损失模块，我们提出了一种新的设计，可以自定义模块之间的链接，实现不同模块之间的灵活组合。 ([新模块化设计教程](docs/tutorials/customize_losses.md))
-
 
 <table>
 <thead>
@@ -57,9 +55,10 @@ MMGeneration 是一个基于 PyTorch 和[MMCV](https://github.com/open-mmlab/mmc
 
 ## 亮点
 
-* **Positional Encoding as Spatial Inductive Bias in GANs (CVPR2021)** 已在 `MMGeneration` 中发布.  [\[配置文件\]](configs/positional_encoding_in_gans/README.md), [\[项目主页\]](https://nbei.github.io/gan-pos-encoding.html)
-* 我们已经支持训练目前主流的 Conditional GANs 模型，更多的方法和预训练权重马上就会发布，敬请期待。
-* 混合精度训练已经在 `StyleGAN2` 中进行了初步支持，请到[这里](configs/styleganv2/README.md)查看各种实现方式的详细比较。
+- **Positional Encoding as Spatial Inductive Bias in GANs (CVPR2021)** 已在 `MMGeneration` 中发布.  [\[配置文件\]](configs/positional_encoding_in_gans/README.md), [\[项目主页\]](https://nbei.github.io/gan-pos-encoding.html)
+- 我们已经支持训练目前主流的 Conditional GANs 模型，更多的方法和预训练权重马上就会发布，敬请期待。
+- 混合精度训练已经在 `StyleGAN2` 中进行了初步支持，请到[这里](configs/styleganv2/README.md)查看各种实现方式的详细比较。
+
 ## 更新日志
 
 v0.7.1 在 30/04/2022 发布。 关于细节和发布历史，请参考 [changelog.md](docs/zh_cn/changelog.md)。
@@ -67,7 +66,6 @@ v0.7.1 在 30/04/2022 发布。 关于细节和发布历史，请参考 [changel
 ## 模型库
 
 这些算法在我们的框架中得到了认真研究和支持。
-
 
 <details open>
 <summary>Unconditional GANs (点击折叠)</summary>
@@ -91,7 +89,6 @@ v0.7.1 在 30/04/2022 发布。 关于细节和发布历史，请参考 [changel
 - ✅ [Projection GAN](configs/sngan_proj/README.md) (ICLR'2018)
 - ✅ [SAGAN](configs/sagan/README.md) (ICML'2019)
 - ✅ [BIGGAN/BIGGAN-DEEP](configs/biggan/README.md) (ICLR'2019)
-
 
 </details>
 
@@ -148,6 +145,7 @@ pip3 install -e .[all]
 更详细的安装指南请参考 [get_started.md](docs/zh/get_started.md) .
 
 ## 相关应用
+
 - ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
 ## 开源许可证

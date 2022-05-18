@@ -5,12 +5,13 @@ In MMGeneration, we provide a [script](https://github.com/open-mmlab/mmgeneratio
 <!-- TOC -->
 
 - [Load images](#load-images)
-    - [Load from directory](#load-from-directory)
-    - [Load with dataset config](#load-with-dataset-config)
+  - [Load from directory](#load-from-directory)
+  - [Load with dataset config](#load-with-dataset-config)
 - [Define the version of Inception Net](#define-the-version-of-inception-net)
 - [Control number of images to calculate inception state](#control-number-of-images-to-calculate-inception-state)
 - [Control the shuffle operation in data loading](#control-the-shuffle-operation-in-data-loading)
 - [Note on inception state extraction between various code bases](#note-on-inception-state-extraction-between-various-code-bases)
+
 <!-- TOC -->
 
 ## Load Images
@@ -20,10 +21,13 @@ We provide two ways to load real data, namely, pass the path of directory that c
 ### Load from Directory
 
 If you want to pass the path of real images, you can use `--imgsdir` arguments as the follow command.
+
 ```shell
 python tools/utils/inception_stat.py --imgsdir ${IMGS_PATH} --pklname ${PKLNAME} --size ${SIZE} --flip ${FLIP}
 ```
+
 Then a pre-defined pipeline will be used to load images in `${IMGS_PATH}`.
+
 ```python
 pipeline = [
     dict(type='LoadImageFromFile', key='real_img'),
@@ -40,16 +44,21 @@ pipeline = [
     dict(type='ImageToTensor', keys=['real_img'])
 ]
 ```
+
 If `${FLIP}` is set as `True`, the following config of horizontal flip operation would be added to the end of the pipeline.
+
 ```python
 dict(type='Flip', keys=['real_img'], direction='horizontal')
 ```
 
 If you want to use a specific pipeline otherwise the pre-defined ones, you can use `--pipeline-cfg` to pass a config file contains the data pipeline you want to use.
+
 ```shell
 python tools/utils/inception_stat.py --imgsdir ${IMGS_PATH} --pklname ${PKLNAME} --pipeline-cfg ${PIPELINE}
 ```
+
 To be noted that, the name of the pipeline dict in `${PIPELINE}` should be fixed as `inception_pipeline`. For example,
+
 ```python
 # an example of ${PIPELINE}
 inception_pipeline = [
@@ -61,11 +70,13 @@ inception_pipeline = [
 ### Load with Dataset Config
 
 If you want to use a dataset config, you can use `--data-config` arguments as the following command.
+
 ```shell
 python tools/utils/inception_stat.py --data-config ${CONFIG} --pklname ${PKLNAME} --subset ${SUBSET}
 ```
 
 Then a dataset will be instantiated following the `${SUBSET}` in the configs, and defaults to `test`. Take the following dataset config as example,
+
 ```python
 # from `imagenet_128x128_inception_stat.py`
 data = dict(
@@ -86,6 +97,7 @@ data = dict(
         ann_file='data/imagenet/meta/val.txt',
         pipeline=test_pipeline))
 ```
+
 If not defined, the config in `data['test']` would be used in data loading process. If you want to extract the inception state of the training set, you can set `--subset train` in the command. Then the dataset would be built under the guidance of config in `data['train']` and images under `data/imagenet/train` and process pipeline of `train_pipeline` would be used.
 
 ## Define the Version of Inception Net
@@ -120,6 +132,7 @@ python tools/utils/inception_stat.py --data-config ${CONFIG} --pklname ${PKLNAME
 For FID evaluation, differences between [PyTorch Studio GAN](https://github.com/POSTECH-CVLab/PyTorch-StudioGAN) and ours are mainly on the selection of real samples. In MMGen, we follow the pipeline of [BigGAN](https://github.com/ajbrock/BigGAN-PyTorch), where the whole training set is adopted to extract inception statistics. Besides, we also use [Tero's Inception](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt) for feature extraction.
 
 You can download the preprocessed inception state by the following url:
+
 - [CIFAR10](https://download.openmmlab.com/mmgen/evaluation/fid_inception_pkl/cifar10.pkl)
 - [ImageNet1k](https://download.openmmlab.com/mmgen/evaluation/fid_inception_pkl/imagenet.pkl)
 - [ImageNet1k-64x64](https://download.openmmlab.com/mmgen/evaluation/fid_inception_pkl/imagenet_64x64.pkl)

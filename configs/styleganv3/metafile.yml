@@ -15,7 +15,7 @@ Models:
   Results:
   - Dataset: FFHQ
     Metrics:
-      FID50k: 3.37<sup></sup>
+      FID50k: 3.37<sup>\</sup>
       Iter: 490000.0
       Log: '[log]'
     Task: Unconditional GANs

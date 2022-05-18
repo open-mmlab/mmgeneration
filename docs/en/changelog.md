@@ -13,7 +13,6 @@
 - Efficient Distributed Training for Generative Models: For the highly dynamic training in generative models, we adopt a new way to train dynamic models with `MMDDP`.
 - New Modular Design for Flexible Combination: A new design for complex loss modules is proposed for customizing the links between modules, which can achieve flexible combination among different modules.
 
-
 ## v0.2.0 (30/05/2021)
 
 #### Highlights
@@ -34,7 +33,6 @@
 - Fix error when data_root option in val_cfg or test_cfg are set as None (#28)
 - Change latex in quick_run.md to svg url and fix number of checkpoints in modelzoo_statistics.md (#34)
 
-
 ## v0.3.0 (02/08/2021)
 
 #### Highlights
@@ -51,7 +49,6 @@
 - Fix failing to build docs #64
 - Revise the logic of `num_classes` in basic conditional gan #69
 - Support dynamic eval internal in eval hook #73
-
 
 ## v0.4.0 (03/11/2021)
 
@@ -70,7 +67,6 @@
 - Add CI for python3.9 #110
 - Add support for PyTorch1.9 #115
 - Add pre-commit hook for spell checking #135
-
 
 ## v0.5.0 (12/01/2022)
 
@@ -93,7 +89,6 @@
 - Fix bug in SinGAN dataset (#192)
 - Fix SAGAN, SNGAN and BigGAN's default `sn_style` (#199, #213)
 
-
 ## v0.6.0 (07/03/2022)
 
 #### Highlights
@@ -106,13 +101,11 @@
 - Support training on CPU (#238)
 - Speed up training (#231)
 
-
 #### Fix bugs and Improvements
 
 - Fix bug in non-distributed training/testing (#239)
 - Fix typos and invalid links (#221, #226, #228, #244, #249)
 - Add part of Chinese documentation (#250, #257)
-
 
 ## v0.7.0 (02/04/2022)
 
@@ -128,14 +121,15 @@
 - Add multi machine distribute train (#267)
 
 #### Fix bugs and Improvements
+
 - Add brief installation steps in README (#270)
 - Support random seed for distributed sampler (#271)
 - Use hyphen for command line args in apps (#273)
 
-
 ## v0.7.1 (30/04/2022)
 
 #### Fix bugs and Improvements
+
 - Support train_dataloader, val_dataloader and test_dataloader settings (#281)
 - Fix ada typo (#283)
 - Add chinese application tutorial (#284)

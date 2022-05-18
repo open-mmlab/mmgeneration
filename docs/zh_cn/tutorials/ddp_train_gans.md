@@ -36,6 +36,7 @@ outputs = self.model.train_step(data_batch, self.optimizer, **kwargs)
 ```
 
 通过如下对 train_step 的修改，reducer 可以帮助我们在当前反传中重建桶：
+
 ```python
 if ddp_reducer is not None:
     ddp_reducer.prepare_for_backward(_find_tensors(loss_disc))
@@ -54,6 +55,7 @@ if ddp_reducer is not None:
 
 loss_disc.backward()
 ```
+
 也就是说，用户应该在损失计算和损失反传之间准备 reducer。
 
 在我们的 `MMGeneration` 中，这个功能被作为训练 DDP 模型的默认方式。在配置文件中，用户只需要添加以下配置来使用动态 ddp runner。
@@ -67,8 +69,6 @@ runner = dict(
 ```
 
 *这个实现将使用 PyTorch 中的私有接口，我们将继续维护这一实现。*
-
-
 
 ## DDP Wrapper
 

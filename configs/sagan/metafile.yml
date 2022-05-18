@@ -20,8 +20,8 @@ Models:
       Inplace ReLU: w/o
       Iter: 400000.0
       Log: '[Log]'
-      Total Batchsize (BZ_PER_GPU \* NGPU): 64x1
-      Total Iters*: 500000.0
+      Total Batchsize (BZ_PER_GPU * NGPU): 64x1
+      Total Iters\*: 500000.0
       dist_step: 5.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_cifar10_32_lr2e-4_ndisc5_b64x1_woReUinplace_is-iter400000_20210730_125743-4008a9ca.pth
@@ -38,8 +38,8 @@ Models:
       Inplace ReLU: w/o
       Iter: 480000.0
       Log: '[Log]'
-      Total Batchsize (BZ_PER_GPU \* NGPU): 64x1
-      Total Iters*: 500000.0
+      Total Batchsize (BZ_PER_GPU * NGPU): 64x1
+      Total Iters\*: 500000.0
       dist_step: 5.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_cifar10_32_lr2e-4_ndisc5_b64x1_woReUinplace_fid-iter480000_20210730_125449-d50568a4.pth
@@ -56,8 +56,8 @@ Models:
       Inplace ReLU: w
       Iter: 380000.0
       Log: '[Log]'
-      Total Batchsize (BZ_PER_GPU \* NGPU): 64x1
-      Total Iters*: 500000.0
+      Total Batchsize (BZ_PER_GPU * NGPU): 64x1
+      Total Iters\*: 500000.0
       dist_step: 5.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_cifar10_32_lr2e-4_ndisc5_b64x1_wReLUinplace_is-iter380000_20210730_124937-c77b4d25.pth
@@ -74,8 +74,8 @@ Models:
       Inplace ReLU: w
       Iter: 460000.0
       Log: '[Log]'
-      Total Batchsize (BZ_PER_GPU \* NGPU): 64x1
-      Total Iters*: 500000.0
+      Total Batchsize (BZ_PER_GPU * NGPU): 64x1
+      Total Iters\*: 500000.0
       dist_step: 5.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_cifar10_32_lr2e-4_ndisc5_b64x1_wReLUinplace_fid-iter460000_20210730_125155-cbefb354.pth
@@ -92,8 +92,8 @@ Models:
       Inplace ReLU: w/o
       Iter: 980000.0
       Log: '[Log]'
-      Total Batchsize (BZ_PER_GPU \* NGPU): 64x4
-      Total Iters*: 1000000.0
+      Total Batchsize (BZ_PER_GPU * NGPU): 64x4
+      Total Iters\*: 1000000.0
       dist_step: 1.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_imagenet1k_128_Glr1e-4_Dlr4e-4_ndisc1_b32x4_woReLUinplace_is-iter980000_20210730_163140-cfbebfc6.pth
@@ -110,8 +110,8 @@ Models:
       Inplace ReLU: w/o
       Iter: 950000.0
       Log: '[Log]'
-      Total Batchsize (BZ_PER_GPU \* NGPU): 64x4
-      Total Iters*: 1000000.0
+      Total Batchsize (BZ_PER_GPU * NGPU): 64x4
+      Total Iters\*: 1000000.0
       dist_step: 1.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_imagenet1k_128_Glr1e-4_Dlr4e-4_ndisc1_b32x4_woReLUinplace_fid-iter950000_20210730_163431-d7916963.pth
@@ -128,8 +128,8 @@ Models:
       Inplace ReLU: w/o
       Iter: 826000.0
       Log: '[Log]'
-      Total Batchsize (BZ_PER_GPU \* NGPU): 32x8
-      Total Iters*: 1000000.0
+      Total Batchsize (BZ_PER_GPU * NGPU): 32x8
+      Total Iters\*: 1000000.0
       dist_step: 1.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_128_woReLUinplace_noaug_bigGAN_imagenet1k_b32x8_Glr1e-4_Dlr-4e-4_ndisc1_20210818_210232-3f5686af.pth
@@ -146,8 +146,8 @@ Models:
       Inplace ReLU: w/o
       Iter: 826000.0
       Log: '[Log]'
-      Total Batchsize (BZ_PER_GPU \* NGPU): 32x8
-      Total Iters*: 1000000.0
+      Total Batchsize (BZ_PER_GPU * NGPU): 32x8
+      Total Iters\*: 1000000.0
       dist_step: 1.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_128_woReLUinplace_noaug_bigGAN_imagenet1k_b32x8_Glr1e-4_Dlr-4e-4_ndisc1_20210818_210232-3f5686af.pth
