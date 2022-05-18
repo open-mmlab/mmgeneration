@@ -47,11 +47,9 @@ def nan_to_num(x, nan=0.0, posinf=None, neginf=None, *, out=None):
         Tensor: Output tensor.
     """
     try:
-        print(torch.__version__, 'do not get error')
         return torch.nan_to_num(
             x, nan=nan, posinf=posinf, neginf=neginf, out=out)
     except AttributeError:
-        print(torch.__version__, 'get error')
         if not isinstance(x, torch.Tensor):
             raise TypeError(
                 f'argument input (position 1) must be Tensor, not {type(x)}')
