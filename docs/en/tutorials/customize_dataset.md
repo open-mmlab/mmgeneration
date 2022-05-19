@@ -1,8 +1,8 @@
 # Tutorial 2: Customize Datasets
 
 In this section, we will detail how to prepare data and adopt proper dataset in our repo for different methods.
-## Datasets for unconditional models
 
+## Datasets for unconditional models
 
 **Data preparation for unconditional model** is simple. What you need to do is downloading the images and put them into a directory. Next, you should set a symlink in the `data` directory. For standard unconditional gans with static architectures, like DCGAN and StyleGAN2, `UnconditionalImageDataset` is designed to train such unconditional models. Here is an example config for FFHQ dataset:
 
@@ -39,6 +39,7 @@ data = dict(
             pipeline=train_pipeline)))
 
 ```
+
 Here, we adopt `RepeatDataset` to avoid frequent dataloader reloading, which will accelerate the training procedure. As shown in the example, `pipeline` provides important data pipeline to process images, including loading from file system, resizing, cropping and transferring to `torch.Tensor`. All of supported data pipelines can be found in `mmgen/datasets/pipelines`.
 
 For unconditional GANs with dynamic architectures like PGGAN and StyleGANv1, `GrowScaleImgDataset` is recommended to use for training. Since such dynamic architectures need real images in different scales, directly adopting `UnconditionalImageDataset` will bring heavy I/O cost for loading multiple high-resolution images. Here is an example we use for training PGGAN in CelebA-HQ dataset:
@@ -90,6 +91,7 @@ data = dict(
         },
         len_per_stage=300000))
 ```
+
 In this dataset, you should provide a dictionary of image paths to the `imgs_roots`. Thus, you should resize the images in the dataset in advance. For the resizing methods in the data pre-processing, we adopt bilinear interpolation methods in all of the experiments studied in MMGeneration.
 
 Note that this dataset should be used with `PGGANFetchDataHook`. In this config file, this hook should be added in the customized hooks, as shown below.
@@ -108,9 +110,11 @@ custom_hooks = [
         priority='VERY_HIGH')
 ]
 ```
+
 This fetching data hook helps the dataloader update the status of dataset to change the data source and batch size during training.
 
 ## Datasets for image translation models
+
 **Data preparation for translation model** needs a little attention. You should organize the files in the way we told you in `quick_run.md`. Fortunately, for most official datasets like facades and summer2winter_yosemite, they already have the right format. Also, you should set a symlink in the `data` directory. For paired-data trained translation model like Pix2Pix , `PairedImageDataset` is designed to train such translation models. Here is an example config for facades dataset:
 
 ```python
@@ -275,4 +279,5 @@ data = dict(
         test_mode=True))
 
 ```
+
 Here, `UnpairedImageDataset` will load both images (domain A and B) from different paths and transform them at the same time.

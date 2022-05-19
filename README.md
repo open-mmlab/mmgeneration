@@ -31,14 +31,12 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
     <img src="https://user-images.githubusercontent.com/12726765/114534478-9a65a900-9c81-11eb-8087-de8b6816eed8.png" width="800"/>
 </div>
 
-
 ## Major Features
 
 - **High-quality Training Performance:** We currently support training on Unconditional GANs, Internal GANs, and Image Translation Models. Support for conditional models will come soon.
 - **Powerful Application Toolkit:** A plentiful toolkit containing multiple applications in GANs is provided to users. GAN interpolation, GAN projection, and GAN manipulations are integrated into our framework. It's time to play with your GANs! ([Tutorial for applications](docs/en/tutorials/applications.md))
 - **Efficient Distributed Training for Generative Models:** For the highly dynamic training in generative models, we adopt a new way to train dynamic models with `MMDDP`. ([Tutorial for DDP](docs/en/tutorials/ddp_train_gans.md))
 - **New Modular Design for Flexible Combination:** A new design for complex loss modules is proposed for customizing the links between modules, which can achieve flexible combination among different modules. ([Tutorial for new modular design](docs/en/tutorials/customize_losses.md))
-
 
 <table>
 <thead>
@@ -73,9 +71,10 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 
 ## Highlight
 
-* **Positional Encoding as Spatial Inductive Bias in GANs (CVPR2021)** has been released in `MMGeneration`.  [\[Config\]](configs/positional_encoding_in_gans/README.md), [\[Project Page\]](https://nbei.github.io/gan-pos-encoding.html)
-* Conditional GANs have been supported in our toolkit. More methods and pre-trained weights will come soon.
-* Mixed-precision training (FP16) for StyleGAN2 has been supported. Please check [the comparison](configs/styleganv2/README.md) between different implementations.
+- **Positional Encoding as Spatial Inductive Bias in GANs (CVPR2021)** has been released in `MMGeneration`.  [\[Config\]](configs/positional_encoding_in_gans/README.md), [\[Project Page\]](https://nbei.github.io/gan-pos-encoding.html)
+- Conditional GANs have been supported in our toolkit. More methods and pre-trained weights will come soon.
+- Mixed-precision training (FP16) for StyleGAN2 has been supported. Please check [the comparison](configs/styleganv2/README.md) between different implementations.
+
 ## Changelog
 
 v0.7.1 was released on 30/04/2022. Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
@@ -83,7 +82,6 @@ v0.7.1 was released on 30/04/2022. Please refer to [changelog.md](docs/en/change
 ## ModelZoo
 
 These methods have been carefully studied and supported in our frameworks:
-
 
 <details open>
 <summary>Unconditional GANs (click to collapse)</summary>
@@ -133,6 +131,7 @@ These methods have been carefully studied and supported in our frameworks:
 </details>
 
 ## Related-Applications
+
 - ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
 ## License

@@ -3,8 +3,8 @@
 We basically categorize our supported models into 3 main streams according to tasks:
 
 - Unconditional GANs:
-    - Static architectures: DCGAN, StyleGANv2
-    - Dynamic architectures: PGGAN, StyleGANv1
+  - Static architectures: DCGAN, StyleGANv2
+  - Dynamic architectures: PGGAN, StyleGANv1
 - Image Translation Models: Pix2Pix, CycleGAN
 - Internal Learning (Single Image Model): SinGAN
 
@@ -17,7 +17,6 @@ All of the other modules in `MMGeneration` will be registered as `MODULES`, incl
 ## Develop new components
 
 In all of the related repos in OpenMMLab, users may follow the similar steps to build up a new components:
-
 
 - Implement a class
 - Decorate the class with one of the register (`MODELS` or `MODULES` in our repo)
