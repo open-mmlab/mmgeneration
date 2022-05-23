@@ -62,7 +62,7 @@ class TestStaticUnconditionalGAN(object):
         for i in range(2):
             data_input.append(
                 dict(
-                    inputs=torch.randn(3, 16, 16),
+                    inputs=dict(img=torch.randn(3, 16, 16)),
                     data_sample=GenDataSample()))
         optimizer_g = torch.optim.SGD(dcgan.generator.parameters(), lr=0.01)
         optimizer_d = torch.optim.SGD(
@@ -106,7 +106,7 @@ class TestStaticUnconditionalGAN(object):
         for i in range(2):
             data_input.append(
                 dict(
-                    inputs=torch.randn(3, 16, 16),
+                    inputs=dict(img=torch.randn(3, 16, 16)),
                     data_sample=GenDataSample()))
         optimizer_g = torch.optim.SGD(dcgan.generator.parameters(), lr=0.01)
         optimizer_d = torch.optim.SGD(
@@ -238,7 +238,9 @@ class TestStaticUnconditionalGAN(object):
         data_input = []
         for i in range(2):
             data_input.append(
-                dict(inputs=torch.randn(3, 8, 8), data_sample=GenDataSample()))
+                dict(
+                    inputs=dict(img=torch.randn(3, 8, 8)),
+                    data_sample=GenDataSample()))
         optimizer_g = torch.optim.SGD(s3gan.generator.parameters(), lr=0.01)
         optimizer_d = torch.optim.SGD(
             s3gan.discriminator.parameters(), lr=0.01)
