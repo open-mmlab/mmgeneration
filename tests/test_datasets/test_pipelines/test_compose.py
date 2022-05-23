@@ -17,12 +17,12 @@ def test_compose():
     ]
     compose = Compose(test_pipeline)
     compose_results = compose(results)
-    assert compose_results['inputs'].shape == (3, 64, 64)
+    assert compose_results['inputs']['img'].shape == (3, 64, 64)
     assert compose_results['data_sample'].img_name == 'test_image.png'
 
     resize = Resize(scale=(64, 64))
     pack = PackGenInputs(meta_keys=['img_name'])
     compose = Compose([resize, pack])
     compose_results = compose(results)
-    assert compose_results['inputs'].shape == (3, 64, 64)
+    assert compose_results['inputs']['img'].shape == (3, 64, 64)
     assert compose_results['data_sample'].img_name == 'test_image.png'

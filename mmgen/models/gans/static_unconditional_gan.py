@@ -344,7 +344,7 @@ class StaticUnconditionalGAN(BaseGAN):
                    `gt_instance`. Return None If the input data does not
                    contain `data_sample`.
         """
-        images = [data_['inputs'] for data_ in data]
+        images = [data_['inputs']['img'] for data_ in data]
         data_samples = [data_['data_sample'] for data_ in data]
 
         device = get_module_device(self)
