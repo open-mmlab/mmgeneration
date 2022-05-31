@@ -60,7 +60,7 @@ pip install -v -e .
 Case b: If you use mmgeneration as a dependency or third-party package, install it with pip:
 
 ```shell
-pip install mmgeneration
+pip install mmgen
 ```
 
 ## Verify the Installation
