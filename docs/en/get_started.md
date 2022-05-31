@@ -1,149 +1,69 @@
-## Prerequisites
+# Prerequisites
 
-- Linux
-- Python 3.6+
-- PyTorch 1.5+
-- CUDA 9.2+ (If you build PyTorch from source, CUDA 9.0 is also compatible)
-- GCC 5.4+
-- [MMCV (MMCV-FULL)](https://mmcv.readthedocs.io/en/latest/#installation)
+In this section we demonstrate how to prepare an environment with PyTorch.
 
-The compatible MMGeneration and MMCV versions are as below. Please install the correct version of MMCV to avoid installation issues.
+MMGeneration works on Linux, Windows and macOS. It requires Python 3.6+, CUDA 9.2+ and PyTorch 1.5+.
 
-| MMGeneration version |   MMCV version   |
-| :------------------: | :--------------: |
-|        master        | mmcv-full>=1.3.0 |
+```{note}
+If you are experienced with PyTorch and have already installed it, just skip this part and jump to the [next section](#installation). Otherwise, you can follow these steps for the preparation.
+```
 
-Note: You need to run `pip uninstall mmcv` first if you have mmcv installed.
-If mmcv and mmcv-full are both installed, there will be `ModuleNotFoundError`.
+**Step 0.** Download and install Miniconda from the [official website](https://docs.conda.io/en/latest/miniconda.html).
 
-## Installation
+**Step 1.** Create a conda environment and activate it.
 
-1. Create a conda virtual environment and activate it. (Here, we assume the new environment is called `open-mmlab`)
-
-   ```shell
-   conda create -n open-mmlab python=3.7 -y
-   conda activate open-mmlab
-   ```
-
-2. Install PyTorch and torchvision following the [official instructions](https://pytorch.org/), e.g.,
-
-   ```shell
-   conda install pytorch torchvision -c pytorch
-   ```
-
-   Note: Make sure that your compilation CUDA version and runtime CUDA version match.
-   You can check the supported CUDA version for precompiled packages on the [PyTorch website](https://pytorch.org/).
-
-   `E.g.1` If you have CUDA 10.1 installed under `/usr/local/cuda` and would like to install
-   PyTorch 1.5, you need to install the prebuilt PyTorch with CUDA 10.1.
-
-   ```shell
-   conda install pytorch cudatoolkit=10.1 torchvision -c pytorch
-   ```
-
-   `E.g. 2` If you have CUDA 9.2 installed under `/usr/local/cuda` and would like to install
-   PyTorch 1.5.1., you need to install the prebuilt PyTorch with CUDA 9.2.
-
-   ```shell
-   conda install pytorch=1.5.1 cudatoolkit=9.2 torchvision=0.6.1 -c pytorch
-   ```
-
-   If you build PyTorch from source instead of installing the prebuilt package,
-   you can use more CUDA versions such as 9.0.
-
-3. Install mmcv-full, we recommend you to install the pre-build package as below.
-
-   ```shell
-   pip install mmcv-full={mmcv_version} -f https://download.openmmlab.com/mmcv/dist/{cu_version}/{torch_version}/index.html
-   ```
-
-   Please replace `{cu_version}` and `{torch_version}` in the url to your desired one. For example, to install the latest `mmcv-full` with `CUDA 11` and `PyTorch 1.7.0`, use the following command:
-
-   ```shell
-   pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu110/torch1.7.0/index.html
-   ```
-
-   See [here](https://github.com/open-mmlab/mmcv#install-with-pip) for different versions of MMCV compatible to different PyTorch and CUDA versions.
-   Optionally you can choose to compile mmcv from source by the following command
-
-   ```shell
-   git clone https://github.com/open-mmlab/mmcv.git
-   cd mmcv
-   MMCV_WITH_OPS=1 pip install -e .  # package mmcv-full will be installed after this step
-   cd ..
-   ```
-
-   Or directly run
-
-   ```shell
-   pip install mmcv-full
-   ```
-
-4. Clone the MMGeneration repository.
-
-   ```shell
-   git clone https://github.com/open-mmlab/mmgeneration.git
-   cd mmgeneration
-   ```
-
-5. Install build requirements and then install MMGeneration.
-
-   ```shell
-   pip install -r requirements.txt
-   pip install -v -e .  # or "python setup.py develop"
-   ```
-
-Note:
-
-a. Following the above instructions, MMGeneration is installed on `dev` mode,
-any local modifications made to the code will take effect without the need to reinstall it.
-
-b. If you would like to use `opencv-python-headless` instead of `opencv -python`,
-you can install it before installing MMCV.
-
-### Install with CPU only
-
-The code can be built for CPU only environment (where CUDA isn't available).
-
-### A from-scratch setup script
-
-Assuming that you already have CUDA 10.1 installed, here is a full script for setting up MMGeneration with conda.
+On GPU platforms:
 
 ```shell
-conda create -n open-mmlab python=3.7 -y
-conda activate open-mmlab
+conda create -name openmmlab python=3.8 -y
+conda activate openmmlab
+```
 
-conda install pytorch==1.7.0 torchvision==0.8.0 cudatoolkit=10.1 -c pytorch -y
+**Step 2.** Install Pytorch following [official instructions](https://pytorch.org/get-started/locally/), e.g.
 
-# install the latest mmcv
-# pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/{cu_version}/{torch_version}/index.html
-pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu101/torch1.7.0/index.html
+On GPU platforms:
 
-# install mmgeneration
+```shell
+conda install pytorch torchvision -c pytorch
+```
+
+On CPU platforms:
+
+```shell
+conda install pytorch torchvision cpuonly -c pytorch
+```
+
+# Installation
+
+We recommend that users follow our best practices to install MMGeneration. However, the whole process is highly customizable. See [Customize Installation](#customize-installation) section for more information.
+
+## Best Practices
+
+**Step 0.** Install [MMCV](https://github.com/open-mmlab/mmcv) using [MIM](https://github.com/open-mmlab/mim).
+
+```shell
+pip install -U openmim
+mim install mmcv-full
+```
+
+**Step 1.** Install MMGeneration.
+
+```shell
 git clone https://github.com/open-mmlab/mmgeneration.git
 cd mmgeneration
-pip install -r requirements.txt
 pip install -v -e .
+# "-v" means verbose, or more output
+# "-e" means installing a project in editable mode,
+# thus any local modifications made to the code will take effect without reinstallation.
 ```
 
-To be noted that, mmcv-full is only compiled on PyTorch 1.x.0 because the compatibility usually holds between 1.x.0 and 1.x.1. If your PyTorch version is 1.x.1, you can install mmcv-full compiled with PyTorch 1.x.0 and it usually works well.
+Case b: If you use mmgeneration as a dependency or third-party package, install it with pip:
 
 ```shell
-# We can ignore the micro version of PyTorch
-pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.10/index.html
+pip install mmgen
 ```
 
-### Developing with multiple MMGeneration versions
-
-The train and test scripts already modify the `PYTHONPATH` to ensure the script uses the `MMGeneration` in the current directory.
-
-To use the default MMGeneration installed in the environment rather than that you are working with, you can remove the following line in those scripts
-
-```shell
-PYTHONPATH="$(dirname $0)/..":$PYTHONPATH
-```
-
-## Verification
+## Verify the Installation
 
 To verify whether MMGeneration and the required environment are installed correctly, we can run sample Python code to initialize an unconditional model and use it to generate random samples:
 
@@ -161,3 +81,61 @@ fake_imgs = sample_unconditional_model(model, 4)
 ```
 
 The above code is supposed to run successfully upon you finish the installation.
+
+## Customize Installation
+
+### CUDA Version
+
+When installing PyTorch, you need to specify the version of CUDA. If you are not clear on which to choose, follow our recommendations:
+
+- For Ampere-based NVIDIA GPUs, such as GeForce 30 series and NVIDIA A100, CUDA 11 is a must.
+- For older NVIDIA GPUs, CUDA 11 is backward compatible, but CUDA 10.2 offers better compatibility and is more lightweight.
+
+Please make sure the GPU driver satisfies the minimum version requirements. See [this table](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cuda-major-component-versions__table-cuda-toolkit-driver-versions) for more information.
+
+```{note}
+Installing CUDA runtime libraries is enough if you follow our best practices, because no CUDA code will be compiled locally. However if you hope to compile MMCV from source or develop other CUDA operators, you need to install the complete CUDA toolkit from NVIDIA's [website](https://developer.nvidia.com/cuda-downloads), and its version should match the CUDA version of PyTorch. i.e., the specified version of cudatoolkit in `conda install` command.
+```
+
+### Install MMCV without MIM
+
+MMCV contains C++ and CUDA extensions, thus depending on PyTorch in a complex way. MIM solves such dependencies automatically and makes the installation easier. However, it is not a must.
+
+To install MMCV with pip instead of MIM, please follow [MMCV installation guides](https://mmcv.readthedocs.io/en/latest/get_started/installation.html). This requires manually specifying a find-url based on PyTorch version and its CUDA version.
+
+For example, the following command install mmcv-full built for PyTorch 1.10.x and CUDA 11.3.
+
+```shell
+pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.10/index.html
+```
+
+### Using MMGeneration with Docker
+
+We provide a [Dockerfile](https://github.com/open-mmlab/mmgeneration/blob/master/docker/Dockerfile) to build an image. Ensure that your [docker version](https://docs.docker.com/engine/install/) >=19.03.
+
+```shell
+# build an image with PyTorch 1.8, CUDA 11.1
+# If you prefer other versions, just modified the Dockerfile
+docker build -t mmgeneration docker/
+```
+
+Run it with
+
+```shell
+docker run --gpus all --shm-size=8g -it -v {DATA_DIR}:/mmgeneration/data mmgeneration
+```
+
+## Trouble shooting
+
+If you have some issues during the installation, please first view the [FAQ](faq.md) page.
+You may [open an issue](https://github.com/open-mmlab/mmgeneration/issues/new/choose) on GitHub if no solution is found.
+
+# Developing with multiple MMGeneration versions
+
+The train and test scripts already modify the `PYTHONPATH` to ensure the script uses the `MMGeneration` in the current directory.
+
+To use the default MMGeneration installed in the environment rather than that you are working with, you can remove the following line in those scripts
+
+```shell
+PYTHONPATH="$(dirname $0)/..":$PYTHONPATH
+```
