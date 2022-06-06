@@ -1,20 +1,18 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 import os.path as osp
 from pathlib import Path
 
 from mmcv import scandir
-from torch.utils.data import Dataset
+from mmengine.dataset import BaseDataset
 
 from mmgen.registry import DATASETS
-from .pipelines import Compose
 
 IMG_EXTENSIONS = ('.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm',
                   '.PPM', '.bmp', '.BMP', '.tif', '.TIF', '.tiff', '.TIFF')
 
 
 @DATASETS.register_module()
-class PairedImageDataset(Dataset):
+class PairedImageDataset(BaseDataset):
     """General paired image folder dataset for image generation.
 
     It assumes that the training directory is '/path/to/data/train'.
@@ -31,22 +29,21 @@ class PairedImageDataset(Dataset):
             Default: 'test'.
     """
 
-    def __init__(self, dataroot, pipeline, test_mode=False, testdir='test'):
-        super().__init__()
+    def __init__(self, data_root, pipeline, test_mode=False, testdir='test'):
         phase = testdir if test_mode else 'train'
-        self.dataroot = osp.join(str(dataroot), phase)
-        self.data_infos = self.load_annotations()
-        self.test_mode = test_mode
-        self.pipeline = Compose(pipeline)
+        self.data_root = osp.join(str(data_root), phase)
+        super().__init__(
+            data_root=self.data_root, pipeline=pipeline, test_mode=test_mode)
+        # self.data_infos = self.load_annotations()
 
-    def load_annotations(self):
+    def load_data_list(self):
         """Load paired image paths.
 
         Returns:
             list[dict]: List that contains paired image paths.
         """
         data_infos = []
-        pair_paths = sorted(self.scan_folder(self.dataroot))
+        pair_paths = sorted(self.scan_folder(self.data_root))
         for pair_path in pair_paths:
             data_infos.append(dict(pair_path=pair_path))
 
@@ -73,46 +70,3 @@ class PairedImageDataset(Dataset):
         images = [osp.join(path, v) for v in images]
         assert images, f'{path} has no valid image file.'
         return images
-
-    def prepare_train_data(self, idx):
-        """Prepare training data.
-
-        Args:
-            idx (int): Index of the training batch data.
-
-        Returns:
-            dict: Returned training batch.
-        """
-        results = copy.deepcopy(self.data_infos[idx])
-        return self.pipeline(results)
-
-    def prepare_test_data(self, idx):
-        """Prepare testing data.
-
-        Args:
-            idx (int): Index for getting each testing batch.
-
-        Returns:
-            Tensor: Returned testing batch.
-        """
-        results = copy.deepcopy(self.data_infos[idx])
-        return self.pipeline(results)
-
-    def __len__(self):
-        """Length of the dataset.
-
-        Returns:
-            int: Length of the dataset.
-        """
-        return len(self.data_infos)
-
-    def __getitem__(self, idx):
-        """Get item at each call.
-
-        Args:
-            idx (int): Index for getting each item.
-        """
-        if not self.test_mode:
-            return self.prepare_train_data(idx)
-
-        return self.prepare_test_data(idx)

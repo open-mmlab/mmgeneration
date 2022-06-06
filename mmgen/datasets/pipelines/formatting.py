@@ -1,7 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+
 import numpy as np
 from mmcv.transforms import BaseTransform, to_tensor
-from mmcv.utils import is_list_of
+from mmengine import is_list_of
 
 from mmgen.core.data_structures import GenDataSample
 from mmgen.registry import TRANSFORMS

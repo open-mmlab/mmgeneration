@@ -4,17 +4,16 @@ from pathlib import Path
 
 import numpy as np
 from mmcv import scandir
-from torch.utils.data import Dataset
+from mmengine.dataset import BaseDataset
 
 from mmgen.registry import DATASETS
-from .pipelines import Compose
 
 IMG_EXTENSIONS = ('.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm',
                   '.PPM', '.bmp', '.BMP', '.tif', '.TIF', '.tiff', '.TIFF')
 
 
 @DATASETS.register_module()
-class UnpairedImageDataset(Dataset):
+class UnpairedImageDataset(BaseDataset):
     """General unpaired image folder dataset for image generation.
 
     It assumes that the training directory of images from domain A is
@@ -41,22 +40,28 @@ class UnpairedImageDataset(Dataset):
                  test_mode=False,
                  domain_a=None,
                  domain_b=None):
-        super().__init__()
         phase = 'test' if test_mode else 'train'
         self.dataroot_a = osp.join(str(dataroot), phase + 'A')
         self.dataroot_b = osp.join(str(dataroot), phase + 'B')
-        self.data_infos_a = self.load_annotations(self.dataroot_a)
-        self.data_infos_b = self.load_annotations(self.dataroot_b)
+        super().__init__(
+            data_root=dataroot,
+            pipeline=pipeline,
+            test_mode=test_mode,
+            serialize_data=False)
         self.len_a = len(self.data_infos_a)
         self.len_b = len(self.data_infos_b)
         self.test_mode = test_mode
-        self.pipeline = Compose(pipeline)
         assert isinstance(domain_a, str)
         assert isinstance(domain_b, str)
         self.domain_a = domain_a
         self.domain_b = domain_b
 
-    def load_annotations(self, dataroot):
+    def load_data_list(self):
+        self.data_infos_a = self._load_domain_data_list(self.dataroot_a)
+        self.data_infos_b = self._load_domain_data_list(self.dataroot_b)
+        return [self.data_infos_a, self.data_infos_b]
+
+    def _load_domain_data_list(self, dataroot):
         """Load unpaired image paths of one domain.
 
         Args:

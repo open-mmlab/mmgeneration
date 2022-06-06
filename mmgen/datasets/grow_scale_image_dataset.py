@@ -2,10 +2,10 @@
 import os.path as osp
 
 import mmcv
+from mmengine.dataset import Compose
 from torch.utils.data import Dataset
 
 from mmgen.registry import DATASETS
-from .pipelines import Compose
 
 
 @DATASETS.register_module()
