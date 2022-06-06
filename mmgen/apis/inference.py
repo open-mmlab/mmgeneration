@@ -3,9 +3,9 @@ import mmcv
 import torch
 from mmcv.parallel import collate, scatter
 from mmcv.runner import load_checkpoint
-from mmcv.utils import is_list_of
+from mmengine import is_list_of
+from mmengine.dataset import Compose
 
-from mmgen.datasets.pipelines import Compose
 from mmgen.models import BaseTranslationModel, build_model
 
 

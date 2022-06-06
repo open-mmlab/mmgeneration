@@ -8,7 +8,7 @@ from mmcv.cnn import (ConvModule, build_activation_layer, constant_init,
                       xavier_init)
 from mmcv.runner import load_checkpoint
 from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
-from mmcv.utils import is_list_of
+from mmengine import is_list_of
 from mmengine.logging import MMLogger
 from torch.nn.init import xavier_uniform_
 from torch.nn.utils import spectral_norm
