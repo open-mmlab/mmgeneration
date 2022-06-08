@@ -19,11 +19,25 @@
    <div>&nbsp;</div>
 </div>
 
-Documentation: https://mmgeneration.readthedocs.io/
+    
+  [![PyPI](https://img.shields.io/pypi/v/mmgen)](https://pypi.org/project/mmgen)
+  [![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmgeneration.readthedocs.io/en/latest/)
+  [![badge](https://github.com/open-mmlab/mmgeneration/workflows/build/badge.svg)](https://github.com/open-mmlab/mmgeneration/actions)
+  [![codecov](https://codecov.io/gh/open-mmlab/mmgeneration/branch/master/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmgeneration)
+  [![license](https://img.shields.io/github/license/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/blob/master/LICENSE)
+  [![open issues](https://isitmaintained.com/badge/open/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/issues)
+  [![issue resolution](https://isitmaintained.com/badge/resolution/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/issues)
 
-## Introduction
+[📘Documentation](https://mmgeneration.readthedocs.io/en/latest/) |
+[🛠️Installation](https://mmgeneration.readthedocs.io/en/latest/get_started.html#installation) |
+[👀Model Zoo](https://mmgeneration.readthedocs.io/en/latest/modelzoo_statistics.html) |
+[🆕Update News](https://github.com/open-mmlab/mmgeneration/blob/master/docs/en/changelog.md) |
+[🚀Ongoing Projects](https://github.com/open-mmlab/mmgeneration/projects) |
+[🤔Reporting Issues](https://github.com/open-mmlab/mmgeneration/issues)
 
 English | [简体中文](README_zh-CN.md)
+
+## Introduction
 
 MMGeneration is a powerful toolkit for generative models, especially for GANs now. It is based on PyTorch and [MMCV](https://github.com/open-mmlab/mmcv). The master branch works with **PyTorch 1.5+**.
 
@@ -78,6 +92,42 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 ## Changelog
 
 v0.7.1 was released on 30/04/2022. Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
+
+## Installation
+
+MMGeneration depends on [PyTorch](https://pytorch.org/) and [MMCV](https://github.com/open-mmlab/mmcv).
+Below are quick steps for installation.
+
+**Step 1.**
+Install PyTorch following [official instructions](https://pytorch.org/get-started/locally/), e.g.
+
+```python
+pip3 install torch torchvision
+
+```
+
+**Step 2.**
+Install MMCV with [MIM](https://github.com/open-mmlab/mim).
+
+```
+pip3 install openmim
+mim install mmcv-full
+```
+
+**Step 3.**
+Install MMGeneration from source.
+
+```
+git clone https://github.com/open-mmlab/mmgeneration.git
+cd mmgeneration
+pip3 install -e .[all]
+```
+
+Please refer to [get_started.md](docs/en/get_started.md) for more detailed instruction.
+
+## Getting Started
+
+Please see [get_started.md](docs/en/get_started.md) for the basic usage of MMGeneration. [docs/en/quick_run.md](docs/en/quick_run.md) can offer full guidance for quick run. For other details and tutorials, please go to our [documentation](https://mmgeneration.readthedocs.io/).
 
 ## ModelZoo
 
@@ -134,45 +184,6 @@ These methods have been carefully studied and supported in our frameworks:
 
 - ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
-## License
-
-This project is released under the [Apache 2.0 license](LICENSE). Some operations in `MMGeneration` are with other licenses instead of Apache2.0. Please refer to [LICENSES.md](LICENSES.md) for the careful check, if you are using our code for commercial matters.
-
-## Installation
-
-MMGeneration depends on [PyTorch](https://pytorch.org/) and [MMCV](https://github.com/open-mmlab/mmcv).
-Below are quick steps for installation.
-
-**Step 1.**
-Install PyTorch following [official instructions](https://pytorch.org/get-started/locally/), e.g.
-
-```python
-pip3 install torch torchvision
-
-```
-
-**Step 2.**
-Install MMCV with [MIM](https://github.com/open-mmlab/mim).
-
-```
-pip3 install openmim
-mim install mmcv-full
-```
-
-**Step 3.**
-Install MMGeneration from source.
-
-```
-git clone https://github.com/open-mmlab/mmgeneration.git
-cd mmgeneration
-pip3 install -e .[all]
-```
-
-Please refer to [get_started.md](docs/en/get_started.md) for more detailed instruction.
-
-## Getting Started
-
-Please see [get_started.md](docs/en/get_started.md) for the basic usage of MMGeneration. [docs/en/quick_run.md](docs/en/quick_run.md) can offer full guidance for quick run. For other details and tutorials, please go to our [documentation](https://mmgeneration.readthedocs.io/).
 
 ## Contributing
 
@@ -190,6 +201,9 @@ If you find this project useful in your research, please consider cite:
     year={2021}
 }
 ```
+## License
+
+This project is released under the [Apache 2.0 license](LICENSE). Some operations in `MMGeneration` are with other licenses instead of Apache2.0. Please refer to [LICENSES.md](LICENSES.md) for the careful check, if you are using our code for commercial matters.
 
 ## Projects in OpenMMLab
 

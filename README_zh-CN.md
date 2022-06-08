@@ -1,12 +1,45 @@
 <div align="center">
     <img src="https://user-images.githubusercontent.com/12726765/114528756-de55af80-9c7b-11eb-94d7-d3224ada1585.png" width="400"/>
+      <div>&nbsp;</div>
+   <div align="center">
+     <b><font size="5">OpenMMLab 官网</font></b>
+     <sup>
+       <a href="https://openmmlab.com">
+         <i><font size="4">HOT</font></i>
+       </a>
+     </sup>
+     &nbsp;&nbsp;&nbsp;&nbsp;
+     <b><font size="5">OpenMMLab 开放平台</font></b>
+     <sup>
+       <a href="https://platform.openmmlab.com">
+         <i><font size="4">TRY IT OUT</font></i>
+       </a>
+     </sup>
+   </div>
+   <div>&nbsp;</div>
 </div>
 
-文档: https://mmgeneration.readthedocs.io/
+  [![PyPI](https://img.shields.io/pypi/v/mmgen)](https://pypi.org/project/mmgen)
+  [![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmgeneration.readthedocs.io/en/latest/)
+  [![badge](https://github.com/open-mmlab/mmgeneration/workflows/build/badge.svg)](https://github.com/open-mmlab/mmgeneration/actions)
+  [![codecov](https://codecov.io/gh/open-mmlab/mmgeneration/branch/master/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmgeneration)
+  [![license](https://img.shields.io/github/license/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/blob/master/LICENSE)
+  [![open issues](https://isitmaintained.com/badge/open/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/issues)
+  [![issue resolution](https://isitmaintained.com/badge/resolution/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/issues)
 
-## 简介
+[📘使用文档](https://mmgeneration.readthedocs.io/en/latest/) |
+[🛠️安装教程](https://mmgeneration.readthedocs.io/en/latest/get_started.html#installation) |
+[👀模型库](https://mmgeneration.readthedocs.io/en/latest/modelzoo_statistics.html) |
+[🆕更新记录](https://github.com/open-mmlab/mmgeneration/blob/master/docs/en/changelog.md) |
+[🚀进行中的项目](https://github.com/open-mmlab/mmgeneration/projects) |
+[🤔提出问题](https://github.com/open-mmlab/mmgeneration/issues)
+
+
+
 
 [English](README.md) | 简体中文
+
+## 简介
 
 MMGeneration 是一个基于 PyTorch 和[MMCV](https://github.com/open-mmlab/mmcv)的强有力的生成模型工具箱，尤其专注于 GAN 模型。
 主分支目前支持 **PyTorch 1.5** 以上的版本。
@@ -63,6 +96,40 @@ MMGeneration 是一个基于 PyTorch 和[MMCV](https://github.com/open-mmlab/mmc
 
 v0.7.1 在 30/04/2022 发布。 关于细节和发布历史，请参考 [changelog.md](docs/zh_cn/changelog.md)。
 
+## 安装
+
+MMGeneration 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.com/open-mmlab/mmcv)，以下是安装的简要步骤。
+
+**步骤 1.**
+依照[官方教程](https://pytorch.org/get-started/locally/)安装PyTorch，例如
+
+```python
+pip3 install torch torchvision
+```
+
+**步骤 2.**
+使用 [MIM](https://github.com/open-mmlab/mim) 安装 MMCV
+
+```
+pip3 install openmim
+mim install mmcv-full
+```
+
+**步骤 3.**
+从源码安装 MMGeneration
+
+```
+git clone https://github.com/open-mmlab/mmgeneration.git
+cd mmgeneration
+pip3 install -e .[all]
+```
+
+更详细的安装指南请参考 [get_started.md](docs/zh/get_started.md) .
+
+## 快速入门
+
+对于 `MMGeneration` 的基本使用请参考 [快速入门](docs/zh_cn/get_started.md)。其他细节和教程，请参考我们的[文档](https://mmgeneration.readthedocs.io/)。
+
 ## 模型库
 
 这些算法在我们的框架中得到了认真研究和支持。
@@ -114,51 +181,14 @@ v0.7.1 在 30/04/2022 发布。 关于细节和发布历史，请参考 [changel
 
 </details>
 
-## 安装
-
-MMGeneration 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.com/open-mmlab/mmcv)，以下是安装的简要步骤。
-
-**步骤 1.**
-依照[官方教程](https://pytorch.org/get-started/locally/)安装PyTorch，例如
-
-```python
-pip3 install torch torchvision
-```
-
-**步骤 2.**
-使用 [MIM](https://github.com/open-mmlab/mim) 安装 MMCV
-
-```
-pip3 install openmim
-mim install mmcv-full
-```
-
-**步骤 3.**
-从源码安装 MMGeneration
-
-```
-git clone https://github.com/open-mmlab/mmgeneration.git
-cd mmgeneration
-pip3 install -e .[all]
-```
-
-更详细的安装指南请参考 [get_started.md](docs/zh/get_started.md) .
 
 ## 相关应用
 
 - ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
 
-## 开源许可证
 
-该项目采用 [Apache 2.0 license](LICENSE) 开源许可证。`MMGeneration` 中的一些操作使用了其他许可证。如果您使用我们的代码进行商业事务，请参考 [许可证](LICENSES.md) 并仔细检查。
 
-## 安装
 
-请参考[快速入门](docs/zh_cn/get_started.md)进行安装。
-
-## 快速入门
-
-对于 `MMGeneration` 的基本使用请参考 [快速入门](docs/zh_cn/get_started.md)。其他细节和教程，请参考我们的[文档](https://mmgeneration.readthedocs.io/)。
 
 ## 贡献指南
 
@@ -176,6 +206,10 @@ pip3 install -e .[all]
     year={2020}
 }
 ```
+
+## 开源许可证
+
+该项目采用 [Apache 2.0 license](LICENSE) 开源许可证。`MMGeneration` 中的一些操作使用了其他许可证。如果您使用我们的代码进行商业事务，请参考 [许可证](LICENSES.md) 并仔细检查。
 
 ## OpenMMLab 的其他项目
 
