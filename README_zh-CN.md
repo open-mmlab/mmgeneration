@@ -19,13 +19,13 @@
    <div>&nbsp;</div>
 </div>
 
-  [![PyPI](https://img.shields.io/pypi/v/mmgen)](https://pypi.org/project/mmgen)
-  [![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmgeneration.readthedocs.io/en/latest/)
-  [![badge](https://github.com/open-mmlab/mmgeneration/workflows/build/badge.svg)](https://github.com/open-mmlab/mmgeneration/actions)
-  [![codecov](https://codecov.io/gh/open-mmlab/mmgeneration/branch/master/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmgeneration)
-  [![license](https://img.shields.io/github/license/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/blob/master/LICENSE)
-  [![open issues](https://isitmaintained.com/badge/open/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/issues)
-  [![issue resolution](https://isitmaintained.com/badge/resolution/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/issues)
+[![PyPI](https://img.shields.io/pypi/v/mmgen)](https://pypi.org/project/mmgen)
+[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmgeneration.readthedocs.io/en/latest/)
+[![badge](https://github.com/open-mmlab/mmgeneration/workflows/build/badge.svg)](https://github.com/open-mmlab/mmgeneration/actions)
+[![codecov](https://codecov.io/gh/open-mmlab/mmgeneration/branch/master/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmgeneration)
+[![license](https://img.shields.io/github/license/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/blob/master/LICENSE)
+[![open issues](https://isitmaintained.com/badge/open/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/issues)
+[![issue resolution](https://isitmaintained.com/badge/resolution/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/issues)
 
 [📘使用文档](https://mmgeneration.readthedocs.io/en/latest/) |
 [🛠️安装教程](https://mmgeneration.readthedocs.io/en/latest/get_started.html#installation) |
@@ -33,9 +33,6 @@
 [🆕更新记录](https://github.com/open-mmlab/mmgeneration/blob/master/docs/en/changelog.md) |
 [🚀进行中的项目](https://github.com/open-mmlab/mmgeneration/projects) |
 [🤔提出问题](https://github.com/open-mmlab/mmgeneration/issues)
-
-
-
 
 [English](README.md) | 简体中文
 
@@ -181,14 +178,9 @@ pip3 install -e .[all]
 
 </details>
 
-
 ## 相关应用
 
 - ✅ [MMGEN-FaceStylor](https://github.com/open-mmlab/MMGEN-FaceStylor)
-
-
-
-
 
 ## 贡献指南
 
