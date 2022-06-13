@@ -1,15 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
 
-import mmcv
-from mmengine.dataset import Compose
-from torch.utils.data import Dataset
+from mmengine import BaseDataset, print_log, scandir
 
 from mmgen.registry import DATASETS
 
 
 @DATASETS.register_module()
-class GrowScaleImgDataset(Dataset):
+class GrowScaleImgDataset(BaseDataset):
     """Grow Scale Unconditional Image Dataset.
 
     This dataset is similar with ``UnconditionalImageDataset``, but offer
@@ -56,21 +54,19 @@ class GrowScaleImgDataset(Dataset):
     _VALID_IMG_SUFFIX = ('.jpg', '.png', '.jpeg', '.JPEG')
 
     def __init__(self,
-                 imgs_roots,
+                 data_roots: dict,
                  pipeline,
                  len_per_stage=int(1e6),
                  gpu_samples_per_scale=None,
                  gpu_samples_base=32,
                  test_mode=False):
-        super().__init__()
-        assert isinstance(imgs_roots, dict)
-        self.imgs_roots = imgs_roots
-        self._img_scales = sorted([int(x) for x in imgs_roots.keys()])
+
+        assert isinstance(data_roots, dict)
+        self.data_roots = data_roots
+        self._img_scales = sorted([int(x) for x in data_roots.keys()])
         self._curr_scale = self._img_scales[0]
         self._actual_curr_scale = self._curr_scale
-        self.imgs_root = self.imgs_roots[str(self._curr_scale)]
-        self.pipeline = Compose(pipeline)
-        self.test_mode = test_mode
+        self.data_root = self.data_roots[str(self._curr_scale)]
 
         # len_per_stage = -1, keep the original length
         self.len_per_stage = len_per_stage
@@ -81,22 +77,30 @@ class GrowScaleImgDataset(Dataset):
         else:
             self.gpu_samples_per_scale = dict()
         self.gpu_samples_base = gpu_samples_base
-        self.load_annotations()
+
+        # use current data root to initialize and do not support
+        # `serialize_data`
+        super().__init__(
+            data_root=self.data_root,
+            pipeline=pipeline,
+            test_mode=test_mode,
+            serialize_data=False)
 
         # print basic dataset information to check the validity
-        mmcv.print_log(repr(self), 'mmgen')
+        print_log(repr(self), 'current')
 
-    def load_annotations(self):
+    def load_data_list(self):
         """Load annotations."""
         # recursively find all of the valid images from imgs_root
-        imgs_list = mmcv.scandir(
-            self.imgs_root, self._VALID_IMG_SUFFIX, recursive=True)
-        self.imgs_list = [osp.join(self.imgs_root, x) for x in imgs_list]
+        data_list = scandir(
+            self.data_root, self._VALID_IMG_SUFFIX, recursive=True)
+        self.data_list = [osp.join(self.data_root, x) for x in data_list]
 
         if self.len_per_stage > 0:
             self.concat_imgs_list_to(self.len_per_stage)
         self.samples_per_gpu = self.gpu_samples_per_scale.get(
             str(self._actual_curr_scale), self.gpu_samples_base)
+        return self.data_list
 
     def update_annotations(self, curr_scale):
         """Update annotations.
@@ -118,10 +122,10 @@ class GrowScaleImgDataset(Dataset):
                 assert RuntimeError(
                     f'Cannot find a suitable scale for {curr_scale}')
         self._actual_curr_scale = curr_scale
-        self.imgs_root = self.imgs_roots[str(self._curr_scale)]
-        self.load_annotations()
+        self.data_root = self.data_roots[str(self._curr_scale)]
+        self.load_data_list()
         # print basic dataset information to check the validity
-        mmcv.print_log('Update Dataset: ' + repr(self), 'mmgen')
+        print_log('Update Dataset: ' + repr(self), 'current')
         return True
 
     def concat_imgs_list_to(self, num):
@@ -130,13 +134,14 @@ class GrowScaleImgDataset(Dataset):
         Args:
             num (int): The length of the concatenated image list.
         """
-        if num <= len(self.imgs_list):
-            self.imgs_list = self.imgs_list[:num]
+
+        if num <= len(self.data_list):
+            self.data_list = self.data_list[:num]
             return
 
-        concat_factor = (num // len(self.imgs_list)) + 1
-        imgs = self.imgs_list * concat_factor
-        self.imgs_list = imgs[:num]
+        concat_factor = (num // len(self.data_list)) + 1
+        imgs = self.data_list * concat_factor
+        self.data_list = imgs[:num]
 
     def prepare_train_data(self, idx):
         """Prepare training data.
@@ -147,7 +152,7 @@ class GrowScaleImgDataset(Dataset):
         Returns:
             dict: Prepared training data batch.
         """
-        results = dict(real_img_path=self.imgs_list[idx])
+        results = dict(real_img_path=self.data_list[idx])
         return self.pipeline(results)
 
     def prepare_test_data(self, idx):
@@ -159,11 +164,8 @@ class GrowScaleImgDataset(Dataset):
         Returns:
             dict: Prepared training data batch.
         """
-        results = dict(real_img_path=self.imgs_list[idx])
+        results = dict(real_img_path=self.data_list[idx])
         return self.pipeline(results)
-
-    def __len__(self):
-        return len(self.imgs_list)
 
     def __getitem__(self, idx):
         if not self.test_mode:
@@ -173,7 +175,7 @@ class GrowScaleImgDataset(Dataset):
 
     def __repr__(self):
         dataset_name = self.__class__
-        imgs_root = self.imgs_root
+        imgs_root = self.data_root
         num_imgs = len(self)
         return (f'dataset_name: {dataset_name}, total {num_imgs} images in '
                 f'imgs_root: {imgs_root}')
