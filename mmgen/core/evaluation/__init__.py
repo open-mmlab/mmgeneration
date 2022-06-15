@@ -2,13 +2,27 @@
 from .eval_hooks import GenerativeEvalHook, TranslationEvalHook
 from .evaluation import (make_metrics_table, make_vanilla_dataloader,
                          offline_evaluation, online_evaluation)
+# >>> new code
+from .evaluator import GenEvaluator
 from .metric_utils import slerp
-from .metrics import (IS, MS_SSIM, PR, SWD, GaussianKLD, ms_ssim,
-                      sliced_wasserstein)
+from .metrics import (FrechetInceptionDistance, InceptionScore,
+                      MultiScaleStructureSimilarity, SlicedWassersteinDistance)
+
+# <<< new code
 
 __all__ = [
-    'MS_SSIM', 'SWD', 'ms_ssim', 'sliced_wasserstein', 'offline_evaluation',
-    'online_evaluation', 'PR', 'IS', 'slerp', 'GenerativeEvalHook',
-    'make_metrics_table', 'make_vanilla_dataloader', 'GaussianKLD',
-    'TranslationEvalHook'
+    'offline_evaluation',
+    'online_evaluation',
+    'GenerativeEvalHook',
+    'make_metrics_table',
+    'make_vanilla_dataloader',
+    'TranslationEvalHook',
+    'slerp',
+    # >>> new code
+    'InceptionScore',
+    'FrechetInceptionDistance',
+    'MultiScaleStructureSimilarity',
+    'SlicedWassersteinDistance',
+    'GenEvaluator'
+    # <<< new code
 ]

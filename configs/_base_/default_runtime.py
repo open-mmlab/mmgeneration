@@ -1,35 +1,60 @@
-checkpoint_config = dict(interval=10000, by_epoch=False)
-# yapf:disable
-log_config = dict(
-    interval=100,
-    hooks=[
-        dict(type='TextLoggerHook'),
-        # dict(type='TensorboardLoggerHook'),
-    ])
-# yapf:enable
+default_scope = 'mmgen'
 
-custom_hooks = [
-    dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=1000)
-]
-
-# use dynamic runner
-runner = dict(
-    type='DynamicIterBasedRunner',
-    is_dynamic_ddp=True,
-    pass_training_status=True)
-
+# env settings
 dist_params = dict(backend='nccl')
-log_level = 'INFO'
-load_from = None
-resume_from = None
-workflow = [('train', 10000)]
-find_unused_parameters = True
-cudnn_benchmark = True
-
 # disable opencv multithreading to avoid system being overloaded
 opencv_num_threads = 0
 # set multi-process start method as `fork` to speed up the training
 mp_start_method = 'fork'
+
+# configure for default hooks
+default_hooks = dict(
+    # record time of every iteration.
+    timer=dict(type='IterTimerHook'),
+    # print log every 100 iterations.
+    logger=dict(type='LoggerHook', interval=100),
+    # save checkpoint per 10000 iterations
+    checkpoint=dict(
+        type='CheckpointHook',
+        interval=10000,
+        by_epoch=False,
+        save_optimizer=True))
+
+# config for environment
+env_cfg = dict(
+    # whether to enable cudnn benchmark.
+    cudnn_benchmark=True,
+    # set multi process parameters.
+    mp_cfg=dict(mp_start_method='fork', opencv_num_threads=0),
+    # set distributed parameters.
+    dist_cfg=dict(backend='nccl'))
+
+# set log level
+log_level = 'INFO'
+log_processor = dict(by_epoch=False)
+
+# load from which checkpoint
+load_from = None
+
+# whether to resume training from the loaded checkpoint
+resume = None
+
+# config for model wrapper
+model_wrapper_cfg = dict(
+    type='MMSeparateDistributedDataParallel',
+    broadcast_buffers=False,
+    find_unused_parameters=False)
+
+# config for training
+train_cfg = dict(by_epoch=False, val_begin=1, val_interval=10000)
+
+# config for val
+val_cfg = dict(type='GenValLoop')
+val_evaluator = dict(type='GenEvaluator')
+
+# config for test
+test_cfg = dict(type='GenTestLoop')
+test_evaluator = dict(type='GenEvaluator')
+
+# config for optim_wrapper_constructor
+optim_wrapper = dict(constructor='GenOptimWrapperConstructor')
