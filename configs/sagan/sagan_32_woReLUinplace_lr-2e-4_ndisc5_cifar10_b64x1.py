@@ -1,61 +1,41 @@
 _base_ = [
-    '../_base_/models/sagan/sagan_32x32.py',
-    '../_base_/datasets/cifar10_nopad.py', '../_base_/default_runtime.py'
+    '../_base_/default_runtime.py', '../_base_/datasets/cifar10_noaug.py',
+    '../_base_/models/sagan/sagan_32x32.py'
 ]
 
+# MODEL
+disc_step = 5
 init_cfg = dict(type='studio')
 model = dict(
-    num_classes=10,
-    generator=dict(num_classes=10, init_cfg=init_cfg),
-    discriminator=dict(num_classes=10, init_cfg=init_cfg))
+    # CIFAR images are RGB, convert to BGR
+    data_preprocessor=dict(rgb_to_bgr=True),
+    generator=dict(init_cfg=init_cfg),
+    discriminator=dict(act_cfg=dict(init_cfg=init_cfg)))
 
-lr_config = None
-checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=20)
-custom_hooks = [
+# TRAIN
+train_cfg = dict(max_iters=100000 * disc_step)
+train_dataloader = dict(batch_size=64)
+
+optim_wrapper = dict(
+    generator=dict(optimizer=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999))),
+    discriminator=dict(
+        optimizer=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999))))
+
+# METRICS
+metrics = [
     dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=1000)
+        type='InceptionScore',
+        prefix='IS-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='orig'),
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='orig')
 ]
 
-inception_pkl = './work_dirs/inception_pkl/cifar10.pkl'
-
-evaluation = dict(
-    type='GenerativeEvalHook',
-    interval=10000,
-    metrics=[
-        dict(
-            type='FID',
-            num_images=50000,
-            inception_pkl=inception_pkl,
-            bgr2rgb=True,
-            inception_args=dict(type='StyleGAN')),
-        dict(type='IS', num_images=50000)
-    ],
-    best_metric=['fid', 'is'],
-    sample_kwargs=dict(sample_model='orig'))
-
-n_disc = 5
-total_iters = 100000 * n_disc
-# use ddp wrapper for faster training
-use_ddp_wrapper = True
-find_unused_parameters = False
-
-runner = dict(
-    type='DynamicIterBasedRunner',
-    is_dynamic_ddp=False,  # Note that this flag should be False.
-    pass_training_status=True)
-
-metrics = dict(
-    fid50k=dict(
-        type='FID',
-        num_images=50000,
-        inception_pkl=inception_pkl,
-        inception_args=dict(type='StyleGAN')),
-    IS50k=dict(type='IS', num_images=50000))
-
-optimizer = dict(
-    generator=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)),
-    discriminator=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)))
-
-data = dict(samples_per_gpu=64)
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)

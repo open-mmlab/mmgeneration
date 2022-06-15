@@ -8,6 +8,7 @@ https://mmengine.readthedocs.io/en/latest/tutorials/registry.html.
 
 from mmengine.registry import DATA_SAMPLERS as MMENGINE_DATA_SAMPLERS
 from mmengine.registry import DATASETS as MMENGINE_DATASETS
+from mmengine.registry import EVALUATOR as MMENGINE_EVALUATOR
 from mmengine.registry import HOOKS as MMENGINE_HOOKS
 from mmengine.registry import LOOPS as MMENGINE_LOOPS
 from mmengine.registry import METRICS as MMENGINE_METRICS
@@ -54,3 +55,6 @@ PARAM_SCHEDULERS = Registry(
 VISUALIZERS = Registry('visualizer', parent=MMENGINE_VISUALIZERS)
 # manage visualizer backend
 VISBACKENDS = Registry('vis_backend', parent=MMENGINE_VISBACKENDS)
+
+# manage evaluator
+EVALUATOR = Registry('evaluator', parent=MMENGINE_EVALUATOR)

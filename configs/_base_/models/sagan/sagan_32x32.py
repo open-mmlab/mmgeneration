@@ -1,8 +1,10 @@
-# define GAN model
 model = dict(
-    type='BasiccGAN',
+    type='SAGAN',
+    data_preprocessor=dict(type='GANDataPreprocessor'),
+    num_classes=10,
     generator=dict(
         type='SAGANGenerator',
+        num_classes=10,
         output_scale=32,
         base_channels=256,
         attention_cfg=dict(type='SelfAttentionBlock'),
@@ -10,17 +12,11 @@ model = dict(
         with_spectral_norm=True),
     discriminator=dict(
         type='ProjDiscriminator',
+        num_classes=10,
         input_scale=32,
         base_channels=128,
         attention_cfg=dict(type='SelfAttentionBlock'),
         attention_after_nth_block=1,
         with_spectral_norm=True),
-    gan_loss=dict(type='GANLoss', gan_type='hinge'))
-
-train_cfg = dict(disc_steps=5)
-test_cfg = None
-
-# define optimizer
-optimizer = dict(
-    generator=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)),
-    discriminator=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)))
+    generator_steps=1,
+    discriminator_steps=5)

@@ -242,6 +242,7 @@ class DCGANDiscriminator(nn.Module):
 
         # build up downsampling backbone (excluding the output layer)
         downsamples = []
+        curr_channels = in_channels
         for i in range(self.num_downsamples):
             # remove norm for the first conv
             norm_cfg_ = None if i == 0 else default_norm_cfg

@@ -11,11 +11,11 @@ from torch.nn.parallel.distributed import _find_tensors
 
 from mmgen.registry import MODELS
 from ..common import set_requires_grad
-from .static_unconditional_gan import StaticUnconditionalGAN
+from .base_gan import BaseGAN
 
 
 @MODELS.register_module()
-class MSPIEStyleGAN2(StaticUnconditionalGAN):
+class MSPIEStyleGAN2(BaseGAN):
     """MS-PIE StyleGAN2.
 
     In this GAN, we adopt the MS-PIE training schedule so that multi-scale
