@@ -1,7 +1,5 @@
 # dataset settings
-train_dataset_type = 'PairedImageDataset'
-val_dataset_type = 'PairedImageDataset'
-img_norm_cfg = dict(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+dataset_type = 'PairedImageDataset'
 domain_a = 'photo'
 domain_b = 'mask'
 train_pipeline = [
@@ -24,18 +22,7 @@ train_pipeline = [
     dict(
         type='Flip',
         keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        direction='horizontal'),
-    dict(type='RescaleToZeroOne', keys=[f'img_{domain_a}', f'img_{domain_b}']),
-    dict(
-        type='Normalize',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        to_rgb=False,
-        **img_norm_cfg),
-    dict(type='ImageToTensor', keys=[f'img_{domain_a}', f'img_{domain_b}']),
-    dict(
-        type='Collect',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
+        direction='horizontal')
 ]
 test_pipeline = [
     dict(
@@ -49,36 +36,35 @@ test_pipeline = [
         type='Resize',
         keys=[f'img_{domain_a}', f'img_{domain_b}'],
         scale=(256, 256),
-        interpolation='bicubic'),
-    dict(type='RescaleToZeroOne', keys=[f'img_{domain_a}', f'img_{domain_b}']),
-    dict(
-        type='Normalize',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        to_rgb=False,
-        **img_norm_cfg),
-    dict(type='ImageToTensor', keys=[f'img_{domain_a}', f'img_{domain_b}']),
-    dict(
-        type='Collect',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
+        interpolation='bicubic')
 ]
 
-data = dict(
-    samples_per_gpu=1,
-    workers_per_gpu=4,
-    drop_last=True,
-    train=dict(
-        type=train_dataset_type,
-        dataroot=None,
-        pipeline=train_pipeline,
-        test_mode=False),
-    val=dict(
-        type=val_dataset_type,
-        dataroot=None,
-        pipeline=test_pipeline,
-        test_mode=True),
-    test=dict(
-        type=val_dataset_type,
-        dataroot=None,
-        pipeline=test_pipeline,
-        test_mode=True))
+train_dataloader = dict(
+    batch_size=1,
+    num_workers=4,
+    persistent_workers=True,
+    sampler=dict(type='InfiniteSampler', shuffle=True),
+    dataset=dict(
+        type=dataset_type,
+        data_root=None,  # set by user
+        pipeline=train_pipeline))
+
+val_dataloader = dict(
+    batch_size=1,
+    num_workers=4,
+    dataset=dict(
+        type=dataset_type,
+        data_root=None,  # set by user
+        pipeline=test_pipeline),
+    sampler=dict(type='DefaultSampler', shuffle=False),
+    persistent_workers=True)
+
+test_dataloader = dict(
+    batch_size=1,
+    num_workers=4,
+    dataset=dict(
+        type=dataset_type,
+        data_root=None,  # set by user
+        pipeline=test_pipeline),
+    sampler=dict(type='DefaultSampler', shuffle=False),
+    persistent_workers=True)

@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABCMeta, abstractmethod
-from copy import deepcopy
 
 import torch.nn as nn
 
@@ -35,36 +34,26 @@ class BaseTranslationModel(nn.Module, metaclass=ABCMeta):
             `related_domains`. However, related_domains may contain
             source domains that are used to retrieve source images from
             data_batch but not in reachable_domains.
-        train_cfg (dict): Config for training. Default: None.
-        test_cfg (dict): Config for testing. Default: None.
+        discriminator_steps (int): The number of times the discriminator is
+            completely updated before the generator is updated. Defaults to 1.
+        disc_init_steps (int): The number of initial steps used only to train
+            discriminators.
     """
 
     def __init__(self,
                  default_domain,
                  reachable_domains,
                  related_domains,
-                 train_cfg=None,
-                 test_cfg=None):
+                 discriminator_steps=1,
+                 disc_init_steps=0):
         self._default_domain = default_domain
         self._reachable_domains = reachable_domains
         self._related_domains = related_domains
         assert self._default_domain in self._reachable_domains
         assert set(self._reachable_domains) <= set(self._related_domains)
 
-        self.train_cfg = deepcopy(train_cfg) if train_cfg else None
-        self.test_cfg = deepcopy(test_cfg) if test_cfg else None
-
-        self._parse_train_cfg()
-        if test_cfg is not None:
-            self._parse_test_cfg()
-
-    @abstractmethod
-    def _parse_train_cfg(self):
-        """Parsing train config and set some attributes for training."""
-
-    @abstractmethod
-    def _parse_test_cfg(self):
-        """Parsing test config and set some attributes for testing."""
+        self.discriminator_steps = discriminator_steps
+        self.disc_init_steps = disc_init_steps
 
     def forward(self, img, test_mode=False, **kwargs):
         """Forward function.
