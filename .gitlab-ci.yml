@@ -27,6 +27,12 @@ linting:
   script:
     - echo "Start building..."
     - pip install -r requirements.txt
+
+    - echo "Install mmcls..."
+    - git clone --branch refactor_dev -c core.sshCommand="/usr/bin/ssh -i /root/.ssh/id_gitlab" git@gitlab.sh.sensetime.com:openmmlab-enterprise/openmmlab-ce/mmclassification.git /mmclassification
+    - pip install -e /mmclassification
+    - python -c "import mmcls; print(mmcls.__version__)"
+
     - pip install -e .[all] -i https://pypi.tuna.tsinghua.edu.cn/simple/
     - python -c "import mmgen; print(mmgen.__version__)"
     - echo "Start testing..."
