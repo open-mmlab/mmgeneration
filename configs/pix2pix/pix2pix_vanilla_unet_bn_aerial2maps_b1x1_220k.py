@@ -9,14 +9,12 @@ target_domain = 'map'
 model = dict(
     default_domain=target_domain,
     reachable_domains=[target_domain],
-    related_domains=[target_domain, source_domain],
-    gen_auxiliary_loss=dict(
-        data_info=dict(
-            pred=f'fake_{target_domain}', target=f'real_{target_domain}')))
-# dataset settings
-domain_a = source_domain
-domain_b = target_domain
-img_norm_cfg = dict(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+    related_domains=[target_domain, source_domain])
+
+train_cfg = dict(max_iters=220000)
+
+domain_a = target_domain
+domain_b = source_domain
 train_pipeline = [
     dict(
         type='LoadPairedImageFromFile',
@@ -26,29 +24,29 @@ train_pipeline = [
         domain_b=domain_b,
         flag='color'),
     dict(
-        type='Resize',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        scale=(286, 286),
-        interpolation='bicubic'),
-    dict(
-        type='FixedCrop',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        crop_size=(256, 256)),
+        type='TransformBroadcaster',
+        mapping={'img': [f'img_{domain_a}', f'img_{domain_b}']},
+        auto_remap=True,
+        share_random_params=True,
+        transforms=[
+            dict(
+                type='mmgen.Resize', scale=(286, 286),
+                interpolation='bicubic'),
+            dict(type='mmgen.FixedCrop', crop_size=(256, 256))
+        ]),
     dict(
         type='Flip',
         keys=[f'img_{domain_a}', f'img_{domain_b}'],
         direction='horizontal'),
-    dict(type='RescaleToZeroOne', keys=[f'img_{domain_a}', f'img_{domain_b}']),
     dict(
-        type='Normalize',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        to_rgb=False,
-        **img_norm_cfg),
-    dict(type='ImageToTensor', keys=[f'img_{domain_a}', f'img_{domain_b}']),
-    dict(
-        type='Collect',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
+        type='PackGenInputs',
+        keys=[f'img_{domain_a}', f'img_{domain_b}', 'pair'],
+        meta_keys=[
+            'pair_path', 'sample_idx', 'pair_ori_shape',
+            f'img_{domain_a}_path', f'img_{domain_b}_path',
+            'img_photo_ori_shape', 'img_mask_ori_shape', 'flip',
+            'flip_direction'
+        ])
 ]
 test_pipeline = [
     dict(
@@ -59,72 +57,59 @@ test_pipeline = [
         domain_b=domain_b,
         flag='color'),
     dict(
-        type='Resize',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        scale=(256, 256),
-        interpolation='bicubic'),
-    dict(type='RescaleToZeroOne', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+        type='TransformBroadcaster',
+        mapping={'img': [f'img_{domain_a}', f'img_{domain_b}']},
+        auto_remap=True,
+        share_random_params=True,
+        transforms=[
+            dict(
+                type='mmgen.Resize', scale=(256, 256), interpolation='bicubic')
+        ]),
     dict(
-        type='Normalize',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        to_rgb=False,
-        **img_norm_cfg),
-    dict(type='ImageToTensor', keys=[f'img_{domain_a}', f'img_{domain_b}']),
-    dict(
-        type='Collect',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
+        type='PackGenInputs',
+        keys=[f'img_{domain_a}', f'img_{domain_b}', 'pair'],
+        meta_keys=[
+            'pair_path', 'sample_idx', 'pair_ori_shape',
+            f'img_{domain_a}_path', f'img_{domain_b}_path',
+            'img_photo_ori_shape', 'img_mask_ori_shape'
+        ])
 ]
-
 dataroot = 'data/paired/maps'
-data = dict(
-    train=dict(dataroot=dataroot, pipeline=train_pipeline),
-    val=dict(dataroot=dataroot, pipeline=test_pipeline, testdir='val'),
-    test=dict(dataroot=dataroot, pipeline=test_pipeline, testdir='val'))
+train_dataloader = dict(
+    dataset=dict(data_root=dataroot, pipeline=train_pipeline))
+
+val_dataloader = dict(
+    dataset=dict(test_mode=True, data_root=dataroot, pipeline=test_pipeline))
+
+test_dataloader = dict(
+    dataset=dict(test_mode=True, data_root=dataroot, pipeline=test_pipeline))
 
 # optimizer
-optimizer = dict(
-    generators=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)),
-    discriminators=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999)))
+optim_wrapper = dict(
+    generators=dict(
+        type='OptimWrapper',
+        optimizer=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999))),
+    discriminators=dict(
+        type='OptimWrapper',
+        optimizer=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999))))
 
-# learning policy
-lr_config = None
-
-# checkpoint saving
-checkpoint_config = dict(interval=10000, save_optimizer=True, by_epoch=False)
-custom_hooks = [
+fake_nums = 1098
+metrics = [
     dict(
-        type='MMGenVisualizationHook',
-        output_dir='training_samples',
-        res_name_list=[f'fake_{target_domain}'],
-        interval=5000)
+        type='InceptionScore',
+        prefix='IS-Full',
+        fake_nums=fake_nums,
+        inception_style='StyleGAN',
+        sample_model='orig'),
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full',
+        fake_nums=fake_nums,
+        inception_style='StyleGAN',
+        real_key=f'img_{target_domain}',
+        fake_key='target',
+        sample_model='orig')
 ]
-runner = None
-use_ddp_wrapper = True
 
-# runtime settings
-total_iters = 220000
-workflow = [('train', 1)]
-exp_name = 'pix2pix_aerial2map'
-work_dir = f'./work_dirs/experiments/{exp_name}'
-num_images = 1098
-metrics = dict(
-    FID=dict(type='FID', num_images=num_images, image_shape=(3, 256, 256)),
-    IS=dict(
-        type='IS',
-        num_images=num_images,
-        image_shape=(3, 256, 256),
-        inception_args=dict(type='pytorch')))
-
-evaluation = dict(
-    type='TranslationEvalHook',
-    target_domain=domain_b,
-    interval=10000,
-    metrics=[
-        dict(type='FID', num_images=num_images, bgr2rgb=True),
-        dict(
-            type='IS',
-            num_images=num_images,
-            inception_args=dict(type='pytorch'))
-    ],
-    best_metric=['fid', 'is'])
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)

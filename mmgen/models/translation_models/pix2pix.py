@@ -1,8 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-from torch.nn.parallel.distributed import _find_tensors
+import torch.nn.functional as F
+from mmengine import MessageHub
 
 from mmgen.registry import MODELS
+from mmgen.typing import ForwardOutputs, ValTestStepInputs
 from ..common import set_requires_grad
 from .static_translation_gan import StaticTranslationGAN
 
@@ -17,7 +19,6 @@ class Pix2Pix(StaticTranslationGAN):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.use_ema = False
 
     def forward_test(self, img, target_domain, **kwargs):
         """Forward function for testing.
@@ -47,15 +48,15 @@ class Pix2Pix(StaticTranslationGAN):
         fake_ab = torch.cat((outputs[f'real_{source_domain}'],
                              outputs[f'fake_{target_domain}']), 1)
         fake_pred = discriminators[target_domain](fake_ab.detach())
-        losses['loss_gan_d_fake'] = self.gan_loss(
-            fake_pred, target_is_real=False, is_disc=True)
+        losses['loss_gan_d_fake'] = F.binary_cross_entropy_with_logits(
+            fake_pred, 0. * torch.ones_like(fake_pred))
         real_ab = torch.cat((outputs[f'real_{source_domain}'],
                              outputs[f'real_{target_domain}']), 1)
         real_pred = discriminators[target_domain](real_ab)
-        losses['loss_gan_d_real'] = self.gan_loss(
-            real_pred, target_is_real=True, is_disc=True)
+        losses['loss_gan_d_real'] = F.binary_cross_entropy_with_logits(
+            real_pred, 1. * torch.ones_like(real_pred))
 
-        loss_d, log_vars_d = self._parse_losses(losses)
+        loss_d, log_vars_d = self.parse_losses(losses)
         loss_d *= 0.5
 
         return loss_d, log_vars_d
@@ -70,30 +71,13 @@ class Pix2Pix(StaticTranslationGAN):
         fake_ab = torch.cat((outputs[f'real_{source_domain}'],
                              outputs[f'fake_{target_domain}']), 1)
         fake_pred = discriminators[target_domain](fake_ab)
-        losses['loss_gan_g'] = self.gan_loss(
-            fake_pred, target_is_real=True, is_disc=False)
+        losses['loss_gan_g'] = F.binary_cross_entropy_with_logits(
+            fake_pred, 1. * torch.ones_like(fake_pred))
 
-        # gen auxiliary loss
-        if self.with_gen_auxiliary_loss:
-            for loss_module in self.gen_auxiliary_losses:
-                loss_ = loss_module(outputs)
-                if loss_ is None:
-                    continue
-                # the `loss_name()` function return name as 'loss_xxx'
-                if loss_module.loss_name() in losses:
-                    losses[loss_module.loss_name(
-                    )] = losses[loss_module.loss_name()] + loss_
-                else:
-                    losses[loss_module.loss_name()] = loss_
-
-        loss_g, log_vars_g = self._parse_losses(losses)
+        loss_g, log_vars_g = self.parse_losses(losses)
         return loss_g, log_vars_g
 
-    def train_step(self,
-                   data_batch,
-                   optimizer,
-                   ddp_reducer=None,
-                   running_status=None):
+    def train_step(self, data, optim_wrapper=None):
         """Training step function.
 
         Args:
@@ -111,20 +95,17 @@ class Pix2Pix(StaticTranslationGAN):
             dict: Dict of loss, information for logger, the number of samples\
                 and results for visualization.
         """
-        # data
+        message_hub = MessageHub.get_current_instance()
+        curr_iter = message_hub.get_info('iter')
+        inputs_dict, data_sample = self.data_preprocessor(data, True)
+
+        disc_optimizer_wrapper = optim_wrapper['discriminators']
+        disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
+
         target_domain = self._default_domain
         source_domain = self.get_other_domains(self._default_domain)[0]
-        source_image = data_batch[f'img_{source_domain}']
-        target_image = data_batch[f'img_{target_domain}']
-
-        # get running status
-        if running_status is not None:
-            curr_iter = running_status['iteration']
-        else:
-            # dirty walkround for not providing running status
-            if not hasattr(self, 'iteration'):
-                self.iteration = 0
-            curr_iter = self.iteration
+        source_image = inputs_dict[f'img_{source_domain}']
+        target_image = inputs_dict[f'img_{target_domain}']
 
         # forward generator
         outputs = dict()
@@ -138,47 +119,37 @@ class Pix2Pix(StaticTranslationGAN):
         # discriminator
         set_requires_grad(self.discriminators, True)
         # optimize
-        optimizer['discriminators'].zero_grad()
+        disc_optimizer_wrapper.zero_grad()
         loss_d, log_vars_d = self._get_disc_loss(outputs)
         log_vars.update(log_vars_d)
-        # prepare for backward in ddp. If you do not call this function before
-        # back propagation, the ddp will not dynamically find the used params
-        # in current computation.
-        if ddp_reducer is not None:
-            ddp_reducer.prepare_for_backward(_find_tensors(loss_d))
         loss_d.backward()
-        optimizer['discriminators'].step()
+        disc_optimizer_wrapper.step()
 
         # generator, no updates to discriminator parameters.
-        if (curr_iter % self.disc_steps == 0
+        gen_optimizer_wrapper = optim_wrapper['generators']
+        if ((curr_iter + 1) % (self.discriminator_steps * disc_accu_iters) == 0
                 and curr_iter >= self.disc_init_steps):
             set_requires_grad(self.discriminators, False)
             # optimize
-            optimizer['generators'].zero_grad()
+            gen_optimizer_wrapper.zero_grad()
             loss_g, log_vars_g = self._get_gen_loss(outputs)
             log_vars.update(log_vars_g)
-            # prepare for backward in ddp. If you do not call this function
-            # before back propagation, the ddp will not dynamically find the
-            # used params in current computation.
-            if ddp_reducer is not None:
-                ddp_reducer.prepare_for_backward(_find_tensors(loss_g))
             loss_g.backward()
-            optimizer['generators'].step()
+            gen_optimizer_wrapper.step()
 
-        if hasattr(self, 'iteration'):
-            self.iteration += 1
+        return log_vars
 
-        image_results = dict()
-        image_results[f'real_{source_domain}'] = outputs[
-            f'real_{source_domain}'].cpu()
-        image_results[f'fake_{target_domain}'] = outputs[
-            f'fake_{target_domain}'].cpu()
-        image_results[f'real_{target_domain}'] = outputs[
-            f'real_{target_domain}'].cpu()
+    def test_step(self, data: ValTestStepInputs) -> ForwardOutputs:
+        """Gets the generated image of given data. Same as :meth:`val_step`.
 
-        results = dict(
-            log_vars=log_vars,
-            num_samples=len(outputs[f'real_{source_domain}']),
-            results=image_results)
+        Args:
+            data (ValTestStepInputs): Data sampled from metric specific
+                sampler. More detials in `Metrics` and `Evaluator`.
 
-        return results
+        Returns:
+            ForwardOutputs: Generated image or image dict.
+        """
+        inputs_dict, data_sample = self.data_preprocessor(data)
+        outputs = self.forward_test(
+            inputs_dict['img_mask'], target_domain='photo')
+        return outputs
