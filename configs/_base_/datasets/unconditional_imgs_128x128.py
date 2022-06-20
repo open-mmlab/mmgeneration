@@ -1,21 +1,38 @@
 dataset_type = 'UnconditionalImageDataset'
 
 train_pipeline = [
-    dict(type='LoadImageFromFile', key='real_img', io_backend='disk'),
-    dict(type='Resize', keys=['real_img'], scale=(128, 128)),
-    dict(
-        type='Normalize',
-        keys=['real_img'],
-        mean=[127.5] * 3,
-        std=[127.5] * 3,
-        to_rgb=False),
-    dict(type='ImageToTensor', keys=['real_img']),
-    dict(type='Collect', keys=['real_img'], meta_keys=['real_img_path'])
+    dict(type='LoadImageFromFile', key='img', io_backend='disk'),
+    dict(type='Resize', scale=(128, 128)),
+    dict(type='PackGenInputs', meta_keys=[])
 ]
 
-# `samples_per_gpu` and `imgs_root` need to be set.
-data = dict(
-    samples_per_gpu=None,
-    workers_per_gpu=4,
-    train=dict(type=dataset_type, imgs_root=None, pipeline=train_pipeline),
-    val=dict(type=dataset_type, imgs_root=None, pipeline=train_pipeline))
+# `batch_size` and `data_root` need to be set.
+train_dataloader = dict(
+    batch_size=None,
+    num_workers=4,
+    persistent_workers=True,
+    sampler=dict(type='InfiniteSampler', shuffle=True),
+    dataset=dict(
+        type=dataset_type,
+        data_root=None,  # set by user
+        pipeline=train_pipeline))
+
+val_dataloader = dict(
+    batch_size=None,
+    num_workers=4,
+    dataset=dict(
+        type=dataset_type,
+        data_root=None,  # set by user
+        pipeline=train_pipeline),
+    sampler=dict(type='DefaultSampler', shuffle=False),
+    persistent_workers=True)
+
+test_dataloader = dict(
+    batch_size=None,
+    num_workers=4,
+    dataset=dict(
+        type=dataset_type,
+        data_root=None,  # set by user
+        pipeline=train_pipeline),
+    sampler=dict(type='DefaultSampler', shuffle=False),
+    persistent_workers=True)

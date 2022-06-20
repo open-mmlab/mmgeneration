@@ -35,7 +35,7 @@ class UnconditionalImageDataset(BaseDataset):
         imgs_list = mmcv.scandir(
             self.data_root, self._VALID_IMG_SUFFIX, recursive=True)
         data_list = [
-            dict(real_img_path=osp.join(self.data_root, x)) for x in imgs_list
+            dict(img_path=osp.join(self.data_root, x)) for x in imgs_list
         ]
         return data_list
 
