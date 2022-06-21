@@ -33,3 +33,15 @@ class TestMSStyleGAN2:
         g = MSStyleGANv2Generator(**cfg_)
         res = g(torch.randn, num_batches=2)
         assert res.shape == (2, 3, 32, 32)
+
+        cfg_ = deepcopy(self.generator_cfg)
+        cfg_['mix_prob'] = 1
+        g = MSStyleGANv2Generator(**cfg_)
+        res = g(None, num_batches=2)
+        assert res.shape == (2, 3, 32, 32)
+
+        cfg_ = deepcopy(self.generator_cfg)
+        cfg_['mix_prob'] = 0
+        g = MSStyleGANv2Generator(**cfg_)
+        res = g(None, num_batches=2)
+        assert res.shape == (2, 3, 32, 32)

@@ -188,9 +188,21 @@ class TestStyleGAN1Generator:
         assert res.shape == (2, 3, 256, 256)
 
         cfg_ = deepcopy(self.default_cfg)
+        cfg_['mix_prob'] = 1
+        g = StyleGANv1Generator(**cfg_)
+        res = g(None, num_batches=2)
+        assert res.shape == (2, 3, 256, 256)
+
+        cfg_ = deepcopy(self.default_cfg)
         cfg_['mix_prob'] = 0
         g = StyleGANv1Generator(**cfg_)
         res = g(torch.randn, num_batches=2)
+        assert res.shape == (2, 3, 256, 256)
+
+        cfg_ = deepcopy(self.default_cfg)
+        cfg_['mix_prob'] = 0
+        g = StyleGANv1Generator(**cfg_)
+        res = g(None, num_batches=2)
         assert res.shape == (2, 3, 256, 256)
 
 

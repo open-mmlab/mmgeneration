@@ -186,9 +186,21 @@ class TestStyleGAN2Generator:
         assert res.shape == (2, 3, 64, 64)
 
         cfg_ = deepcopy(self.default_cfg)
+        cfg_['mix_prob'] = 1
+        g = StyleGANv2Generator(**cfg_)
+        res = g(None, num_batches=2)
+        assert res.shape == (2, 3, 64, 64)
+
+        cfg_ = deepcopy(self.default_cfg)
         cfg_['mix_prob'] = 0
         g = StyleGANv2Generator(**cfg_)
         res = g(torch.randn, num_batches=2)
+        assert res.shape == (2, 3, 64, 64)
+
+        cfg_ = deepcopy(self.default_cfg)
+        cfg_['mix_prob'] = 0
+        g = StyleGANv2Generator(**cfg_)
+        res = g(None, num_batches=2)
         assert res.shape == (2, 3, 64, 64)
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
