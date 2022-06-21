@@ -30,8 +30,7 @@ class StaticTranslationGAN(BaseTranslationModel, BaseModel):
                  discriminator,
                  *args,
                  pretrained=None,
-                 data_preprocessor=dict(
-                     type='GANDataPreprocessor', rgb_to_bgr=True),
+                 data_preprocessor=dict(type='GANDataPreprocessor'),
                  **kwargs):
         BaseModel.__init__(self, data_preprocessor=data_preprocessor)
         BaseTranslationModel.__init__(self, *args, **kwargs)

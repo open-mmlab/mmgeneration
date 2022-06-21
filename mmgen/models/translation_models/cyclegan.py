@@ -1,7 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from torch.nn.parallel.distributed import _find_tensors
+import torch
+import torch.nn.functional as F
+from mmengine import MessageHub
 
 from mmgen.registry import MODELS
+from mmgen.typing import ForwardOutputs, ValTestStepInputs
 from ..common import GANImageBuffer, set_requires_grad
 from .static_translation_gan import StaticTranslationGAN
 
@@ -15,16 +18,19 @@ class CycleGAN(StaticTranslationGAN):
     Networks
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self,
+                 *args,
+                 buffer_size=50,
+                 loss_config=dict(cycle_loss_weight=10., id_loss_weight=0.5),
+                 **kwargs):
         super().__init__(*args, **kwargs)
         # GAN image buffers
         self.image_buffers = dict()
-        self.buffer_size = (50 if self.train_cfg is None else
-                            self.train_cfg.get('buffer_size', 50))
+        self.buffer_size = buffer_size
         for domain in self._reachable_domains:
             self.image_buffers[domain] = GANImageBuffer(self.buffer_size)
 
-        self.use_ema = False
+        self.loss_config = loss_config
 
     def forward_test(self, img, target_domain, **kwargs):
         """Forward function for testing.
@@ -64,13 +70,13 @@ class CycleGAN(StaticTranslationGAN):
             fake_img = self.image_buffers[domain].query(
                 outputs[f'fake_{domain}'])
             fake_pred = discriminators[domain](fake_img.detach())
-            losses[f'loss_gan_d_{domain}_fake'] = self.gan_loss(
-                fake_pred, target_is_real=False, is_disc=True)
+            losses[f'loss_gan_d_{domain}_fake'] = F.mse_loss(
+                fake_pred, 0. * torch.ones_like(fake_pred))
             real_pred = discriminators[domain](outputs[f'real_{domain}'])
-            losses[f'loss_gan_d_{domain}_real'] = self.gan_loss(
-                real_pred, target_is_real=True, is_disc=True)
+            losses[f'loss_gan_d_{domain}_real'] = F.mse_loss(
+                real_pred, 1. * torch.ones_like(real_pred))
 
-            _loss_d, _log_vars_d = self._parse_losses(losses)
+            _loss_d, _log_vars_d = self.parse_losses(losses)
             _loss_d *= 0.5
             loss_d += _loss_d
             log_vars_d[f'loss_gan_d_{domain}'] = _log_vars_d['loss'] * 0.5
@@ -90,29 +96,37 @@ class CycleGAN(StaticTranslationGAN):
         discriminators = self.get_module(self.discriminators)
 
         losses = dict()
+        # gan loss
         for domain in self._reachable_domains:
             # Identity reconstruction for generators
             outputs[f'identity_{domain}'] = generators[domain](
                 outputs[f'real_{domain}'])
             # GAN loss for generators
             fake_pred = discriminators[domain](outputs[f'fake_{domain}'])
-            losses[f'loss_gan_g_{domain}'] = self.gan_loss(
-                fake_pred, target_is_real=True, is_disc=False)
+            # LSGAN loss
+            losses[f'loss_gan_g_{domain}'] = F.mse_loss(
+                fake_pred, 1. * torch.ones_like(fake_pred))
 
-        # gen auxiliary loss
-        if self.with_gen_auxiliary_loss:
-            for loss_module in self.gen_auxiliary_losses:
-                loss_ = loss_module(outputs)
-                if loss_ is None:
-                    continue
-                # the `loss_name()` function return name as 'loss_xxx'
-                if loss_module.loss_name() in losses:
-                    losses[loss_module.loss_name(
-                    )] = losses[loss_module.loss_name()] + loss_
-                else:
-                    losses[loss_module.loss_name()] = loss_
+        # cycle loss
+        loss_weight = self.loss_config['cycle_loss_weight']
+        losses['cycle_loss'] = 0.
+        for domain in self._reachable_domains:
+            losses['cycle_loss'] += loss_weight * F.l1_loss(
+                outputs[f'cycle_{domain}'],
+                outputs[f'real_{domain}'],
+                reduction='mean')
 
-        loss_g, log_vars_g = self._parse_losses(losses)
+        # id loss
+        loss_weight = self.loss_config['id_loss_weight']
+        if loss_weight != 0.:
+            losses['id_loss'] = 0.
+            for domain in self._reachable_domains:
+                losses['id_loss'] += loss_weight * F.l1_loss(
+                    outputs[f'identity_{domain}'],
+                    outputs[f'real_{domain}'],
+                    reduction='mean')
+
+        loss_g, log_vars_g = self.parse_losses(losses)
 
         return loss_g, log_vars_g
 
@@ -122,11 +136,7 @@ class CycleGAN(StaticTranslationGAN):
                 return item
         return None
 
-    def train_step(self,
-                   data_batch,
-                   optimizer,
-                   ddp_reducer=None,
-                   running_status=None):
+    def train_step(self, data, optim_wrapper):
         """Training step function.
 
         Args:
@@ -144,21 +154,16 @@ class CycleGAN(StaticTranslationGAN):
             dict: Dict of loss, information for logger, the number of samples\
                 and results for visualization.
         """
-        # get running status
-        if running_status is not None:
-            curr_iter = running_status['iteration']
-        else:
-            # dirty walkround for not providing running status
-            if not hasattr(self, 'iteration'):
-                self.iteration = 0
-            curr_iter = self.iteration
+        message_hub = MessageHub.get_current_instance()
+        curr_iter = message_hub.get_info('iter')
+        inputs_dict, data_sample = self.data_preprocessor(data, True)
 
         # forward generators
         outputs = dict()
         for target_domain in self._reachable_domains:
             # fetch data by domain
             source_domain = self.get_other_domains(target_domain)[0]
-            img = data_batch[f'img_{source_domain}']
+            img = inputs_dict[f'img_{source_domain}']
             # translation process
             results = self(img, test_mode=False, target_domain=target_domain)
             outputs[f'real_{source_domain}'] = results['source']
@@ -174,38 +179,41 @@ class CycleGAN(StaticTranslationGAN):
 
         # discriminators
         set_requires_grad(self.discriminators, True)
-        # optimize
-        optimizer['discriminators'].zero_grad()
+        disc_optimizer_wrapper = optim_wrapper['discriminators']
+        disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
         loss_d, log_vars_d = self._get_disc_loss(outputs)
+        disc_optimizer_wrapper.update_params(loss_d)
         log_vars.update(log_vars_d)
-        if ddp_reducer is not None:
-            ddp_reducer.prepare_for_backward(_find_tensors(loss_d))
-        loss_d.backward()
-        optimizer['discriminators'].step()
 
         # generators, no updates to discriminator parameters.
-        if (curr_iter % self.disc_steps == 0
+        if ((curr_iter + 1) % (self.discriminator_steps * disc_accu_iters) == 0
                 and curr_iter >= self.disc_init_steps):
             set_requires_grad(self.discriminators, False)
             # optimize
-            optimizer['generators'].zero_grad()
+            gen_optimizer_wrapper = optim_wrapper['generators']
             loss_g, log_vars_g = self._get_gen_loss(outputs)
+            gen_optimizer_wrapper.update_params(loss_g)
             log_vars.update(log_vars_g)
-            if ddp_reducer is not None:
-                ddp_reducer.prepare_for_backward(_find_tensors(loss_g))
-            loss_g.backward()
-            optimizer['generators'].step()
 
-        if hasattr(self, 'iteration'):
-            self.iteration += 1
+        return log_vars
 
-        image_results = dict()
-        for domain in self._reachable_domains:
-            image_results[f'real_{domain}'] = outputs[f'real_{domain}'].cpu()
-            image_results[f'fake_{domain}'] = outputs[f'fake_{domain}'].cpu()
-        results = dict(
-            log_vars=log_vars,
-            num_samples=len(outputs[f'real_{domain}']),
-            results=image_results)
+    def test_step(self, data: ValTestStepInputs) -> ForwardOutputs:
+        """Gets the generated image of given data. Same as :meth:`val_step`.
 
-        return results
+        Args:
+            data (ValTestStepInputs): Data sampled from metric specific
+                sampler. More detials in `Metrics` and `Evaluator`.
+
+        Returns:
+            ForwardOutputs: Generated image or image dict.
+        """
+        inputs_dict, data_sample = self.data_preprocessor(data)
+        outputs = {}
+        for src_domain in self._reachable_domains:
+            # Identity reconstruction for generators
+            target_domain = self.get_other_domains(src_domain)[0]
+            target = self.forward_test(
+                inputs_dict[f'img_{src_domain}'],
+                target_domain=target_domain)['target']
+            outputs[f'img_{target_domain}'] = target
+        return outputs

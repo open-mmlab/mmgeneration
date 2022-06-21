@@ -226,7 +226,7 @@ def prepare_inception_feat(
                 inception_state = pickle.load(file)
             print_log(
                 f'\'{metric.prefix}\' successful load inception feature '
-                f'from \'{inception_pkl}\'', 'currnet')
+                f'from \'{inception_pkl}\'', 'current')
             return inception_state['inception_feat']
         elif inception_pkl.startswith('s3'):
             try:

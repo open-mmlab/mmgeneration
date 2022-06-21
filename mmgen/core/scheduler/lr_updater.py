@@ -1,53 +1,49 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from mmcv.runner import LrUpdaterHook
+from mmengine import MessageHub
+from mmengine.optim import LinearLR
 
-from mmgen.registry import HOOKS
+from mmgen.registry import PARAM_SCHEDULERS
 
 
-@HOOKS.register_module()
-class LinearLrUpdaterHook(LrUpdaterHook):
+@PARAM_SCHEDULERS.register_module()
+class LinearLrInterval(LinearLR):
     """Linear learning rate scheduler for image generation.
 
-    In the beginning, the learning rate is 'base_lr' defined in mmcv.
-    We give a target learning rate 'target_lr' and a start point 'start'
-    (iteration / epoch). Before 'start', we fix learning rate as 'base_lr';
-    After 'start', we linearly update learning rate to 'target_lr'.
+    In the beginning, the learning rate is 'start_factor' defined in mmengine.
+    We give a target learning rate 'end_factor' and a start point 'begin'.
+    If :attr:self.by_epoch is True, 'begin' is calculated by epoch, otherwise,
+    calculated by iteration." Before 'begin', we fix learning rate as
+    'start_factor'; After 'begin', we linearly update learning rate to
+    'end_factor'.
 
     Args:
-        target_lr (float): The target learning rate. Default: 0.
-        start (int): The start point (iteration / epoch, specified by args
-            'by_epoch' in its parent class in mmcv) to update learning rate.
-            Default: 0.
         interval (int): The interval to update the learning rate. Default: 1.
     """
 
-    def __init__(self, target_lr=0, start=0, interval=1, **kwargs):
-        super().__init__(**kwargs)
-        self.target_lr = target_lr
-        self.start = start
+    def __init__(self, interval=1, *args, **kwargs):
         self.interval = interval
+        super().__init__(*args, **kwargs)
 
-    def get_lr(self, runner, base_lr):
-        """Calculates the learning rate.
+    def _get_value(self):
+        """Compute value using chainable form of the scheduler."""
+        if self.last_step == 0:
+            return [
+                group[self.param_name] * self.start_factor
+                for group in self.optimizer.param_groups
+            ]
 
-        Args:
-            runner (object): The passed runner.
-            base_lr (float): Base learning rate.
-
-        Returns:
-            float: Current learning rate.
-        """
+        message_hub = MessageHub.get_current_instance()
         if self.by_epoch:
-            progress = runner.epoch
-            max_progress = runner.max_epochs
+            progress = message_hub.get_info('epoch')
         else:
-            progress = runner.iter
-            max_progress = runner.max_iters
-        assert max_progress >= self.start
-        if max_progress == self.start:
-            return base_lr
+            progress = message_hub.get_info('iter')
 
-        # Before 'start', fix lr; After 'start', linearly update lr.
-        factor = (max(0, progress - self.start) // self.interval) / (
-            (max_progress - self.start) // self.interval)
-        return base_lr + (self.target_lr - base_lr) * factor
+        max_progress = self.end
+
+        factor = (max(0, progress - self.begin) // self.interval) / (
+            (max_progress - self.begin) // self.interval)
+
+        return [
+            self.start_factor + (self.end_factor - self.start_factor) * factor
+            for group in self.optimizer.param_groups
+        ]

@@ -1,13 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABCMeta, abstractmethod
 
-import torch.nn as nn
+from mmengine.model import BaseModel
 
 from mmgen.registry import MODELS
 
 
 @MODELS.register_module()
-class BaseTranslationModel(nn.Module, metaclass=ABCMeta):
+class BaseTranslationModel(BaseModel, metaclass=ABCMeta):
     """Base Translation Model.
 
     Translation models can transfer images from one domain to
@@ -45,7 +45,8 @@ class BaseTranslationModel(nn.Module, metaclass=ABCMeta):
                  reachable_domains,
                  related_domains,
                  discriminator_steps=1,
-                 disc_init_steps=0):
+                 disc_init_steps=0,
+                 real_img_key='real_img'):
         self._default_domain = default_domain
         self._reachable_domains = reachable_domains
         self._related_domains = related_domains
@@ -54,6 +55,7 @@ class BaseTranslationModel(nn.Module, metaclass=ABCMeta):
 
         self.discriminator_steps = discriminator_steps
         self.disc_init_steps = disc_init_steps
+        self.real_img_key = real_img_key
 
     def forward(self, img, test_mode=False, **kwargs):
         """Forward function.

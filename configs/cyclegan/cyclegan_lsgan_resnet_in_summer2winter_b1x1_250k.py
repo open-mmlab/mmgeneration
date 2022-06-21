@@ -3,45 +3,15 @@ _base_ = [
     '../_base_/datasets/unpaired_imgs_256x256.py',
     '../_base_/default_runtime.py'
 ]
+train_cfg = dict(max_iters=250000)
 
 domain_a = 'summer'
 domain_b = 'winter'
 model = dict(
+    loss_config=dict(cycle_loss_weight=10., id_loss_weight=0.5),
     default_domain=domain_b,
     reachable_domains=[domain_a, domain_b],
-    related_domains=[domain_a, domain_b],
-    gen_auxiliary_loss=[
-        dict(
-            type='L1Loss',
-            loss_weight=10.0,
-            loss_name='cycle_loss',
-            data_info=dict(
-                pred=f'cycle_{domain_a}', target=f'real_{domain_a}'),
-            reduction='mean'),
-        dict(
-            type='L1Loss',
-            loss_weight=10.0,
-            loss_name='cycle_loss',
-            data_info=dict(
-                pred=f'cycle_{domain_b}',
-                target=f'real_{domain_b}',
-            ),
-            reduction='mean'),
-        dict(
-            type='L1Loss',
-            loss_weight=0.5,
-            loss_name='id_loss',
-            data_info=dict(
-                pred=f'identity_{domain_a}', target=f'real_{domain_a}'),
-            reduction='mean'),
-        dict(
-            type='L1Loss',
-            loss_weight=0.5,
-            loss_name='id_loss',
-            data_info=dict(
-                pred=f'identity_{domain_b}', target=f'real_{domain_b}'),
-            reduction='mean')
-    ])
+    related_domains=[domain_a, domain_b])
 dataroot = './data/summer2winter_yosemite'
 train_pipeline = [
     dict(
@@ -55,10 +25,13 @@ train_pipeline = [
         key=f'img_{domain_b}',
         flag='color'),
     dict(
-        type='Resize',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        scale=(286, 286),
-        interpolation='bicubic'),
+        type='TransformBroadcaster',
+        mapping={'img': [f'img_{domain_a}', f'img_{domain_b}']},
+        auto_remap=True,
+        share_random_params=True,
+        transforms=dict(
+            type='Resize', scale=(286, 286), interpolation='bicubic'),
+    ),
     dict(
         type='Crop',
         keys=[f'img_{domain_a}', f'img_{domain_b}'],
@@ -66,16 +39,8 @@ train_pipeline = [
         random_crop=True),
     dict(type='Flip', keys=[f'img_{domain_a}'], direction='horizontal'),
     dict(type='Flip', keys=[f'img_{domain_b}'], direction='horizontal'),
-    dict(type='RescaleToZeroOne', keys=[f'img_{domain_a}', f'img_{domain_b}']),
     dict(
-        type='Normalize',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        to_rgb=False,
-        mean=[0.5, 0.5, 0.5],
-        std=[0.5, 0.5, 0.5]),
-    dict(type='ImageToTensor', keys=[f'img_{domain_a}', f'img_{domain_b}']),
-    dict(
-        type='Collect',
+        type='PackGenInputs',
         keys=[f'img_{domain_a}', f'img_{domain_b}'],
         meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
 ]
@@ -92,83 +57,78 @@ test_pipeline = [
         key=f'img_{domain_b}',
         flag='color'),
     dict(
-        type='Resize',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        scale=(256, 256),
-        interpolation='bicubic'),
-    dict(type='RescaleToZeroOne', keys=[f'img_{domain_a}', f'img_{domain_b}']),
+        type='TransformBroadcaster',
+        mapping={'img': [f'img_{domain_a}', f'img_{domain_b}']},
+        auto_remap=True,
+        share_random_params=True,
+        transforms=dict(
+            type='Resize', scale=(286, 286), interpolation='bicubic'),
+    ),
     dict(
-        type='Normalize',
-        keys=[f'img_{domain_a}', f'img_{domain_b}'],
-        to_rgb=False,
-        mean=[0.5, 0.5, 0.5],
-        std=[0.5, 0.5, 0.5]),
-    dict(type='ImageToTensor', keys=[f'img_{domain_a}', f'img_{domain_b}']),
-    dict(
-        type='Collect',
+        type='PackGenInputs',
         keys=[f'img_{domain_a}', f'img_{domain_b}'],
         meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
 ]
 
-data = dict(
-    train=dict(
-        dataroot=dataroot,
+train_dataloader = dict(
+    batch_size=1,
+    dataset=dict(
+        data_root=dataroot,
         pipeline=train_pipeline,
         domain_a=domain_a,
-        domain_b=domain_b),
-    val=dict(
-        dataroot=dataroot,
-        domain_a=domain_a,
-        domain_b=domain_b,
-        pipeline=test_pipeline),
-    test=dict(
-        dataroot=dataroot,
-        domain_a=domain_a,
-        domain_b=domain_b,
-        pipeline=test_pipeline))
+        domain_b=domain_b))
 
-optimizer = dict(
-    generators=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)),
-    discriminators=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999)))
+val_dataloader = dict(
+    batch_size=1,
+    dataset=dict(
+        data_root=dataroot,
+        pipeline=test_pipeline,
+        test_mode=True,
+        domain_a=domain_a,
+        domain_b=domain_b))
+
+test_dataloader = dict(
+    batch_size=1,
+    dataset=dict(
+        data_root=dataroot,
+        pipeline=test_pipeline,
+        test_mode=True,
+        domain_a=domain_a,
+        domain_b=domain_b))
+
+optim_wrapper = dict(
+    generators=dict(
+        optimizer=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999))),
+    discriminators=dict(
+        optimizer=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999))))
 
 # learning policy
-lr_config = dict(
-    policy='Linear', by_epoch=False, target_lr=0, start=125000, interval=1250)
+param_scheduler = dict(
+    type='LinearLrInterval',
+    interval=1250,
+    by_epoch=False,
+    start_factor=0.0002,
+    end_factor=0,
+    begin=125000,
+    end=250000)
 
-checkpoint_config = dict(interval=10000, save_optimizer=True, by_epoch=False)
-custom_hooks = [
+num_images = 238
+metrics = [
     dict(
-        type='MMGenVisualizationHook',
-        output_dir='training_samples',
-        res_name_list=[f'fake_{domain_a}', f'fake_{domain_b}'],
-        interval=5000)
+        type='TransIS',
+        prefix='IS-Full',
+        fake_nums=num_images,
+        real_key='img_winter',
+        fake_key='img_winter',
+        inception_style='StyleGAN'),
+    dict(
+        type='TransFID',
+        prefix='FID-Full',
+        fake_nums=num_images,
+        inception_style='PyTorch',
+        real_key='img_winter',
+        fake_key='img_winter')
 ]
 
-runner = None
-use_ddp_wrapper = True
-total_iters = 250000
-workflow = [('train', 1)]
-exp_name = 'cyclegan_summer2winter'
-work_dir = f'./work_dirs/experiments/{exp_name}'
-# testA: 309, testB:238
-num_images = 238
-metrics = dict(
-    FID=dict(type='FID', num_images=num_images, image_shape=(3, 256, 256)),
-    IS=dict(
-        type='IS',
-        num_images=num_images,
-        image_shape=(3, 256, 256),
-        inception_args=dict(type='pytorch')))
-
-evaluation = dict(
-    type='TranslationEvalHook',
-    target_domain=domain_b,
-    interval=10000,
-    metrics=[
-        dict(type='FID', num_images=num_images, bgr2rgb=True),
-        dict(
-            type='IS',
-            num_images=num_images,
-            inception_args=dict(type='pytorch'))
-    ],
-    best_metric=['fid', 'is'])
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)
