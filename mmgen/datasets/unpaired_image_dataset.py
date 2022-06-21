@@ -35,16 +35,16 @@ class UnpairedImageDataset(BaseDataset):
     """
 
     def __init__(self,
-                 dataroot,
+                 data_root,
                  pipeline,
                  test_mode=False,
                  domain_a=None,
                  domain_b=None):
         phase = 'test' if test_mode else 'train'
-        self.dataroot_a = osp.join(str(dataroot), phase + 'A')
-        self.dataroot_b = osp.join(str(dataroot), phase + 'B')
+        self.dataroot_a = osp.join(str(data_root), phase + 'A')
+        self.dataroot_b = osp.join(str(data_root), phase + 'B')
         super().__init__(
-            data_root=dataroot,
+            data_root=data_root,
             pipeline=pipeline,
             test_mode=test_mode,
             serialize_data=False)

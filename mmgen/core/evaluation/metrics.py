@@ -374,7 +374,7 @@ class GenerativeMetric(GenMetric, metaclass=ABCMeta):
 
         sample_mode = metrics[0].sample_mode
         assert all([metric.sample_mode == sample_mode for metric in metrics
-                    ]), ('\'sample_model\' between metrics is inconsistency.')
+                    ]), ('\'sample_mode\' between metrics is inconsistency.')
 
         class dummy_iterator:
 
@@ -488,11 +488,11 @@ class FrechetInceptionDistance(GenerativeMetric):
                  inception_pkl: Optional[str] = None,
                  fake_key: Optional[str] = None,
                  real_key: Optional[str] = 'img',
-                 sample_model: str = 'ema',
+                 sample_mode: str = 'ema',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None):
-        super().__init__(fake_nums, real_nums, fake_key, real_key,
-                         sample_model, collect_device, prefix)
+        super().__init__(fake_nums, real_nums, fake_key, real_key, sample_mode,
+                         collect_device, prefix)
         self.real_mean = None
         self.real_cov = None
         self.device = 'cpu'
@@ -714,10 +714,10 @@ class InceptionScore(GenerativeMetric):
                  use_pillow_resize: bool = True,
                  fake_key: Optional[str] = None,
                  real_key: Optional[str] = 'img',
-                 sample_model='orig',
+                 sample_mode='ema',
                  collect_device: str = 'cpu',
                  prefix: str = None):
-        super().__init__(fake_nums, 0, fake_key, real_key, sample_model,
+        super().__init__(fake_nums, 0, fake_key, real_key, sample_mode,
                          collect_device, prefix)
 
         self.resize = resize
@@ -939,3 +939,178 @@ class MultiScaleStructureSimilarity(GenerativeMetric):
         """
         avg = results / self.num_pairs
         return {'avg': str(round(avg.item(), 4))}
+
+
+@METRICS.register_module()
+class TransFID(FrechetInceptionDistance):
+
+    def __init__(self,
+                 fake_nums: int,
+                 real_nums: int = -1,
+                 inception_style='StyleGAN',
+                 inception_path: Optional[str] = None,
+                 inception_pkl: Optional[str] = None,
+                 fake_key: Optional[str] = None,
+                 real_key: Optional[str] = 'img',
+                 sample_model: str = 'ema',
+                 collect_device: str = 'cpu',
+                 prefix: Optional[str] = None):
+        super().__init__(fake_nums, real_nums, inception_style, inception_path,
+                         inception_pkl, fake_key, real_key, sample_model,
+                         collect_device, prefix)
+
+        self.SAMPLER_MODE = 'normal'
+
+    @classmethod
+    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
+                           metrics: List['GenMetric']) -> DataLoader:
+        """Get sampler for normal metrics. Directly returns the dataloader.
+
+        Args:
+            model (nn.Module): Model to evaluate.
+            dataloader (DataLoader): Dataloader for real images.
+            metrics (List['GenMetric']): Metrics with the same sample mode.
+
+        Returns:
+            DataLoader: Default sampler for normal metrics.
+        """
+        return dataloader
+
+    def process(self, data_batch: ValTestStepInputs,
+                predictions: ForwardOutputs) -> None:
+        """Process one batch of data samples and predictions. The processed
+        results should be stored in ``self.fake_results``, which will be used
+        to compute the metrics when all batches have been processed.
+
+        Args:
+            data_batch (Sequence[dict]): A batch of data from the dataloader.
+            predictions (Sequence[dict]): A batch of outputs from the model.
+        """
+        # real images should be preprocessed. Ignore data_batch
+        if isinstance(predictions, dict):
+            fake_img = predictions[self.fake_key]
+        else:
+            fake_img = predictions
+        feat = self.forward_inception(fake_img)
+        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
+        self.fake_results += feat_list
+
+
+@METRICS.register_module()
+class TransIS(InceptionScore):
+    """IS (Inception Score) metric. The images are split into groups, and the
+    inception score is calculated on each group of images, then the mean and
+    standard deviation of the score is reported. The calculation of the
+    inception score on a group of images involves first using the inception v3
+    model to calculate the conditional probability for each image (p(y|x)). The
+    marginal probability is then calculated as the average of the conditional
+    probabilities for the images in the group (p(y)). The KL divergence is then
+    calculated for each image as the conditional probability multiplied by the
+    log of the conditional probability minus the log of the marginal
+    probability. The KL divergence is then summed over all images and averaged
+    over all classes and the exponent of the result is calculated to give the
+    final score.
+
+    Ref: https://github.com/sbarratt/inception-score-pytorch/blob/master/inception_score.py  # noqa
+
+    Note that we highly recommend that users should download the Inception V3
+    script module from the following address. Then, the `inception_pkl` can
+    be set with user's local path. If not given, we will use the Inception V3
+    from pytorch model zoo. However, this may bring significant different in
+    the final results.
+
+    Tero's Inception V3: https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt  # noqa
+
+    Args:
+        fake_nums (int): Numbers of the generated image need for the metric.
+        resize (bool, optional): Whether resize image to 299x299. Defaults to
+            True.
+        splits (int, optional): The number of groups. Defaults to 10.
+        inception_style (str): The target inception style want to load. If the
+            given style cannot be loaded successful, will attempt to load a
+            valid one. Defaults to 'StyleGAN'.
+        inception_path (str, optional): Path the the pretrain Inception
+            network. Defaults to None.
+        resize_method (str): Resize method. If `resize` is False, this will be
+            ignored. Defaults to 'bicubic'.
+        use_pil_resize (bool): Whether use Bicubic interpolation with
+            Pillow's backend. If set as True, the evaluation process may be a
+            little bit slow, but achieve a more accurate IS result. Defaults
+            to False.
+        fake_key (Optional[str]): Key for get fake images of the output dict.
+            Defaults to None.
+        real_key (Optional[str]): Key for get real images from the input dict.
+            Defaults to 'img'.
+        sample_mode (str): Sampling mode for the generative model. Support
+            'orig' and 'ema'. Defaults to 'ema'.
+        collect_device (str, optional): Device name used for collecting results
+            from different ranks during distributed training. Must be 'cpu' or
+            'gpu'. Defaults to 'cpu'.
+        prefix (str, optional): The prefix that will be added in the metric
+            names to disambiguate homonymous metrics of different evaluators.
+            If prefix is not provided in the argument, self.default_prefix
+            will be used instead. Defaults to None.
+    """
+
+    def __init__(self,
+                 fake_nums: int = 50000,
+                 resize: bool = True,
+                 splits: int = 10,
+                 inception_style: str = 'StyleGAN',
+                 inception_path: Optional[str] = None,
+                 resize_method='bicubic',
+                 use_pillow_resize: bool = True,
+                 fake_key: Optional[str] = None,
+                 real_key: Optional[str] = 'img',
+                 sample_mode='ema',
+                 collect_device: str = 'cpu',
+                 prefix: str = None):
+        super().__init__(fake_nums, resize, splits, inception_style,
+                         inception_path, resize_method, use_pillow_resize,
+                         fake_key, real_key, sample_mode, collect_device,
+                         prefix)
+        self.SAMPLER_MODE = 'normal'
+
+    def process(self, data_batch: Optional[Sequence[dict]],
+                predictions: Union[Sequence[dict], Tensor]) -> None:
+        """Process one batch of data samples and predictions. The processed
+        results should be stored in ``self.fake_results``, which will be used
+        to compute the metrics when all batches have been processed.
+
+        Args:
+            data_batch (Sequence[dict]): A batch of data from the dataloader.
+            predictions (Sequence[dict]): A batch of outputs from the model.
+        """
+        if len(self.fake_results) >= self.fake_nums_per_device:
+            return
+
+        if isinstance(predictions, dict):
+            fake_img = predictions[self.fake_key]
+        else:
+            fake_img = predictions
+
+        fake_img = self._preprocess(fake_img).to(self.device)
+        if self.inception_style == 'StyleGAN':
+            fake_img = (fake_img * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+            with disable_gpu_fuser_on_pt19():
+                feat = self.inception(fake_img, no_output_bias=True)
+        else:
+            feat = F.softmax(self.inception(fake_img), dim=1)
+
+        # NOTE: feat is shape like (bz, 1000), convert to a list
+        self.fake_results += list(torch.tensor_split(feat, feat.shape[0]))
+
+    @classmethod
+    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
+                           metrics: List['GenMetric']) -> DataLoader:
+        """Get sampler for normal metrics. Directly returns the dataloader.
+
+        Args:
+            model (nn.Module): Model to evaluate.
+            dataloader (DataLoader): Dataloader for real images.
+            metrics (List['GenMetric']): Metrics with the same sample mode.
+
+        Returns:
+            DataLoader: Default sampler for normal metrics.
+        """
+        return dataloader
