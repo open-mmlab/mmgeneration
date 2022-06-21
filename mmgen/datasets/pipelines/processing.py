@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import numpy as np
-from mmcls.datasets import PIPELINES as CLS_PIPELINE
+from mmcls.registry import TRANSFORMS as CLS_TRANSFORMS
 from mmcv.transforms import BaseTransform
 from mmcv.transforms import Resize as MMCV_Resize
 
@@ -124,7 +124,7 @@ class NumpyPad(BaseTransform):
         return repr_str
 
 
-@CLS_PIPELINE.register_module()
+@CLS_TRANSFORMS.register_module()
 @TRANSFORMS.register_module()
 class RandomCropLongEdge(BaseTransform):
     """Random crop the given image by the long edge.
@@ -169,7 +169,7 @@ class RandomCropLongEdge(BaseTransform):
         return repr_str
 
 
-@CLS_PIPELINE.register_module()
+@CLS_TRANSFORMS.register_module()
 @TRANSFORMS.register_module()
 class CenterCropLongEdge(BaseTransform):
     """Center crop the given image by the long edge.
