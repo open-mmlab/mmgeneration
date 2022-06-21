@@ -544,11 +544,11 @@ class FrechetInceptionDistance(GenerativeMetric):
                  inception_pkl: Optional[str] = None,
                  fake_key: Optional[str] = None,
                  real_key: Optional[str] = 'img',
-                 sample_model: str = 'ema',
+                 sample_mode: str = 'ema',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None):
-        super().__init__(fake_nums, real_nums, fake_key, real_key,
-                         sample_model, collect_device, prefix)
+        super().__init__(fake_nums, real_nums, fake_key, real_key, sample_mode,
+                         collect_device, prefix)
         self.real_mean = None
         self.real_cov = None
         self.device = 'cpu'
