@@ -3,6 +3,7 @@ import math
 import os
 import warnings
 from abc import ABCMeta
+from copy import deepcopy
 from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -1144,6 +1145,131 @@ class PrecisionAndRecall(GenerativeMetric):
 
 
 @METRICS.register_module()
+class Equivariance(GenerativeMetric):
+
+    name = 'Equivariance'
+
+    def __init__(self,
+                 fake_nums: int,
+                 real_nums: int = 0,
+                 fake_key: Optional[str] = None,
+                 real_key: Optional[str] = 'img',
+                 sample_mode: str = 'ema',
+                 sample_kwargs: dict = dict(),
+                 collect_device: str = 'cpu',
+                 prefix: Optional[str] = None,
+                 eq_cfg=dict()):
+        super().__init__(fake_nums, real_nums, fake_key, real_key, sample_mode,
+                         collect_device, prefix)
+        # set default sampler config
+        self._eq_cfg = deepcopy(eq_cfg)
+        self._eq_cfg.setdefault('compute_eqt_int', False)
+        self._eq_cfg.setdefault('compute_eqt_frac', False)
+        self._eq_cfg.setdefault('compute_eqr', False)
+        self._eq_cfg.setdefault('translate_max', 0.125)
+        self._eq_cfg.setdefault('rotate_max', 1)
+
+        self.sample_kwargs = sample_kwargs
+
+    @torch.no_grad()
+    def process(self, data_batch: ValTestStepInputs,
+                predictions: ForwardOutputs) -> None:
+        """Process one batch of data samples and predictions. The processed
+        results should be stored in ``self.fake_results``, which will be used
+        to compute the metrics when all batches have been processed.
+
+        Args:
+            data_batch (Sequence[dict]): A batch of data from the dataloader.
+            predictions (Sequence[dict]): A batch of outputs from the model.
+        """
+        item = torch.stack([x.to(torch.float64).sum() for x in predictions])
+        self.fake_results.append(item)
+
+    def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
+                           metrics: GenMetric):
+        """Get sampler for generative metrics. Returns a dummy iterator, whose
+        return value of each iteration is a dict containing batch size and
+        sample mode to generate images.
+
+        Args:
+            model (nn.Module): Model to evaluate.
+            dataloader (DataLoader): Dataloader for real images. Used to get
+                batch size during generate fake images.
+            metrics (List['GenMetric']): Metrics with the same sampler mode.
+
+        Returns:
+            :class:`dummy_iterator`: Sampler for generative metrics.
+        """
+
+        batch_size = dataloader.batch_size
+
+        sample_mode = metrics[0].sample_mode
+        assert all([metric.sample_mode == sample_mode for metric in metrics
+                    ]), ('\'sample_model\' between metrics is inconsistency.')
+
+        return eq_iterator(
+            batch_size=batch_size,
+            max_length=max([metric.fake_nums_per_device
+                            for metric in metrics]),
+            sample_mode=sample_mode,
+            eq_cfg=self.eq_cfg,
+            sample_kwargs=self.sample_kwargs)
+
+    def compute_metrics(self, results) -> dict:
+        """Compute the metrics from processed results.
+
+        Args:
+            results (list): The processed results of each batch.
+
+        Returns:
+            dict: The computed metrics. The keys are the names of the metrics,
+            and the values are corresponding results.
+        """
+        sums = self.fake_results
+        mses = sums[0::2] / sums[1::2]
+        psnrs = np.log10(2) * 20 - mses.log10() * 10
+        psnrs = tuple(psnrs.numpy())
+
+        results = dict()
+        index = 0
+        if self._eq_cfg['compute_eqt_int']:
+            results['eqt_int'] = psnrs[index]
+            index += 1
+        if self._eq_cfg['compute_eqt_frac']:
+            results['eqt_frac'] = psnrs[index]
+            index += 1
+        if self._eq_cfg['compute_eqr']:
+            results['eqr'] = psnrs[index]
+            index += 1
+        return results
+
+
+class eq_iterator:
+
+    def __init__(self, batch_size, max_length, sample_mode, eq_cfg,
+                 sample_kwargs) -> None:
+        self.batch_size = batch_size
+        self.max_length = max_length
+        self.sample_mode = sample_mode
+        self.eq_cfg = eq_cfg
+        self.sample_kwargs = sample_kwargs
+
+    def __iter__(self) -> Iterator:
+        self.idx = 0
+        return self
+
+    def __next__(self) -> ForwardInputs:
+        if self.idx > self.max_length:
+            raise StopIteration
+        self.idx += self.batch_size
+        mode = dict(
+            sample_mode=self.sample_mode,
+            eq_cfg=self.eq_cfg,
+            sample_kwargs=self.sample_kwargs)
+        # StyleGAN3 forward will receive eq config from mode
+        return dict(mode=mode, num_batches=self.batch_size)
+
+
 class TransFID(FrechetInceptionDistance):
 
     def __init__(self,
