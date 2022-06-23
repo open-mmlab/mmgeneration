@@ -191,6 +191,53 @@ def get_inception_feat_cache_name_and_args(
     return cache_tag, args
 
 
+def get_vgg_feat_cache_name_and_args(dataloader: DataLoader,
+                                     metric: BaseMetric) -> Tuple[str, dict]:
+    """Get the name and meta info of the vgg feature cache file corresponding
+    to the input dataloader and metric. The meta info includs 'data_root',
+    'data_prefix', 'meta_info' and 'pipeline' of the dataset, and
+    'use_tero_scirpt' of the metric. Then we calculate the hash value of the
+    meta info dict with md5, and the name of the vgg feature cache will be
+    'vgg_feat_{HASH}.pkl'.
+
+    Args:
+        datalaoder (Dataloader): The dataloader of real images.
+        metric (BaseMetric): The metric which needs inception features.
+
+    Returns:
+        Tuple[str, dict]: Filename and meta info dict of the inception feature
+            cache.
+    """
+
+    dataset: BaseDataset = dataloader.dataset
+    assert isinstance(dataset, Dataset), (
+        f'Only support normal dataset, but receive {type(dataset)}.')
+
+    # get dataset info
+    data_root = deepcopy(dataset.data_root)
+    data_prefix = deepcopy(dataset.data_prefix)
+    metainfo = dataset.metainfo
+    pipeline = dataset.pipeline
+    if isinstance(pipeline, Compose):
+        pipeline_str = repr(pipeline)
+    else:
+        pipeline_str = ''
+
+    # get metric info
+    use_tero_scirpt = metric.use_tero_scirpt
+
+    args = dict(
+        data_root=data_root,
+        data_prefix=data_prefix,
+        metainfo=metainfo,
+        pipeline=pipeline_str,
+        use_tero_scirpt=use_tero_scirpt)
+
+    md5 = hashlib.md5(repr(sorted(args.items())).encode('utf-8'))
+    cache_tag = f'vgg_state-{md5.hexdigest()}.pkl'
+    return cache_tag, args
+
+
 def prepare_inception_feat(
         dataloader: DataLoader,
         metric: BaseMetric,
@@ -324,4 +371,139 @@ def prepare_inception_feat(
         inception_state = dict(inception_feat=real_feat, **args)
         with open(inception_pkl, 'wb') as file:
             pickle.dump(inception_state, file)
+        return real_feat
+
+
+def prepare_vgg_feat(dataloader: DataLoader,
+                     metric: BaseMetric,
+                     data_preprocessor: Optional[nn.Module] = None,
+                     auto_save=True) -> np.ndarray:
+    """Prepare vgg feature for the input metric.
+
+    - If `metric.vgg_pkl` is an online path, try to download and load
+      it. If cannot download or load, corresponding error will be raised.
+    - If `metric.vgg_pkl` is local path and file exists, try to load the
+      file. If cannot load, corresponding error will be raised.
+    - If `metric.vgg_pkl` is local path and file not exists, we will
+      extract the vgg feature manually and save to 'vgg_pkl'.
+    - If `metric.vgg_pkl` is not defined, we will extrace the vgg
+      feature and save it to default cache dir with default name.
+
+    Args:
+        datalaoder (Dataloader): The dataloader of real images.
+        metric (BaseMetric): The metric which needs vgg features.
+        data_preprocessor (Optional[nn.Module]): Data preprocessor of the
+            module. Used to preprocess the real images. If not passed, real
+            images will automatically normalized to [-1, 1]. Defaults to None.
+
+        Returns:
+            np.ndarray: Loaded vgg feature.
+    """
+    if not hasattr(metric, 'vgg16_pkl'):
+        return
+    vgg_pkl: Optional[str] = metric.vgg16_pkl
+
+    if isinstance(vgg_pkl, str):
+        if is_filepath(vgg_pkl) and osp.exists(vgg_pkl):
+            with open(vgg_pkl, 'rb') as file:
+                vgg_state = pickle.load(file)
+            print_log(
+                f'\'{metric.prefix}\' successful load VGG feature '
+                f'from \'{vgg_pkl}\'', 'currnet')
+            return vgg_state['vgg_feat']
+        elif vgg_pkl.startswith('s3'):
+            try:
+                raise NotImplementedError(
+                    'Not support download from Ceph currently')
+            except Exception as exp:
+                raise exp('Not support download from Ceph currently')
+        elif vgg_pkl.startswith('http'):
+            try:
+                raise NotImplementedError(
+                    'Not support download from url currently')
+            except Exception as exp:
+                # cannot download, raise error
+                raise exp('Not support download from url currently')
+
+    # cannot load or download from file, extract manually
+    if vgg_pkl is None:
+        vgg_pkl, args = get_vgg_feat_cache_name_and_args(dataloader, metric)
+        vgg_pkl = osp.join(MMGEN_CACHE_DIR, vgg_pkl)
+    else:
+        args = dict()
+    if osp.exists(vgg_pkl):
+        with open(vgg_pkl, 'rb') as file:
+            real_feat = pickle.load(file)['vgg_feat']
+        print(f'load preprocessed feat from {vgg_pkl}')
+        return real_feat
+
+    assert hasattr(
+        metric,
+        'vgg16'), ('Metric must have a vgg16 network to extract vgg features.')
+
+    real_feat = []
+    mean = getattr(data_preprocessor, 'mean', None)
+    std = getattr(data_preprocessor, 'std', None)
+
+    print_log(f'Vgg pkl \'{vgg_pkl}\' is not found, extract '
+              'manually.', 'current')
+
+    import rich.progress
+
+    # init rich pbar for the main process
+    if is_main_process():
+        columns = [
+            rich.progress.TextColumn('[bold blue]{task.description}'),
+            rich.progress.BarColumn(bar_width=40),
+            rich.progress.TaskProgressColumn(),
+            rich.progress.TimeRemainingColumn(),
+        ]
+        pbar = rich.progress.Progress(*columns)
+        pbar.start()
+        task = pbar.add_task(
+            'Calculate VGG16 Feature.',
+            total=len(dataloader.dataset),
+            visible=True)
+
+    for data in dataloader:
+        inputs, _ = data_preprocessor(data)
+
+        if isinstance(inputs, dict):
+            real_key = 'img' if metric.real_key is None else metric.real_key
+            img = inputs[real_key]
+        else:
+            img = inputs
+
+        # make sure the input image is in [-1, 1]
+        if mean is None and std is None:
+            # rescale to [-1, 1]
+            img = img / 127.5 - 1
+        else:
+            assert mean is not None and std is not None, (
+                '\'mean\' and \'std\' must be None or not None at the '
+                f'same time. But receive \'{mean}\' and \'{std}\' '
+                'respectively.')
+
+        real_feat_ = metric.extract_features(img)
+        real_feat.append(real_feat_)
+        # real_feat += torch.tensor_split(real_feat_, real_feat_.shape[0])
+        if is_main_process():
+            pbar.update(task, advance=len(real_feat_) * get_world_size())
+
+    # stop the pbar
+    if is_main_process():
+        pbar.stop()
+
+    # collect results
+    real_feat = torch.cat(real_feat)
+    # use `all_gather` here, gather tensor is much quicker than gather object.
+    real_feat = all_gather(real_feat)
+
+    # only cat on the main process
+    if is_main_process():
+        real_feat = torch.cat(real_feat, dim=0)[:len(dataloader.dataset)].cpu()
+        if auto_save:
+            vgg_state = dict(vgg_feat=real_feat, **args)
+            with open(vgg_pkl, 'wb') as file:
+                pickle.dump(vgg_state, file)
         return real_feat
