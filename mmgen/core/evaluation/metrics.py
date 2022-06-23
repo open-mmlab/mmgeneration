@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import math
+import os
 import warnings
 from abc import ABCMeta
 from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
@@ -10,23 +11,28 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmengine import is_list_of, print_log
 from mmengine.dist import (all_gather, all_reduce, broadcast_object_list,
-                           collect_results, get_world_size, is_main_process)
+                           collect_results, get_local_rank, get_world_size,
+                           is_main_process)
 from mmengine.evaluator import BaseMetric
 from PIL import Image
 from scipy import linalg
 from scipy.stats import entropy
 from torch import Tensor
 from torch.utils.data.dataloader import DataLoader
+from torchvision import models as torchvision_models
 
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.architectures.lpips import PerceptualLoss
 from mmgen.registry import METRICS
 from mmgen.typing import ForwardInputs, ForwardOutputs, ValTestStepInputs
 from .inception_utils import (disable_gpu_fuser_on_pt19, load_inception,
-                              prepare_inception_feat)
-from .metric_utils import (finalize_descriptors, get_descriptors_for_minibatch,
-                           get_gaussian_kernel, laplacian_pyramid, ms_ssim,
-                           slerp, sliced_wasserstein)
+                              prepare_inception_feat, prepare_vgg_feat)
+from .metric_utils import (compute_pr_distances, finalize_descriptors,
+                           get_descriptors_for_minibatch, get_gaussian_kernel,
+                           laplacian_pyramid, ms_ssim, slerp,
+                           sliced_wasserstein)
+
+from mmgen.models.architectures.common import get_module_device  # isort:skip  # noqa
 
 
 class GenMetric(BaseMetric):
@@ -943,6 +949,375 @@ class MultiScaleStructureSimilarity(GenerativeMetric):
         return {'avg': str(round(avg.item(), 4))}
 
 
+@METRICS.register_module('PR')
+@METRICS.register_module()
+class PrecisionAndRecall(GenerativeMetric):
+    r"""Improved Precision and recall metric.
+
+        In this metric, we draw real and generated samples respectively, and
+        embed them into a high-dimensional feature space using a pre-trained
+        classifier network. We use these features to estimate the corresponding
+        manifold. We obtain the estimation by calculating pairwise Euclidean
+        distances between all feature vectors in the set and, for each feature
+        vector, construct a hypersphere with radius equal to the distance to its
+        kth nearest neighbor. Together, these hyperspheres define a volume in
+        the feature space that serves as an estimate of the true manifold.
+        Precision is quantified by querying for each generated image whether
+        the image is within the estimated manifold of real images.
+        Symmetrically, recall is calculated by querying for each real image
+        whether the image is within estimated manifold of generated image.
+
+        Ref: https://github.com/NVlabs/stylegan2-ada-pytorch/blob/main/metrics/precision_recall.py  # noqa
+
+        Note that we highly recommend that users should download the vgg16
+        script module from the following address. Then, the `vgg16_script` can
+        be set with user's local path. If not given, we will use the vgg16 from
+        pytorch model zoo. However, this may bring significant different in the
+        final results.
+
+        Tero's vgg16: https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/vgg16.pt
+
+        Args:
+            num_images (int): The number of evaluated generated samples.
+            image_shape (tuple): Image shape in order "CHW". Defaults to None.
+            num_real_need (int | None, optional): The number of real images.
+                Defaults to None.
+            full_dataset (bool, optional): Whether to use full dataset for
+                evaluation. Defaults to False.
+            k (int, optional): Kth nearest parameter. Defaults to 3.
+            bgr2rgb (bool, optional): Whether to change the order of image
+                channel. Defaults to True.
+            vgg16_script (str, optional): Path for the Tero's vgg16 module.
+                Defaults to 'work_dirs/cache/vgg16.pt'.
+            row_batch_size (int, optional): The batch size of row data.
+                Defaults to 10000.
+            col_batch_size (int, optional): The batch size of col data.
+                Defaults to 10000.
+            auto_save (bool, optional): Whether save vgg feature automatically.
+        """
+    name = 'PR'
+
+    def __init__(self,
+                 fake_nums,
+                 real_nums=-1,
+                 k=3,
+                 fake_key: Optional[str] = None,
+                 real_key: Optional[str] = 'img',
+                 sample_mode: str = 'ema',
+                 collect_device: str = 'cpu',
+                 prefix: Optional[str] = None,
+                 vgg16_script='work_dirs/cache/vgg16.pt',
+                 vgg16_pkl=None,
+                 row_batch_size=10000,
+                 col_batch_size=10000,
+                 auto_save=True):
+        super().__init__(fake_nums, real_nums, fake_key, real_key, sample_mode,
+                         collect_device, prefix)
+        print_log('loading vgg16 for improved precision and recall...',
+                  'current')
+        self.vgg16_pkl = vgg16_pkl
+        if os.path.isfile(vgg16_script):
+            self.vgg16 = torch.jit.load('work_dirs/cache/vgg16.pt').eval()
+            self.use_tero_scirpt = True
+        else:
+            print_log(
+                'Cannot load Tero\'s script module. Use official '
+                'vgg16 instead', 'current')
+            self.vgg16 = torchvision_models.vgg16(pretrained=True).eval()
+            self.use_tero_scirpt = False
+        self.k = k
+
+        self.auto_save = auto_save
+        self.row_batch_size = row_batch_size
+        self.col_batch_size = col_batch_size
+        self._color_order = 'bgr'
+
+    @torch.no_grad()
+    def extract_features(self, images):
+        """Extracting image features.
+
+        Args:
+            images (torch.Tensor): Images tensor.
+        Returns:
+            torch.Tensor: Vgg16 features of input images.
+        """
+        if self._color_order == 'bgr':
+            images = images[:, [2, 1, 0], ...]
+        if self.use_tero_scirpt:
+            images = (images * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+            feature = self.vgg16(images, return_features=True)
+        else:
+            batch = F.interpolate(images, size=(224, 224))
+            before_fc = self.vgg16.features(batch)
+            before_fc = before_fc.view(-1, 7 * 7 * 512)
+            feature = self.vgg16.classifier[:4](before_fc)
+
+        return feature
+
+    @torch.no_grad()
+    def compute_metrics(self, results_fake) -> dict:
+        """compute_metrics.
+
+        Returns:
+            dict | list: Summarized results.
+        """
+        gen_features = torch.cat(results_fake, dim=0).to(self.collect_device)
+        real_features = self.results_real
+
+        self._result_dict = {}
+        ws = get_world_size()
+        rank = get_local_rank()
+
+        for name, manifold, probes in [
+            ('precision', real_features, gen_features),
+            ('recall', gen_features, real_features)
+        ]:
+            kth = []
+            for manifold_batch in manifold.split(self.row_batch_size):
+                distance = compute_pr_distances(
+                    row_features=manifold_batch,
+                    col_features=manifold,
+                    num_gpus=ws,
+                    rank=rank,
+                    col_batch_size=self.col_batch_size)
+                kth.append(
+                    distance.to(torch.float32).kthvalue(self.k + 1).values.
+                    to(torch.float16) if rank == 0 else None)
+            kth = torch.cat(kth) if rank == 0 else None
+            pred = []
+            for probes_batch in probes.split(self.row_batch_size):
+                distance = compute_pr_distances(
+                    row_features=probes_batch,
+                    col_features=manifold,
+                    num_gpus=ws,
+                    rank=rank,
+                    col_batch_size=self.col_batch_size)
+                pred.append((distance <= kth).any(
+                    dim=1) if rank == 0 else None)
+            self._result_dict[name] = float(
+                torch.cat(pred).to(torch.float32).mean() if rank ==
+                0 else 'nan')
+
+        precision = self._result_dict['precision']
+        recall = self._result_dict['recall']
+        self._result_str = f'precision: {precision}, recall:{recall}'
+        return self._result_dict
+
+    @torch.no_grad()
+    def process(self, data_batch: ValTestStepInputs,
+                predictions: ForwardOutputs) -> None:
+        """Process one batch of data samples and predictions. The processed
+        results should be stored in ``self.fake_results``, which will be used
+        to compute the metrics when all batches have been processed.
+
+        Args:
+            data_batch (Sequence[dict]): A batch of data from the dataloader.
+            predictions (Sequence[dict]): A batch of outputs from the model.
+        """
+        # real images should be preprocessed. Ignore data_batch
+        if isinstance(predictions, dict):
+            fake_img = predictions[self.sample_mode]
+            if isinstance(fake_img, dict):
+                fake_img = fake_img[self.fake_key]
+        else:
+            fake_img = predictions
+        feat = self.extract_features(fake_img)
+        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
+        self.fake_results += feat_list
+
+    @torch.no_grad()
+    def prepare(self, module: nn.Module, dataloader: DataLoader) -> None:
+        # move to corresponding device
+        device = get_module_device(module)
+        self.vgg16.to(device)
+
+        vgg_feat = prepare_vgg_feat(dataloader, self, module.data_preprocessor,
+                                    self.auto_save)
+        if self.real_nums != -1:
+            assert self.real_nums <= vgg_feat.shape[0], (
+                f'Need \'{self.real_nums}\' of real nums, but only '
+                f'\'{vgg_feat.shape[0]}\' images be found in the '
+                'inception feature.')
+            vgg_feat = vgg_feat[np.random.choice(
+                vgg_feat.shape[0], size=self.real_nums, replace=True)]
+        self.results_real = vgg_feat
+
+
+@METRICS.register_module()
+class TransFID(FrechetInceptionDistance):
+
+    def __init__(self,
+                 fake_nums: int,
+                 real_nums: int = -1,
+                 inception_style='StyleGAN',
+                 inception_path: Optional[str] = None,
+                 inception_pkl: Optional[str] = None,
+                 fake_key: Optional[str] = None,
+                 real_key: Optional[str] = 'img',
+                 sample_model: str = 'ema',
+                 collect_device: str = 'cpu',
+                 prefix: Optional[str] = None):
+        super().__init__(fake_nums, real_nums, inception_style, inception_path,
+                         inception_pkl, fake_key, real_key, sample_model,
+                         collect_device, prefix)
+
+        self.SAMPLER_MODE = 'normal'
+
+    @classmethod
+    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
+                           metrics: List['GenMetric']) -> DataLoader:
+        """Get sampler for normal metrics. Directly returns the dataloader.
+
+        Args:
+            model (nn.Module): Model to evaluate.
+            dataloader (DataLoader): Dataloader for real images.
+            metrics (List['GenMetric']): Metrics with the same sample mode.
+
+        Returns:
+            DataLoader: Default sampler for normal metrics.
+        """
+        return dataloader
+
+    def process(self, data_batch: ValTestStepInputs,
+                predictions: ForwardOutputs) -> None:
+        """Process one batch of data samples and predictions. The processed
+        results should be stored in ``self.fake_results``, which will be used
+        to compute the metrics when all batches have been processed.
+
+        Args:
+            data_batch (Sequence[dict]): A batch of data from the dataloader.
+            predictions (Sequence[dict]): A batch of outputs from the model.
+        """
+        # real images should be preprocessed. Ignore data_batch
+        if isinstance(predictions, dict):
+            fake_img = predictions[self.fake_key]
+        else:
+            fake_img = predictions
+        feat = self.forward_inception(fake_img)
+        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
+        self.fake_results += feat_list
+
+
+@METRICS.register_module()
+class TransIS(InceptionScore):
+    """IS (Inception Score) metric. The images are split into groups, and the
+    inception score is calculated on each group of images, then the mean and
+    standard deviation of the score is reported. The calculation of the
+    inception score on a group of images involves first using the inception v3
+    model to calculate the conditional probability for each image (p(y|x)). The
+    marginal probability is then calculated as the average of the conditional
+    probabilities for the images in the group (p(y)). The KL divergence is then
+    calculated for each image as the conditional probability multiplied by the
+    log of the conditional probability minus the log of the marginal
+    probability. The KL divergence is then summed over all images and averaged
+    over all classes and the exponent of the result is calculated to give the
+    final score.
+
+    Ref: https://github.com/sbarratt/inception-score-pytorch/blob/master/inception_score.py  # noqa
+
+    Note that we highly recommend that users should download the Inception V3
+    script module from the following address. Then, the `inception_pkl` can
+    be set with user's local path. If not given, we will use the Inception V3
+    from pytorch model zoo. However, this may bring significant different in
+    the final results.
+
+    Tero's Inception V3: https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt  # noqa
+
+    Args:
+        fake_nums (int): Numbers of the generated image need for the metric.
+        resize (bool, optional): Whether resize image to 299x299. Defaults to
+            True.
+        splits (int, optional): The number of groups. Defaults to 10.
+        inception_style (str): The target inception style want to load. If the
+            given style cannot be loaded successful, will attempt to load a
+            valid one. Defaults to 'StyleGAN'.
+        inception_path (str, optional): Path the the pretrain Inception
+            network. Defaults to None.
+        resize_method (str): Resize method. If `resize` is False, this will be
+            ignored. Defaults to 'bicubic'.
+        use_pil_resize (bool): Whether use Bicubic interpolation with
+            Pillow's backend. If set as True, the evaluation process may be a
+            little bit slow, but achieve a more accurate IS result. Defaults
+            to False.
+        fake_key (Optional[str]): Key for get fake images of the output dict.
+            Defaults to None.
+        real_key (Optional[str]): Key for get real images from the input dict.
+            Defaults to 'img'.
+        sample_mode (str): Sampling mode for the generative model. Support
+            'orig' and 'ema'. Defaults to 'ema'.
+        collect_device (str, optional): Device name used for collecting results
+            from different ranks during distributed training. Must be 'cpu' or
+            'gpu'. Defaults to 'cpu'.
+        prefix (str, optional): The prefix that will be added in the metric
+            names to disambiguate homonymous metrics of different evaluators.
+            If prefix is not provided in the argument, self.default_prefix
+            will be used instead. Defaults to None.
+    """
+
+    def __init__(self,
+                 fake_nums: int = 50000,
+                 resize: bool = True,
+                 splits: int = 10,
+                 inception_style: str = 'StyleGAN',
+                 inception_path: Optional[str] = None,
+                 resize_method='bicubic',
+                 use_pillow_resize: bool = True,
+                 fake_key: Optional[str] = None,
+                 real_key: Optional[str] = 'img',
+                 sample_mode='ema',
+                 collect_device: str = 'cpu',
+                 prefix: str = None):
+        super().__init__(fake_nums, resize, splits, inception_style,
+                         inception_path, resize_method, use_pillow_resize,
+                         fake_key, real_key, sample_mode, collect_device,
+                         prefix)
+        self.SAMPLER_MODE = 'normal'
+
+    def process(self, data_batch: Optional[Sequence[dict]],
+                predictions: Union[Sequence[dict], Tensor]) -> None:
+        """Process one batch of data samples and predictions. The processed
+        results should be stored in ``self.fake_results``, which will be used
+        to compute the metrics when all batches have been processed.
+
+        Args:
+            data_batch (Sequence[dict]): A batch of data from the dataloader.
+            predictions (Sequence[dict]): A batch of outputs from the model.
+        """
+        if len(self.fake_results) >= self.fake_nums_per_device:
+            return
+
+        if isinstance(predictions, dict):
+            fake_img = predictions[self.fake_key]
+        else:
+            fake_img = predictions
+
+        fake_img = self._preprocess(fake_img).to(self.device)
+        if self.inception_style == 'StyleGAN':
+            fake_img = (fake_img * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+            with disable_gpu_fuser_on_pt19():
+                feat = self.inception(fake_img, no_output_bias=True)
+        else:
+            feat = F.softmax(self.inception(fake_img), dim=1)
+
+        # NOTE: feat is shape like (bz, 1000), convert to a list
+        self.fake_results += list(torch.tensor_split(feat, feat.shape[0]))
+
+    @classmethod
+    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
+                           metrics: List['GenMetric']) -> DataLoader:
+        """Get sampler for normal metrics. Directly returns the dataloader.
+
+        Args:
+            model (nn.Module): Model to evaluate.
+            dataloader (DataLoader): Dataloader for real images.
+            metrics (List['GenMetric']): Metrics with the same sample mode.
+
+        Returns:
+            DataLoader: Default sampler for normal metrics.
+        """
+        return dataloader
+
+
 @METRICS.register_module('PPL')
 @METRICS.register_module()
 class PerceptualPathLength(GenerativeMetric):
@@ -1166,178 +1541,3 @@ class PerceptualPathLength(GenerativeMetric):
             epsilon=self.epsilon,
             latent_dim=self.latent_dim)
         return ppl_sampler
-
-
-@METRICS.register_module()
-class TransFID(FrechetInceptionDistance):
-
-    def __init__(self,
-                 fake_nums: int,
-                 real_nums: int = -1,
-                 inception_style='StyleGAN',
-                 inception_path: Optional[str] = None,
-                 inception_pkl: Optional[str] = None,
-                 fake_key: Optional[str] = None,
-                 real_key: Optional[str] = 'img',
-                 sample_model: str = 'ema',
-                 collect_device: str = 'cpu',
-                 prefix: Optional[str] = None):
-        super().__init__(fake_nums, real_nums, inception_style, inception_path,
-                         inception_pkl, fake_key, real_key, sample_model,
-                         collect_device, prefix)
-
-        self.SAMPLER_MODE = 'normal'
-
-    @classmethod
-    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
-                           metrics: List['GenMetric']) -> DataLoader:
-        """Get sampler for normal metrics. Directly returns the dataloader.
-
-        Args:
-            model (nn.Module): Model to evaluate.
-            dataloader (DataLoader): Dataloader for real images.
-            metrics (List['GenMetric']): Metrics with the same sample mode.
-
-        Returns:
-            DataLoader: Default sampler for normal metrics.
-        """
-        return dataloader
-
-    def process(self, data_batch: ValTestStepInputs,
-                predictions: ForwardOutputs) -> None:
-        """Process one batch of data samples and predictions. The processed
-        results should be stored in ``self.fake_results``, which will be used
-        to compute the metrics when all batches have been processed.
-
-        Args:
-            data_batch (Sequence[dict]): A batch of data from the dataloader.
-            predictions (Sequence[dict]): A batch of outputs from the model.
-        """
-        # real images should be preprocessed. Ignore data_batch
-        if isinstance(predictions, dict):
-            fake_img = predictions[self.fake_key]
-        else:
-            fake_img = predictions
-        feat = self.forward_inception(fake_img)
-        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
-        self.fake_results += feat_list
-
-
-@METRICS.register_module()
-class TransIS(InceptionScore):
-    """IS (Inception Score) metric. The images are split into groups, and the
-    inception score is calculated on each group of images, then the mean and
-    standard deviation of the score is reported. The calculation of the
-    inception score on a group of images involves first using the inception v3
-    model to calculate the conditional probability for each image (p(y|x)). The
-    marginal probability is then calculated as the average of the conditional
-    probabilities for the images in the group (p(y)). The KL divergence is then
-    calculated for each image as the conditional probability multiplied by the
-    log of the conditional probability minus the log of the marginal
-    probability. The KL divergence is then summed over all images and averaged
-    over all classes and the exponent of the result is calculated to give the
-    final score.
-
-    Ref: https://github.com/sbarratt/inception-score-pytorch/blob/master/inception_score.py  # noqa
-
-    Note that we highly recommend that users should download the Inception V3
-    script module from the following address. Then, the `inception_pkl` can
-    be set with user's local path. If not given, we will use the Inception V3
-    from pytorch model zoo. However, this may bring significant different in
-    the final results.
-
-    Tero's Inception V3: https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/inception-2015-12-05.pt  # noqa
-
-    Args:
-        fake_nums (int): Numbers of the generated image need for the metric.
-        resize (bool, optional): Whether resize image to 299x299. Defaults to
-            True.
-        splits (int, optional): The number of groups. Defaults to 10.
-        inception_style (str): The target inception style want to load. If the
-            given style cannot be loaded successful, will attempt to load a
-            valid one. Defaults to 'StyleGAN'.
-        inception_path (str, optional): Path the the pretrain Inception
-            network. Defaults to None.
-        resize_method (str): Resize method. If `resize` is False, this will be
-            ignored. Defaults to 'bicubic'.
-        use_pil_resize (bool): Whether use Bicubic interpolation with
-            Pillow's backend. If set as True, the evaluation process may be a
-            little bit slow, but achieve a more accurate IS result. Defaults
-            to False.
-        fake_key (Optional[str]): Key for get fake images of the output dict.
-            Defaults to None.
-        real_key (Optional[str]): Key for get real images from the input dict.
-            Defaults to 'img'.
-        sample_mode (str): Sampling mode for the generative model. Support
-            'orig' and 'ema'. Defaults to 'ema'.
-        collect_device (str, optional): Device name used for collecting results
-            from different ranks during distributed training. Must be 'cpu' or
-            'gpu'. Defaults to 'cpu'.
-        prefix (str, optional): The prefix that will be added in the metric
-            names to disambiguate homonymous metrics of different evaluators.
-            If prefix is not provided in the argument, self.default_prefix
-            will be used instead. Defaults to None.
-    """
-
-    def __init__(self,
-                 fake_nums: int = 50000,
-                 resize: bool = True,
-                 splits: int = 10,
-                 inception_style: str = 'StyleGAN',
-                 inception_path: Optional[str] = None,
-                 resize_method='bicubic',
-                 use_pillow_resize: bool = True,
-                 fake_key: Optional[str] = None,
-                 real_key: Optional[str] = 'img',
-                 sample_mode='ema',
-                 collect_device: str = 'cpu',
-                 prefix: str = None):
-        super().__init__(fake_nums, resize, splits, inception_style,
-                         inception_path, resize_method, use_pillow_resize,
-                         fake_key, real_key, sample_mode, collect_device,
-                         prefix)
-        self.SAMPLER_MODE = 'normal'
-
-    def process(self, data_batch: Optional[Sequence[dict]],
-                predictions: Union[Sequence[dict], Tensor]) -> None:
-        """Process one batch of data samples and predictions. The processed
-        results should be stored in ``self.fake_results``, which will be used
-        to compute the metrics when all batches have been processed.
-
-        Args:
-            data_batch (Sequence[dict]): A batch of data from the dataloader.
-            predictions (Sequence[dict]): A batch of outputs from the model.
-        """
-        if len(self.fake_results) >= self.fake_nums_per_device:
-            return
-
-        if isinstance(predictions, dict):
-            fake_img = predictions[self.fake_key]
-        else:
-            fake_img = predictions
-
-        fake_img = self._preprocess(fake_img).to(self.device)
-        if self.inception_style == 'StyleGAN':
-            fake_img = (fake_img * 127.5 + 128).clamp(0, 255).to(torch.uint8)
-            with disable_gpu_fuser_on_pt19():
-                feat = self.inception(fake_img, no_output_bias=True)
-        else:
-            feat = F.softmax(self.inception(fake_img), dim=1)
-
-        # NOTE: feat is shape like (bz, 1000), convert to a list
-        self.fake_results += list(torch.tensor_split(feat, feat.shape[0]))
-
-    @classmethod
-    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
-                           metrics: List['GenMetric']) -> DataLoader:
-        """Get sampler for normal metrics. Directly returns the dataloader.
-
-        Args:
-            model (nn.Module): Model to evaluate.
-            dataloader (DataLoader): Dataloader for real images.
-            metrics (List['GenMetric']): Metrics with the same sample mode.
-
-        Returns:
-            DataLoader: Default sampler for normal metrics.
-        """
-        return dataloader

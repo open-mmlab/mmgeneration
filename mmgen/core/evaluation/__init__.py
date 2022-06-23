@@ -6,7 +6,8 @@ from .evaluation import (make_metrics_table, make_vanilla_dataloader,
 from .evaluator import GenEvaluator
 from .metric_utils import slerp
 from .metrics import (FrechetInceptionDistance, InceptionScore,
-                      MultiScaleStructureSimilarity, SlicedWassersteinDistance)
+                      MultiScaleStructureSimilarity, PrecisionAndRecall,
+                      SlicedWassersteinDistance)
 
 # <<< new code
 
@@ -23,6 +24,7 @@ __all__ = [
     'FrechetInceptionDistance',
     'MultiScaleStructureSimilarity',
     'SlicedWassersteinDistance',
-    'GenEvaluator'
+    'GenEvaluator',
+    'PrecisionAndRecall'
     # <<< new code
 ]
