@@ -18,13 +18,15 @@ from scipy.stats import entropy
 from torch import Tensor
 from torch.utils.data.dataloader import DataLoader
 
+from mmgen.models.architectures.common import get_module_device
+from mmgen.models.architectures.lpips import PerceptualLoss
 from mmgen.registry import METRICS
 from mmgen.typing import ForwardInputs, ForwardOutputs, ValTestStepInputs
 from .inception_utils import (disable_gpu_fuser_on_pt19, load_inception,
                               prepare_inception_feat)
 from .metric_utils import (finalize_descriptors, get_descriptors_for_minibatch,
                            get_gaussian_kernel, laplacian_pyramid, ms_ssim,
-                           sliced_wasserstein)
+                           slerp, sliced_wasserstein)
 
 
 class GenMetric(BaseMetric):
@@ -939,6 +941,231 @@ class MultiScaleStructureSimilarity(GenerativeMetric):
         """
         avg = results / self.num_pairs
         return {'avg': str(round(avg.item(), 4))}
+
+
+@METRICS.register_module('PPL')
+@METRICS.register_module()
+class PerceptualPathLength(GenerativeMetric):
+    r"""Perceptual path length.
+
+        Measure the difference between consecutive images (their VGG16
+        embeddings) when interpolating between two random inputs. Drastic
+        changes mean that multiple features have changed together and that
+        they might be entangled.
+
+        Ref: https://github.com/rosinality/stylegan2-pytorch/blob/master/ppl.py # noqa
+
+        Args:
+            num_images (int): The number of evaluated generated samples.
+            image_shape (tuple, optional): Image shape in order "CHW". Defaults
+                to None.
+            crop (bool, optional): Whether crop images. Defaults to True.
+            epsilon (float, optional): Epsilon parameter for path sampling.
+                Defaults to 1e-4.
+            space (str, optional): Latent space. Defaults to 'W'.
+            sampling (str, optional): Sampling mode, whether sampling in full
+                path or endpoints. Defaults to 'end'.
+            latent_dim (int, optional): Latent dimension of input noise.
+                Defaults to 512.
+    """
+    SAMPLER_MODE = 'path'
+
+    def __init__(self,
+                 fake_nums: int,
+                 real_nums: int = 0,
+                 fake_key: Optional[str] = None,
+                 real_key: Optional[str] = 'img',
+                 sample_mode: str = 'ema',
+                 collect_device: str = 'cpu',
+                 prefix: Optional[str] = None,
+                 crop=True,
+                 epsilon=1e-4,
+                 space='W',
+                 sampling='end',
+                 latent_dim=512):
+        super().__init__(fake_nums, real_nums, fake_key, real_key, sample_mode,
+                         collect_device, prefix)
+        self.crop = crop
+
+        self.epsilon = epsilon
+        self.space = space
+        self.sampling = sampling
+        self.latent_dim = latent_dim
+
+    @torch.no_grad()
+    def process(self, data_batch: ValTestStepInputs,
+                predictions: ForwardOutputs) -> None:
+        """Process one batch of data samples and predictions. The processed
+        results should be stored in ``self.fake_results``, which will be used
+        to compute the metrics when all batches have been processed.
+
+        Args:
+            data_batch (Sequence[dict]): A batch of data from the dataloader.
+            predictions (Sequence[dict]): A batch of outputs from the model.
+        """
+        # real images should be preprocessed. Ignore data_batch
+        if isinstance(predictions, dict):
+            fake_img = predictions[self.sample_mode]
+            if isinstance(fake_img, dict):
+                fake_img = fake_img[self.fake_key]
+        else:
+            fake_img = predictions
+        feat = self._compute_distance(fake_img)
+        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
+        self.fake_results += feat_list
+
+    @torch.no_grad()
+    def _compute_distance(self, images):
+        """Feed data to the metric.
+
+        Args:
+            images (Tensor): Input tensor.
+        """
+        # use minibatch's device type to initialize a lpips calculator
+        if not hasattr(self, 'percept'):
+            self.percept = PerceptualLoss(
+                use_gpu=images.device.type.startswith('cuda'))
+        # crop and resize images
+        if self.crop:
+            c = images.shape[2] // 8
+            minibatch = images[:, :, c * 3:c * 7, c * 2:c * 6]
+
+        factor = minibatch.shape[2] // 256
+        if factor > 1:
+            minibatch = F.interpolate(
+                minibatch,
+                size=(256, 256),
+                mode='bilinear',
+                align_corners=False)
+        # calculator and store lpips score
+        distance = self.percept(minibatch[::2], minibatch[1::2]).view(
+            minibatch.shape[0] // 2) / (
+                self.epsilon**2)
+        return distance.to('cpu')
+
+    @torch.no_grad()
+    def compute_metrics(self, fake_results: list) -> dict:
+        """Summarize the results.
+
+        Returns:
+            dict | list: Summarized results.
+        """
+        distances = torch.cat(self.fake_results, dim=0).numpy()
+        lo = np.percentile(distances, 1, interpolation='lower')
+        hi = np.percentile(distances, 99, interpolation='higher')
+        filtered_dist = np.extract(
+            np.logical_and(lo <= distances, distances <= hi), distances)
+        ppl_score = float(filtered_dist.mean())
+        return {'ppl_score': ppl_score}
+
+    def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
+                           metrics: GenMetric):
+        """Get sampler for generative metrics. Returns a dummy iterator, whose
+        return value of each iteration is a dict containing batch size and
+        sample mode to generate images.
+
+        Args:
+            model (nn.Module): Model to evaluate.
+            dataloader (DataLoader): Dataloader for real images. Used to get
+                batch size during generate fake images.
+            metrics (List['GenMetric']): Metrics with the same sampler mode.
+
+        Returns:
+            :class:`dummy_iterator`: Sampler for generative metrics.
+        """
+
+        batch_size = dataloader.batch_size
+
+        sample_mode = metrics[0].sample_mode
+        assert all([metric.sample_mode == sample_mode for metric in metrics
+                    ]), ('\'sample_model\' between metrics is inconsistency.')
+
+        class PPLSampler:
+            """StyleGAN series generator's sampling iterator for PPL metric.
+
+            Args:
+                generator (nn.Module): StyleGAN series' generator.
+                num_images (int): The number of evaluated generated samples.
+                batch_size (int): Batch size of generated images.
+                space (str, optional): Latent space. Defaults to 'W'.
+                sampling (str, optional): Sampling mode, whether sampling in
+                    full path or endpoints. Defaults to 'end'.
+                epsilon (float, optional): Epsilon parameter for path sampling.
+                    Defaults to 1e-4.
+                latent_dim (int, optional): Latent dimension of input noise.
+                    Defaults to 512.
+            """
+
+            def __init__(self,
+                         generator,
+                         num_images,
+                         batch_size,
+                         space='W',
+                         sampling='end',
+                         epsilon=1e-4,
+                         latent_dim=512):
+                assert space in ['Z', 'W']
+                assert sampling in ['full', 'end']
+                n_batch = num_images // batch_size
+
+                resid = num_images - (n_batch * batch_size)
+                self.batch_sizes = [batch_size] * n_batch + ([resid] if
+                                                             resid > 0 else [])
+                self.device = get_module_device(generator)
+                self.generator = generator
+                self.latent_dim = latent_dim
+                self.space = space
+                self.sampling = sampling
+                self.epsilon = epsilon
+
+            def __iter__(self):
+                self.idx = 0
+                return self
+
+            @torch.no_grad()
+            def __next__(self):
+                if self.idx >= len(self.batch_sizes):
+                    raise StopIteration
+                batch = self.batch_sizes[self.idx]
+                inputs = torch.randn([batch * 2, self.latent_dim],
+                                     device=self.device)
+                if self.sampling == 'full':
+                    lerp_t = torch.rand(batch, device=self.device)
+                else:
+                    lerp_t = torch.zeros(batch, device=self.device)
+
+                if self.space == 'W':
+                    assert hasattr(self.generator, 'style_mapping')
+                    latent = self.generator.style_mapping(inputs)
+                    latent_t0, latent_t1 = latent[::2], latent[1::2]
+                    latent_e0 = torch.lerp(latent_t0, latent_t1, lerp_t[:,
+                                                                        None])
+                    latent_e1 = torch.lerp(latent_t0, latent_t1,
+                                           lerp_t[:, None] + self.epsilon)
+                    latent_e = torch.stack([latent_e0, latent_e1],
+                                           1).view(*latent.shape)
+                else:
+                    latent_t0, latent_t1 = inputs[::2], inputs[1::2]
+                    latent_e0 = slerp(latent_t0, latent_t1, lerp_t[:, None])
+                    latent_e1 = slerp(latent_t0, latent_t1,
+                                      lerp_t[:, None] + self.epsilon)
+                    latent_e = torch.stack([latent_e0, latent_e1],
+                                           1).view(*inputs.shape)
+
+                self.idx += 1
+                return dict(noise=latent_e)
+
+        ppl_sampler = PPLSampler(
+            model.generator_ema
+            if self.sample_mode == 'ema' else model.generator,
+            num_images=max([metric.fake_nums_per_device
+                            for metric in metrics]),
+            batch_size=batch_size,
+            space=self.space,
+            sampling=self.sampling,
+            epsilon=self.epsilon,
+            latent_dim=self.latent_dim)
+        return ppl_sampler
 
 
 @METRICS.register_module()
