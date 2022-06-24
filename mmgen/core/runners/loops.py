@@ -55,6 +55,10 @@ class GenValLoop(ValLoop):
         # 2. prepare for metric-sampler pair
         metrics_sampler_list = self.evaluator.prepare_samplers(
             module, self.dataloader)
+        # used for log processor
+        self.total_length = sum([
+            len(metrics_sampler[1]) for metrics_sampler in metrics_sampler_list
+        ])
 
         # 3. generate images
         idx_counter = 0
@@ -129,12 +133,17 @@ class GenTestLoop(TestLoop):
         module = self.runner.model
         if hasattr(self.runner.model, 'module'):
             module = module.module
-        # 0. prepare for metrics
+
+        # 1. prepare for metrics
         self.evaluator.prepare_metrics(module, self.dataloader)
 
-        # 1. prepare for metric-sampler pair
+        # 2. prepare for metric-sampler pair
         metrics_sampler_list = self.evaluator.prepare_samplers(
             module, self.dataloader)
+        # used for log processor
+        self.total_length = sum([
+            len(metrics_sampler[1]) for metrics_sampler in metrics_sampler_list
+        ])
 
         idx_counter = 0
         for metrics, sampler in metrics_sampler_list:
@@ -142,9 +151,8 @@ class GenTestLoop(TestLoop):
                 self.run_iter(idx_counter, data, metrics)
                 idx_counter += 1
 
-        # 2. evaluate metrics
+        # 3. evaluate metrics
         metrics_output = self.evaluator.evaluate()
-
         self.runner.call_hook('after_test_epoch', metrics=metrics_output)
         self.runner.call_hook('after_test')
 

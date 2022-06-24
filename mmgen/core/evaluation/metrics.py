@@ -438,6 +438,9 @@ class GenerativeMetric(GenMetric, metaclass=ABCMeta):
                 self.idx = 0
                 return self
 
+            def __len__(self) -> int:
+                return math.ceil(self.max_length / self.batch_size)
+
             def __next__(self) -> ForwardInputs:
                 if self.idx > self.max_length:
                     raise StopIteration
@@ -540,11 +543,11 @@ class FrechetInceptionDistance(GenerativeMetric):
                  inception_pkl: Optional[str] = None,
                  fake_key: Optional[str] = None,
                  real_key: Optional[str] = 'img',
-                 sample_mode: str = 'ema',
+                 sample_model: str = 'ema',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None):
-        super().__init__(fake_nums, real_nums, fake_key, real_key, sample_mode,
-                         collect_device, prefix)
+        super().__init__(fake_nums, real_nums, fake_key, real_key,
+                         sample_model, collect_device, prefix)
         self.real_mean = None
         self.real_cov = None
         self.device = 'cpu'
