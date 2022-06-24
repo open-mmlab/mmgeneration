@@ -11,9 +11,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmengine import is_list_of, print_log
-from mmengine.dist import (all_gather, all_reduce, broadcast_object_list,
-                           collect_results, get_local_rank, get_world_size,
-                           is_main_process)
+from mmengine.dist import (all_gather, broadcast_object_list, collect_results,
+                           get_local_rank, get_world_size, is_main_process)
 from mmengine.evaluator import BaseMetric
 from PIL import Image
 from scipy import linalg
@@ -47,7 +46,7 @@ class GenMetric(BaseMetric):
             Defaults to None.
         real_key (Optional[str]): Key for get real images from the input dict.
             Defaults to 'img'.
-        sample_mode (str): Sampling mode for the generative model. Support
+        sample_model (str): Sampling model for the generative model. Support
             'orig' and 'ema'. Defaults to 'ema'.
         collect_device (str): Device name used for collecting results from
             different ranks during distributed training. Must be 'cpu' or
@@ -65,11 +64,11 @@ class GenMetric(BaseMetric):
                  real_nums: int = 0,
                  fake_key: Optional[str] = None,
                  real_key: Optional[str] = 'img',
-                 sample_mode: str = 'ema',
+                 sample_model: str = 'ema',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None) -> None:
         super().__init__(collect_device, prefix)
-        self.sample_mode = sample_mode
+        self.sample_model = sample_model
 
         self.fake_nums = fake_nums
         self.real_nums = real_nums
@@ -228,7 +227,7 @@ class SlicedWassersteinDistance(GenMetric):
             Defaults to None.
         real_key (Optional[str]): Key for get real images from the input dict.
             Defaults to 'img'.
-        sample_mode (str): Sampling mode for the generative model. Support
+        sample_model (str): Sampling mode for the generative model. Support
             'orig' and 'ema'. Defaults to 'ema'.
         collect_device (str): Device name used for collecting results from
             different ranks during distributed training. Must be 'cpu' or
@@ -246,13 +245,10 @@ class SlicedWassersteinDistance(GenMetric):
                  image_shape: tuple,
                  fake_key: Optional[str] = None,
                  real_key: Optional[str] = 'img',
-                 sample_mode: str = 'ema',
+                 sample_model: str = 'ema',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None):
-        assert collect_device == 'cpu', (
-            'SWD only support \'cpu\' as collect_device, but receive '
-            f'\'{collect_device}\'.')
-        super().__init__(fake_nums, 0, fake_key, real_key, sample_mode,
+        super().__init__(fake_nums, 0, fake_key, real_key, sample_model,
                          collect_device, prefix)
 
         self.nhood_size = 7  # height and width of the extracted patches
@@ -261,6 +257,7 @@ class SlicedWassersteinDistance(GenMetric):
         self.dirs_per_repeat = 128  # number of directions per sampling
         self.resolutions = []
         res = image_shape[1]
+        self.image_shape = image_shape
         while res >= 16 and len(self.resolutions) < 4:
             self.resolutions.append(res)
             res //= 2
@@ -270,32 +267,42 @@ class SlicedWassersteinDistance(GenMetric):
         self.real_results = [[] for res in self.resolutions]
         self.fake_results = [[] for res in self.resolutions]
 
+        self._num_processed = 0
+
     def process(self, data_batch: Sequence[dict],
                 predictions: Sequence[dict]) -> None:
-        """_summary_
+        """Process one batch of data samples and predictions. The processed
+        results should be stored in ``self.fake_results`` and
+        ``self.real_results``, which will be used to compute the metrics when
+        all batches have been processed.
 
         Args:
-            data_batch (Sequence[dict]): _description_
-            predictions (Sequence[dict]): _description_
+            data_batch (Sequence[dict]): A batch of data from the dataloader.
+            predictions (Sequence[dict]): A batch of outputs from the model.
         """
-        # lod: layer_of_descriptors
+        if self._num_processed >= self.fake_nums_per_device:
+            return
 
         # parse real images
-        real_img = data_batch[self.real_key]
+        if isinstance(data_batch, dict):
+            real_img = data_batch[self.real_key]
+        else:
+            real_img = data_batch
 
         # parse fake images
         if isinstance(predictions, dict):
-            fake_img = predictions[self.sample_mode]
+            fake_img = predictions[self.sample_model]
             # get target image from the dict
             if isinstance(fake_img, dict):
                 fake_img = fake_img[self.fake_key]
         else:
             fake_img = predictions
 
+        # real images
         assert real_img.shape[1:] == self.image_shape
         real_pyramid = laplacian_pyramid(real_img, self.n_pyramids - 1,
                                          self.gaussian_k)
-        # real images
+        # lod: layer_of_descriptors
         for lod, level in enumerate(real_pyramid):
             desc = get_descriptors_for_minibatch(level, self.nhood_size,
                                                  self.nhoods_per_image)
@@ -305,12 +312,47 @@ class SlicedWassersteinDistance(GenMetric):
         assert fake_img.shape[1:] == self.image_shape
         fake_pyramid = laplacian_pyramid(fake_img, self.n_pyramids - 1,
                                          self.gaussian_k)
+        # lod: layer_of_descriptors
         for lod, level in enumerate(fake_pyramid):
             desc = get_descriptors_for_minibatch(level, self.nhood_size,
                                                  self.nhoods_per_image)
             self.fake_results[lod].append(desc)
 
+        self._num_processed += real_img.shape[0]
+
+    def _collect_target_results(self, target: str) -> Optional[list]:
+        """Collect function for SWD metric. This function support collect
+        results typing as `List[List[Tensor]]`.
+
+        Args:
+            target (str): Target results to collect.
+
+        Returns:
+            Optional[list]: The collected results.
+        """
+        assert target in [
+            'fake', 'real'
+        ], ('Only support to collect \'fake\' or \'real\' results.')
+        results = getattr(self, f'{target}_results')
+        results_collected = []
+        for result in results:
+            result_collected = torch.cat(result, dim=0)
+            result_collected = torch.cat(all_gather(result_collected), dim=0)
+            results_collected.append(result_collected)
+
+        self._num_processed = 0
+        return results_collected
+
     def compute_metrics(self, results_fake, results_real) -> dict:
+        """Compulate the result of SWD metric.
+
+        Args:
+            fake_results (list): List of image feature of fake images.
+            real_results (list): List of image feature of real images.
+
+        Returns:
+            dict: A dict of the computed SWD metric.
+        """
         fake_descs = [finalize_descriptors(d) for d in results_fake]
         real_descs = [finalize_descriptors(d) for d in results_real]
         distance = [
@@ -339,7 +381,7 @@ class GenerativeMetric(GenMetric, metaclass=ABCMeta):
             Defaults to None.
         real_key (Optional[str]): Key for get real images from the input dict.
             Defaults to 'img'.
-        sample_mode (str): Sampling mode for the generative model. Support
+        sample_model (str): Sampling mode for the generative model. Support
             'orig' and 'ema'. Defaults to 'ema'.
         collect_device (str): Device name used for collecting results from
             different ranks during distributed training. Must be 'cpu' or
@@ -356,11 +398,11 @@ class GenerativeMetric(GenMetric, metaclass=ABCMeta):
                  real_nums: int = 0,
                  fake_key: Optional[str] = None,
                  real_key: Optional[str] = 'img',
-                 sample_mode: str = 'ema',
+                 sample_model: str = 'ema',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None):
-        super().__init__(fake_nums, real_nums, fake_key, real_key, sample_mode,
-                         collect_device, prefix)
+        super().__init__(fake_nums, real_nums, fake_key, real_key,
+                         sample_model, collect_device, prefix)
 
     @classmethod
     def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
@@ -381,16 +423,16 @@ class GenerativeMetric(GenMetric, metaclass=ABCMeta):
 
         batch_size = dataloader.batch_size
 
-        sample_mode = metrics[0].sample_mode
-        assert all([metric.sample_mode == sample_mode for metric in metrics
-                    ]), ('\'sample_mode\' between metrics is inconsistency.')
+        sample_model = metrics[0].sample_model
+        assert all([metric.sample_model == sample_model for metric in metrics
+                    ]), ('\'sample_model\' between metrics is inconsistency.')
 
         class dummy_iterator:
 
-            def __init__(self, batch_size, max_length, sample_mode) -> None:
+            def __init__(self, batch_size, max_length, sample_model) -> None:
                 self.batch_size = batch_size
                 self.max_length = max_length
-                self.sample_mode = sample_mode
+                self.sample_model = sample_model
 
             def __iter__(self) -> Iterator:
                 self.idx = 0
@@ -400,13 +442,14 @@ class GenerativeMetric(GenMetric, metaclass=ABCMeta):
                 if self.idx > self.max_length:
                     raise StopIteration
                 self.idx += batch_size
-                return dict(mode=self.sample_mode, num_batches=self.batch_size)
+                return dict(
+                    mode=self.sample_model, num_batches=self.batch_size)
 
         return dummy_iterator(
             batch_size=batch_size,
             max_length=max([metric.fake_nums_per_device
                             for metric in metrics]),
-            sample_mode=sample_mode)
+            sample_model=sample_model)
 
     def evaluate(self) -> dict():
         """Evaluate generative metric. In this function we only collect
@@ -477,7 +520,7 @@ class FrechetInceptionDistance(GenerativeMetric):
             Defaults to None.
         real_key (Optional[str]): Key for get real images from the input dict.
             Defaults to 'img'.
-        sample_mode (str): Sampling mode for the generative model. Support
+        sample_model (str): Sampling mode for the generative model. Support
             'orig' and 'ema'. Defaults to 'ema'.
         collect_device (str, optional): Device name used for collecting results
             from different ranks during distributed training. Must be 'cpu' or
@@ -508,10 +551,6 @@ class FrechetInceptionDistance(GenerativeMetric):
         self.inception, self.inception_style = self._load_inception(
             inception_style, inception_path)
         self.inception_pkl = inception_pkl
-        if torch.cuda.is_available():
-            self.device = 'cuda'
-            self.inception.cuda()
-            self.collect_device = 'gpu'
 
     def prepare(self, module: nn.Module, dataloader: DataLoader) -> None:
         """Preparing inception feature for the real images.
@@ -520,6 +559,8 @@ class FrechetInceptionDistance(GenerativeMetric):
             module (nn.Module): The model to evaluate.
             dataloader (DataLoader): The dataloader for real images.
         """
+        self.device = module.data_preprocessor.device
+        self.inception.to(self.device)
         inception_feat = prepare_inception_feat(dataloader, self,
                                                 module.data_preprocessor)
         if self.real_nums != -1:
@@ -548,7 +589,7 @@ class FrechetInceptionDistance(GenerativeMetric):
                 corresponding style.
         """
         if inception_style == 'StyleGAN':
-            args = dict(type='StyleGAN', path=inception_path)
+            args = dict(type='StyleGAN', inception_path=inception_path)
         else:
             args = dict(type='Pytorch', normalize_input=False)
         inception, style = load_inception(args, 'FID')
@@ -587,9 +628,12 @@ class FrechetInceptionDistance(GenerativeMetric):
             data_batch (Sequence[dict]): A batch of data from the dataloader.
             predictions (Sequence[dict]): A batch of outputs from the model.
         """
+        if len(self.fake_results) >= self.fake_nums_per_device:
+            return
+
         # real images should be preprocessed. Ignore data_batch
         if isinstance(predictions, dict):
-            fake_img = predictions[self.sample_mode]
+            fake_img = predictions[self.sample_model]
             if isinstance(fake_img, dict):
                 fake_img = fake_img[self.fake_key]
         else:
@@ -701,7 +745,7 @@ class InceptionScore(GenerativeMetric):
             Defaults to None.
         real_key (Optional[str]): Key for get real images from the input dict.
             Defaults to 'img'.
-        sample_mode (str): Sampling mode for the generative model. Support
+        sample_model (str): Sampling mode for the generative model. Support
             'orig' and 'ema'. Defaults to 'ema'.
         collect_device (str, optional): Device name used for collecting results
             from different ranks during distributed training. Must be 'cpu' or
@@ -722,11 +766,10 @@ class InceptionScore(GenerativeMetric):
                  resize_method='bicubic',
                  use_pillow_resize: bool = True,
                  fake_key: Optional[str] = None,
-                 real_key: Optional[str] = 'img',
-                 sample_mode='ema',
+                 sample_model='orig',
                  collect_device: str = 'cpu',
                  prefix: str = None):
-        super().__init__(fake_nums, 0, fake_key, real_key, sample_mode,
+        super().__init__(fake_nums, 0, fake_key, None, sample_model,
                          collect_device, prefix)
 
         self.resize = resize
@@ -743,10 +786,16 @@ class InceptionScore(GenerativeMetric):
 
         self.inception, self.inception_style = self._load_inception(
             inception_style, inception_path)
-        if torch.cuda.is_available():
-            self.device = 'cuda'
-            self.inception = self.inception.cuda()
-            self.collect_device = 'gpu'
+
+    def prepare(self, module: nn.Module, dataloader: DataLoader) -> None:
+        """_summary_
+
+        Args:
+            module (nn.Module): _description_
+            dataloader (DataLoader): _description_
+        """
+        self.device = module.data_preprocessor.device
+        self.inception.to(self.device)
 
     def _load_inception(
             self, inception_style: str,
@@ -762,7 +811,7 @@ class InceptionScore(GenerativeMetric):
                 corresponding style.
         """
         inception, style = load_inception(
-            dict(type=inception_style, path='inception_path'), 'IS')
+            dict(type=inception_style, inception_path=inception_path), 'IS')
         inception.eval()
         return inception, style
 
@@ -809,7 +858,7 @@ class InceptionScore(GenerativeMetric):
             return
 
         if isinstance(predictions, dict):
-            fake_img = predictions[self.sample_mode]
+            fake_img = predictions[self.sample_model]
             # get target image from the dict
             if isinstance(fake_img, dict):
                 fake_img = fake_img[self.fake_key]
@@ -869,7 +918,7 @@ class MultiScaleStructureSimilarity(GenerativeMetric):
             Defaults to None.
         real_key (Optional[str]): Key for get real images from the input dict.
             Defaults to 'img'.
-        sample_mode (str): Sampling mode for the generative model. Support
+        sample_model (str): Sampling mode for the generative model. Support
             'orig' and 'ema'. Defaults to 'ema'.
         collect_device (str, optional): Device name used for collecting results
             from different ranks during distributed training. Must be 'cpu' or
@@ -884,18 +933,14 @@ class MultiScaleStructureSimilarity(GenerativeMetric):
     def __init__(self,
                  fake_nums: int,
                  fake_key: Optional[str] = None,
-                 real_key: Optional[str] = 'img',
-                 sample_mode: str = 'ema',
+                 sample_model: str = 'ema',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None) -> None:
-        super().__init__(fake_nums, 0, fake_key, real_key, sample_mode,
+        super().__init__(fake_nums, 0, fake_key, None, sample_model,
                          collect_device, prefix)
 
         assert fake_nums % 2 == 0
         self.num_pairs = fake_nums // 2
-
-        self.sum = 0.0
-        # self.device = 'cpu'
 
     def process(self, data_batch: Optional[Sequence[dict]],
                 predictions: Union[Sequence[dict], Tensor]) -> None:
@@ -906,48 +951,36 @@ class MultiScaleStructureSimilarity(GenerativeMetric):
                 in this metric.
             predictions (Union[Sequence[dict], Tensor]): Generated images.
         """
+        if len(self.fake_results) >= (self.fake_nums_per_device // 2):
+            return
+
         if isinstance(predictions, dict):
-            minibatch = predictions[self.sample_mode]
+            minibatch = predictions[self.sample_model]
             if isinstance(minibatch, dict):
                 minibatch = minibatch[self.fake_key]
         else:
             minibatch = predictions
 
+        assert minibatch.shape[0] % 2 == 0, 'batch size must be divided by 2.'
         minibatch = ((minibatch + 1) / 2)
         minibatch = minibatch.clamp_(0, 1)
         half1 = minibatch[0::2].cpu().data.numpy().transpose((0, 2, 3, 1))
         half1 = (half1 * 255).astype('uint8')
         half2 = minibatch[1::2].cpu().data.numpy().transpose((0, 2, 3, 1))
         half2 = (half2 * 255).astype('uint8')
-        score = ms_ssim(half1, half2)
-        self.sum += score * (minibatch.shape[0] // 2)
 
-    def evaluate(self):
-        """Collect and evaluate MS-SSIM.
+        scores = ms_ssim(half1, half2, reduce_mean=False)
+        self.fake_results += [torch.Tensor([s]) for s in scores.tolist()]
 
-        Different like other metrics, MS-SSIM
-        only save score for each minibatch in the memory and do not save
-        images to `self.fake_results`. Therefore we only collect
-        :attr:`self.sum` across the device (if need).
-        """
-        self.sum = torch.Tensor(self.sum)
-        results = all_reduce(self.sum, op='mean')
-        # all_reduce sync `results` across device, all process can run the
-        # following code
-        metrics = self.compute_metrics(results)
-
-        # reset the `sum`
-        self.sum = 0.0
-        return metrics
-
-    def compute_metrics(self, results):
+    def compute_metrics(self, results_fake: List):
         """Computed the result of MS-SSIM.
 
         Returns:
             dict: Calculated MS-SSIM result.
         """
-        avg = results / self.num_pairs
-        return {'avg': str(round(avg.item(), 4))}
+        results = torch.cat(results_fake, dim=0)
+        avg = results.sum() / self.num_pairs
+        return {'avg': round(avg.item(), 4)}
 
 
 @METRICS.register_module('PR')
@@ -1004,7 +1037,7 @@ class PrecisionAndRecall(GenerativeMetric):
                  k=3,
                  fake_key: Optional[str] = None,
                  real_key: Optional[str] = 'img',
-                 sample_mode: str = 'ema',
+                 sample_model: str = 'ema',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None,
                  vgg16_script='work_dirs/cache/vgg16.pt',
@@ -1012,8 +1045,8 @@ class PrecisionAndRecall(GenerativeMetric):
                  row_batch_size=10000,
                  col_batch_size=10000,
                  auto_save=True):
-        super().__init__(fake_nums, real_nums, fake_key, real_key, sample_mode,
-                         collect_device, prefix)
+        super().__init__(fake_nums, real_nums, fake_key, real_key,
+                         sample_model, collect_device, prefix)
         print_log('loading vgg16 for improved precision and recall...',
                   'current')
         self.vgg16_pkl = vgg16_pkl
@@ -1369,7 +1402,7 @@ class TransIS(InceptionScore):
             Defaults to None.
         real_key (Optional[str]): Key for get real images from the input dict.
             Defaults to 'img'.
-        sample_mode (str): Sampling mode for the generative model. Support
+        sample_model (str): Sampling mode for the generative model. Support
             'orig' and 'ema'. Defaults to 'ema'.
         collect_device (str, optional): Device name used for collecting results
             from different ranks during distributed training. Must be 'cpu' or
@@ -1390,12 +1423,12 @@ class TransIS(InceptionScore):
                  use_pillow_resize: bool = True,
                  fake_key: Optional[str] = None,
                  real_key: Optional[str] = 'img',
-                 sample_mode='ema',
+                 sample_model='ema',
                  collect_device: str = 'cpu',
                  prefix: str = None):
         super().__init__(fake_nums, resize, splits, inception_style,
                          inception_path, resize_method, use_pillow_resize,
-                         fake_key, real_key, sample_mode, collect_device,
+                         fake_key, real_key, sample_model, collect_device,
                          prefix)
         self.SAMPLER_MODE = 'normal'
 

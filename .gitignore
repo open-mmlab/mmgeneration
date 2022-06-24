@@ -106,8 +106,6 @@ venv.bak/
 
 # custom
 data/
-!tests/data
-!tests_old/data
 .vscode
 .idea
 *.pkl
@@ -115,6 +113,9 @@ data/
 *.log.json
 work_dirs/
 *.DS_Store
+!tests/data
+!tests_old/data
+!tests/data/inception_pkl/inception_feat.pkl
 
 # PyTorch
 *.pth

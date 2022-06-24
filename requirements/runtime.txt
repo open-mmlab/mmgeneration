@@ -2,6 +2,7 @@ mmcls
 ninja
 numpy
 prettytable
+rich
 scikit-image
 scipy
 tqdm

@@ -10,8 +10,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 from mmengine import is_filepath, print_log
+from mmengine.data import pseudo_collate
 from mmengine.dataset import BaseDataset, Compose
-from mmengine.dist import all_gather, get_world_size, is_main_process
+from mmengine.dist import (all_gather, get_dist_info, get_world_size,
+                           is_main_process)
 from mmengine.evaluator import BaseMetric
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
@@ -81,6 +83,8 @@ def load_inception(inception_args, metric):
 
     # try to load Tero's version
     path = _inception_args.get('inception_path', TERO_INCEPTION_URL)
+    if path is None:
+        path = TERO_INCEPTION_URL
 
     # try to parse `path` as web url and download
     if 'http' not in path:
@@ -144,8 +148,9 @@ def _load_inception_torch(inception_args, metric) -> nn.Module:
     return inception_model
 
 
-def get_inception_feat_cache_name_and_args(
-        dataloader: DataLoader, metric: BaseMetric) -> Tuple[str, dict]:
+def get_inception_feat_cache_name_and_args(dataloader: DataLoader,
+                                           metric: BaseMetric,
+                                           real_nums: int) -> Tuple[str, dict]:
     """Get the name and meta info of the inception feature cache file
     corresponding to the input dataloader and metric. The meta info includs
     'data_root', 'data_prefix', 'meta_info' and 'pipeline' of the dataset, and
@@ -170,9 +175,7 @@ def get_inception_feat_cache_name_and_args(
     data_root = deepcopy(dataset.data_root)
     data_prefix = deepcopy(dataset.data_prefix)
     metainfo = dataset.metainfo
-    pipeline = dataset.pipeline
-    if isinstance(pipeline, Compose):
-        pipeline_str = pipeline.__repr__
+    pipeline = repr(dataset.pipeline)
 
     # get metric info
     inception_style = metric.inception_style
@@ -182,12 +185,16 @@ def get_inception_feat_cache_name_and_args(
         data_root=data_root,
         data_prefix=data_prefix,
         metainfo=metainfo,
-        pipeline=pipeline_str,
+        pipeline=pipeline,
         inception_style=inception_style,
-        inception_args=inception_args)
+        inception_args=inception_args,
+        # save `num_gpus` because this may influence the data loading order
+        num_gpus=get_world_size(),
+        real_nums=real_nums)
 
+    real_nums_str = 'full' if real_nums == -1 else str(real_nums)
     md5 = hashlib.md5(repr(sorted(args.items())).encode('utf-8'))
-    cache_tag = f'inception_state-{md5.hexdigest()}.pkl'
+    cache_tag = f'inception_state-{real_nums_str}-{md5.hexdigest()}.pkl'
     return cache_tag, args
 
 
@@ -260,8 +267,8 @@ def prepare_inception_feat(
             module. Used to preprocess the real images. If not passed, real
             images will automatically normalized to [-1, 1]. Defaults to None.
 
-        Returns:
-            np.ndarray: Loaded inception feature.
+    Returns:
+        np.ndarray: Loaded inception feature.
     """
     if not hasattr(metric, 'inception_pkl'):
         return
@@ -290,9 +297,12 @@ def prepare_inception_feat(
                 raise exp('Not support download from url currently')
 
     # cannot load or download from file, extract manually
+    assert hasattr(metric, 'real_nums'), (
+        'Metric \'{metric.name}\' must have attribute \'real_nums\'.')
+    real_nums = metric.real_nums
     if inception_pkl is None:
         inception_pkl, args = get_inception_feat_cache_name_and_args(
-            dataloader, metric)
+            dataloader, metric, real_nums)
         inception_pkl = osp.join(MMGEN_CACHE_DIR, inception_pkl)
     else:
         args = dict()
@@ -315,6 +325,21 @@ def prepare_inception_feat(
 
     import rich.progress
 
+    dataset, batch_size = dataloader.dataset, dataloader.batch_size
+    if real_nums == -1:
+        num_items = len(dataset)
+    else:
+        num_items = min(len(dataset), real_nums)
+
+    rank, num_gpus = get_dist_info()
+    item_subset = [(i * num_gpus + rank) % num_items
+                   for i in range((num_items - 1) // num_gpus + 1)]
+    inception_dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        sampler=item_subset,
+        collate_fn=pseudo_collate,
+        shuffle=False)
     # init rich pbar for the main process
     if is_main_process():
         columns = [
@@ -327,10 +352,10 @@ def prepare_inception_feat(
         pbar.start()
         task = pbar.add_task(
             'Calculate Inception Feature.',
-            total=len(dataloader.dataset),
+            total=len(inception_dataloader),
             visible=True)
 
-    for data in dataloader:
+    for data in inception_dataloader:
         inputs, _ = data_preprocessor(data)
 
         if isinstance(inputs, dict):
@@ -351,9 +376,9 @@ def prepare_inception_feat(
 
         real_feat_ = metric.forward_inception(img)
         real_feat.append(real_feat_)
-        # real_feat += torch.tensor_split(real_feat_, real_feat_.shape[0])
+
         if is_main_process():
-            pbar.update(task, advance=len(real_feat_) * get_world_size())
+            pbar.update(task, advance=1)
 
     # stop the pbar
     if is_main_process():
