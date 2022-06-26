@@ -6,16 +6,13 @@ import os.path as osp
 from mmengine.config import Config, DictAction
 from mmengine.runner import Runner
 
-# TODO: whether use a register_all func here
-from mmgen.core import *  # noqa: F401,F403
-from mmgen.datasets import *  # noqa: F401,F403
-from mmgen.models import *  # noqa: F401,F403
+from mmgen.utils import register_all_modules
 
 
 # TODO: support fuse_conv_bn, visualization, and format_only
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='MMDet test (and eval) a model')
+        description='MMGen test (and eval) a model')
     parser.add_argument('config', help='test config file path')
     parser.add_argument('checkpoint', help='checkpoint file')
     parser.add_argument(
@@ -45,6 +42,10 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    # register all modules in mmgen into the registries
+    # do not init the default scope here because it will be init in the runner
+    register_all_modules()
 
     # load config
     cfg = Config.fromfile(args.config)
