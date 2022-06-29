@@ -206,5 +206,10 @@ if __name__ == '__main__':
         license='Apache License 2.0',
         include_package_data=True,
         install_requires=parse_requirements('requirements.txt'),
+        extras_require={
+            'all': parse_requirements('requirements.txt'),
+            'tests': parse_requirements('requirements/tests.txt'),
+            'mim': parse_requirements('requirements/mminstall.txt'),
+        },
         cmdclass={'build_ext': BuildExtension},
         zip_safe=False)
