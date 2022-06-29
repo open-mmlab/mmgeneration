@@ -143,11 +143,11 @@ Models:
       disc_step: 5.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sngan_proj/sngan_proj_imagenet1k_128_Glr2e-4_Dlr5e-5_ndisc5_b128x2_wReLUinplace_fid-iter988000_20210730_132401-9a682411.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/sngan_proj_32x32.py
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sngan_proj/sngan_proj_32_cvt_studioGAN.py
   In Collection: SNGAN
   Metadata:
     Training Data: Others
-  Name: sngan_proj_32x32
+  Name: sngan_proj_32_cvt_studioGAN
   Results:
   - Dataset: Others
     Metrics:
@@ -160,11 +160,11 @@ Models:
       disc_step: 5.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sngan_proj/sngan_cifar10_convert-studio-rgb_20210709_111346-2979202d.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/sngan_proj_128x128.py
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sngan_proj/sngan_proj_32_cvt_studioGAN.py
   In Collection: SNGAN
   Metadata:
     Training Data: Others
-  Name: sngan_proj_128x128
+  Name: sngan_proj_32_cvt_studioGAN
   Results:
   - Dataset: Others
     Metrics:
