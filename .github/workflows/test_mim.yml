@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [3.8]
         torch: [1.8.0]
         include:
           - torch: 1.8.0
