@@ -11,7 +11,7 @@ Models:
   In Collection: GGAN
   Metadata:
     Training Data: CELEBA
-  Name: ggan_celeba-cropped
+  Name: ggan_celeba-cropped_dcgan-archi_lr-1e-3_64_b128x1_12m
   Results:
   - Dataset: CELEBA
     Metrics:
@@ -24,7 +24,7 @@ Models:
   In Collection: GGAN
   Metadata:
     Training Data: CELEBA
-  Name: ggan_dcgan-archi
+  Name: ggan_celeba-cropped_dcgan-archi_lr-1e-4_128_b64x1_10m
   Results:
   - Dataset: CELEBA
     Metrics:
@@ -37,7 +37,7 @@ Models:
   In Collection: GGAN
   Metadata:
     Training Data: LSUN
-  Name: ggan_lsun-bedroom
+  Name: ggan_lsun-bedroom_lsgan_archi_lr-1e-4_64_b128x1_20m
   Results:
   - Dataset: LSUN
     Metrics:

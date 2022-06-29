@@ -7,33 +7,33 @@ Collections:
   - https://arxiv.org/abs/2102.09672
   README: configs/improved_ddpm/README.md
 Models:
-- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/improve_ddpm/ddpm_cosine_hybird_timestep-4k_drop0.3_cifar10_32x32_b8x16_500k.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/improved_ddpm/ddpm_cosine_hybird_timestep-4k_drop0.3_cifar10_32x32_b8x16_500k.py
   In Collection: Improved-DDPM
   Metadata:
     Training Data: CIFAR
-  Name: ddpm_hybird
+  Name: ddpm_cosine_hybird_timestep-4k_drop0.3_cifar10_32x32_b8x16_500k
   Results:
   - Dataset: CIFAR
     Metrics:
       FID: 3.8848
     Task: Denoising Diffusion Probabilistic Models
   Weights: https://download.openmmlab.com/mmgen/improved_ddpm/ddpm_cosine_hybird_timestep-4k_drop0.3_cifar10_32x32_b8x16_500k_20220103_222621-2f42f476.pth
-- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/improve_ddpm/ddpm_cosine_hybird_timestep-4k_imagenet1k_64x64_b8x16_1500k
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/improve_ddpm/ddpm_cosine_hybird_timestep-4k_imagenet1k_64x64_b8x16_1500k.py
   In Collection: Improved-DDPM
   Metadata:
     Training Data: IMAGENET
-  Name: ddpm_cosine
+  Name: ddpm_cosine_hybird_timestep-4k_imagenet1k_64x64_b8x16_1500k
   Results:
   - Dataset: IMAGENET
     Metrics:
       FID: 13.5181
     Task: Denoising Diffusion Probabilistic Models
   Weights: https://download.openmmlab.com/mmgen/improved_ddpm/ddpm_cosine_hybird_timestep-4k_imagenet1k_64x64_b8x16_1500k_20220103_223919-b8f1a310.pth
-- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/improve_ddpm/ddpm_cosine_hybird_timestep-4k_drop0.3_imagenet1k_64x64_b8x16_1500k.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/improved_ddpm/ddpm_cosine_hybird_timestep-4k_drop0.3_imagenet1k_64x64_b8x16_1500k.py
   In Collection: Improved-DDPM
   Metadata:
     Training Data: IMAGENET
-  Name: ddpm_timestep-4k
+  Name: ddpm_cosine_hybird_timestep-4k_drop0.3_imagenet1k_64x64_b8x16_1500k
   Results:
   - Dataset: IMAGENET
     Metrics:

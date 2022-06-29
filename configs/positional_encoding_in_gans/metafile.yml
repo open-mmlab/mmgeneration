@@ -11,7 +11,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_c2
+  Name: stylegan2_c2_ffhq_256_b3x8_1100k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -25,7 +25,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_ffhq
+  Name: stylegan2_c2_ffhq_512_b3x8_1100k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -39,7 +39,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_c2
+  Name: mspie-stylegan2_c2_config-c_ffhq_256-512_b3x8_1100k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -53,7 +53,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_config-d
+  Name: mspie-stylegan2_c2_config-d_ffhq_256-512_b3x8_1100k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -67,7 +67,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_config-e
+  Name: mspie-stylegan2_c2_config-e_ffhq_256-512_b3x8_1100k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -81,7 +81,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_config-f
+  Name: mspie-stylegan2_c2_config-f_ffhq_256-512_b3x8_1100k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -95,7 +95,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_c1
+  Name: mspie-stylegan2_c1_config-g_ffhq_256-512_b3x8_1100k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -109,7 +109,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_config-h
+  Name: mspie-stylegan2_c2_config-h_ffhq_256-512_b3x8_1100k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -123,7 +123,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_config-i
+  Name: mspie-stylegan2_c2_config-i_ffhq_256-512_b3x8_1100k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -137,7 +137,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_config-j
+  Name: mspie-stylegan2_c2_config-j_ffhq_256-512_b3x8_1100k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -151,7 +151,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_config-k
+  Name: mspie-stylegan2_c2_config-k_ffhq_256-512_b3x8_1100k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -165,7 +165,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_ffhq
+  Name: mspie-stylegan2_c2_config-f_ffhq_256-896_b3x8_1100k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -179,7 +179,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: FFHQ
-  Name: mspie-stylegan2_256-1024
+  Name: mspie-stylegan2_c1_config-f_ffhq_256-1024_b2x8_1600k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -193,7 +193,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: singan_interp-pad
+  Name: singan_interp-pad_balloons
   Results:
   - Dataset: Others
     Metrics:
@@ -204,7 +204,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: singan_balloons
+  Name: singan_interp-pad_disc-nobn_balloons
   Results:
   - Dataset: Others
     Metrics:
@@ -215,7 +215,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: singan_disc-nobn
+  Name: singan_interp-pad_disc-nobn_fish
   Results:
   - Dataset: Others
     Metrics:
@@ -226,7 +226,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: singan_csg
+  Name: singan_csg_fish
   Results:
   - Dataset: Others
     Metrics:
@@ -237,7 +237,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: singan_bohemian
+  Name: singan_csg_bohemian
   Results:
   - Dataset: Others
     Metrics:
@@ -248,7 +248,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: singan_spe-dim4
+  Name: singan_spe-dim4_fish
   Results:
   - Dataset: Others
     Metrics:
@@ -259,7 +259,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: singan
+  Name: singan_spe-dim4_bohemian
   Results:
   - Dataset: Others
     Metrics:
@@ -270,7 +270,7 @@ Models:
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
-  Name: singan_spe-dim8
+  Name: singan_spe-dim8_bohemian
   Results:
   - Dataset: Others
     Metrics:

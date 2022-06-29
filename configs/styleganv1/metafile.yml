@@ -11,7 +11,7 @@ Models:
   In Collection: StyleGANv1
   Metadata:
     Training Data: FFHQ
-  Name: styleganv1_256
+  Name: styleganv1_ffhq_256_g8_25Mimg
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -23,7 +23,7 @@ Models:
   In Collection: StyleGANv1
   Metadata:
     Training Data: FFHQ
-  Name: styleganv1_1024
+  Name: styleganv1_ffhq_1024_g8_25Mimg
   Results:
   - Dataset: FFHQ
     Metrics:

@@ -11,7 +11,7 @@ Models:
   In Collection: BigGAN
   Metadata:
     Training Data: CIFAR
-  Name: biggan_cifar10
+  Name: biggan_cifar10_32x32_b25x2_500k
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -23,7 +23,7 @@ Models:
   In Collection: BigGAN
   Metadata:
     Training Data: IMAGENET
-  Name: biggan_ajbrock-sn
+  Name: biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -35,7 +35,7 @@ Models:
   In Collection: BigGAN
   Metadata:
     Training Data: IMAGENET
-  Name: biggan_ajbrock-sn
+  Name: biggan_ajbrock-sn_imagenet1k_128x128_b32x8_1500k
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -47,7 +47,7 @@ Models:
   In Collection: BigGAN
   Metadata:
     Training Data: Others
-  Name: biggan_cvt
+  Name: biggan_128x128_cvt_BigGAN-PyTorch_rgb
   Results:
   - Dataset: Others
     Metrics:
@@ -59,7 +59,7 @@ Models:
   In Collection: BigGAN
   Metadata:
     Training Data: Others
-  Name: biggan-deep_128x128
+  Name: biggan-deep_128x128_cvt_hugging-face_rgb
   Results:
   - Dataset: Others
     Metrics:
@@ -71,7 +71,7 @@ Models:
   In Collection: BigGAN
   Metadata:
     Training Data: Others
-  Name: biggan-deep_256x256
+  Name: biggan-deep_256x256_cvt_hugging-face_rgb
   Results:
   - Dataset: Others
     Metrics:
@@ -83,7 +83,7 @@ Models:
   In Collection: BigGAN
   Metadata:
     Training Data: Others
-  Name: biggan-deep_512x512
+  Name: biggan-deep_512x512_cvt_hugging-face_rgb
   Results:
   - Dataset: Others
     Metrics:
