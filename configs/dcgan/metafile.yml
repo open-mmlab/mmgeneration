@@ -14,7 +14,7 @@ Models:
     Adversarial Networks
   Metadata:
     Training Data: Others
-  Name: dcgan_mnist-64
+  Name: dcgan_mnist-64_b128x1_Glr4e-4_Dlr1e-4_5k
   Results:
   - Dataset: Others
     Metrics:
@@ -27,7 +27,7 @@ Models:
     Adversarial Networks
   Metadata:
     Training Data: CELEBA
-  Name: dcgan_celeba-cropped
+  Name: dcgan_celeba-cropped_64_b128x1_300k
   Results:
   - Dataset: CELEBA
     Metrics:
@@ -40,7 +40,7 @@ Models:
     Adversarial Networks
   Metadata:
     Training Data: LSUN
-  Name: dcgan_lsun-bedroom
+  Name: dcgan_lsun-bedroom_64x64_b128x1_5e
   Results:
   - Dataset: LSUN
     Metrics:

@@ -11,7 +11,7 @@ Models:
   In Collection: LSGAN
   Metadata:
     Training Data: CELEBA
-  Name: lsgan_lr-1e-3
+  Name: lsgan_dcgan-archi_lr-1e-3_celeba-cropped_64_b128x1_12m
   Results:
   - Dataset: CELEBA
     Metrics:
@@ -24,7 +24,7 @@ Models:
   In Collection: LSGAN
   Metadata:
     Training Data: LSUN
-  Name: lsgan_dcgan-archi
+  Name: lsgan_dcgan-archi_lr-1e-4_lsun-bedroom_64_b128x1_12m
   Results:
   - Dataset: LSUN
     Metrics:
@@ -37,7 +37,7 @@ Models:
   In Collection: LSGAN
   Metadata:
     Training Data: CELEBA
-  Name: lsgan_lr-1e-4
+  Name: lsgan_dcgan-archi_lr-1e-4_celeba-cropped_128_b64x1_10m
   Results:
   - Dataset: CELEBA
     Metrics:
@@ -50,7 +50,7 @@ Models:
   In Collection: LSGAN
   Metadata:
     Training Data: LSUN
-  Name: lsgan_lsgan-archi
+  Name: lsgan_lsgan-archi_lr-1e-4_lsun-bedroom_128_b64x1_10m
   Results:
   - Dataset: LSUN
     Metrics:

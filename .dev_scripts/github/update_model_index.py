@@ -226,13 +226,14 @@ def parse_md(md_file, task):
                         right = line[checkpoint_idx].index(')', left)
                         checkpoint = line[checkpoint_idx][left:right]
                     name_key = osp.splitext(osp.basename(config))[0]
-                    if name_key in unique_dict:
-                        model_name = unique_dict[name_key]
-                    else:
-                        model_name = name_key
-                        warnings.warn(
-                            f'Config file of {model_name} is not found,'
-                            'please check it again.')
+                    model_name = name_key
+                    # if name_key in unique_dict:
+                    #     model_name = unique_dict[name_key]
+                    # else:
+                    #     model_name = name_key
+                    #     warnings.warn(
+                    #         f'Config file of {model_name} is not found,'
+                    #         'please check it again.')
 
                     # find dataset in config file
                     dataset = 'Others'

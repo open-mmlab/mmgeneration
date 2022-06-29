@@ -11,7 +11,7 @@ Models:
   In Collection: PGGAN
   Metadata:
     Training Data: CELEBA
-  Name: pggan_celeba-cropped
+  Name: pggan_celeba-cropped_128_g8_12Mimgs
   Results:
   - Dataset: CELEBA
     Metrics:
@@ -24,7 +24,7 @@ Models:
   In Collection: PGGAN
   Metadata:
     Training Data: LSUN
-  Name: pggan_lsun-bedroom
+  Name: pggan_lsun-bedroom_128_g8_12Mimgs
   Results:
   - Dataset: LSUN
     Metrics:
@@ -37,7 +37,7 @@ Models:
   In Collection: PGGAN
   Metadata:
     Training Data: CELEBA
-  Name: pggan_celeba-hq
+  Name: pggan_celeba-hq_1024_g8_12Mimg
   Results:
   - Dataset: CELEBA
     Metrics:
