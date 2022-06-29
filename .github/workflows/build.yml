@@ -123,7 +123,6 @@ jobs:
           coverage xml
           coverage report -m
       - name: Upload coverage to Codecov
-        if: ${{matrix.torch == '1.9.0+cu102' && matrix.python-version == '3.7'}}
         uses: codecov/codecov-action@v2
         with:
           file: ./coverage.xml
