@@ -194,7 +194,12 @@ if __name__ == '__main__':
         author_email='openmmlab@gmail.com',
         license='Apache License 2.0',
         include_package_data=True,
-        install_requires=parse_requirements('requirements.txt'),
+        install_requires=parse_requirements('requirements/runtime.txt'),
+        extras_require={
+            'all': parse_requirements('requirements.txt'),
+            'tests': parse_requirements('requirements/tests.txt'),
+            'mim': parse_requirements('requirements/miminstall.txt'),
+        },
         cmdclass={'build_ext': BuildExtension},
         extras_require={
             'all': parse_requirements('requirements.txt'),
