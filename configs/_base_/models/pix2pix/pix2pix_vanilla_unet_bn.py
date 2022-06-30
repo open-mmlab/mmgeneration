@@ -3,7 +3,7 @@ target_domain = None  # set by user
 # model settings
 model = dict(
     type='Pix2Pix',
-    data_preprocessor=dict(type='GANDataPreprocessor', rgb_to_bgr=True),
+    data_preprocessor=dict(type='GANDataPreprocessor'),
     generator=dict(
         type='UnetGenerator',
         in_channels=3,

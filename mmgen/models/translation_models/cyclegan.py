@@ -217,3 +217,24 @@ class CycleGAN(StaticTranslationGAN):
                 target_domain=target_domain)['target']
             outputs[f'img_{target_domain}'] = target
         return outputs
+
+    def val_step(self, data: ValTestStepInputs) -> ForwardOutputs:
+        """Gets the generated image of given data. Same as :meth:`val_step`.
+
+        Args:
+            data (ValTestStepInputs): Data sampled from metric specific
+                sampler. More detials in `Metrics` and `Evaluator`.
+
+        Returns:
+            ForwardOutputs: Generated image or image dict.
+        """
+        inputs_dict, data_sample = self.data_preprocessor(data)
+        outputs = {}
+        for src_domain in self._reachable_domains:
+            # Identity reconstruction for generators
+            target_domain = self.get_other_domains(src_domain)[0]
+            target = self.forward_test(
+                inputs_dict[f'img_{src_domain}'],
+                target_domain=target_domain)['target']
+            outputs[f'img_{target_domain}'] = target
+        return outputs

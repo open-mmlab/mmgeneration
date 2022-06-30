@@ -1306,6 +1306,7 @@ class eq_iterator:
         return dict(mode=mode, num_batches=self.batch_size)
 
 
+@METRICS.register_module()
 class TransFID(FrechetInceptionDistance):
 
     def __init__(self,
@@ -1425,14 +1426,12 @@ class TransIS(InceptionScore):
                  resize_method='bicubic',
                  use_pillow_resize: bool = True,
                  fake_key: Optional[str] = None,
-                 real_key: Optional[str] = 'img',
                  sample_model='ema',
                  collect_device: str = 'cpu',
                  prefix: str = None):
         super().__init__(fake_nums, resize, splits, inception_style,
                          inception_path, resize_method, use_pillow_resize,
-                         fake_key, real_key, sample_model, collect_device,
-                         prefix)
+                         fake_key, sample_model, collect_device, prefix)
         self.SAMPLER_MODE = 'normal'
 
     def process(self, data_batch: Optional[Sequence[dict]],

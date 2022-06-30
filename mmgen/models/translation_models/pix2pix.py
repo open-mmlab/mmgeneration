@@ -150,6 +150,25 @@ class Pix2Pix(StaticTranslationGAN):
             ForwardOutputs: Generated image or image dict.
         """
         inputs_dict, data_sample = self.data_preprocessor(data)
+        target_domain = self._reachable_domains[0]
+        source_domain = self.get_other_domains(target_domain)[0]
         outputs = self.forward_test(
-            inputs_dict['img_mask'], target_domain='photo')
+            inputs_dict[f'img_{source_domain}'], target_domain=target_domain)
+        return outputs
+
+    def val_step(self, data: ValTestStepInputs) -> ForwardOutputs:
+        """Gets the generated image of given data. Same as :meth:`val_step`.
+
+        Args:
+            data (ValTestStepInputs): Data sampled from metric specific
+                sampler. More detials in `Metrics` and `Evaluator`.
+
+        Returns:
+            ForwardOutputs: Generated image or image dict.
+        """
+        inputs_dict, data_sample = self.data_preprocessor(data)
+        target_domain = self._reachable_domains[0]
+        source_domain = self.get_other_domains(target_domain)[0]
+        outputs = self.forward_test(
+            inputs_dict[f'img_{source_domain}'], target_domain=target_domain)
         return outputs
