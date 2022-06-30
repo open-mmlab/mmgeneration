@@ -45,7 +45,8 @@ custom_hooks = [
         priority='VERY_HIGH')
 ]
 
-inception_pkl = './work_dirs/inception_pkl/imagenet.pkl'
+inception_pkl = ('https://download.openmmlab.com/mmgen/evaluation/'
+                 'fid_inception_pkl/imagenet.pkl')
 
 evaluation = dict(
     type='GenerativeEvalHook',

@@ -57,6 +57,11 @@ def load_inception(inception_args, metric):
     inceptoin_type = _inception_args.pop('type', None)
 
     if torch.__version__ < '1.6.0':
+        # reset inception_args for FID (Inception for IS do not use
+        # inception_args)
+        if metric == 'FID':
+            _inception_args = dict(normalize_input=False)
+
         mmcv.print_log(
             'Current Pytorch Version not support script module, load '
             'Inception Model from torch model zoo. If you want to use '
@@ -118,7 +123,7 @@ def _load_inception_torch(inception_args, metric):
     assert metric in ['FID', 'IS']
     if metric == 'FID':
         inception_model = InceptionV3([3], **inception_args)
-    elif metric == 'IS':
+    else:  # metric == 'IS'
         inception_model = inception_v3(pretrained=True, transform_input=False)
         mmcv.print_log(
             'Load Inception V3 Network from Pytorch Model Zoo '
@@ -505,15 +510,23 @@ class FID(Metric):
     def prepare(self):
         """Prepare for evaluating models with this metric."""
         # if `inception_pkl` is provided, read mean and cov stat
-        if self.inception_pkl is not None and mmcv.is_filepath(
-                self.inception_pkl):
-            with open(self.inception_pkl, 'rb') as f:
+        if self.inception_pkl is not None:
+            if self.inception_pkl[:4] == 'http':
+                inception_path = download_from_url(self.inception_pkl)
+            elif mmcv.is_filepath(self.inception_pkl):
+                inception_path = self.inception_pkl
+            else:
+                raise FileNotFoundError('Cannot load inception pkl from '
+                                        f'{self.inception_pkl}')
+
+            # load from path
+            with open(inception_path, 'rb') as f:
                 reference = pickle.load(f)
                 self.real_mean = reference['mean']
                 self.real_cov = reference['cov']
-                mmcv.print_log(
-                    f'Load reference inception pkl from {self.inception_pkl}',
-                    'mmgen')
+            mmcv.print_log(
+                f'Load reference inception pkl from {self.inception_pkl}',
+                'mmgen')
             self.num_real_feeded = self.num_images
 
     @torch.no_grad()
