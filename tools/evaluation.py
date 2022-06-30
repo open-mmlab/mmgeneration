@@ -125,8 +125,6 @@ def main():
         init_dist(args.launcher, **cfg.dist_params)
         rank, world_size = get_dist_info()
         cfg.gpu_ids = range(world_size)
-        assert args.online or world_size == 1, (
-            'We only support online mode for distrbuted evaluation.')
 
     dirname = os.path.dirname(args.checkpoint)
     ckpt = os.path.basename(args.checkpoint)
