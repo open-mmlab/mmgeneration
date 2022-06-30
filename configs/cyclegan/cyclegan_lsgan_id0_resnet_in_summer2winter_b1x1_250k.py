@@ -12,7 +12,7 @@ model = dict(
     default_domain=domain_b,
     reachable_domains=[domain_a, domain_b],
     related_domains=[domain_a, domain_b])
-dataroot = './data/summer2winter_yosemite'
+dataroot = './data/cyclegan/summer2winter_yosemite'
 train_pipeline = [
     dict(
         type='LoadImageFromFile',
@@ -122,9 +122,8 @@ metrics = [
         type='TransIS',
         prefix='IS-Full',
         fake_nums=num_images,
-        real_key='img_winter',
         fake_key='img_winter',
-        inception_style='StyleGAN'),
+        inception_style='PyTorch'),
     dict(
         type='TransFID',
         prefix='FID-Full',

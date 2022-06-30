@@ -13,8 +13,8 @@ model = dict(
 
 train_cfg = dict(max_iters=220000)
 
-domain_a = target_domain
-domain_b = source_domain
+domain_a = source_domain
+domain_b = target_domain
 train_pipeline = [
     dict(
         type='LoadPairedImageFromFile',
@@ -44,7 +44,7 @@ train_pipeline = [
         meta_keys=[
             'pair_path', 'sample_idx', 'pair_ori_shape',
             f'img_{domain_a}_path', f'img_{domain_b}_path',
-            'img_photo_ori_shape', 'img_mask_ori_shape', 'flip',
+            f'img_{domain_a}_ori_shape', f'img_{domain_b}_ori_shape', 'flip',
             'flip_direction'
         ])
 ]
@@ -71,18 +71,26 @@ test_pipeline = [
         meta_keys=[
             'pair_path', 'sample_idx', 'pair_ori_shape',
             f'img_{domain_a}_path', f'img_{domain_b}_path',
-            'img_photo_ori_shape', 'img_mask_ori_shape'
+            f'img_{domain_a}_ori_shape', f'img_{domain_b}_ori_shape'
         ])
 ]
-dataroot = 'data/paired/maps'
+dataroot = 'data/pix2pix/maps'
 train_dataloader = dict(
     dataset=dict(data_root=dataroot, pipeline=train_pipeline))
 
 val_dataloader = dict(
-    dataset=dict(test_mode=True, data_root=dataroot, pipeline=test_pipeline))
+    dataset=dict(
+        test_mode=True,
+        data_root=dataroot,
+        pipeline=test_pipeline,
+        testdir='val'))
 
 test_dataloader = dict(
-    dataset=dict(test_mode=True, data_root=dataroot, pipeline=test_pipeline))
+    dataset=dict(
+        test_mode=True,
+        data_root=dataroot,
+        pipeline=test_pipeline,
+        testdir='val'))
 
 # optimizer
 optim_wrapper = dict(
@@ -96,16 +104,17 @@ optim_wrapper = dict(
 fake_nums = 1098
 metrics = [
     dict(
-        type='InceptionScore',
+        type='TransIS',
         prefix='IS-Full',
         fake_nums=fake_nums,
-        inception_style='StyleGAN',
+        fake_key='target',
+        inception_style='PyTorch',
         sample_model='orig'),
     dict(
-        type='FrechetInceptionDistance',
+        type='TransFID',
         prefix='FID-Full',
         fake_nums=fake_nums,
-        inception_style='StyleGAN',
+        inception_style='PyTorch',
         real_key=f'img_{target_domain}',
         fake_key='target',
         sample_model='orig')

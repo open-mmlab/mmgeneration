@@ -5,15 +5,15 @@ _base_ = [
 ]
 train_cfg = dict(max_iters=80000)
 
-domain_a = 'mask'
-domain_b = 'photo'
+domain_a = 'photo'
+domain_b = 'mask'
 model = dict(
     loss_config=dict(cycle_loss_weight=10., id_loss_weight=0.5),
-    default_domain=domain_b,
+    default_domain=domain_a,
     reachable_domains=[domain_a, domain_b],
     related_domains=[domain_a, domain_b],
 )
-dataroot = './data/unpaired_facades'
+dataroot = './data/cyclegan/facades'
 
 train_pipeline = [
     dict(
@@ -121,16 +121,15 @@ metrics = [
         type='TransIS',
         prefix='IS-Full',
         fake_nums=num_images,
-        real_key='img_photo',
-        fake_key='img_photo',
-        inception_style='StyleGAN'),
+        fake_key=f'img_{domain_a}',
+        inception_style='PyTorch'),
     dict(
         type='TransFID',
         prefix='FID-Full',
         fake_nums=num_images,
         inception_style='PyTorch',
-        real_key='img_photo',
-        fake_key='img_photo')
+        real_key=f'img_{domain_a}',
+        fake_key=f'img_{domain_a}')
 ]
 
 val_evaluator = dict(metrics=metrics)

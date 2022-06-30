@@ -1273,6 +1273,7 @@ class eq_iterator:
         return dict(mode=mode, num_batches=self.batch_size)
 
 
+@METRICS.register_module()
 class TransFID(FrechetInceptionDistance):
 
     def __init__(self,

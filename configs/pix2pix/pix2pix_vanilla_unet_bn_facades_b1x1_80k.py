@@ -72,11 +72,11 @@ test_pipeline = [
         meta_keys=[
             'pair_path', 'sample_idx', 'pair_ori_shape',
             f'img_{domain_a}_path', f'img_{domain_b}_path',
-            'img_photo_ori_shape', 'img_mask_ori_shape'
+            f'img_{domain_a}_ori_shape', f'img_{domain_b}_ori_shape'
         ])
 ]
 
-dataroot = 'data/paired/facades'
+dataroot = 'data/pix2pix/facades'
 train_dataloader = dict(
     dataset=dict(data_root=dataroot, pipeline=train_pipeline))
 
@@ -97,16 +97,17 @@ optim_wrapper = dict(
 fake_nums = 106
 metrics = [
     dict(
-        type='InceptionScore',
+        type='TransIS',
         prefix='IS-Full',
         fake_nums=fake_nums,
-        inception_style='StyleGAN',
+        inception_style='PyTorch',
+        fake_key='target',
         sample_model='orig'),
     dict(
-        type='FrechetInceptionDistance',
+        type='TransFID',
         prefix='FID-Full',
         fake_nums=fake_nums,
-        inception_style='StyleGAN',
+        inception_style='PyTorch',
         real_key=f'img_{target_domain}',
         fake_key='target',
         sample_model='orig')
