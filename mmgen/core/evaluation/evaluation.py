@@ -5,6 +5,7 @@ import sys
 from copy import deepcopy
 
 import mmcv
+import numpy as np
 import torch
 import torch.distributed as dist
 from mmcv.runner import get_dist_info
@@ -62,6 +63,89 @@ def make_vanilla_dataloader(img_path, batch_size, dist=False):
     return dataloader
 
 
+def make_npz_dataloader(npz_path, batch_size, dist=False):
+    pipeline = [
+        # permute the color channel. Because in npz_dataloader's pipeline, we
+        # direct load image in RGB order from npz file and we must convert it
+        # to BGR by setting ``to_rgb=True``.
+        dict(
+            type='Normalize',
+            keys=['real_img'],
+            mean=[127.5] * 3,
+            std=[127.5] * 3,
+            to_rgb=True),
+        dict(type='ImageToTensor', keys=['real_img']),
+        dict(type='Collect', keys=['real_img'])
+    ]
+
+    dataset = build_dataset(
+        dict(type='FileDataset', file_path=npz_path, pipeline=pipeline))
+    dataloader = build_dataloader(
+        dataset,
+        samples_per_gpu=batch_size,
+        workers_per_gpu=0,
+        dist=dist,
+        shuffle=True)
+    return dataloader
+
+
+def parse_npz_file_name(npz_file):
+    """Parse the basic information from the give npz file.
+    Args:
+        npz_file (str): The file name of the npz file.
+
+    Returns:
+        tuple(int): A tuple of (num_samples, H, W, num_channels).
+    """
+    # remove 'samples_' (8) and '.npz' (4)
+    num_samples, H, W, num_channles = npz_file[8:-4].split('x')
+    assert num_samples.isdigit()
+    assert H.isdigit()
+    assert W.isdigit()
+    assert num_channles.isdigit()
+    return int(num_samples), int(H), int(W), int(num_channles)
+
+
+def parse_npz_folder(npz_folder_path):
+    """Parse the npz files under the given folder.
+    Args:
+        npz_folder_path: The folder contains npz file.
+
+    Returns:
+        tuple(list, int): A tuple contains a list valid npz files' names and
+            a int of existing image numbers.
+    """
+
+    npz_files = [
+        f for f in list(mmcv.scandir(npz_folder_path, suffix=('.npz')))
+        if 'samples' in f
+    ]
+    valid_npz_files = []
+    img_shape = None
+    num_exist = 0
+    for npz_file in npz_files:
+        try:
+            n_samples, H, W, n_channels = parse_npz_file_name(npz_file)
+
+            # shape checking
+            if img_shape is None:
+                img_shape = (H, W, n_channels)
+            else:
+                if img_shape != (H, W, n_channels):
+                    raise ValueError(
+                        'Image shape conflicting under sample path:'
+                        f'\'{npz_folder_path}\'. Find {img_shape} vs. '
+                        f'{(H, W, n_channels)}.')
+
+            valid_npz_files.append(npz_file)
+            num_exist += n_samples
+        except AssertionError:
+            mmcv.print_log(
+                f'Find npz file \'{npz_file}\' does not conform to the '
+                'standard naming convention.', 'mmgen')
+    return valid_npz_files, num_exist
+
+
 @torch.no_grad()
 def offline_evaluation(model,
                        data_loader,
@@ -70,6 +154,7 @@ def offline_evaluation(model,
                        basic_table_info,
                        batch_size,
                        samples_path=None,
+                       save_npz=False,
                        **kwargs):
     """Evaluate model in offline mode.
 
@@ -87,6 +172,10 @@ def offline_evaluation(model,
         samples_path (str): Used to save generated images. If it's none, we'll
             give it a default directory and delete it after finishing the
             evaluation. Default to None.
+        save_npz (bool, optional): Whether save the generated images to a npz
+            file named 'samples_{NUM_IMAGES}x{H}x{W}x{NUM_CHANNELS}.npz' If
+            true, dataset will be build upon npz file instead of image files.
+            Defaults to True.
         kwargs (dict): Other arguments.
     """
     # eval special and recon metric online only
@@ -111,11 +200,14 @@ def offline_evaluation(model,
         os.makedirs(samples_path)
         delete_samples_path = True
 
-    # sample images
-    num_exist = len(
-        list(
-            mmcv.scandir(
-                samples_path, suffix=('.jpg', '.png', '.jpeg', '.JPEG'))))
+    # check existing images
+    if save_npz:
+        npz_file_exist, num_exist = parse_npz_folder(samples_path)
+    else:
+        num_exist = len(
+            list(
+                mmcv.scandir(
+                    samples_path, suffix=('.jpg', '.png', '.jpeg', '.JPEG'))))
     if basic_table_info['num_samples'] > 0:
         max_num_images = basic_table_info['num_samples']
     else:
@@ -128,6 +220,7 @@ def offline_evaluation(model,
         # define mmcv progress bar
         pbar = mmcv.ProgressBar(num_needed)
 
+    fake_img_list = []
     # if no images, `num_needed` should be zero
     total_batch_size = batch_size * ws
     for begin in range(0, num_needed, total_batch_size):
@@ -163,8 +256,66 @@ def offline_evaluation(model,
                 images = fakes[i:i + 1]
                 images = ((images + 1) / 2)
                 images = images.clamp_(0, 1)
-                image_name = str(num_exist + begin + i) + '.png'
-                save_image(images, os.path.join(samples_path, image_name))
+                if save_npz:
+                    # permute to [H, W, chn] and rescale to [0, 255]
+                    fake_img_list.append(
+                        images.permute(0, 2, 3, 1).cpu().numpy() * 255)
+                else:
+                    image_name = str(num_exist + begin + i) + '.png'
+                    save_image(images, os.path.join(samples_path, image_name))
+
+    if save_npz:
+        # only one npz file and fake_img_list is empty --> do not need to save
+        if len(npz_file_exist) == 1 and len(fake_img_list) == 0:
+            npz_path = os.path.join(samples_path, npz_file_exist[0])
+            if rank == 0:
+                mmcv.print_log(
+                    f'Existing npz file \'{npz_path}\' has already met '
+                    'requirements.', 'mmgen')
+        else:
+            # load from locl file and merge to one
+            if rank == 0:
+                fake_img_exist_list = []
+                for exist_npz_file in npz_file_exist:
+                    fake_imgs_ = np.load(
+                        os.path.join(samples_path, exist_npz_file))['real_img']
+                    fake_img_exist_list.append(fake_imgs_)
+
+                # merge fake_img_exist_list and fake_img_list
+                fake_imgs = np.concatenate(
+                    fake_img_exist_list + fake_img_list, axis=0)
+                num_imgs, H, W, num_channels = fake_imgs.shape
+
+                npz_path = os.path.join(
+                    samples_path,
+                    f'samples_{num_imgs}x{H}x{W}x{num_channels}.npz')
+
+                # save new npz file -->
+                # set key as ``real_img`` to align with vanilla dataset
+                np.savez(npz_path, real_img=fake_imgs)
+                mmcv.print_log(f'Save new npz_file to \'{npz_path}\'.',
+                               'mmgen')
+
+                # delete old npz files
+                for npz_file in npz_file_exist:
+                    os.remove(os.path.join(samples_path, npz_file))
+                    mmcv.print_log(
+                        'Remove useless npz file '
+                        f'\'{os.path.join(samples_path, npz_file)}\'.',
+                        'mmgen')
+
+            # waiting for rank-0 to save the new npz file
+            if ws > 1:
+                dist.barrier()
+            # get npz_path.
+            # We have delete useless npz files then there should only one
+            # file under the sample_path. Check and directly load it!
+            npz_files = [
+                f for f in list(mmcv.scandir(samples_path, suffix=('.npz')))
+                if 'samples' in f
+            ]
+            assert len(npz_files) == 1
+            npz_path = os.path.join(samples_path, npz_files[0])
 
     if num_needed > 0 and rank == 0:
         sys.stdout.write('\n')
@@ -175,8 +326,13 @@ def offline_evaluation(model,
 
     # empty cache to release GPU memory
     torch.cuda.empty_cache()
-    fake_dataloader = make_vanilla_dataloader(
-        samples_path, batch_size, dist=ws > 1)
+    if save_npz:
+        fake_dataloader = make_npz_dataloader(
+            npz_path, batch_size, dist=ws > 1)
+    else:
+        fake_dataloader = make_vanilla_dataloader(
+            samples_path, batch_size, dist=ws > 1)
+
     for metric in metrics:
         mmcv.print_log(f'Evaluate with {metric.name} metric.', 'mmgen')
         metric.prepare()

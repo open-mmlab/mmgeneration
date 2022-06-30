@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .builder import build_dataloader, build_dataset
 from .dataset_wrappers import RepeatDataset
+from .file_dataset import FileDataset
 from .grow_scale_image_dataset import GrowScaleImgDataset
 from .paired_image_dataset import PairedImageDataset
 from .pipelines import (Collect, Compose, Flip, ImageToTensor,
@@ -16,5 +17,5 @@ __all__ = [
     'DistributedSampler', 'UnconditionalImageDataset', 'Compose', 'ToTensor',
     'ImageToTensor', 'Collect', 'Flip', 'Resize', 'RepeatDataset', 'Normalize',
     'GrowScaleImgDataset', 'SinGANDataset', 'PairedImageDataset',
-    'UnpairedImageDataset', 'QuickTestImageDataset'
+    'UnpairedImageDataset', 'QuickTestImageDataset', 'FileDataset'
 ]

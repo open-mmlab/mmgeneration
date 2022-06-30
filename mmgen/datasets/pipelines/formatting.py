@@ -129,8 +129,9 @@ class Collect:
         """
         data = {}
         img_meta = {}
-        for key in self.meta_keys:
-            img_meta[key] = results[key]
+        if self.meta_keys is not None:
+            for key in self.meta_keys:
+                img_meta[key] = results[key]
         data['meta'] = DC(img_meta, cpu_only=True)
         for key in self.keys:
             data[key] = results[key]
