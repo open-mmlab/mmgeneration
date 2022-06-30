@@ -1,4 +1,5 @@
 Import:
+- configs/ada/metafile.yml
 - configs/biggan/metafile.yml
 - configs/cyclegan/metafile.yml
 - configs/dcgan/metafile.yml
