@@ -45,6 +45,10 @@ model_wrapper_cfg = dict(
     broadcast_buffers=False,
     find_unused_parameters=False)
 
+# set visualizer
+vis_backends = [dict(type='GenVisBackend')]
+visualizer = dict(type='GenVisualizer', vis_backends=vis_backends)
+
 # config for training
 train_cfg = dict(by_epoch=False, val_begin=1, val_interval=10000)
 
