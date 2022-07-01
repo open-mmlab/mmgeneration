@@ -10,7 +10,7 @@ model = dict(
     # CIFAR images are RGB, convert to BGR
     data_preprocessor=dict(rgb_to_bgr=True),
     generator=dict(init_cfg=init_cfg),
-    discriminator=dict(act_cfg=dict(init_cfg=init_cfg)))
+    discriminator=dict(init_cfg=init_cfg))
 
 # TRAIN
 train_cfg = dict(max_iters=100000 * disc_step)
@@ -20,6 +20,15 @@ optim_wrapper = dict(
     generator=dict(optimizer=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999))),
     discriminator=dict(
         optimizer=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999))))
+
+# VIS_HOOK
+custom_hooks = [
+    dict(
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img'))
+]
 
 # METRICS
 metrics = [

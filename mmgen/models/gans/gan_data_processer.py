@@ -55,6 +55,16 @@ class GANDataPreprocessor(ImgDataPreprocessor):
 
         super().__init__(mean, std, pad_size_divisor, pad_value, bgr_to_rgb,
                          rgb_to_bgr)
+        # get color order
+        if bgr_to_rgb:
+            input_color_order, output_color_order = 'bgr', 'rgb'
+        elif rgb_to_bgr:
+            input_color_order, output_color_order = 'rgb', 'bgr'
+        else:
+            # 'bgr' order as default
+            input_color_order = output_color_order = 'bgr'
+        self.input_color_order = input_color_order
+        self.output_color_order = output_color_order
 
     def _check_keys_consistency(self, data) -> None:
         """Ensure keys in all inputs are consistency."""

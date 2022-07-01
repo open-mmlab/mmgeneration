@@ -22,6 +22,15 @@ optim_wrapper = dict(
     discriminator=dict(
         optimizer=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999))))
 
+# VIS_HOOK
+custom_hooks = [
+    dict(
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img'))
+]
+
 # METRICS
 metrics = [
     dict(

@@ -4,11 +4,9 @@ from .ema_hook import ExponentialMovingAverageHook
 from .iter_time_hook import GenIterTimerHook
 from .pggan_fetch_data_hook import PGGANFetchDataHook
 from .pickle_data_hook import PickleDataHook
-from .visualization import VisualizationHook
-from .visualize_training_samples import VisualizeUnconditionalSamples
+from .visualization_hook import GenVisualizationHook
 
 __all__ = [
-    'VisualizeUnconditionalSamples', 'PGGANFetchDataHook',
-    'ExponentialMovingAverageHook', 'VisualizationHook', 'PickleDataHook',
-    'PetrelUploadHook', 'GenIterTimerHook'
+    'PGGANFetchDataHook', 'ExponentialMovingAverageHook', 'PickleDataHook',
+    'PetrelUploadHook', 'GenIterTimerHook', 'GenVisualizationHook'
 ]

@@ -65,7 +65,7 @@ def load_inception(inception_args, metric):
                         f'\'{inception_args}\'')
 
     _inception_args = deepcopy(inception_args)
-    inceptoin_type = _inception_args.pop('type', None)
+    inception_type = _inception_args.pop('type', None)
 
     if torch.__version__ < '1.6.0':
         print_log(
@@ -76,7 +76,7 @@ def load_inception(inception_args, metric):
         return _load_inception_torch(_inception_args, metric), 'pytorch'
 
     # load pytorch version is specific
-    if inceptoin_type != 'StyleGAN':
+    if inception_type != 'StyleGAN':
         return _load_inception_torch(_inception_args, metric), 'pytorch'
 
     # try to load Tero's version
