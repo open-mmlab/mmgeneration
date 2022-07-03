@@ -7,7 +7,8 @@ cifar_pipeline = [
 ]
 cifar_dataset = dict(
     type=dataset_type,
-    data_prefix='data/cifar10',
+    data_root='./data',
+    data_prefix='cifar10',
     test_mode=False,
     pipeline=cifar_pipeline)
 

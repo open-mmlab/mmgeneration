@@ -116,6 +116,9 @@ data/
 work_dirs/
 *.DS_Store
 mmgen/.mim
+!tests/data
+!tests_old/data
+configs_ceph/
 
 # PyTorch
 *.pth
