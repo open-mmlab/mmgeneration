@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Optional, Sequence
 
 import numpy as np
 from mmcv.transforms import BaseTransform, to_tensor
@@ -10,16 +11,31 @@ from mmgen.registry import TRANSFORMS
 
 @TRANSFORMS.register_module()
 class PackGenInputs(BaseTransform):
+    """Pack the inputs data for the image generation.
 
-    def __init__(self, keys='img', meta_keys=None):
-        if isinstance(keys, str):
-            self.keys = [keys]
-        elif is_list_of(keys, str):
-            self.keys = keys
-        else:
-            raise TypeError(
-                'keys is supported to be a string or a list of string')
-        self.meta_keys = meta_keys
+    Args:
+        keys (str): Target keys to pack. Defaults to 'img'.
+        pack_all (bool): If true all keys will be packed. Defaults to False.
+        meta_keys (Sequence[str], optional): Meta keys to be converted to
+            ``mmcv.DataContainer`` and collected in ``data[img_metas]``.
+            Default: ``('img_id', 'img_path', 'ori_shape', 'img_shape',
+            'scale_factor', 'flip', 'flip_direction')``
+    """
+
+    def __init__(self,
+                 keys: str = 'img',
+                 pack_all: bool = False,
+                 meta_keys: Optional[Sequence[str]] = None):
+        self.pack_all = pack_all
+        if not self.pack_all:
+            if isinstance(keys, str):
+                self.keys = [keys]
+            elif is_list_of(keys, str):
+                self.keys = keys
+            else:
+                raise TypeError(
+                    'keys is supported to be a string or a list of string')
+        self.meta_keys = [] if meta_keys is None else meta_keys
 
     def transform(self, results: dict) -> dict:
         """Method to pack the input data.
@@ -35,7 +51,8 @@ class PackGenInputs(BaseTransform):
                 sample.
         """
         packed_results = dict(inputs=dict())
-        for key in self.keys:
+        pack_keys = results.keys() if self.pack_all else self.keys
+        for key in pack_keys:
             if key in results:
                 img = results[key]
                 if len(img.shape) < 3:
