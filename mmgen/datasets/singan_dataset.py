@@ -1,8 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import numpy as np
-import torch
-from torch.utils.data import Dataset
+from mmengine.dataset import BaseDataset
 
 from mmgen.registry import DATASETS
 
@@ -59,7 +58,7 @@ def create_real_pyramid(real, min_size, max_size, scale_factor_init):
 
 
 @DATASETS.register_module()
-class SinGANDataset(Dataset):
+class SinGANDataset(BaseDataset):
     """SinGAN Dataset.
 
     In this dataset, we create an image pyramid and save it in the cache.
@@ -77,17 +76,25 @@ class SinGANDataset(Dataset):
     """
 
     def __init__(self,
-                 img_path,
+                 data_root,
                  min_size,
                  max_size,
                  scale_factor_init,
+                 pipeline,
                  num_samples=-1):
-        self.img_path = img_path
-        assert mmcv.is_filepath(self.img_path)
-        self.load_annotations(min_size, max_size, scale_factor_init)
+        self.min_size = min_size
+        self.max_size = max_size
+        self.scale_factor_init = scale_factor_init
         self.num_samples = num_samples
+        super().__init__(data_root=data_root, pipeline=pipeline)
 
-    def load_annotations(self, min_size, max_size, scale_factor_init):
+    def full_init(self):
+        """Skip the full init process for SinGANDataset."""
+
+        self.load_data_list(self.min_size, self.max_size,
+                            self.scale_factor_init)
+
+    def load_data_list(self, min_size, max_size, scale_factor_init):
         """Load annatations for SinGAN Dataset.
 
         Args:
@@ -95,27 +102,36 @@ class SinGANDataset(Dataset):
             max_size (int): The maximum size for the image pyramid.
             scale_factor_init (float): The initial scale factor.
         """
-        real = mmcv.imread(self.img_path)
+        real = mmcv.imread(self.data_root)
         self.reals, self.scale_factor, self.stop_scale = create_real_pyramid(
             real, min_size, max_size, scale_factor_init)
 
         self.data_dict = {}
 
         for i, real in enumerate(self.reals):
-            self.data_dict[f'real_scale{i}'] = self._img2tensor(real)
+            self.data_dict[f'real_scale{i}'] = real
 
-        self.data_dict['input_sample'] = torch.zeros_like(
-            self.data_dict['real_scale0'])
-
-    def _img2tensor(self, img):
-        img = torch.from_numpy(img).to(torch.float32).permute(2, 0,
-                                                              1).contiguous()
-        img = (img / 255 - 0.5) * 2
-
-        return img
+        self.data_dict['input_sample'] = np.zeros_like(
+            self.data_dict['real_scale0']).astype(np.float32)
 
     def __getitem__(self, index):
-        return self.data_dict
+        """Get `:attr:self.data_dict`. For SinGAN, we use single image with
+        different resolution to train the model.
+
+        Args:
+            idx (int): This will be ignored in `:class:SinGANDataset`.
+
+        Returns:
+            dict: Dict contains input image in different resolution.
+            ``self.pipeline``.
+        """
+        return self.pipeline(self.data_dict)
 
     def __len__(self):
+        """Get the length of filtered dataset and automatically call
+        ``full_init`` if the  dataset has not been fully init.
+
+        Returns:
+            int: The length of filtered dataset.
+        """
         return int(1e6) if self.num_samples < 0 else self.num_samples
