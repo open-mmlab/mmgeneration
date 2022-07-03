@@ -116,6 +116,7 @@ work_dirs/
 !tests/data
 !tests_old/data
 !tests/data/inception_pkl/inception_feat.pkl
+configs_ceph/
 
 # PyTorch
 *.pth
