@@ -1,43 +1,37 @@
 _base_ = [
-    '../_base_/models/pggan/pggan_128x128.py',
-    '../_base_/datasets/grow_scale_imgs_128x128.py',
-    '../_base_/default_runtime.py'
+    '../_base_/default_runtime.py', '../_base_/models/pggan/pggan_128x128.py',
+    '../_base_/datasets/grow_scale_imgs_128x128.py'
 ]
 
-optimizer = None
-checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=20)
+# TRAIN
+train_cfg = dict(max_iters=280000)
+data_roots = {'128': './data/celeba-cropped/cropped_images_aligned_png'}
+train_dataloader = dict(batch_size=64, dataset=dict(data_roots=data_roots))
 
-data = dict(
-    samples_per_gpu=64,
-    train=dict(
-        imgs_roots={'128': './data/celeba-cropped/cropped_images_aligned_png'},
-        gpu_samples_base=4,
-        # note that this should be changed with total gpu number
-        gpu_samples_per_scale={
-            '4': 64,
-            '8': 32,
-            '16': 16,
-            '32': 8,
-            '64': 4
-        }))
+optim_wrapper = dict(
+    constructor='PGGANOptimWrapperConstructor',
+    generator=dict(optimizer=dict(type='Adam', lr=0.001, betas=(0., 0.99))),
+    discriminator=dict(
+        optimizer=dict(type='Adam', lr=0.001, betas=(0., 0.99))),
+    lr_schedule=dict(generator={'128': 0.0015}, discriminator={'128': 0.0015}))
 
+# VIS_HOOK + DATAFETCH
 custom_hooks = [
     dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=5000),
-    dict(type='PGGANFetchDataHook', interval=1),
-    dict(
-        type='ExponentialMovingAverageHook',
-        module_keys=('generator_ema', ),
-        interval=1,
-        priority='VERY_HIGH')
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img')),
+    dict(type='PGGANFetchDataHook')
 ]
 
-lr_config = None
+# METRICS
+metrics = [
+    dict(type='SWD', fake_nums=16384, image_shape=(3, 128, 128)),
+    dict(type='MS_SSIM', fake_nums=10000)
+]
 
-total_iters = 280000
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)
 
-metrics = dict(
-    ms_ssim10k=dict(type='MS_SSIM', num_images=10000),
-    swd16k=dict(type='SWD', num_images=16384, image_shape=(3, 128, 128)))
+val_dataloader = test_dataloader = train_dataloader

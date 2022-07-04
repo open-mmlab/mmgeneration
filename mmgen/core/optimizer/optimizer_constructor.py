@@ -1,7 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from copy import deepcopy
 from typing import Optional
 
 import torch.nn as nn
+from mmengine.model import is_model_wrapper
 from mmengine.optim import DefaultOptimWrapperConstructor, OptimWrapperDict
 
 from mmgen.registry import OPTIM_WRAPPER_CONSTRUCTORS
@@ -146,5 +148,105 @@ class SinGANOptimWrapperConstructor:
                 if hasattr(submodule, 'module'):
                     submodule = submodule.module
                 optimizers[f'{key}_{idx}'] = constructor(submodule.blocks[idx])
+        optimizers = OptimWrapperDict(**optimizers)
+        return optimizers
+
+
+@OPTIM_WRAPPER_CONSTRUCTORS.register_module()
+class PGGANOptimWrapperConstructor:
+    """OptimizerConstructor for SinGAN models. Set optimizers for each
+    submodule of SinGAN. All submodule must be contained in a
+    :class:~`torch.nn.ModuleList` named 'blocks'. And we access each submodule
+    by `MODEL.blocks[SCALE]`, where `MODLE` is generator or discriminator, and
+    the scale is the index of the resolution scale.
+
+    More detail about the resolution scale and naming rule please refers to
+    :class:~`mmgen.models.SinGANMultiScaleGenerator` and
+    :class:~`mmgen.models.SinGANMultiScaleDiscriminator`.
+
+    Example:
+        >>> # build PGGAN model
+        >>> model = dict(
+        >>>     type='PGGAN',
+        >>>     data_preprocessor=dict(
+        >>>         type='GANDataPreprocessor',
+        >>>         non_image_keys=['input_sample']),
+        >>>     generator=dict(
+        >>>         type='SinGANMultiScaleGenerator',
+        >>>         in_channels=3,
+        >>>         out_channels=3,
+        >>>         num_scales=2),
+        >>>     discriminator=dict(
+        >>>         type='SinGANMultiScaleDiscriminator',
+        >>>         in_channels=3,
+        >>>         num_scales=3))
+        >>> pggan = MODELS.build(model)
+        >>> # build constructor
+        >>> optim_wrapper = dict(
+        >>>     generator=dict(optimizer=dict(type='Adam', lr=0.0005,
+        >>>                                   betas=(0.5, 0.999))),
+        >>>     discriminator=dict(
+        >>>         optimizer=dict(type='Adam', lr=0.0005,
+        >>>                        betas=(0.5, 0.999))))
+        >>> optim_wrapper_dict_builder = SinGANOptimWrapperConstructor(
+        >>>     optim_wrapper)
+        >>> # build optim wrapper dict
+        >>> optim_wrapper_dict = optim_wrapper_dict_builder(singan)
+
+    Args:
+        optim_wrapper_cfg (dict): Config of the optimizer wrapper.
+        paramwise_cfg (Optional[dict]): Parameter-wise options.
+    """
+
+    def __init__(self,
+                 optim_wrapper_cfg: dict,
+                 reset_optim_for_new_scale: bool = True,
+                 paramwise_cfg: Optional[dict] = None,
+                 lr_schedule: Optional[dict] = None):
+        if not isinstance(optim_wrapper_cfg, dict):
+            raise TypeError('optimizer_cfg should be a dict',
+                            f'but got {type(optim_wrapper_cfg)}')
+        assert paramwise_cfg is None, (
+            'parawise_cfg should be set in each optimizer separately')
+        self.optim_cfg = optim_wrapper_cfg
+        self.reset_optim = reset_optim_for_new_scale
+        self.lr_schedule = dict() if lr_schedule is None else \
+            deepcopy(lr_schedule)
+        self.constructors = {}
+
+        for key, cfg in self.optim_cfg.items():
+            cfg_ = cfg.copy()
+            paramwise_cfg_ = cfg_.pop('paramwise_cfg', None)
+            self.constructors[key] = DefaultOptimWrapperConstructor(
+                cfg_, paramwise_cfg_)
+
+    def __call__(self, module: nn.Module) -> OptimWrapperDict:
+        """Build optimizer and return a optimizerwrapperdict."""
+        optimizers = {}
+        if is_model_wrapper(module):
+            module = module.module
+
+        scales = module.scales
+
+        for key, base_cfg in self.optim_cfg.keys():
+            submodule = module._modules[key]
+
+            cfg_ = base_cfg.copy()
+            base_lr = cfg_['optimizer']['lr']
+            paramwise_cfg_ = base_cfg.pop('paramwise_cfg', None)
+
+            default_constructor = self.constructors[key]
+            default_optimizer = default_constructor(submodule)
+            for idx, scale in enumerate(scales):
+                if self.reset_optim:
+                    scale_cfg = cfg_.copy()
+                    scale_lr = self.lr_schedule[key].get(scale, base_lr)
+                    scale_cfg['optimizer']['lr'] = scale_lr
+                    constructor = DefaultOptimWrapperConstructor(
+                        scale_cfg, paramwise_cfg_)
+                    optimizers[f'{key}_{scale}'] = constructor(submodule)
+                else:
+                    optimizers[f'{key}_{scale}'] = default_optimizer
+
         optimizers = OptimWrapperDict(**optimizers)
         return optimizers
