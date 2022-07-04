@@ -285,7 +285,10 @@ class SlicedWassersteinDistance(GenMetric):
 
         # parse real images
         if isinstance(data_batch, dict):
-            real_img = data_batch[self.real_key]
+            real_img = data_batch['inputs']
+            # get target image from the dict
+            if isinstance(real_img, dict):
+                real_img = real_img[self.real_key]
         else:
             real_img = data_batch
 
@@ -306,7 +309,7 @@ class SlicedWassersteinDistance(GenMetric):
         for lod, level in enumerate(real_pyramid):
             desc = get_descriptors_for_minibatch(level, self.nhood_size,
                                                  self.nhoods_per_image)
-            self.real_results[lod].append(desc)
+            self.real_results[lod].append(desc.cpu())
 
         # fake images
         assert fake_img.shape[1:] == self.image_shape
@@ -316,7 +319,7 @@ class SlicedWassersteinDistance(GenMetric):
         for lod, level in enumerate(fake_pyramid):
             desc = get_descriptors_for_minibatch(level, self.nhood_size,
                                                  self.nhoods_per_image)
-            self.fake_results[lod].append(desc)
+            self.fake_results[lod].append(desc.cpu())
 
         self._num_processed += real_img.shape[0]
 

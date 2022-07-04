@@ -405,7 +405,7 @@ class TestSWD(TestCase):
             image_shape=(3, 32, 32))
 
         random_tensor = torch.randn(2, 3, 32, 32)
-        real_img = dict(img=random_tensor, img_1=random_tensor)
+        real_img = dict(inputs=dict(img=random_tensor, img_1=random_tensor))
         gen_img = dict(orig=random_tensor)
         swd.process(real_img, gen_img)
 
