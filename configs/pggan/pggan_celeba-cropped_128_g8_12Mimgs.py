@@ -27,8 +27,8 @@ custom_hooks = [
 
 # METRICS
 metrics = [
-    dict(type='SWD', fake_nums=16384, image_shape=(3, 128, 128)),
-    dict(type='MS_SSIM', fake_nums=10000)
+    dict(type='SWD', fake_nums=16384, image_shape=(3, 128, 128), prefix='SWD'),
+    dict(type='MS_SSIM', fake_nums=10000, prefix='MS-SSIM')
 ]
 
 val_evaluator = dict(metrics=metrics)
