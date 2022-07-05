@@ -41,6 +41,8 @@ def noise_sample_fn(noise: Union[Tensor, Callable, None] = None,
     # Check the shape if `noise_size` is passed. Ignore `num_batches` here
     # because `num_batches` has default value.
     if noise_size is not None:
+        if isinstance(noise_size, int):
+            noise_size = [noise_size]
         assert list(noise_batch.shape[1:]) == noise_size, (
             'Size of the input noise is inconsistency with \'noise_size\'\'. '
             f'Receive \'{noise_batch.shape[1:]}\' and \'{noise_size}\' '

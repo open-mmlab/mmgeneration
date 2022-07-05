@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Union
 import torch
 import torch.nn as nn
 from mmengine import Config, MessageHub
-from mmengine.model import BaseModel
+from mmengine.model import BaseModel, is_model_wrapper
 from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 
@@ -56,7 +56,9 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
         if isinstance(generator, dict):
             self._gen_cfg = deepcopy(generator)
             # build generator with default `noise_size` and `num_classes`
-            gen_args = dict(noise_size=self.noise_size)
+            gen_args = dict()
+            if self.noise_size:
+                gen_args['noise_size'] = self.noise_size
             if hasattr(self, 'num_classes'):
                 gen_args['num_classes'] = self.num_classes
             generator = MODULES.build(generator, default_args=gen_args)
@@ -154,55 +156,50 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
             ema_config (dict): Config to initialize the EMA model.
         """
         ema_config.setdefault('type', 'ExponentialMovingAverage')
+        self.ema_start = ema_config.pop('start_iter', 0)
+        src_model = self.generator.module if is_model_wrapper(
+            self.generator) else self.generator
         self.generator_ema = MODELS.build(
-            ema_config, default_args=dict(model=deepcopy(self.generator)))
+            ema_config, default_args=dict(model=src_model))
+        self.generator_ema.update_parameters(src_model)
 
-    def _get_valid_mode(self,
-                        batch_inputs: ForwardInputs,
-                        mode: Optional[str] = None) -> str:
-        """Try get the valid forward mode from inputs.
+    def _get_valid_model(self, batch_inputs: ForwardInputs) -> str:
+        """Try to get the valid forward model from inputs.
 
-        - If forward mode is contained in `batch_inputs` and `mode` is passed
-          to :meth:`forward`, we check whether that the two have the same
-          value, and then return the value. If not same, `AssertionError` will
-          be raised.
-        - If forward mode is defined by one of `batch_inputs` or `mode`, it
-          will be used as forward mode.
-        - If forward mode is not defined by any input, 'ema' will returned if
-          :property:`with_ema_gen` is true. Otherwise, 'orig' will be returned.
+        - If forward model is defined in `batch_inputs`, it will be used as
+          forward model.
+        - If forward model is not defined in `batch_inputs`, 'ema' will
+          returned if :property:`with_ema_gen` is true. Otherwise, 'orig' will
+          be returned.
 
         Args:
             batch_inputs (ForwardInputs): Inputs passed to :meth:`forward`.
-            mode (Optional[str]): Forward mode passed to :meth:`forward`.
 
         Returns:
-            str: Forward mode to generate image. ('orig' or 'ema').
+            str: Forward model to generate image. ('orig', 'ema' or
+                'ema/orig').
         """
         if isinstance(batch_inputs, dict):
-            input_mode = batch_inputs.get('mode', None)
+            sample_model = batch_inputs.get('sample_model', None)
         else:  # batch_inputs is a Tensor
-            input_mode = None
-        if input_mode is not None and mode is not None:
-            assert input_mode == mode, (
-                '\'mode\' in \'batch_inputs\' is inconsistency with \'mode\'. '
-                f'Receive \'{input_mode}\' and \'{mode}\'.')
-        mode = input_mode or mode
+            sample_model = None
 
         # set default value
-        if mode is None:
+        if sample_model is None:
             if self.with_ema_gen:
-                mode = 'ema'
+                sample_model = 'ema'
             else:
-                mode = 'orig'
+                sample_model = 'orig'
 
         # security checking for mode
-        assert mode in ['ema', 'ema/orig', 'orig'
-                        ], ('Only support \'ema\', \'ema/orig\', \'orig\' '
-                            f'in {self.__class__.__name__}\'s image sampling.')
-        if mode in ['ema', 'ema/orig']:
+        assert sample_model in [
+            'ema', 'ema/orig', 'orig'
+        ], ('Only support \'ema\', \'ema/orig\', \'orig\' '
+            f'in {self.__class__.__name__}\'s image sampling.')
+        if sample_model in ['ema', 'ema/orig']:
             assert self.with_ema_gen, (
                 f'\'{self.__class__.__name__}\' do not have EMA model.')
-        return mode
+        return sample_model
 
     def forward(self,
                 batch_inputs: ForwardInputs,
@@ -218,8 +215,7 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
                 information (e.g. noise, num_batches, mode) to generate image.
             data_samples (Optional[list]): Data samples collated by
                 :attr:`data_preprocessor`. Defaults to None.
-            mode (Optional[str]): Which generator used to generate images. If
-                is passed, must be one of 'ema', 'orig' and 'ema/orig'.
+            mode (Optional[str]): `mode` is not used in :class:`BaseGAN`.
                 Defaults to None.
 
         Returns:
@@ -228,21 +224,19 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
         if isinstance(batch_inputs, Tensor):
             noise = batch_inputs
         else:
-            if 'noise' in batch_inputs:
-                noise = batch_inputs['noise']
-            else:
-                num_batches = get_valid_num_batches(batch_inputs)
-                noise = self.noise_fn(num_batches=num_batches)
+            noise = batch_inputs.get('noise', None)
+            num_batches = get_valid_num_batches(batch_inputs)
+            noise = self.noise_fn(noise, num_batches=num_batches)
 
-        mode = self._get_valid_mode(batch_inputs, mode)
-        if mode in ['ema', 'ema/orig']:
+        sample_model = self._get_valid_model(batch_inputs)
+        if sample_model in ['ema', 'ema/orig']:
             generator = self.generator_ema
         else:  # mode is 'orig'
             generator = self.generator
 
         outputs = generator(noise, return_noise=False)
 
-        if mode == 'ema/orig':
+        if sample_model == 'ema/orig':
             generator = self.generator
             outputs_orig = generator(noise, return_noise=False)
             outputs = dict(ema=outputs, orig=outputs_orig)
@@ -336,8 +330,12 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
             set_requires_grad(self.discriminator, True)
 
             # only do ema after generator update
-            if self.with_ema_gen:
-                self.generator_ema.update_parameters(self.generator)
+            if self.with_ema_gen and (curr_iter + 1) >= (
+                    self.ema_start * self.discriminator_steps *
+                    disc_accu_iters):
+                self.generator_ema.update_parameters(
+                    self.generator.module
+                    if is_model_wrapper(self.generator) else self.generator)
 
             log_vars.update(log_vars_gen)
 
@@ -526,9 +524,8 @@ class BaseConditionalGAN(BaseGAN):
                 information (e.g. noise, num_batches, mode) to generate image.
             data_samples (Optional[list]): Data samples collated by
                 :attr:`data_preprocessor`. Defaults to None.
-            mode (Optional[str]): Which generator used to generate images. If
-                is passed, must be one of 'ema', 'orig' and 'ema/orig'.
-                Defaults to None.
+            mode (Optional[str]): `mode` is not used in
+                :class:`BaseConditionalGAN`. Defaults to None.
 
         Returns:
             ForwardOutputs: Generated images or image dict.
@@ -536,25 +533,23 @@ class BaseConditionalGAN(BaseGAN):
         if isinstance(batch_inputs, Tensor):
             noise = batch_inputs
         else:
-            if 'noise' in batch_inputs:
-                noise = batch_inputs['noise']
-            else:
-                num_batches = get_valid_num_batches(batch_inputs)
-                noise = self.noise_fn(num_batches=num_batches)
+            noise = batch_inputs.get('noise', None)
+            num_batches = get_valid_num_batches(batch_inputs)
+            noise = self.noise_fn(noise, num_batches=num_batches)
 
         labels = self.data_sample_to_label(data_samples)
         if labels is None:
             num_batches = get_valid_num_batches(batch_inputs)
             labels = self.label_fn(num_batches=num_batches)
 
-        mode = self._get_valid_mode(batch_inputs, mode)
-        if mode in ['ema', 'ema/orig']:
+        sample_model = self._get_valid_model(batch_inputs)
+        if sample_model in ['ema', 'ema/orig']:
             generator = self.generator_ema
-        elif mode == 'orig':
+        elif sample_model == 'orig':
             generator = self.generator
         outputs = generator(noise, label=labels, return_noise=False)
 
-        if mode == 'ema/orig':
+        if sample_model == 'ema/orig':
             generator = self.generator
             outputs_orig = generator(noise, label=labels, return_noise=False)
 
