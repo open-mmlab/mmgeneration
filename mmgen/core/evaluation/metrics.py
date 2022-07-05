@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmengine import is_list_of, print_log
+from mmengine.data import pseudo_collate
 from mmengine.dist import (all_gather, broadcast_object_list, collect_results,
                            get_dist_info, get_world_size, is_main_process)
 from mmengine.evaluator import BaseMetric
@@ -182,7 +183,35 @@ class GenMetric(BaseMetric):
         Returns:
             DataLoader: Default sampler for normal metrics.
         """
-        return dataloader
+        batch_size = dataloader.batch_size
+        max_length = max([metric.fake_nums_per_device for metric in metrics])
+
+        class data_iterator:
+
+            def __init__(self, batch_size, max_length, dataloader) -> None:
+                self.batch_size = batch_size
+                self.max_length = max_length
+                self._dataloader = DataLoader(
+                    dataloader.dataset,
+                    batch_size=batch_size,
+                    collate_fn=pseudo_collate)
+                self._iterator = iter(self._dataloader)
+
+            def __iter__(self) -> Iterator:
+                self.idx = 0
+                return self
+
+            def __len__(self) -> int:
+                return math.ceil(self.max_length / self.batch_size)
+
+            def __next__(self):
+                if self.idx > self.max_length:
+                    self._iterator = iter(self._dataloader)
+                    raise StopIteration
+                self.idx += self.batch_size
+                return next(self._iterator)
+
+        return data_iterator(batch_size, max_length, dataloader)
 
     def compute_metrics(self, results_fake, results_real) -> dict:
         """Compute the metrics from processed results.
@@ -369,7 +398,10 @@ class SlicedWassersteinDistance(GenMetric):
         distance = [d * 1e3 for d in distance]  # multiply by 10^3
         result = distance + [np.mean(distance)]
 
-        return {'score': ', '.join([str(round(d, 2)) for d in result])}
+        return {
+            f'{resolution}': round(d, 2)
+            for resolution, d in zip(self.resolutions + ['avg'], result)
+        }
 
 
 class GenerativeMetric(GenMetric, metaclass=ABCMeta):
