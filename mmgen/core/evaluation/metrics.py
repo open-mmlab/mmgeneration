@@ -446,7 +446,8 @@ class GenerativeMetric(GenMetric, metaclass=ABCMeta):
                     raise StopIteration
                 self.idx += batch_size
                 return dict(
-                    mode=self.sample_model, num_batches=self.batch_size)
+                    sample_model=self.sample_model,
+                    num_batches=self.batch_size)
 
         return dummy_iterator(
             batch_size=batch_size,

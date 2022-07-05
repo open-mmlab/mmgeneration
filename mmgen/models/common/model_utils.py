@@ -83,7 +83,7 @@ class GANImageBuffer:
 
 
 def get_valid_noise_size(noise_size: Optional[int],
-                         generator: Union[Dict, nn.Module]) -> int:
+                         generator: Union[Dict, nn.Module]) -> Optional[int]:
     """Get the value of `noise_size` from input, `generator` and check the
     consistency of these values. If no conflict is found, return that value.
 
@@ -93,7 +93,7 @@ def get_valid_noise_size(noise_size: Optional[int],
         generator (ModelType): The config or the model of generator.
 
     Returns:
-        int: The noise size feed to generator.
+        int | None: The noise size feed to generator.
     """
     if isinstance(generator, dict):
         model_noise_size = generator.get('noise_size', None)
@@ -108,9 +108,6 @@ def get_valid_noise_size(noise_size: Optional[int],
             f'\'{model_noise_size}\'.')
     else:
         noise_size = noise_size or model_noise_size
-
-    assert noise_size is not None, (
-        '\'noise_size\' must passed or defined in \'generator\'.')
 
     return noise_size
 

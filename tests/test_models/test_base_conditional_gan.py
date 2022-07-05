@@ -55,16 +55,16 @@ class TestBaseGAN(TestCase):
         self.assertEqual(outputs_test.shape, (3, 3, 32, 32))
 
         # set mode
-        inputs = dict(num_batches=4, mode='orig')
+        inputs = dict(num_batches=4, sample_model='orig')
         outputs_val = gan.val_step(inputs)
         outputs_test = gan.test_step(inputs)
         self.assertEqual(outputs_val.shape, (4, 3, 32, 32))
         self.assertEqual(outputs_test.shape, (4, 3, 32, 32))
 
-        inputs = dict(num_batches=4, mode='orig/ema')
+        inputs = dict(num_batches=4, sample_model='orig/ema')
         self.assertRaises(AssertionError, gan.val_step, inputs)
 
-        inputs = dict(num_batches=4, mode='ema')
+        inputs = dict(num_batches=4, sample_model='ema')
         self.assertRaises(AssertionError, gan.val_step, inputs)
 
         # set noise and label input
@@ -85,7 +85,7 @@ class TestBaseGAN(TestCase):
             data_preprocessor=GANDataPreprocessor())
         gan.eval()
         inputs = dict(num_batches=3)
-        outputs = gan(inputs, None, mode='orig')
+        outputs = gan(inputs, None)
         self.assertEqual(outputs.shape, (3, 3, 32, 32))
 
         outputs = gan(inputs)
@@ -106,7 +106,7 @@ class TestBaseGAN(TestCase):
         outputs = gan(inputs)
         self.assertEqual(outputs.shape, (3, 3, 32, 32))
 
-        inputs = dict(num_batches=3, mode='ema/orig')
+        inputs = dict(num_batches=3, sample_model='ema/orig')
         outputs = gan(inputs)
         self.assertEqual(set(outputs.keys()), set(['ema', 'orig']))
         self.assertEqual(outputs['ema'].shape, outputs['orig'].shape)
@@ -114,8 +114,3 @@ class TestBaseGAN(TestCase):
         inputs = dict(noise=torch.randn(4, 10))
         outputs = gan(inputs)
         self.assertEqual(outputs.shape, (4, 3, 32, 32))
-
-        # test conflict with sample mode
-        inputs = dict(mode='ema')
-        with self.assertRaises(AssertionError):
-            gan(inputs, mode='orig')
