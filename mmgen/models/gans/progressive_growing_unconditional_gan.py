@@ -1,10 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from functools import partial
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import mmcv
 import numpy as np
 import torch
+import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
 from mmengine import MessageHub
@@ -159,7 +160,7 @@ class ProgressiveGrowingGAN(BaseGAN):
         if transition_weight is None:
             transition_weight = self._curr_transition_weight.item()
 
-        sample_model = self._get_valid_mode(batch_inputs, None)
+        sample_model = self._get_valid_model(batch_inputs)
 
         if sample_model in ['ema', 'ema/orig']:
             _model = self.generator_ema
@@ -212,8 +213,61 @@ class ProgressiveGrowingGAN(BaseGAN):
         optimizer_wrapper.update_params(parsed_loss)
         return log_vars
 
-    def disc_loss(self):
-        pass
+    def disc_loss(self, disc_pred_fake: Tensor, disc_pred_real: Tensor,
+                  fake_data: Tensor, real_data: Tensor) -> Tuple[Tensor, dict]:
+        r"""Get disc loss. PGGAN use WGAN-GP's loss and discriminator shift
+        loss to train the discriminator.
+
+        .. math:
+            L_{D} = \mathbb{E}_{z\sim{p_{z}}}D\left\(G\left\(z\right\)\right\)
+                - \mathbb{E}_{x\sim{p_{data}}}D\left\(x\right\) + L_{GP} \\
+            L_{GP} = \lambda\mathbb{E}(\Vert\nabla_{\tilde{x}}D(\tilde{x})
+                \Vert_2-1)^2 \\
+            \tilde{x} = \epsilon x + (1-\epsilon)G(z)
+            L_{shift} =
+
+        Args:
+            disc_pred_fake (Tensor): Discriminator's prediction of the fake
+                images.
+            disc_pred_real (Tensor): Discriminator's prediction of the real
+                images.
+            fake_data (Tensor): Generated images, used to calculate gradient
+                penalty.
+            real_data (Tensor): Real images, used to calculate gradient
+                penalty.
+
+        Returns:
+            Tuple[Tensor, dict]: Loss value and a dict of log variables.
+        """
+
+        losses_dict = dict()
+        losses_dict['loss_disc_fake'] = disc_pred_fake.mean()
+        losses_dict['loss_disc_real'] = -disc_pred_real.mean()
+
+        # gradient penalty
+        batch_size = real_data.size(0)
+        alpha = torch.rand(batch_size, 1, 1, 1).to(real_data)
+
+        # interpolate between real_data and fake_data
+        interpolates = alpha * real_data + (1. - alpha) * fake_data
+        interpolates = autograd.Variable(interpolates, requires_grad=True)
+
+        disc_interpolates = self.discriminator(
+            interpolates, curr_scale=self.curr_stage)
+        gradients = autograd.grad(
+            outputs=disc_interpolates,
+            inputs=interpolates,
+            grad_outputs=torch.ones_like(disc_interpolates),
+            create_graph=True,
+            retain_graph=True,
+            only_inputs=True)[0]
+        # norm_mode is 'pixel'
+        gradients_penalty = ((gradients.norm(2, dim=1) - 1)**2).mean()
+        losses_dict['loss_gp'] = 0.1 * gradients_penalty
+        losses_dict['loss_disc_shift'] = disc_pred_fake**2 + disc_pred_real**2
+
+        parsed_loss, log_vars = self.parse_losses(losses_dict)
+        return parsed_loss, log_vars
 
     def train_discriminator(
             self, inputs: TrainInput, data_samples: List[GenDataSample],
@@ -236,8 +290,26 @@ class ProgressiveGrowingGAN(BaseGAN):
         optimizer_wrapper.update_params(parsed_loss)
         return log_vars
 
-    def gen_loss(self):
-        pass
+    def gen_loss(self, disc_pred_fake: Tensor) -> Tuple[Tensor, dict]:
+        r"""Generator loss for PGGAN. PGGAN use WGAN's loss to train the
+        generator.
+
+        .. math:
+            L_{G} = -\mathbb{E}_{z\sim{p_{z}}}D\left\(G\left\(z\right\)\right\)
+                + L_{MSE}
+
+        Args:
+            disc_pred_fake (Tensor): Discriminator's prediction of the fake
+                images.
+            recon_imgs (Tensor): Reconstructive images.
+
+        Returns:
+            Tuple[Tensor, dict]: Loss value and a dict of log variables.
+        """
+        losses_dict = dict()
+        losses_dict['loss_gen'] = -disc_pred_fake.mean()
+        loss, log_vars = self.parse_losses(losses_dict)
+        return loss, log_vars
 
     def train_step(self, data: TrainStepInputs,
                    optim_wrapper: OptimWrapperDict):
