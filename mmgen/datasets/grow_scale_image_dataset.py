@@ -1,9 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import os.path as osp
+from typing import Optional
 
-from mmengine import BaseDataset, print_log, scandir
+from mmengine import BaseDataset, FileClient, print_log
 
 from mmgen.registry import DATASETS
+from .utils import infer_io_backend
 
 
 @DATASETS.register_module()
@@ -47,6 +48,9 @@ class GrowScaleImgDataset(BaseDataset):
             with ``samples_per_gpu=self.gpu_samples_base``.
         gpu_samples_base (int, optional): Set default ``samples_per_gpu`` for
             each scale. Defaults to 32.
+        io_backend (str, optional): The storage backend type. Options are
+            "disk", "ceph", "memcached", "lmdb", "http" and "petrel".
+            Default: None.
         test_mode (bool, optional): If True, the dataset will work in test
             mode. Otherwise, in train mode. Default to False.
     """
@@ -59,6 +63,7 @@ class GrowScaleImgDataset(BaseDataset):
                  len_per_stage=int(1e6),
                  gpu_samples_per_scale=None,
                  gpu_samples_base=32,
+                 io_backend: Optional[str] = None,
                  test_mode=False):
 
         assert isinstance(data_roots, dict)
@@ -78,6 +83,11 @@ class GrowScaleImgDataset(BaseDataset):
             self.gpu_samples_per_scale = dict()
         self.gpu_samples_base = gpu_samples_base
 
+        if io_backend is None:
+            data_root_ = list(data_roots.values())[0]
+            io_backend = infer_io_backend(data_root_)
+        self.file_client = FileClient(backend=io_backend)
+
         # use current data root to initialize and do not support
         # `serialize_data`
         super().__init__(
@@ -92,9 +102,14 @@ class GrowScaleImgDataset(BaseDataset):
     def load_data_list(self):
         """Load annotations."""
         # recursively find all of the valid images from imgs_root
-        data_list = scandir(
-            self.data_root, self._VALID_IMG_SUFFIX, recursive=True)
-        self.data_list = [osp.join(self.data_root, x) for x in data_list]
+        data_list = self.file_client.list_dir_or_file(
+            self.data_root,
+            list_dir=False,
+            suffix=self._VALID_IMG_SUFFIX,
+            recursive=True)
+        self.data_list = [
+            self.file_client.join_path(self.data_root, x) for x in data_list
+        ]
 
         if self.len_per_stage > 0:
             self.concat_imgs_list_to(self.len_per_stage)
@@ -152,7 +167,7 @@ class GrowScaleImgDataset(BaseDataset):
         Returns:
             dict: Prepared training data batch.
         """
-        results = dict(real_img_path=self.data_list[idx])
+        results = dict(img_path=self.data_list[idx])
         return self.pipeline(results)
 
     def prepare_test_data(self, idx):
@@ -164,7 +179,7 @@ class GrowScaleImgDataset(BaseDataset):
         Returns:
             dict: Prepared training data batch.
         """
-        results = dict(real_img_path=self.data_list[idx])
+        results = dict(img_path=self.data_list[idx])
         return self.pipeline(results)
 
     def __getitem__(self, idx):

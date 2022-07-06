@@ -1,8 +1,11 @@
+import os
 import os.path as osp
+import pickle
 from typing import Optional, Sequence
 from unittest import TestCase
 from unittest.mock import MagicMock
 
+import numpy as np
 import pytest
 import torch
 from mmengine.logging import MMLogger
@@ -16,6 +19,17 @@ from mmgen.datasets import PackGenInputs, UnconditionalImageDataset
 from mmgen.models import LSGAN, DCGANGenerator, GANDataPreprocessor
 
 logger = MMLogger(name='mmgen')
+
+
+def construct_inception_pkl(inception_path):
+    data_root = osp.dirname(inception_path)
+    os.makedirs(data_root, exist_ok=True)
+    with open(inception_path, 'wb') as file:
+        feat = np.random.rand(10, 2048)
+        mean = np.mean(feat, 0)
+        cov = np.cov(feat, rowvar=False)
+        inception_feat = dict(raw_feature=feat, real_mean=mean, real_cov=cov)
+        pickle.dump(inception_feat, file)
 
 
 class ToyMetric(GenMetric):
@@ -61,6 +75,7 @@ class TestFID(TestCase):
         'data/inception_pkl/inception_feat.pkl')
 
     def test_init(self):
+        construct_inception_pkl(self.inception_pkl)
 
         fid = FrechetInceptionDistance(
             fake_nums=2,
@@ -101,9 +116,6 @@ class TestFID(TestCase):
             real_key='real',
             fake_key='fake',
             inception_pkl=self.inception_pkl)
-
-        with self.assertRaises(AssertionError):
-            fid.prepare(module, dataloader)
 
     def test_load_inception(self):
         fid = FrechetInceptionDistance(

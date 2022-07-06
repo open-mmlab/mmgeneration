@@ -1,9 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Optional
+
 import mmcv
 import numpy as np
 from mmengine import FileClient
 
 from mmgen.registry import TRANSFORMS
+from ..utils import infer_io_backend
 
 
 @TRANSFORMS.register_module()
@@ -11,7 +14,8 @@ class LoadImageFromFile:
     """Load image from file.
 
     Args:
-        io_backend (str): io backend where images are store. Default: 'disk'.
+        io_backend (Optional[str]): io backend where images are store. If not
+            passed, try to infer the io backend by file path. Default: None.
         key (str): Keys in results to find corresponding path. Default: 'gt'.
         flag (str): Loading flag for images. Default: 'color'.
         channel_order (str): Order of channel, candidates are 'bgr' and 'rgb'.
@@ -26,7 +30,7 @@ class LoadImageFromFile:
     """
 
     def __init__(self,
-                 io_backend='disk',
+                 io_backend: Optional[str] = None,
                  key='gt',
                  flag='color',
                  channel_order='bgr',
@@ -52,9 +56,11 @@ class LoadImageFromFile:
         Returns:
             dict: A dict containing the processed data and information.
         """
-        if self.file_client is None:
-            self.file_client = FileClient(self.io_backend, **self.kwargs)
         filepath = str(results[f'{self.key}_path'])
+        if self.file_client is None:
+            if self.io_backend is None:
+                self.io_backend = infer_io_backend(filepath)
+            self.file_client = FileClient(self.io_backend, **self.kwargs)
         img_bytes = self.file_client.get(filepath)
         img = mmcv.imfrombytes(
             img_bytes,

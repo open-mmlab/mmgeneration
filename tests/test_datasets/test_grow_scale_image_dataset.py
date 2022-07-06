@@ -17,10 +17,7 @@ class TestGrowScaleImgDataset:
             '32': osp.join(cls.imgs_root, 'img_root', 'grass')
         }
         cls.default_pipeline = [
-            dict(
-                type='mmgen.LoadImageFromFile',
-                io_backend='disk',
-                key='real_img')
+            dict(type='mmgen.LoadImageFromFile', io_backend='disk', key='img')
         ]
         cls.len_per_stage = 10
         cls.gpu_samples_base = 2
@@ -32,7 +29,7 @@ class TestGrowScaleImgDataset:
             self.len_per_stage,
             gpu_samples_base=self.gpu_samples_base)
         assert len(dataset) == 10
-        img = dataset[2]['real_img']
+        img = dataset[2]['img']
         assert img.ndim == 3
         assert repr(dataset) == (
             f'dataset_name: {dataset.__class__}, '
@@ -41,7 +38,7 @@ class TestGrowScaleImgDataset:
 
         dataset.update_annotations(8)
         assert len(dataset) == 10
-        img = dataset[2]['real_img']
+        img = dataset[2]['img']
         assert img.ndim == 3
         assert repr(dataset) == (f'dataset_name: {dataset.__class__}, '
                                  f'total {10} images in imgs_root:'
@@ -58,7 +55,7 @@ class TestGrowScaleImgDataset:
                 '16': 13
             })
         assert len(dataset) == 20
-        img = dataset[2]['real_img']
+        img = dataset[2]['img']
         assert img.ndim == 3
         assert repr(dataset) == (
             f'dataset_name: {dataset.__class__}, '
@@ -67,7 +64,7 @@ class TestGrowScaleImgDataset:
 
         dataset.update_annotations(8)
         assert len(dataset) == 20
-        img = dataset[2]['real_img']
+        img = dataset[2]['img']
         assert img.ndim == 3
         assert repr(dataset) == (f'dataset_name: {dataset.__class__}, '
                                  f'total {20} images in imgs_root:'
@@ -77,7 +74,7 @@ class TestGrowScaleImgDataset:
         dataset = GrowScaleImgDataset(
             self.imgs_roots, self.default_pipeline, 5, test_mode=True)
         assert len(dataset) == 5
-        img = dataset[2]['real_img']
+        img = dataset[2]['img']
         assert img.ndim == 3
         assert repr(dataset) == (
             f'dataset_name: {dataset.__class__}, '
@@ -85,7 +82,7 @@ class TestGrowScaleImgDataset:
 
         dataset.update_annotations(24)
         assert len(dataset) == 5
-        img = dataset[2]['real_img']
+        img = dataset[2]['img']
         assert img.ndim == 3
         _path_str = osp.join(self.imgs_root, 'img_root', 'grass')
         assert repr(dataset) == (f'dataset_name: {dataset.__class__}, '

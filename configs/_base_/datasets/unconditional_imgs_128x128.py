@@ -1,7 +1,7 @@
 dataset_type = 'UnconditionalImageDataset'
 
 train_pipeline = [
-    dict(type='LoadImageFromFile', key='img', io_backend='disk'),
+    dict(type='LoadImageFromFile', key='img'),
     dict(type='Resize', scale=(128, 128)),
     dict(type='PackGenInputs', meta_keys=[])
 ]

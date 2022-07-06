@@ -565,18 +565,11 @@ class FrechetInceptionDistance(GenerativeMetric):
         """
         self.device = module.data_preprocessor.device
         self.inception.to(self.device)
-        inception_feat = prepare_inception_feat(dataloader, self,
-                                                module.data_preprocessor)
-        if self.real_nums != -1:
-            assert self.real_nums <= inception_feat.shape[0], (
-                f'Need \'{self.real_nums}\' of real nums, but only '
-                f'\'{inception_feat.shape[0]}\' images be found in the '
-                'inception feature.')
-            inception_feat = inception_feat[np.random.choice(
-                inception_feat.shape[0], size=self.real_nums, replace=True)]
+        inception_feat_dict = prepare_inception_feat(
+            dataloader, self, module.data_preprocessor, capture_mean_cov=True)
         if is_main_process():
-            self.real_mean = np.mean(inception_feat, 0)
-            self.real_cov = np.cov(inception_feat, rowvar=False)
+            self.real_mean = inception_feat_dict['real_mean']
+            self.real_cov = inception_feat_dict['real_cov']
 
     def _load_inception(
             self, inception_style: str,
