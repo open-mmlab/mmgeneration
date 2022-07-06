@@ -1,5 +1,6 @@
 default_scope = 'mmgen'
 
+randomness = dict(seed=2022, diff_rank_seed=True)
 # env settings
 dist_params = dict(backend='nccl')
 # disable opencv multithreading to avoid system being overloaded
@@ -18,6 +19,8 @@ default_hooks = dict(
         type='CheckpointHook',
         interval=10000,
         by_epoch=False,
+        less_keys=['FID-Full-50k/fid'],
+        greater_keys=['IS-50k/is'],
         save_optimizer=True))
 
 # config for environment

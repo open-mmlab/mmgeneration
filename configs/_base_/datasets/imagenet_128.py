@@ -1,5 +1,4 @@
 # dataset settings
-# dataset settings
 custom_imports = dict(
     imports=['mmcls.datasets.pipelines'], allow_failed_imports=False)
 dataset_type = 'mmcls.ImageNet'

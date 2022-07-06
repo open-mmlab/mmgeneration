@@ -1,11 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import hashlib
+import os
 import os.path as osp
 import pickle
+import sys
 from contextlib import contextmanager
 from copy import deepcopy
 from typing import Optional, Tuple
 
+import mmcv
 import numpy as np
 import torch
 import torch.nn as nn
@@ -145,7 +148,8 @@ def _load_inception_torch(inception_args, metric) -> nn.Module:
 
 
 def get_inception_feat_cache_name_and_args(
-        dataloader: DataLoader, metric: BaseMetric) -> Tuple[str, dict]:
+        dataloader: DataLoader, metric: BaseMetric, real_nums: int,
+        capture_mean_cov: bool, capture_all: bool) -> Tuple[str, dict]:
     """Get the name and meta info of the inception feature cache file
     corresponding to the input dataloader and metric. The meta info includs
     'data_root', 'data_prefix', 'meta_info' and 'pipeline' of the dataset, and
@@ -156,6 +160,11 @@ def get_inception_feat_cache_name_and_args(
     Args:
         datalaoder (Dataloader): The dataloader of real images.
         metric (BaseMetric): The metric which needs inception features.
+        real_nums (int): Number of images used to extract inception feature.
+        capture_mean_cov (bool): Whether save the mean and covariance of
+            inception feature. Defaults to False.
+        capture_all (bool): Whether save the raw inception feature. Defaults
+            to False.
 
     Returns:
         Tuple[str, dict]: Filename and meta info dict of the inception feature
@@ -178,16 +187,29 @@ def get_inception_feat_cache_name_and_args(
     inception_style = metric.inception_style
     inception_args = getattr(metric, 'inception_args', None)
 
+    real_key = 'img' if metric.real_key is None else metric.real_key
     args = dict(
         data_root=data_root,
         data_prefix=data_prefix,
         metainfo=metainfo,
         pipeline=pipeline_str,
         inception_style=inception_style,
-        inception_args=inception_args)
+        inception_args=inception_args,
+        # save `num_gpus` because this may influence the data loading order
+        num_gpus=get_world_size(),
+        capture_mean_cov=capture_mean_cov,
+        capture_all=capture_all,
+        real_keys=real_key,
+        real_nums=real_nums)
 
     md5 = hashlib.md5(repr(sorted(args.items())).encode('utf-8'))
-    cache_tag = f'inception_state-{md5.hexdigest()}.pkl'
+    if capture_all:
+        prefix = 'inception_state-capture_all'
+    elif capture_mean_cov:
+        prefix = 'inception_state-capture_mean_cov'
+    else:
+        prefix = 'inception_state-capture_all_mean_cov'
+    cache_tag = f'{prefix}-{real_nums_str}-{md5.hexdigest()}.pkl'
     return cache_tag, args
 
 
@@ -238,10 +260,11 @@ def get_vgg_feat_cache_name_and_args(dataloader: DataLoader,
     return cache_tag, args
 
 
-def prepare_inception_feat(
-        dataloader: DataLoader,
-        metric: BaseMetric,
-        data_preprocessor: Optional[nn.Module] = None) -> np.ndarray:
+def prepare_inception_feat(dataloader: DataLoader,
+                           metric: BaseMetric,
+                           data_preprocessor: Optional[nn.Module] = None,
+                           capture_mean_cov: bool = False,
+                           capture_all: bool = False) -> dict:
     """Prepare inception feature for the input metric.
 
     - If `metric.inception_pkl` is an online path, try to download and load
@@ -259,10 +282,17 @@ def prepare_inception_feat(
         data_preprocessor (Optional[nn.Module]): Data preprocessor of the
             module. Used to preprocess the real images. If not passed, real
             images will automatically normalized to [-1, 1]. Defaults to None.
+        capture_mean_cov (bool): Whether save the mean and covariance of
+            inception feature. Defaults to False.
+        capture_all (bool): Whether save the raw inception feature. If true,
+            it will take a lot of time to save the inception feature. Defaults
+            to False.
 
-        Returns:
-            np.ndarray: Loaded inception feature.
+    Returns:
+        dict: Dict contains inception feature.
     """
+    assert capture_mean_cov or capture_all, (
+        'At least one of \'capture_mean_cov\' and \'capture_all\' is True.')
     if not hasattr(metric, 'inception_pkl'):
         return
     inception_pkl: Optional[str] = metric.inception_pkl
@@ -274,7 +304,7 @@ def prepare_inception_feat(
             print_log(
                 f'\'{metric.prefix}\' successful load inception feature '
                 f'from \'{inception_pkl}\'', 'current')
-            return inception_state['inception_feat']
+            return inception_state
         elif inception_pkl.startswith('s3'):
             try:
                 raise NotImplementedError(
@@ -290,15 +320,18 @@ def prepare_inception_feat(
                 raise exp('Not support download from url currently')
 
     # cannot load or download from file, extract manually
+    assert hasattr(metric, 'real_nums'), (
+        f'Metric \'{metric.name}\' must have attribute \'real_nums\'.')
+    real_nums = metric.real_nums
     if inception_pkl is None:
         inception_pkl, args = get_inception_feat_cache_name_and_args(
-            dataloader, metric)
+            dataloader, metric, real_nums, capture_mean_cov, capture_all)
         inception_pkl = osp.join(MMGEN_CACHE_DIR, inception_pkl)
     else:
         args = dict()
     if osp.exists(inception_pkl):
         with open(inception_pkl, 'rb') as file:
-            real_feat = pickle.load(file)['inception_feat']
+            real_feat = pickle.load(file)
         print(f'load preprocessed feat from {inception_pkl}')
         return real_feat
 
@@ -315,20 +348,43 @@ def prepare_inception_feat(
 
     import rich.progress
 
+    dataset, batch_size = dataloader.dataset, dataloader.batch_size
+    if real_nums == -1:
+        num_items = len(dataset)
+    else:
+        num_items = min(len(dataset), real_nums)
+
+    rank, num_gpus = get_dist_info()
+    item_subset = [(i * num_gpus + rank) % num_items
+                   for i in range((num_items - 1) // num_gpus + 1)]
+    inception_dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        sampler=item_subset,
+        collate_fn=pseudo_collate,
+        shuffle=False,
+        drop_last=False)
     # init rich pbar for the main process
     if is_main_process():
-        columns = [
-            rich.progress.TextColumn('[bold blue]{task.description}'),
-            rich.progress.BarColumn(bar_width=40),
-            rich.progress.TaskProgressColumn(),
-            rich.progress.TimeRemainingColumn(),
-        ]
-        pbar = rich.progress.Progress(*columns)
-        pbar.start()
-        task = pbar.add_task(
-            'Calculate Inception Feature.',
-            total=len(dataloader.dataset),
-            visible=True)
+        # check the launcher
+        slurm_env_name = ['SLURM_PROCID', 'SLURM_NTASKS', 'SLURM_NODELIST']
+        if all([n in os.environ for n in slurm_env_name]):
+            is_slurm = True
+            pbar = mmcv.ProgressBar(len(inception_dataloader))
+        else:
+            is_slurm = False
+            columns = [
+                rich.progress.TextColumn('[bold blue]{task.description}'),
+                rich.progress.BarColumn(bar_width=40),
+                rich.progress.TaskProgressColumn(),
+                rich.progress.TimeRemainingColumn(),
+            ]
+            pbar = rich.progress.Progress(*columns)
+            pbar.start()
+            task = pbar.add_task(
+                'Calculate Inception Feature.',
+                total=len(inception_dataloader),
+                visible=True)
 
     for data in dataloader:
         inputs, _ = data_preprocessor(data)
@@ -353,11 +409,17 @@ def prepare_inception_feat(
         real_feat.append(real_feat_)
         # real_feat += torch.tensor_split(real_feat_, real_feat_.shape[0])
         if is_main_process():
-            pbar.update(task, advance=len(real_feat_) * get_world_size())
+            if is_slurm:
+                pbar.update(1)
+            else:
+                pbar.update(task, advance=1)
 
     # stop the pbar
     if is_main_process():
-        pbar.stop()
+        if is_slurm:
+            sys.stdout.write('\n')
+        else:
+            pbar.stop()
 
     # collect results
     real_feat = torch.cat(real_feat)
@@ -366,12 +428,24 @@ def prepare_inception_feat(
 
     # only cat on the main process
     if is_main_process():
-        real_feat = torch.cat(
-            real_feat, dim=0)[:len(dataloader.dataset)].cpu().numpy()
-        inception_state = dict(inception_feat=real_feat, **args)
+        inception_state = dict(**args)
+        if capture_mean_cov:
+            real_feat = torch.cat(real_feat, dim=0)[:num_items].cpu().numpy()
+            real_mean = np.mean(real_feat, 0)
+            real_cov = np.cov(real_feat, rowvar=False)
+            inception_state['real_mean'] = real_mean
+            inception_state['real_cov'] = real_cov
+        if capture_all:
+            inception_state['raw_feature'] = real_feat
+        dir_name = osp.dirname(inception_pkl)
+        os.makedirs(dir_name, exist_ok=True)
+        print_log(
+            f'Saving inception pkl to {inception_pkl}. Please be patient.',
+            'current')
         with open(inception_pkl, 'wb') as file:
             pickle.dump(inception_state, file)
-        return real_feat
+        print_log('Inception pkl Finished.', 'current')
+        return inception_state
 
 
 def prepare_vgg_feat(dataloader: DataLoader,

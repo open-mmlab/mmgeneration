@@ -1,10 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import os.path as osp
+from typing import Optional
 
-import mmcv
+from mmcv import FileClient
 from mmengine.dataset import BaseDataset
 
 from mmgen.registry import DATASETS
+from .utils import infer_io_backend
 
 
 @DATASETS.register_module()
@@ -18,13 +19,23 @@ class UnconditionalImageDataset(BaseDataset):
     Args:
         data_root (str): Root path for unconditional images.
         pipeline (list[dict | callable]): A sequence of data transforms.
+        io_backend (str, optional): The storage backend type. Options are
+            "disk", "ceph", "memcached", "lmdb", "http" and "petrel".
+            Default: None.
         test_mode (bool, optional): If True, the dataset will work in test
             mode. Otherwise, in train mode. Default to False.
     """
 
     _VALID_IMG_SUFFIX = ('.jpg', '.png', '.jpeg', '.JPEG')
 
-    def __init__(self, data_root, pipeline, test_mode=False):
+    def __init__(self,
+                 data_root,
+                 pipeline,
+                 io_backend: Optional[str] = None,
+                 test_mode=False):
+        if io_backend is None:
+            io_backend = infer_io_backend(data_root)
+        self.file_client = FileClient(backend=io_backend)
         super().__init__(
             data_root=data_root, pipeline=pipeline, test_mode=test_mode)
 
@@ -32,10 +43,14 @@ class UnconditionalImageDataset(BaseDataset):
         """Load annotations."""
         # recursively find all of the valid images from data_root
         data_list = []
-        imgs_list = mmcv.scandir(
-            self.data_root, self._VALID_IMG_SUFFIX, recursive=True)
+        imgs_list = self.file_client.list_dir_or_file(
+            self.data_root,
+            list_dir=False,
+            suffix=self._VALID_IMG_SUFFIX,
+            recursive=True)
         data_list = [
-            dict(img_path=osp.join(self.data_root, x)) for x in imgs_list
+            dict(img_path=self.file_client.join_path(self.data_root, x))
+            for x in imgs_list
         ]
         return data_list
 

@@ -31,6 +31,7 @@ custom_hooks = [
 ]
 
 # METRICS
+inception_pkl = './work_dirs/inception_pkl/cifar10-full.pkl'
 metrics = [
     dict(
         type='InceptionScore',
@@ -43,8 +44,10 @@ metrics = [
         prefix='FID-Full-50k',
         fake_nums=50000,
         inception_style='StyleGAN',
+        inception_pkl=inception_pkl,
         sample_model='orig')
 ]
+default_hooks = dict(checkpoint=dict(save_best='FID-Full-50k/fid'))
 
 val_evaluator = dict(metrics=metrics)
 test_evaluator = dict(metrics=metrics)
