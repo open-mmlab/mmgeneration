@@ -10,6 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmengine import MessageHub
 from mmengine.dist import get_world_size
+from mmengine.model import is_model_wrapper
 from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 
@@ -334,6 +335,10 @@ class ProgressiveGrowingGAN(BaseGAN):
             self._actual_nkimgs.append(self.shown_nkimg.item())
 
         inputs, data_sample = self.data_preprocessor(data, True)
+        if isinstance(inputs, dict):
+            real_imgs = inputs['img']
+        else:  # tensor
+            real_imgs = inputs
 
         curr_scale = str(self.curr_scale[0])
         disc_optimizer_wrapper: OptimWrapper = optim_wrapper[
@@ -355,19 +360,19 @@ class ProgressiveGrowingGAN(BaseGAN):
         self._curr_transition_weight = torch.tensor(transition_weight).to(
             self._curr_transition_weight)
 
-        if inputs.shape[2:] == self.curr_scale:
+        if real_imgs.shape[2:] == self.curr_scale:
             pass
-        elif inputs.shape[2] >= self.curr_scale[0] and inputs.shape[
+        elif real_imgs.shape[2] >= self.curr_scale[0] and real_imgs.shape[
                 3] >= self.curr_scale[1]:
-            inputs = self.interp_real_to(inputs, size=self.curr_scale)
+            real_imgs = self.interp_real_to(real_imgs, size=self.curr_scale)
         else:
             raise RuntimeError(
-                f'The scale of real image {inputs.shape[2:]} is smaller '
+                f'The scale of real image {real_imgs.shape[2:]} is smaller '
                 f'than current scale {self.curr_scale}.')
 
         # normal gan training process
         with disc_optimizer_wrapper.optim_context(self.discriminator):
-            log_vars = self.train_discriminator(inputs, data_sample,
+            log_vars = self.train_discriminator(real_imgs, data_sample,
                                                 disc_optimizer_wrapper)
 
         # add 1 to `curr_iter` because iter is updated in train loop.
@@ -386,7 +391,7 @@ class ProgressiveGrowingGAN(BaseGAN):
             for _ in range(self.generator_steps * gen_accu_iters):
                 with gen_optimizer_wrapper.optim_context(self.generator):
                     log_vars_gen = self.train_generator(
-                        inputs, data_sample, gen_optimizer_wrapper)
+                        real_imgs, data_sample, gen_optimizer_wrapper)
 
                 log_vars_gen_list.append(log_vars_gen)
             log_vars_gen = gather_log_vars(log_vars_gen_list)
@@ -396,12 +401,14 @@ class ProgressiveGrowingGAN(BaseGAN):
 
             # only do ema after generator update
             if self.with_ema_gen:
-                self.generator_ema.update_parameters(self.generator)
+                self.generator_ema.update_parameters(
+                    self.generator.module
+                    if is_model_wrapper(self.generator) else self.generator)
 
             log_vars.update(log_vars_gen)
 
         # add batch size info to log_vars
-        _batch_size = inputs.shape[0] * get_world_size()
+        _batch_size = real_imgs.shape[0] * get_world_size()
         self.shown_nkimg += (_batch_size / 1000.)
 
         log_vars.update(

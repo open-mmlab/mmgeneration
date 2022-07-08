@@ -2,7 +2,7 @@
 from typing import Optional, Sequence
 
 import torch
-from mmengine.data import pseudo_collate
+from mmengine.data import DefaultSampler, InfiniteSampler, pseudo_collate
 from mmengine.hooks import Hook
 from mmengine.model import is_model_wrapper
 from mmengine.runner import IterBasedTrainLoop
@@ -38,11 +38,13 @@ class PGGANFetchDataHook(Hook):
             _next_scale_int = _next_scale_int.item()
 
         dataloader_orig = runner.train_loop.dataloader
-        dataloader = self.update_dataloader(dataloader_orig, _next_scale_int)
-        runner.train_loop.dataloader = dataloader
-        if isinstance(runner.train_loop, IterBasedTrainLoop):
-            runner.train_loop.dataloader_iterator = \
-                _InfiniteDataloaderIterator(dataloader)
+        new_dataloader = self.update_dataloader(dataloader_orig,
+                                                _next_scale_int)
+        if new_dataloader is not None:
+            runner.train_loop.dataloader = new_dataloader
+            if isinstance(runner.train_loop, IterBasedTrainLoop):
+                runner.train_loop.dataloader_iterator = \
+                    _InfiniteDataloaderIterator(new_dataloader)
 
     def update_dataloader(self, dataloader: DataLoader, curr_scale: int):
 
@@ -53,7 +55,23 @@ class PGGANFetchDataHook(Hook):
 
         if update_flag:
             dataset = dataloader.dataset
-            sampler = dataloader.sampler
+            # build new sampler
+            sampler_orig = dataloader.sampler
+            if isinstance(sampler_orig, DefaultSampler):
+                shuffle = sampler_orig.shuffle
+                seed = sampler_orig.seed
+                round_up = sampler_orig.round_up
+                sampler = DefaultSampler(dataset, shuffle, seed, round_up)
+            elif isinstance(sampler_orig, InfiniteSampler):
+                shuffle = sampler_orig.shuffle
+                seed = sampler_orig.seed
+                sampler = InfiniteSampler(dataset, shuffle, seed)
+            else:
+                raise ValueError(
+                    'MMGeneration only support \'DefaultSampler\' and '
+                    '\'InfiniteSampler\' as sampler. But receive '
+                    f'\'{type(sampler_orig)}\'.')
+
             num_workers = dataloader.num_workers
             worker_init_fn = dataloader.worker_init_fn
 
@@ -65,4 +83,5 @@ class PGGANFetchDataHook(Hook):
                 collate_fn=pseudo_collate,
                 shuffle=False,
                 worker_init_fn=worker_init_fn)
-        return dataloader
+            return dataloader
+        return None

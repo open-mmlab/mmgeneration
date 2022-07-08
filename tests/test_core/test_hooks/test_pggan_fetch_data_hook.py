@@ -3,7 +3,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock
 
 import torch
-from mmengine.data import DefaultSampler, pseudo_collate
+from mmengine.data import DefaultSampler, InfiniteSampler, pseudo_collate
 from mmengine.runner import IterBasedTrainLoop
 from torch.utils.data.dataloader import DataLoader
 
@@ -58,10 +58,13 @@ class TestPGGANFetchDataHook(TestCase):
         runner = MagicMock()
         model = MODELS.build(self.pggan_cfg)
         dataset = DATASETS.build(self.grow_scale_dataset_cfg)
+
+        # test default sampler
+        default_sampler = DefaultSampler(dataset)
         dataloader = DataLoader(
             batch_size=64,
             dataset=dataset,
-            sampler=DefaultSampler,
+            sampler=default_sampler,
             collate_fn=pseudo_collate)
 
         runner.train_loop = MagicMock(spec=IterBasedTrainLoop)
@@ -78,6 +81,11 @@ class TestPGGANFetchDataHook(TestCase):
             hooks.before_train_iter(runner, 0, None)
             self.assertEqual(runner.train_loop.dataloader.batch_size,
                              target_bz)
+            # check attribute of default sampler
+            sampler = runner.train_loop.dataloader.sampler
+            self.assertEqual(sampler.seed, default_sampler.seed)
+            self.assertEqual(sampler.shuffle, default_sampler.shuffle)
+            self.assertEqual(sampler.round_up, default_sampler.round_up)
 
         # set `_next_scale_int` as int
         delattr(model, '_next_scale_int')
@@ -85,11 +93,42 @@ class TestPGGANFetchDataHook(TestCase):
         hooks.before_train_iter(runner, 0, None)
         self.assertEqual(runner.train_loop.dataloader.batch_size, 4)
 
-        # test do not update
+        # test InfinitySampler
+        infinite_sampler = InfiniteSampler(dataset)
+        dataloader = DataLoader(
+            batch_size=64,
+            dataset=dataset,
+            sampler=infinite_sampler,
+            collate_fn=pseudo_collate)
+        runner.train_loop.dataloader = dataloader
+        for scale, target_bz in self.grow_scale_dataset_cfg[
+                'gpu_samples_per_scale'].items():
+
+            model._next_scale_int = torch.tensor(int(scale), dtype=torch.int32)
+            hooks.before_train_iter(runner, 0, None)
+            self.assertEqual(runner.train_loop.dataloader.batch_size,
+                             target_bz)
+            # check attribute of infinite sampler
+            sampler = runner.train_loop.dataloader.sampler
+            self.assertEqual(sampler.seed, infinite_sampler.seed)
+            self.assertEqual(sampler.shuffle, infinite_sampler.shuffle)
+
+        # test do not update + `IterBasedTrainLoop`
         hooks.before_train_iter(runner, 1, None)
 
         # test not `IterBasedTrainLoop`
         runner.train_loop = MagicMock()
         runner.train_loop.dataloader = dataloader
         runner.model = model
+        model._next_scale_int = 8
+        # test update
         hooks.before_train_iter(runner, 0, None)
+        # test do not update
+        hooks.before_train_iter(runner, 1, None)
+
+        # test invalid sampler type
+        dataloader = DataLoader(
+            batch_size=64, dataset=dataset, collate_fn=pseudo_collate)
+        runner.train_loop.dataloader = dataloader
+        model._next_scale_int = 4
+        self.assertRaises(ValueError, hooks.before_train_iter, runner, 0, None)
