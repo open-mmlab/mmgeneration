@@ -12,47 +12,54 @@ model = dict(generator=dict(out_channels=1), discriminator=dict(in_channels=1))
 train_pipeline = [
     dict(
         type='LoadImageFromFile',
-        key='real_img',
-        flag='grayscale',
-        io_backend='disk'),
-    dict(type='Resize', keys=['real_img'], scale=(64, 64)),
-    dict(
-        type='Normalize',
-        keys=['real_img'],
-        mean=[127.5],
-        std=[127.5],
-        to_rgb=False),
-    dict(type='ImageToTensor', keys=['real_img']),
-    dict(type='Collect', keys=['real_img'], meta_keys=['real_img_path'])
+        key='img',
+        io_backend='disk',
+        flag='grayscale'),
+    dict(type='Resize', scale=(64, 64)),
+    dict(type='PackGenInputs', meta_keys=[])
 ]
 
-# you must set `samples_per_gpu` and `imgs_root`
-data = dict(
-    samples_per_gpu=128,
-    train=dict(imgs_root='data/mnist_64/train', pipeline=train_pipeline),
-    val=None)
+# set ``batch_size``` and ``data_root```
+batch_size = 128
+data_root = 'data/mnist_64/train'
+train_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
 
-# adjust running config
-lr_config = None
-checkpoint_config = dict(interval=500, by_epoch=False)
+val_dataloader = dict(batch_size=batch_size, dataset=dict(data_root=data_root))
+
+test_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
+
+default_hooks = dict(checkpoint=dict(interval=500))
+
+# VIS_HOOK
 custom_hooks = [
     dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=100)
+        type='GenVisualizationHook',
+        interval=10000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
 
-log_config = dict(
-    interval=100, hooks=[
-        dict(type='TextLoggerHook'),
-    ])
+train_cfg = dict(max_iters=5000)
 
-total_iters = 5000
+# METRICS
+metrics = [
+    dict(
+        type='MS_SSIM', prefix='ms-ssim', fake_nums=10000,
+        sample_model='orig'),
+    dict(
+        type='SWD',
+        prefix='swd',
+        fake_nums=16384,
+        sample_model='orig',
+        image_shape=(3, 64, 64))
+]
 
-metrics = dict(
-    ms_ssim10k=dict(type='MS_SSIM', num_images=10000),
-    swd16k=dict(type='SWD', num_images=16384, image_shape=(3, 64, 64)))
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)
 
-optimizer = dict(
-    generator=dict(type='Adam', lr=0.0004, betas=(0.5, 0.999)),
-    discriminator=dict(type='Adam', lr=0.0001, betas=(0.5, 0.999)))
+optim_wrapper = dict(
+    generator=dict(optimizer=dict(type='Adam', lr=0.0004, betas=(0.5, 0.999))),
+    discriminator=dict(
+        optimizer=dict(type='Adam', lr=0.0001, betas=(0.5, 0.999))))

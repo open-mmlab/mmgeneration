@@ -6,49 +6,64 @@ _base_ = [
 model = dict(
     type='StaticUnconditionalGAN',
     generator=dict(type='LSGANGenerator', output_scale=64),
-    discriminator=dict(type='LSGANDiscriminator', input_scale=64),
-    gan_loss=dict(type='GANLoss', gan_type='hinge'))
-train_cfg = dict(disc_steps=1)
-test_cfg = None
+    discriminator=dict(type='LSGANDiscriminator', input_scale=64))
+
 # define dataset
-# you must set `samples_per_gpu` and `imgs_root`
-data = dict(
-    samples_per_gpu=128,
-    train=dict(imgs_root='data/lsun/bedroom_train'),
-    val=dict(imgs_root='data/lsun/bedroom_train'))
+batch_size = 128
+data_root = 'data/lsun/bedroom_train'
+train_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
 
-optimizer = dict(
-    generator=dict(type='Adam', lr=0.0001, betas=(0.5, 0.99)),
-    discriminator=dict(type='Adam', lr=0.0001, betas=(0.5, 0.99)))
+val_dataloader = dict(batch_size=batch_size, dataset=dict(data_root=data_root))
 
-# adjust running config
-lr_config = None
-checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=20)
+test_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
+
+optim_wrapper = dict(
+    generator=dict(optimizer=dict(type='Adam', lr=0.0001, betas=(0.5, 0.99))),
+    discriminator=dict(
+        optimizer=dict(type='Adam', lr=0.0001, betas=(0.5, 0.99))))
+
+default_hooks = dict(checkpoint=dict(max_keep_ckpts=20))
+
+# VIS_HOOK
 custom_hooks = [
     dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=5000)
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
 
-evaluation = dict(
-    type='GenerativeEvalHook',
-    interval=10000,
-    metrics=dict(
-        type='FID', num_images=50000, inception_pkl=None, bgr2rgb=True),
-    sample_kwargs=dict(sample_model='orig'))
+train_cfg = dict(max_iters=160000)
 
-total_iters = 160000
-# use ddp wrapper for faster training
-use_ddp_wrapper = True
-find_unused_parameters = False
+# METRICS
+metrics = [
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='orig'),
+    dict(
+        type='MS_SSIM', prefix='ms-ssim', fake_nums=10000,
+        sample_model='orig'),
+    dict(
+        type='SWD',
+        prefix='swd',
+        fake_nums=16384,
+        sample_model='orig',
+        image_shape=(3, 64, 64))
+]
 
-runner = dict(
-    type='DynamicIterBasedRunner',
-    is_dynamic_ddp=False,  # Note that this flag should be False.
-    pass_training_status=True)
+val_metrics = [
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='orig'),
+]
 
-metrics = dict(
-    ms_ssim10k=dict(type='MS_SSIM', num_images=10000),
-    swd16k=dict(type='SWD', num_images=16384, image_shape=(3, 64, 64)),
-    fid50k=dict(type='FID', num_images=50000, inception_pkl=None))
+val_evaluator = dict(metrics=val_metrics)
+test_evaluator = dict(metrics=metrics)
