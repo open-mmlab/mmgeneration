@@ -3,6 +3,9 @@ _base_ = [
     '../_base_/datasets/grow_scale_imgs_128x128.py'
 ]
 
+# MODEL
+model_wrapper_cfg = dict(find_unused_parameters=True)
+
 # TRAIN
 train_cfg = dict(max_iters=280000)
 data_roots = {'128': './data/celeba-cropped/cropped_images_aligned_png'}
@@ -19,7 +22,7 @@ optim_wrapper = dict(
 custom_hooks = [
     dict(
         type='GenVisualizationHook',
-        interval=5000,
+        interval=1,
         fixed_input=True,
         sample_kwargs_list=dict(type='GAN', name='fake_img')),
     dict(type='PGGANFetchDataHook')
@@ -31,7 +34,8 @@ metrics = [
     dict(type='MS_SSIM', fake_nums=10000, prefix='MS-SSIM')
 ]
 
-val_evaluator = dict(metrics=metrics)
-test_evaluator = dict(metrics=metrics)
+# do not evaluate in training
+val_cfg = val_evaluator = val_dataloader = None
 
-val_dataloader = test_dataloader = train_dataloader
+test_evaluator = dict(metrics=metrics)
+test_dataloader = train_dataloader

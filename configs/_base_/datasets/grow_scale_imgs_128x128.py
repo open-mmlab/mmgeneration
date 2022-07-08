@@ -13,7 +13,7 @@ train_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         pipeline=train_pipeline,
-        # data_roots=None,
+        data_roots={},
         gpu_samples_base=4,
         # note that this should be changed with total gpu number
         gpu_samples_per_scale={
