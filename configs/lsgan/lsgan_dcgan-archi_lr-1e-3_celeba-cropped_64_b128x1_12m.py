@@ -9,7 +9,7 @@ disc_step = 1
 train_cfg = dict(max_iters=total_iters * disc_step)
 # define dataset
 # batch_size and data_root must be set
-batch_size = 32
+batch_size = 128
 data_root = './data/celeba-cropped/cropped_images_aligned_png/'
 train_dataloader = dict(
     batch_size=batch_size, dataset=dict(data_root=data_root))
@@ -23,6 +23,15 @@ optim_wrapper = dict(
     generator=dict(optimizer=dict(type='Adam', lr=0.001, betas=(0.5, 0.99))),
     discriminator=dict(
         optimizer=dict(type='Adam', lr=0.001, betas=(0.5, 0.99))))
+
+# VIS_HOOK
+custom_hooks = [
+    dict(
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img'))
+]
 
 # METRICS
 metrics = [

@@ -5,22 +5,45 @@ _base_ = [
 ]
 
 # define dataset
-# you must set `samples_per_gpu` and `imgs_root`
-data = dict(
-    samples_per_gpu=128, train=dict(imgs_root='data/lsun/bedroom_train'))
+# batch_size and data_root must be set
+batch_size = 128
+data_root = './data/lsun/bedroom_train'
+train_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
 
-# adjust running config
-lr_config = None
-checkpoint_config = dict(interval=100000, by_epoch=False)
+val_dataloader = dict(batch_size=batch_size, dataset=dict(data_root=data_root))
+
+test_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
+
+optim_wrapper = dict(
+    generator=dict(optimizer=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999))),
+    discriminator=dict(
+        optimizer=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999))))
+
+train_cfg = dict(max_iters=1500002)
+
+# VIS_HOOK
 custom_hooks = [
     dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=10000)
+        type='GenVisualizationHook',
+        interval=10000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
 
-total_iters = 1500002
+# METRICS
+metrics = [
+    dict(
+        type='MS_SSIM', prefix='ms-ssim', fake_nums=10000,
+        sample_model='orig'),
+    dict(
+        type='SWD',
+        prefix='swd',
+        fake_nums=16384,
+        sample_model='orig',
+        image_shape=(3, 64, 64))
+]
 
-metrics = dict(
-    ms_ssim10k=dict(type='MS_SSIM', num_images=10000),
-    swd16k=dict(type='SWD', num_images=16384, image_shape=(3, 64, 64)))
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)

@@ -1,14 +1,14 @@
 _base_ = ['./wgangp_GN_celeba-cropped_128_b64x1_160kiter.py']
 
-model = dict(disc_auxiliary_loss=[
-    dict(
-        type='GradientPenaltyLoss',
-        loss_weight=50,
-        norm_mode='HWC',
-        data_info=dict(
-            discriminator='disc', real_data='real_imgs',
-            fake_data='fake_imgs'))
-])
+loss_config = dict(gp_norm_mode='HWC', gp_loss_weight=50)
+model = dict(loss_config=loss_config)
 
-data = dict(
-    samples_per_gpu=64, train=dict(imgs_root='./data/lsun/bedroom_train'))
+batch_size = 64
+data_root = './data/lsun/bedroom_train'
+train_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
+
+val_dataloader = dict(batch_size=batch_size, dataset=dict(data_root=data_root))
+
+test_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
