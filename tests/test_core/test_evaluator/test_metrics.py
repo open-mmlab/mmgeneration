@@ -102,10 +102,13 @@ class TestBaseMetric(TestCase):
 
         model = MagicMock()
         dataloader = MagicMock()
+        dataset = MagicMock()
+        dataloader.dataset = dataset
+        dataloader.batch_size = 4
 
         sampler = toy_metric.get_metric_sampler(model, dataloader,
                                                 [toy_metric])
-        self.assertEqual(sampler, dataloader)
+        self.assertEqual(sampler._dataloader.dataset, dataset)
 
 
 class TestFID(TestCase):
@@ -388,14 +391,17 @@ class TestSWD(TestCase):
 
     def test_prosess(self):
         swd = SlicedWassersteinDistance(fake_nums=4, image_shape=(3, 32, 32))
-        real_img = torch.randn(2, 3, 32, 32)
-        gen_img = torch.randn(2, 3, 32, 32)
+        torch.random.manual_seed(42)
+        real_img = torch.rand(100, 3, 32, 32)
+        gen_img = torch.rand(100, 3, 32, 32)
 
         swd.process(real_img, gen_img)
-        swd.process(real_img, gen_img)
-        swd.process(real_img, gen_img)
 
-        swd.evaluate()
+        output = swd.evaluate()
+        result = [16.495922580361366, 24.15413036942482, 20.325026474893093]
+        output = [item / 100 for item in output.values()]
+        result = [item / 100 for item in result]
+        np.testing.assert_almost_equal(output, result, decimal=1)
 
         swd = SlicedWassersteinDistance(
             fake_nums=4,

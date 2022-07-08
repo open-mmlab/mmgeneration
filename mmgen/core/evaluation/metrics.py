@@ -368,8 +368,14 @@ class SlicedWassersteinDistance(GenMetric):
         results = getattr(self, f'{target}_results')
         results_collected = []
         for result in results:
+            # save the original tensor size
+            results_size_list = [res.shape[0] for res in result]
             result_collected = torch.cat(result, dim=0)
             result_collected = torch.cat(all_gather(result_collected), dim=0)
+            # split to tuple
+            result_collected = torch.split(result_collected, results_size_list)
+            # convert to list
+            result_collected = [res for res in result_collected]
             results_collected.append(result_collected)
 
         self._num_processed = 0
@@ -399,7 +405,7 @@ class SlicedWassersteinDistance(GenMetric):
         result = distance + [np.mean(distance)]
 
         return {
-            f'{resolution}': round(d, 2)
+            f'{resolution}': round(d, 4)
             for resolution, d in zip(self.resolutions + ['avg'], result)
         }
 
