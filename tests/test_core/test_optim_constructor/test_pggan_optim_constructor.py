@@ -12,7 +12,7 @@ from mmgen.utils import register_all_modules
 register_all_modules()
 
 
-class TestSinGANOptimWrapperConstructor(TestCase):
+class TestPGGANOptimWrapperConstructor(TestCase):
 
     pggan_cfg = dict(
         type='ProgressiveGrowingGAN',
