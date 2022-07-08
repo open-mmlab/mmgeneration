@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmengine import is_list_of, print_log
-from mmengine.data import pseudo_collate
+from mmengine.data import DefaultSampler, pseudo_collate
 from mmengine.dist import (all_gather, broadcast_object_list, collect_results,
                            get_dist_info, get_world_size, is_main_process)
 from mmengine.evaluator import BaseMetric
@@ -191,10 +191,12 @@ class GenMetric(BaseMetric):
             def __init__(self, batch_size, max_length, dataloader) -> None:
                 self.batch_size = batch_size
                 self.max_length = max_length
+                dataset = dataloader.dataset
                 self._dataloader = DataLoader(
-                    dataloader.dataset,
+                    dataset,
                     batch_size=batch_size,
-                    collate_fn=pseudo_collate)
+                    collate_fn=pseudo_collate,
+                    sampler=DefaultSampler(dataset))
                 self._iterator = iter(self._dataloader)
 
             def __iter__(self) -> Iterator:
