@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .base_gan import BaseConditionalGAN, BaseGAN
+from .biggan import BigGAN
 from .gan_data_processer import GANDataPreprocessor
 from .lsgan import LSGAN
 from .mspie_stylegan2 import MSPIEStyleGAN2
@@ -9,5 +10,6 @@ from .singan import PESinGAN, SinGAN
 
 __all__ = [
     'BaseGAN', 'BaseConditionalGAN', 'ProgressiveGrowingGAN', 'SinGAN',
-    'MSPIEStyleGAN2', 'PESinGAN', 'SAGAN', 'GANDataPreprocessor', 'LSGAN'
+    'MSPIEStyleGAN2', 'PESinGAN', 'SAGAN', 'GANDataPreprocessor', 'LSGAN',
+    'BigGAN'
 ]

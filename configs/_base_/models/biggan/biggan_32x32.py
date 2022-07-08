@@ -1,6 +1,7 @@
 model = dict(
-    type='BasiccGAN',
+    type='BigGAN',
     num_classes=10,
+    data_preprocessor=dict(type='GANDataPreprocessor'),
     generator=dict(
         type='BigGANGenerator',
         output_scale=32,
@@ -22,11 +23,5 @@ model = dict(
         sn_style='torch',
         init_type='N02',
         with_spectral_norm=True),
-    gan_loss=dict(type='GANLoss', gan_type='hinge'))
-
-train_cfg = dict(
-    disc_steps=4, gen_steps=1, batch_accumulation_steps=1, use_ema=True)
-test_cfg = None
-optimizer = dict(
-    generator=dict(type='Adam', lr=0.0002, betas=(0.0, 0.999)),
-    discriminator=dict(type='Adam', lr=0.0002, betas=(0.0, 0.999)))
+    generator_steps=1,
+    discriminator_steps=4)
