@@ -54,22 +54,16 @@ class ProgressiveGrowingGAN(BaseGAN):
         discriminator (dict): Config for discriminator.
     """
 
-    def __init__(
-            self,
-            generator,
-            discriminator,
-            data_preprocessor,
-            noise_size,
-            # g_lr_base,
-            # d_lr_base,
-            nkimgs_per_scale,
-            interp_real=None,
-            # g_lr_schedule=dict(),
-            # d_lr_schedule=dict(),
-            transition_kimgs: int = 600,
-            # reset_optim_for_new_scale: bool = True,
-            prev_stage: int = 0,
-            ema_config: Optional[Dict] = None):
+    def __init__(self,
+                 generator,
+                 discriminator,
+                 data_preprocessor,
+                 nkimgs_per_scale,
+                 noise_size=None,
+                 interp_real=None,
+                 transition_kimgs: int = 600,
+                 prev_stage: int = 0,
+                 ema_config: Optional[Dict] = None):
         super().__init__(generator, discriminator, data_preprocessor, 1, 1,
                          noise_size, ema_config)
 
@@ -121,21 +115,6 @@ class ProgressiveGrowingGAN(BaseGAN):
                 data_samples: Optional[list] = None,
                 mode: Optional[str] = None):
         """Sample images from noises by using the generator."""
-        # use `self.curr_scale` if curr_scale is None
-        curr_scale = batch_inputs.get('curr_scale', None)
-        if curr_scale is None:
-            # in training, 'curr_scale' will be set as attribute
-            if hasattr(self, 'curr_scale'):
-                curr_scale = self.curr_scale[0]
-            # in testing, adopt '_curr_scale_int' from buffer as testing scale
-            else:
-                curr_scale = self._curr_scale_int.item()
-
-        # use `self._curr_transition_weight` if `transition_weight` is None
-        transition_weight = batch_inputs.get('transition_weight', None)
-        if transition_weight is None:
-            transition_weight = self._curr_transition_weight.item()
-
         if isinstance(batch_inputs, Tensor):
             noise = batch_inputs
             curr_scale = transition_weight = None
@@ -169,7 +148,6 @@ class ProgressiveGrowingGAN(BaseGAN):
 
         outputs = _model(
             noise,
-            num_batches=num_batches,
             curr_scale=curr_scale,
             transition_weight=transition_weight,
             # **kwargs
@@ -179,7 +157,6 @@ class ProgressiveGrowingGAN(BaseGAN):
             _model = self.generator
             outputs_orig = _model(
                 noise,
-                num_batches=num_batches,
                 curr_scale=curr_scale,
                 transition_weight=transition_weight,
                 # **kwargs
@@ -187,9 +164,9 @@ class ProgressiveGrowingGAN(BaseGAN):
             outputs = dict(ema=outputs, orig=outputs_orig)
         return outputs
 
-    def train_generator(self, inputs: TrainInput,
-                        data_samples: List[GenDataSample],
-                        optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
+    def train_discriminator(
+            self, inputs: TrainInput, data_samples: List[GenDataSample],
+            optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
         real_imgs = inputs
         num_batches = real_imgs.shape[0]
         noise_batch = self.noise_fn(num_batches=num_batches)
@@ -200,16 +177,18 @@ class ProgressiveGrowingGAN(BaseGAN):
                 curr_scale=self.curr_scale[0],
                 transition_weight=self._curr_transition_weight,
                 return_noise=False)
+
         disc_pred_fake = self.discriminator(
             fake_imgs,
             curr_scale=self.curr_scale[0],
             transition_weight=self._curr_transition_weight)
         disc_pred_real = self.discriminator(
-            fake_imgs,
+            real_imgs,
             curr_scale=self.curr_scale[0],
             transition_weight=self._curr_transition_weight)
 
-        parsed_loss, log_vars = self.disc_loss(disc_pred_fake, disc_pred_real)
+        parsed_loss, log_vars = self.disc_loss(disc_pred_fake, disc_pred_real,
+                                               fake_imgs, real_imgs)
         optimizer_wrapper.update_params(parsed_loss)
         return log_vars
 
@@ -253,7 +232,9 @@ class ProgressiveGrowingGAN(BaseGAN):
         interpolates = autograd.Variable(interpolates, requires_grad=True)
 
         disc_interpolates = self.discriminator(
-            interpolates, curr_scale=self.curr_stage)
+            interpolates,
+            curr_scale=self.curr_scale[0],
+            transition_weight=self._curr_transition_weight)
         gradients = autograd.grad(
             outputs=disc_interpolates,
             inputs=interpolates,
@@ -269,9 +250,9 @@ class ProgressiveGrowingGAN(BaseGAN):
         parsed_loss, log_vars = self.parse_losses(losses_dict)
         return parsed_loss, log_vars
 
-    def train_discriminator(
-            self, inputs: TrainInput, data_samples: List[GenDataSample],
-            optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
+    def train_generator(self, inputs: TrainInput,
+                        data_samples: List[GenDataSample],
+                        optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
         real_imgs = inputs
         num_batches = real_imgs.shape[0]
         noise_batch = self.noise_fn(num_batches=num_batches)
@@ -396,7 +377,6 @@ class ProgressiveGrowingGAN(BaseGAN):
         # `disc_accu_counts` times of grad accumulations.
         if (curr_iter + 1) % (self.discriminator_steps * disc_accu_iters) == 0:
             set_requires_grad(self.discriminator, False)
-            gen_optimizer_wrapper = optim_wrapper['generator']
             gen_accu_iters = gen_optimizer_wrapper._accumulative_counts
 
             log_vars_gen_list = []
@@ -422,7 +402,7 @@ class ProgressiveGrowingGAN(BaseGAN):
 
         # add batch size info to log_vars
         _batch_size = inputs.shape[0] * get_world_size()
-        self.show_nkimg += (_batch_size / 1000.)
+        self.shown_nkimg += (_batch_size / 1000.)
 
         log_vars.update(
             dict(

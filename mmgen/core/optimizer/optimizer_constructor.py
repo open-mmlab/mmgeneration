@@ -200,18 +200,18 @@ class PGGANOptimWrapperConstructor:
 
     def __init__(self,
                  optim_wrapper_cfg: dict,
-                 reset_optim_for_new_scale: bool = True,
-                 paramwise_cfg: Optional[dict] = None,
-                 lr_schedule: Optional[dict] = None):
+                 paramwise_cfg: Optional[dict] = None):
         if not isinstance(optim_wrapper_cfg, dict):
             raise TypeError('optimizer_cfg should be a dict',
                             f'but got {type(optim_wrapper_cfg)}')
         assert paramwise_cfg is None, (
             'parawise_cfg should be set in each optimizer separately')
-        self.optim_cfg = optim_wrapper_cfg
-        self.reset_optim = reset_optim_for_new_scale
-        self.lr_schedule = dict() if lr_schedule is None else \
-            deepcopy(lr_schedule)
+        self.optim_cfg = deepcopy(optim_wrapper_cfg)
+
+        self.reset_optim = self.optim_cfg.pop('reset_optim_for_new_scale',
+                                              True)
+        print(self.reset_optim)
+        self.lr_schedule = self.optim_cfg.pop('lr_schedule', dict())
         self.constructors = {}
 
         for key, cfg in self.optim_cfg.items():
@@ -226,9 +226,10 @@ class PGGANOptimWrapperConstructor:
         if is_model_wrapper(module):
             module = module.module
 
-        scales = module.scales
+        # module.scales: [int, int]
+        scales = [s[0] for s in module.scales]
 
-        for key, base_cfg in self.optim_cfg.keys():
+        for key, base_cfg in self.optim_cfg.items():
             submodule = module._modules[key]
 
             cfg_ = base_cfg.copy()
@@ -240,7 +241,7 @@ class PGGANOptimWrapperConstructor:
             for idx, scale in enumerate(scales):
                 if self.reset_optim:
                     scale_cfg = cfg_.copy()
-                    scale_lr = self.lr_schedule[key].get(scale, base_lr)
+                    scale_lr = self.lr_schedule[key].get(str(scale), base_lr)
                     scale_cfg['optimizer']['lr'] = scale_lr
                     constructor = DefaultOptimWrapperConstructor(
                         scale_cfg, paramwise_cfg_)

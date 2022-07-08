@@ -23,17 +23,14 @@ class PGGANFetchDataHook(Hook):
             to -1, the visualization hook will not be called. Defaults to 1.
     """
 
-    def __init__(self, interval=1):
+    def __init__(self):
         super().__init__()
-        self.interval = interval
 
     def before_train_iter(self,
                           runner,
                           batch_idx: int,
                           data_batch: DATA_BATCH = None) -> None:
 
-        if not self.every_n_inner_iters(self.interval):
-            return
         _module = runner.model.module if is_model_wrapper(
             runner.model) else runner.model
         _next_scale_int = _module._next_scale_int
@@ -49,9 +46,8 @@ class PGGANFetchDataHook(Hook):
 
     def update_dataloader(self, dataloader: DataLoader, curr_scale: int):
 
-        if hasattr(self._dataloader.dataset, 'update_annotations'):
-            update_flag = self._dataloader.dataset.update_annotations(
-                curr_scale)
+        if hasattr(dataloader.dataset, 'update_annotations'):
+            update_flag = dataloader.dataset.update_annotations(curr_scale)
         else:
             update_flag = False
 
@@ -63,7 +59,7 @@ class PGGANFetchDataHook(Hook):
 
             dataloader = DataLoader(
                 dataset,
-                batch_size=dataloader.dataset.sampler_per_gpu,
+                batch_size=dataloader.dataset.samples_per_gpu,
                 sampler=sampler,
                 num_workers=num_workers,
                 collate_fn=pseudo_collate,
