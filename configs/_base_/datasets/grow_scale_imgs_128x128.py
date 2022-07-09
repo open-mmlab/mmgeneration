@@ -26,4 +26,13 @@ train_dataloader = dict(
         len_per_stage=-1),
     sampler=dict(type='InfiniteSampler', shuffle=True))
 
-val_dataloader = test_dataloader = train_dataloader
+test_dataloader = dict(
+    num_workers=4,
+    batch_size=64,
+    dataset=dict(
+        type='UnconditionalImageDataset',
+        pipeline=train_pipeline,
+        data_root=None),
+    sampler=dict(type='DefaultSampler', shuffle=False))
+
+val_dataloader = test_dataloader
