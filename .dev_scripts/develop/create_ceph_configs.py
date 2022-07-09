@@ -120,8 +120,8 @@ def update_ceph_config(filename, args, dry_run=False):
         return True
 
     except Exception as e:  # noqa
-        print(e)
         if dry_run:
+            print(e)
             raise
         else:
             return False
@@ -165,4 +165,4 @@ if __name__ == '__main__':
             print(fn)
 
     else:
-        update_ceph_config(args.test_file, args)
+        update_ceph_config(args.test_file, args, dry_run=True)
