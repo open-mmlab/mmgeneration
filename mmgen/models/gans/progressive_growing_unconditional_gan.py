@@ -148,20 +148,14 @@ class ProgressiveGrowingGAN(BaseGAN):
             _model = self.generator
 
         outputs = _model(
-            noise,
-            curr_scale=curr_scale,
-            transition_weight=transition_weight,
-            # **kwargs
-        )
+            noise, curr_scale=curr_scale, transition_weight=transition_weight)
 
         if sample_model == 'ema/orig':
             _model = self.generator
             outputs_orig = _model(
                 noise,
                 curr_scale=curr_scale,
-                transition_weight=transition_weight,
-                # **kwargs
-            )
+                transition_weight=transition_weight)
             outputs = dict(ema=outputs, orig=outputs_orig)
         return outputs
 
@@ -243,10 +237,12 @@ class ProgressiveGrowingGAN(BaseGAN):
             create_graph=True,
             retain_graph=True,
             only_inputs=True)[0]
-        # norm_mode is 'pixel'
-        gradients_penalty = ((gradients.norm(2, dim=1) - 1)**2).mean()
-        losses_dict['loss_gp'] = 0.1 * gradients_penalty
-        losses_dict['loss_disc_shift'] = disc_pred_fake**2 + disc_pred_real**2
+        # norm_mode is 'HWC'
+        gradients_penalty = ((
+            gradients.reshape(batch_size, -1).norm(2, dim=1) - 1)**2).mean()
+        losses_dict['loss_gp'] = 10 * gradients_penalty
+        losses_dict['loss_disc_shift'] = 0.001 * 0.5 * (
+            disc_pred_fake**2 + disc_pred_real**2)
 
         parsed_loss, log_vars = self.parse_losses(losses_dict)
         return parsed_loss, log_vars

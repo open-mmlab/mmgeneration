@@ -1,43 +1,52 @@
 _base_ = [
+    '../_base_/default_runtime.py',
     '../_base_/models/pggan/pggan_1024.py',
     '../_base_/datasets/grow_scale_imgs_celeba-hq.py',
-    '../_base_/default_runtime.py'
 ]
 
-optimizer = None
-checkpoint_config = dict(interval=5000, by_epoch=False, max_keep_ckpts=20)
+# MODEL
+model_wrapper_cfg = dict(find_unused_parameters=True)
 
-data = dict(
-    samples_per_gpu=64,
-    train=dict(
-        gpu_samples_base=4,
-        # note that this should be changed with total gpu number
-        gpu_samples_per_scale={
-            '4': 64,
-            '8': 32,
-            '16': 16,
-            '32': 8,
-            '64': 4
+# TRAIN
+train_cfg = dict(max_iters=280000)
+
+optim_wrapper = dict(
+    constructor='PGGANOptimWrapperConstructor',
+    generator=dict(optimizer=dict(type='Adam', lr=0.001, betas=(0., 0.99))),
+    discriminator=dict(
+        optimizer=dict(type='Adam', lr=0.001, betas=(0., 0.99))),
+    lr_schedule=dict(
+        generator={
+            '128': 0.0015,
+            '256': 0.002,
+            '512': 0.003,
+            '1024': 0.003
         },
-    ))
+        discriminator={
+            '128': 0.0015,
+            '256': 0.002,
+            '512': 0.003,
+            '1024': 0.003
+        }))
 
+# VIS_HOOK + DATAFETCH
 custom_hooks = [
     dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=5000),
-    dict(type='PGGANFetchDataHook', interval=1),
-    dict(
-        type='ExponentialMovingAverageHook',
-        module_keys=('generator_ema', ),
+        type='GenVisualizationHook',
         interval=1,
-        priority='VERY_HIGH')
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img')),
+    dict(type='PGGANFetchDataHook')
 ]
 
-lr_config = None
+# METRICS
+metrics = [
+    dict(
+        type='SWD', fake_nums=16384, image_shape=(3, 1024, 1024),
+        prefix='SWD'),
+    dict(type='MS_SSIM', fake_nums=10000, prefix='MS-SSIM')
+]
 
-total_iters = 280000
-
-metrics = dict(
-    ms_ssim10k=dict(type='MS_SSIM', num_images=10000),
-    swd16k=dict(type='SWD', num_images=16384, image_shape=(3, 1024, 1024)))
+# do not evaluate in training
+val_cfg = val_evaluator = val_dataloader = None
+test_evaluator = dict(metrics=metrics)

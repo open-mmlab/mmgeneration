@@ -1,6 +1,5 @@
 dataset_type = 'GrowScaleImgDataset'
 
-# TODO: do we use flip in test/val config
 pipeline = [
     dict(type='LoadImageFromFile', key='img'),
     dict(type='Flip', keys=['img'], direction='horizontal'),
@@ -9,6 +8,7 @@ pipeline = [
 
 train_dataloader = dict(
     num_workers=4,
+    batch_size=64,
     dataset=dict(
         type=dataset_type,
         data_roots={

@@ -9,7 +9,7 @@ train_pipeline = [
 
 train_dataloader = dict(
     num_workers=4,
-    batch_size=None,  # initialize batch size
+    batch_size=64,  # initialize batch size
     dataset=dict(
         type=dataset_type,
         pipeline=train_pipeline,
