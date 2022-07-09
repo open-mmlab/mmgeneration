@@ -222,3 +222,104 @@ class GenVisBackend(BaseVisBackend):
             self._file_client.put(file, path)
         if self._delete_local:
             os.remove(path)
+
+
+@VISBACKENDS
+class PaviGenVisBackend(BaseVisBackend):
+    """Visualization backend for Pavi."""
+
+    def __init__(self,
+                 save_dir: str,
+                 name: Optional[str] = None,
+                 labels: Optional[str] = None,
+                 project: Optional[str] = None,
+                 model: Optional[str] = None,
+                 description: Optional[str] = None):
+        self.save_dir = save_dir
+
+        self.name = name
+        self.labels = labels
+        self.project = project
+        self.model = model
+        self.description = description
+
+    def _init_env(self):
+        """Init save dir."""
+        try:
+            import pavi
+        except ImportError:
+            raise ImportError(
+                'To use \'PaviGenVisBackend\' Pavi must be installed.')
+        self._pavi = pavi.SummaryWriter(
+            name=self.name,
+            labels=self.labels,
+            project=self.project,
+            model=self.model,
+            description=self.description,
+            log_dir=self.save_dir)
+
+    @property  # type: ignore
+    @force_init_env
+    def experiment(self) -> 'GenVisBackend':
+        """Return the experiment object associated with this visualization
+        backend."""
+        return self._pavi
+
+    @force_init_env
+    def add_image(self,
+                  name: str,
+                  image: np.array,
+                  step: int = 0,
+                  **kwargs) -> None:
+        """Record the image to Pavi.
+
+        Args:
+            name (str): The image identifier.
+            image (np.ndarray): The image to be saved. The format
+                should be RGB. Default to None.
+            step (int): Global step value to record. Default to 0.
+        """
+        assert image.dtype == np.uint8
+        drawn_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        self._pavi.add_image(name, drawn_image, step)
+
+    @force_init_env
+    def add_scalar(self,
+                   name: str,
+                   value: Union[int, float, torch.Tensor, np.ndarray],
+                   step: int = 0,
+                   **kwargs) -> None:
+        """Record the scalar data to Pavi.
+
+        Args:
+            name (str): The scalar identifier.
+            value (int, float, torch.Tensor, np.ndarray): Value to save.
+            step (int): Global step value to record. Default to 0.
+        """
+        if isinstance(value, torch.Tensor):
+            value = value.item()
+        self._pavi.add_scalar(name, value, step)
+
+    @force_init_env
+    def add_scalars(self,
+                    scalar_dict: dict,
+                    step: int = 0,
+                    file_path: Optional[str] = None,
+                    **kwargs) -> None:
+        """Record the scalars to Pavi.
+
+        The scalar dict will be written to the default and
+        specified files if ``file_path`` is specified.
+        Args:
+            scalar_dict (dict): Key-value pair storing the tag and
+                corresponding values. The value must be dumped
+                into json format.
+            step (int): Global step value to record. Default to 0.
+            file_path (str, optional): The scalar's data will be
+                saved to the ``file_path`` file at the same time
+                if the ``file_path`` parameter is specified.
+                Default to None.
+        """
+        assert isinstance(scalar_dict, dict)
+        for name, value in scalar_dict.items():
+            self.add_scalar(name, value, step)
