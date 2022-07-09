@@ -33,7 +33,7 @@ optim_wrapper = dict(
 custom_hooks = [
     dict(
         type='GenVisualizationHook',
-        interval=1,
+        interval=5000,
         fixed_input=True,
         sample_kwargs_list=dict(type='GAN', name='fake_img')),
     dict(type='PGGANFetchDataHook')

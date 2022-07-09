@@ -22,7 +22,7 @@ optim_wrapper = dict(
 custom_hooks = [
     dict(
         type='GenVisualizationHook',
-        interval=1,
+        interval=5000,
         fixed_input=True,
         sample_kwargs_list=dict(type='GAN', name='fake_img')),
     dict(type='PGGANFetchDataHook')
@@ -38,4 +38,4 @@ metrics = [
 val_cfg = val_evaluator = val_dataloader = None
 
 test_evaluator = dict(metrics=metrics)
-test_dataloader = train_dataloader
+test_dataloader = dict(dataset=dict(data_root=data_roots['128']))
