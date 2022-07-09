@@ -230,14 +230,14 @@ class PaviGenVisBackend(BaseVisBackend):
 
     def __init__(self,
                  save_dir: str,
-                 name: Optional[str] = None,
+                 exp_name: Optional[str] = None,
                  labels: Optional[str] = None,
                  project: Optional[str] = None,
                  model: Optional[str] = None,
                  description: Optional[str] = None):
         self.save_dir = save_dir
 
-        self._name = name
+        self._name = exp_name
         self._labels = labels
         self._project = project
         self._model = model

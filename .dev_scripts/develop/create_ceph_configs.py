@@ -100,7 +100,7 @@ def update_ceph_config(filename, args, dry_run=False):
             _, project, name = filename.split('/')
             name = name[:-2]
             pavi_cfg = dict(
-                type='PaviGenVisBackend', name=name, project=project)
+                type='PaviGenVisBackend', exp_name=name, project=project)
             config['vis_backends'].append(pavi_cfg)
         config['visualizer']['vis_backends'] = config['vis_backends']
 
