@@ -160,7 +160,6 @@ class GenVisBackend(BaseVisBackend):
         if isinstance(value, torch.Tensor):
             value = value.item()
         self._dump({name: value, 'step': step}, self._scalar_save_file, 'json')
-        self._upload(f'{self._scalar_save_file}.json')
 
     @force_init_env
     def add_scalars(self,
@@ -195,7 +194,7 @@ class GenVisBackend(BaseVisBackend):
                 'same name, please set ``file_path`` to another value'
             self._dump(scalar_dict, new_save_file_path, 'json')
         self._dump(scalar_dict, self._scalar_save_file, 'json')
-        self._upload(f'{self._scalar_save_file}.json')
+        self._upload(self._scalar_save_file)
 
     def _dump(self, value_dict: dict, file_path: str,
               file_format: str) -> None:
