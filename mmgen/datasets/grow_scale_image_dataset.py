@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional
+from typing import Optional, Union
 
 from mmengine import BaseDataset, FileClient, print_log
 
@@ -64,6 +64,7 @@ class GrowScaleImgDataset(BaseDataset):
                  gpu_samples_per_scale=None,
                  gpu_samples_base=32,
                  io_backend: Optional[str] = None,
+                 file_lists: Optional[Union[str, dict]] = None,
                  test_mode=False):
 
         assert isinstance(data_roots, dict)
