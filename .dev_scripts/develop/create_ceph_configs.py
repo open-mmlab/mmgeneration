@@ -99,9 +99,19 @@ def update_ceph_config(filename, args, dry_run=False):
         if args.add_pavi:
             _, project, name = filename.split('/')
             name = name[:-2]
-            pavi_cfg = dict(
-                type='PaviGenVisBackend', exp_name=name, project=project)
-            config['vis_backends'].append(pavi_cfg)
+            # check if pavi config is inheritance from _base_
+            find_inherit = False
+            for vis_cfg in config['vis_backends']:
+                if vis_cfg['type'] == 'PaviGenVisBackend':
+                    vis_cfg['exp_name'] = name
+                    vis_cfg['project'] = project
+                    find_inherit = True
+                    break
+
+            if not find_inherit:
+                pavi_cfg = dict(
+                    type='PaviGenVisBackend', exp_name=name, project=project)
+                config['vis_backends'].append(pavi_cfg)
         config['visualizer']['vis_backends'] = config['vis_backends']
 
         # 3. change logger hook and checkpoint hook
