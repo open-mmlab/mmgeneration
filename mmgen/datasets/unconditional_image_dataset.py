@@ -55,7 +55,7 @@ class UnconditionalImageDataset(BaseDataset):
         else:
             file_list_io_backend = infer_io_backend(self.file_list)
             _file_client_args = dict(backend=file_list_io_backend)
-            data_list = list_from_file(
+            imgs_list = list_from_file(
                 self.file_list, file_client_args=_file_client_args)
         data_list = [
             dict(img_path=self.file_client.join_path(self.data_root, x))
