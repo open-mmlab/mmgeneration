@@ -31,6 +31,10 @@ def update_ceph_config(filename, args, dry_run=False):
             if not hasattr(config, prefix):
                 continue
             data_cfg = config[prefix]
+
+            # val_dataloader may None
+            if data_cfg is None:
+                continue
             dataset: dict = data_cfg['dataset']
 
             dataset_type: str = dataset['type']
@@ -91,6 +95,15 @@ def update_ceph_config(filename, args, dry_run=False):
             if vis_cfg['type'] == 'GenVisBackend':
                 vis_cfg['ceph_path'] = ceph_path
 
+        # add pavi config
+        if args.add_pavi:
+            _, project, name = filename.split('/')
+            name = name[:-2]
+            pavi_cfg = dict(
+                type='PaviGenVisBackend', name=name, project=project)
+            config['vis_backends'].append(pavi_cfg)
+        config['visualizer']['vis_backends'] = config['vis_backends']
+
         # 3. change logger hook and checkpoint hook
         file_client_args = dict(backend='petrel')
 
@@ -106,7 +119,8 @@ def update_ceph_config(filename, args, dry_run=False):
         config.dump(config.filename)
         return True
 
-    except:  # noqa
+    except Exception as e:  # noqa
+        print(e)
         if dry_run:
             raise
         else:
@@ -124,6 +138,8 @@ if __name__ == '__main__':
         help='Default prefix of the work dirs in the bucket')
     parser.add_argument(
         '--test-file', type=str, default=None, help='Dry-run on a test file.')
+    parser.add_argument(
+        '--add-pavi', action='store_true', help='Add pavi config or not.')
 
     args = parser.parse_args()
 

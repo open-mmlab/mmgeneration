@@ -224,7 +224,7 @@ class GenVisBackend(BaseVisBackend):
             os.remove(path)
 
 
-@VISBACKENDS
+@VISBACKENDS.register_module()
 class PaviGenVisBackend(BaseVisBackend):
     """Visualization backend for Pavi."""
 
