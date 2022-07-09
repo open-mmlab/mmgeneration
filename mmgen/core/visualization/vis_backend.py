@@ -237,11 +237,11 @@ class PaviGenVisBackend(BaseVisBackend):
                  description: Optional[str] = None):
         self.save_dir = save_dir
 
-        self.name = name
-        self.labels = labels
-        self.project = project
-        self.model = model
-        self.description = description
+        self._name = name
+        self._labels = labels
+        self._project = project
+        self._model = model
+        self._description = description
 
     def _init_env(self):
         """Init save dir."""
@@ -251,11 +251,11 @@ class PaviGenVisBackend(BaseVisBackend):
             raise ImportError(
                 'To use \'PaviGenVisBackend\' Pavi must be installed.')
         self._pavi = pavi.SummaryWriter(
-            name=self.name,
-            labels=self.labels,
-            project=self.project,
-            model=self.model,
-            description=self.description,
+            name=self._name,
+            labels=self._labels,
+            project=self._project,
+            model=self._model,
+            description=self._description,
             log_dir=self.save_dir)
 
     @property  # type: ignore
