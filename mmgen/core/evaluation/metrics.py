@@ -1017,21 +1017,35 @@ class PrecisionAndRecall(GenerativeMetric):
         print_log('loading vgg16 for improved precision and recall...',
                   'current')
         self.vgg16_pkl = vgg16_pkl
-        if os.path.isfile(vgg16_script):
-            self.vgg16 = torch.jit.load('work_dirs/cache/vgg16.pt').eval()
-            self.use_tero_scirpt = True
-        else:
-            print_log(
-                'Cannot load Tero\'s script module. Use official '
-                'vgg16 instead', 'current')
-            self.vgg16 = torchvision_models.vgg16(pretrained=True).eval()
-            self.use_tero_scirpt = False
+        self.vgg16, self.use_tero_scirpt = self._load_vgg(vgg16_script)
         self.k = k
 
         self.auto_save = auto_save
         self.row_batch_size = row_batch_size
         self.col_batch_size = col_batch_size
         self._color_order = 'bgr'
+
+    def _load_vgg(self, vgg16_script: Optional[str]) -> Tuple[nn.Module, bool]:
+        """Load VGG network from the given path.
+
+        Args:
+            vgg16_script: The path of script model of VGG network. If None,
+                will load the pytorch version.
+
+        Returns:
+            Tuple[nn.Module, str]: The actually loaded VGG network and
+                corresponding style.
+        """
+        if os.path.isfile(vgg16_script):
+            vgg16 = torch.jit.load('work_dirs/cache/vgg16.pt').eval()
+            use_tero_scirpt = True
+        else:
+            print_log(
+                'Cannot load Tero\'s script module. Use official '
+                'vgg16 instead', 'current')
+            vgg16 = torchvision_models.vgg16(pretrained=True).eval()
+            use_tero_scirpt = False
+        return vgg16, use_tero_scirpt
 
     @torch.no_grad()
     def extract_features(self, images):
