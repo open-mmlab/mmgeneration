@@ -6,15 +6,7 @@ model = dict(
     generator=dict(out_size=256, fp16_enabled=True),
     discriminator=dict(in_size=256, fp16_enabled=False, num_fp16_scales=4),
 )
-
-total_iters = 800000
-
-# use ddp wrapper for faster training
-use_ddp_wrapper = True
-find_unused_parameters = False
-
-runner = dict(
-    fp16_loss_scaler=dict(init_scale=512),
-    is_dynamic_ddp=  # noqa
-    False,  # Note that this flag should be False to use DDP wrapper.
-)
+train_cfg = dict(max_iters=800000)
+optim_wrapper = dict(
+    generator=dict(type='AmpOptimWrapper', loss_scale=512),
+    discriminator=dict(type='AmpOptimWrapper', loss_scale=512))

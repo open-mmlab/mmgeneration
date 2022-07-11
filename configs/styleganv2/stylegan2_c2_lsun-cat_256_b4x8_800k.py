@@ -6,40 +6,73 @@ _base_ = [
     '../_base_/default_runtime.py'
 ]
 
-model = dict(generator=dict(out_size=256), discriminator=dict(in_size=256))
+# reg params
+d_reg_interval = 16
+g_reg_interval = 4
 
-data = dict(
-    samples_per_gpu=4, train=dict(dataset=dict(imgs_root='./data/lsun-cat')))
+g_reg_ratio = g_reg_interval / (g_reg_interval + 1)
+d_reg_ratio = d_reg_interval / (d_reg_interval + 1)
 
 ema_half_life = 10.  # G_smoothing_kimg
 
+model = dict(
+    generator=dict(out_size=256),
+    discriminator=dict(in_size=256),
+    ema_config=dict(
+        type='ExponentialMovingAverage',
+        interval=1,
+        momentum=0.5**(32. / (ema_half_life * 1000.))),
+    loss_config=dict(
+        r1_loss_weight=10. / 2. * d_reg_interval,
+        r1_interval=d_reg_interval,
+        norm_mode='HWC',
+        g_reg_interval=g_reg_interval,
+        g_reg_weight=2. * g_reg_interval,
+        pl_batch_shrink=2))
+
+train_cfg = dict(max_iters=800002)
+
+optim_wrapper = dict(
+    generator=dict(
+        optimizer=dict(
+            type='Adam', lr=0.002 * g_reg_ratio, betas=(0,
+                                                        0.99**g_reg_ratio))),
+    discriminator=dict(
+        optimizer=dict(
+            type='Adam', lr=0.002 * d_reg_ratio, betas=(0,
+                                                        0.99**d_reg_ratio))))
+
+batch_size = 4
+data_root = './data/lsun-cat'
+
+train_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
+
+val_dataloader = dict(batch_size=batch_size, dataset=dict(data_root=data_root))
+
+test_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
+
+# VIS_HOOK
 custom_hooks = [
     dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=5000),
-    dict(
-        type='ExponentialMovingAverageHook',
-        module_keys=('generator_ema', ),
-        interval=1,
-        interp_cfg=dict(momentum=0.5**(32. / (ema_half_life * 1000.))),
-        priority='VERY_HIGH')
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
 
-checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=30)
-lr_config = None
+# METRICS
+metrics = [
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='ema'),
+    dict(type='PrecisionAndRecall', fake_nums=50000, prefix='PR-50K'),
+    dict(type='PerceptualPathLength', fake_nums=50000, prefix='ppl-w')
+]
 
-log_config = dict(
-    interval=100,
-    hooks=[
-        dict(type='TextLoggerHook'),
-        # dict(type='TensorboardLoggerHook'),
-    ])
-
-total_iters = 800002  # need to modify
-
-metrics = dict(
-    fid50k=dict(
-        type='FID', num_images=50000, inception_pkl=None, bgr2rgb=True),
-    pr50k3=dict(type='PR', num_images=50000, k=3),
-    ppl_wend=dict(type='PPL', space='W', sampling='end', num_images=50000))
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)

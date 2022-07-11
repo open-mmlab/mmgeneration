@@ -9,21 +9,33 @@ model = dict(
     # gen_auxiliary_loss=dict(data_info=dict(loss_scaler='loss_scaler')),
 )
 
+batch_size = 2
 dataset_type = 'QuickTestImageDataset'
-data = dict(
-    samples_per_gpu=2,
-    train=dict(type=dataset_type, size=(256, 256)),
-    val=dict(type=dataset_type, size=(256, 256)))
 
-log_config = dict(interval=1)
+train_dataloader = dict(batch_size=batch_size, dataset=dict(type=dataset_type))
 
-total_iters = 800002
+val_dataloader = dict(batch_size=batch_size, dataset=dict(type=dataset_type))
 
-runner = dict(fp16_loss_scaler=dict(init_scale=512))
+test_dataloader = dict(
+    batch_size=batch_size, dataset=dict(dataset_type=dataset_type))
 
-evaluation = dict(
-    type='GenerativeEvalHook',
-    interval=10000,
-    metrics=dict(
-        type='FID', num_images=50000, inception_pkl=None, bgr2rgb=True),
-    sample_kwargs=dict(sample_model='ema'))
+default_hooks = dict(logger=dict(type='LoggerHook', interval=1))
+
+train_cfg = dict(max_iters=800002)
+
+optim_wrapper = dict(
+    generator=dict(type='AmpOptimWrapper', loss_scale=512),
+    discriminator=dict(type='AmpOptimWrapper', loss_scale=512))
+
+# METRICS
+metrics = [
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='ema')
+]
+
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)
