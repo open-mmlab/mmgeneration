@@ -39,7 +39,7 @@ test_dataloader = dict(
     dataset=dict(
         type='UnconditionalImageDataset',
         pipeline=pipeline,
-        data_root='./data/celebahq/imgs_1024'),
+        data_root='./data/ffhq/images'),
     sampler=dict(type='DefaultSampler', shuffle=False))
 
 val_dataloader = test_dataloader
