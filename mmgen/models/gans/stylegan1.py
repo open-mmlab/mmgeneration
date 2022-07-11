@@ -74,8 +74,8 @@ class StyleGANv1(ProgressiveGrowingGAN):
         else:
             style_channels = style_channels or model_style_channels
 
-        super().__init__(generator, discriminator, data_preprocessor, None,
-                         nkimgs_per_scale, interp_real, transition_kimgs,
+        super().__init__(generator, discriminator, data_preprocessor,
+                         nkimgs_per_scale, None, interp_real, transition_kimgs,
                          prev_stage, ema_config)
 
         self.noise_size = style_channels
@@ -114,7 +114,10 @@ class StyleGANv1(ProgressiveGrowingGAN):
         # R1 gradient penalty
         batch_size = real_data.size(0)
         real_data_ = real_data.clone().requires_grad_()
-        disc_pred = self.discriminator(real_data_)
+        disc_pred = self.discriminator(
+            real_data_,
+            curr_scale=self.curr_scale[0],
+            transition_weight=self._curr_transition_weight)
         gradients = autograd.grad(
             outputs=disc_pred,
             inputs=real_data_,
