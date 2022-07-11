@@ -1,17 +1,10 @@
 model = dict(
     type='StyleGANV1',
+    data_preprocessor=dict(type='GANDataPreprocessor'),
+    style_channels=512,
     generator=dict(
         type='StyleGANv1Generator', out_size=None, style_channels=512),
-    discriminator=dict(type='StyleGAN1Discriminator', in_size=None),
-    gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'),
-    disc_auxiliary_loss=[
-        dict(
-            type='R1GradientPenalty',
-            loss_weight=10,
-            norm_mode='HWC',
-            data_info=dict(
-                discriminator='disc_partial', real_data='real_imgs'))
-    ])
+    discriminator=dict(type='StyleGAN1Discriminator', in_size=None))
 
 train_cfg = dict(
     use_ema=True,
@@ -33,6 +26,3 @@ train_cfg = dict(
         '512': 0.003,
         '1024': 0.003
     }))
-
-test_cfg = None
-optimizer = None

@@ -5,10 +5,10 @@ import torch
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
+from mmengine import Config
 from torch import Tensor
 
 from mmgen.registry import MODELS
-from mmgen.typing import NoiseVar
 from .progressive_growing_unconditional_gan import ProgressiveGrowingGAN
 
 ModelType = Union[Dict, nn.Module]
@@ -18,22 +18,67 @@ TrainInput = Union[dict, Tensor]
 @MODELS.register_module('StyleGANV1')
 @MODELS.register_module()
 class StyleGANv1(ProgressiveGrowingGAN):
+    """Implementation of `A Style-Based Generator Architecture for Generative
+    Adversarial Networks<>`_ (StyleGANv1). This class is inheriant from
+    :class:~`ProgressiveGrowingGAN` to support progressive training.
+
+    Detailed architecture can be found in
+    :class:~`mmgen.models.architectures.stylegan.generator_discriminator_v1.StyleGANv1Generator`  # noqa
+    and
+    :class:~`mmgen.models.architectures.stylegan.generator_discriminator_v1.StyleGAN1Discriminator`  # noqa
+
+    Args:
+        generator (ModelType): The config or model of the generator.
+        discriminator (Optional[ModelType]): The config or model of the
+            discriminator. Defaults to None.
+        data_preprocessor (Optional[Union[dict, Config]]): The pre-process
+            config or :class:`~mmgen.models.GANDataPreprocessor`.
+        style_channels (int): The number of channels for style code. Defaults
+            to 128.
+        nkimgs_per_scale (dict): The number of images need for each
+            resolution's training. Defaults to `{}`.
+        intep_real (dict, optional): The config of interpolation method for
+            real images. If not passed, bilinear interpolation with
+            align_corners will be used. Defaults to None.
+        transition_kimgs (int, optional): The number of images during used to
+            transit from the previous torgb layer to newer torgb layer.
+            Defaults to 600.
+        prev_stage (int, optional): The resolution of previous stage. Used for
+            resume training. Defaults to 0.
+        ema_config (Optional[Dict]): The config for generator's exponential
+            moving average setting. Defaults to None.
+    """
 
     def __init__(self,
-                 generator,
-                 discriminator,
-                 data_preprocessor,
-                 nkimgs_per_scale,
-                 interp_real=None,
+                 generator: ModelType,
+                 discriminator: Optional[ModelType] = None,
+                 data_preprocessor: Optional[Union[dict, Config]] = None,
+                 style_channels: int = 512,
+                 nkimgs_per_scale: dict = {},
+                 interp_real: Optional[dict] = None,
                  transition_kimgs: int = 600,
                  prev_stage: int = 0,
                  ema_config: Optional[Dict] = None):
+
+        # get valid style_channels
+        if isinstance(generator, dict):
+            model_style_channels = generator.get('style_channels', None)
+        else:
+            model_style_channels = getattr(generator, 'style_channels', None)
+
+        if style_channels is not None and model_style_channels is not None:
+            assert style_channels == model_style_channels, (
+                'Input \'style_channels\' is unconsistency with '
+                f'\'generator.style_channels\'. Receive \'{style_channels}\' '
+                f'and \'{model_style_channels}\'.')
+        else:
+            style_channels = style_channels or model_style_channels
+
         super().__init__(generator, discriminator, data_preprocessor, None,
                          nkimgs_per_scale, interp_real, transition_kimgs,
                          prev_stage, ema_config)
 
-    def noise_fn(self, noise: NoiseVar = None, num_batches: int = 1):
-        return super().noise_fn(noise, num_batches)
+        self.noise_size = style_channels
 
     def disc_loss(self, disc_pred_fake: Tensor, disc_pred_real: Tensor,
                   fake_data: Tensor, real_data: Tensor) -> Tuple[Tensor, dict]:
