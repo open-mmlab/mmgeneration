@@ -9,10 +9,12 @@ from .mspie_stylegan2 import MSPIEStyleGAN2
 from .progressive_growing_unconditional_gan import ProgressiveGrowingGAN
 from .sagan import SAGAN
 from .singan import PESinGAN, SinGAN
+from .stylegan2 import StyleGAN2
+from .stylegan3 import StyleGAN3
 from .wgan_gp import WGANGP
 
 __all__ = [
     'BaseGAN', 'BaseConditionalGAN', 'ProgressiveGrowingGAN', 'SinGAN',
     'MSPIEStyleGAN2', 'PESinGAN', 'SAGAN', 'GANDataPreprocessor', 'LSGAN',
-    'DCGAN', 'WGANGP', 'GGAN', 'BigGAN'
+    'StyleGAN2', 'BigGAN', 'StyleGAN3', 'DCGAN', 'WGANGP', 'GGAN', 'BigGAN'
 ]

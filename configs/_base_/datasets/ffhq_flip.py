@@ -1,45 +1,43 @@
 dataset_type = 'UnconditionalImageDataset'
 
 train_pipeline = [
-    dict(
-        type='LoadImageFromFile',
-        key='real_img',
-        io_backend='disk',
-    ),
-    dict(type='Flip', keys=['real_img'], direction='horizontal'),
-    dict(
-        type='Normalize',
-        keys=['real_img'],
-        mean=[127.5] * 3,
-        std=[127.5] * 3,
-        to_rgb=False),
-    dict(type='ImageToTensor', keys=['real_img']),
-    dict(type='Collect', keys=['real_img'], meta_keys=['real_img_path'])
+    dict(type='LoadImageFromFile', key='img'),
+    dict(type='Flip', keys=['img'], direction='horizontal'),
+    dict(type='PackGenInputs', keys=['img'], meta_keys=['img_path'])
 ]
 
 val_pipeline = [
-    dict(
-        type='LoadImageFromFile',
-        key='real_img',
-        io_backend='disk',
-    ),
-    dict(
-        type='Normalize',
-        keys=['real_img'],
-        mean=[127.5] * 3,
-        std=[127.5] * 3,
-        to_rgb=True),
-    dict(type='ImageToTensor', keys=['real_img']),
-    dict(type='Collect', keys=['real_img'], meta_keys=['real_img_path'])
+    dict(type='LoadImageFromFile', key='img'),
+    dict(type='PackGenInputs', keys=['img'], meta_keys=['img_path'])
 ]
 
-# `samples_per_gpu` and `imgs_root` need to be set.
-data = dict(
-    samples_per_gpu=None,
-    workers_per_gpu=4,
-    train=dict(
-        type='RepeatDataset',
-        times=100,
-        dataset=dict(
-            type=dataset_type, imgs_root=None, pipeline=train_pipeline)),
-    val=dict(type=dataset_type, imgs_root=None, pipeline=val_pipeline))
+# `batch_size` and `data_root` need to be set.
+train_dataloader = dict(
+    batch_size=4,
+    num_workers=8,
+    persistent_workers=True,
+    sampler=dict(type='InfiniteSampler', shuffle=True),
+    dataset=dict(
+        type=dataset_type,
+        data_root=None,  # set by user
+        pipeline=train_pipeline))
+
+val_dataloader = dict(
+    batch_size=4,
+    num_workers=8,
+    dataset=dict(
+        type=dataset_type,
+        data_root=None,  # set by user
+        pipeline=val_pipeline),
+    sampler=dict(type='DefaultSampler', shuffle=False),
+    persistent_workers=True)
+
+test_dataloader = dict(
+    batch_size=4,
+    num_workers=8,
+    dataset=dict(
+        type=dataset_type,
+        data_root=None,  # set by user
+        pipeline=val_pipeline),
+    sampler=dict(type='DefaultSampler', shuffle=False),
+    persistent_workers=True)

@@ -13,6 +13,10 @@ synthesis_cfg = {
 }
 r1_gamma = 3.3  # set by user
 d_reg_interval = 16
+g_reg_interval = 4
+
+g_reg_ratio = g_reg_interval / (g_reg_interval + 1)
+d_reg_ratio = d_reg_interval / (d_reg_interval + 1)
 
 load_from = 'https://download.openmmlab.com/mmgen/stylegan3/stylegan3_r_ffhq_1024_b4x8_cvt_official_rgb_20220329_234933-ac0500a1.pth'  # noqa
 
@@ -32,8 +36,18 @@ aug_kwargs = {
     'saturation': 1
 }
 
+ema_half_life = 10.  # G_smoothing_kimg
+ema_kimg = 10
+ema_nimg = ema_kimg * 1000
+ema_beta = 0.5**(32 / max(ema_nimg, 1e-8))
+
+ema_config = dict(
+    type='ExponentialMovingAverage',
+    interval=1,
+    momentum=ema_beta,
+    start_iter=0)
+
 model = dict(
-    type='StaticUnconditionalGAN',
     generator=dict(
         out_size=1024,
         img_channels=3,
@@ -44,56 +58,53 @@ model = dict(
         in_size=1024,
         input_bgr2rgb=True,
         data_aug=dict(type='ADAAug', aug_pipeline=aug_kwargs, ada_kimg=100)),
-    gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'),
-    disc_auxiliary_loss=dict(loss_weight=r1_gamma / 2.0 * d_reg_interval))
+    loss_config=dict(
+        r1_loss_weight=r1_gamma / 2.0 * d_reg_interval,
+        r1_interval=d_reg_interval,
+        norm_mode='HWC'),
+    ema_config=ema_config)
 
-imgs_root = 'data/metfaces/images/'
-data = dict(
-    samples_per_gpu=4,
-    train=dict(dataset=dict(imgs_root=imgs_root)),
-    val=dict(imgs_root=imgs_root))
+optim_wrapper = dict(
+    generator=dict(
+        optimizer=dict(
+            type='Adam', lr=0.0025 * g_reg_ratio, betas=(0,
+                                                         0.99**g_reg_ratio))),
+    discriminator=dict(
+        optimizer=dict(
+            type='Adam', lr=0.002 * d_reg_ratio, betas=(0,
+                                                        0.99**d_reg_ratio))))
 
-ema_half_life = 10.  # G_smoothing_kimg
+batch_size = 4
+data_root = 'data/metfaces/images/'
 
-ema_kimg = 10
-ema_nimg = ema_kimg * 1000
-ema_beta = 0.5**(32 / max(ema_nimg, 1e-8))
+train_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
 
+val_dataloader = dict(batch_size=batch_size, dataset=dict(data_root=data_root))
+
+test_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
+
+train_cfg = dict(max_iters=160000)
+
+# VIS_HOOK
 custom_hooks = [
     dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=5000),
-    dict(
-        type='ExponentialMovingAverageHook',
-        module_keys=('generator_ema', ),
-        interp_mode='lerp',
-        interp_cfg=dict(momentum=ema_beta),
-        interval=1,
-        start_iter=0,
-        priority='VERY_HIGH')
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
 
-inception_pkl = 'work_dirs/inception_pkl/metface_1024x1024_noflip.pkl'
-metrics = dict(
-    fid50k=dict(
-        type='FID',
-        num_images=50000,
-        inception_pkl=inception_pkl,
-        inception_args=dict(type='StyleGAN'),
-        bgr2rgb=True))
+# METRICS
+metrics = [
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='ema')
+]
 
-evaluation = dict(
-    type='GenerativeEvalHook',
-    interval=dict(milestones=[100000], interval=[10000, 5000]),
-    metrics=dict(
-        type='FID',
-        num_images=50000,
-        inception_pkl=inception_pkl,
-        inception_args=dict(type='StyleGAN'),
-        bgr2rgb=True),
-    sample_kwargs=dict(sample_model='ema'))
-
-lr_config = None
-
-total_iters = 160000
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)

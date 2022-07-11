@@ -1247,15 +1247,15 @@ class Equivariance(GenerativeMetric):
 
         batch_size = dataloader.batch_size
 
-        sample_mode = metrics[0].sample_mode
-        assert all([metric.sample_mode == sample_mode for metric in metrics
+        sample_model = metrics[0].sample_model
+        assert all([metric.sample_model == sample_model for metric in metrics
                     ]), ('\'sample_model\' between metrics is inconsistency.')
 
         return eq_iterator(
             batch_size=batch_size,
             max_length=max([metric.fake_nums_per_device
                             for metric in metrics]),
-            sample_mode=sample_mode,
+            sample_mode=sample_model,
             eq_cfg=self.eq_cfg,
             sample_kwargs=self.sample_kwargs)
 
@@ -1519,7 +1519,7 @@ class PerceptualPathLength(GenerativeMetric):
                  real_nums: int = 0,
                  fake_key: Optional[str] = None,
                  real_key: Optional[str] = 'img',
-                 sample_mode: str = 'ema',
+                 sample_model: str = 'ema',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None,
                  crop=True,
@@ -1527,8 +1527,8 @@ class PerceptualPathLength(GenerativeMetric):
                  space='W',
                  sampling='end',
                  latent_dim=512):
-        super().__init__(fake_nums, real_nums, fake_key, real_key, sample_mode,
-                         collect_device, prefix)
+        super().__init__(fake_nums, real_nums, fake_key, real_key,
+                         sample_model, collect_device, prefix)
         self.crop = crop
 
         self.epsilon = epsilon
@@ -1620,8 +1620,8 @@ class PerceptualPathLength(GenerativeMetric):
 
         batch_size = dataloader.batch_size
 
-        sample_mode = metrics[0].sample_mode
-        assert all([metric.sample_mode == sample_mode for metric in metrics
+        sample_model = metrics[0].sample_model
+        assert all([metric.sample_model == sample_model for metric in metrics
                     ]), ('\'sample_model\' between metrics is inconsistency.')
 
         class PPLSampler:
@@ -1701,7 +1701,7 @@ class PerceptualPathLength(GenerativeMetric):
 
         ppl_sampler = PPLSampler(
             model.generator_ema
-            if self.sample_mode == 'ema' else model.generator,
+            if self.sample_model == 'ema' else model.generator,
             num_images=max([metric.fake_nums_per_device
                             for metric in metrics]),
             batch_size=batch_size,

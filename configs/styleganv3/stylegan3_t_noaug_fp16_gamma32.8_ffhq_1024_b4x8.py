@@ -14,60 +14,53 @@ synthesis_cfg = {
 r1_gamma = 32.8
 d_reg_interval = 16
 
+ema_config = dict(
+    type='RampUpEMA',
+    interval=1,
+    ema_kimg=10,
+    ema_rampup=0.05,
+    batch_size=batch_size,
+    eps=1e-8,
+    start_iter=0)
+
 model = dict(
     type='StaticUnconditionalGAN',
     generator=dict(out_size=1024, img_channels=3, synthesis_cfg=synthesis_cfg),
     discriminator=dict(in_size=1024),
-    gan_loss=dict(type='GANLoss', gan_type='wgan-logistic-ns'),
-    disc_auxiliary_loss=dict(loss_weight=r1_gamma / 2.0 * d_reg_interval))
+    loss_config=dict(r1_loss_weight=r1_gamma / 2.0 * d_reg_interval),
+    ema_config=ema_config)
 
-imgs_root = None  # set by user
+batch_size = 4
+data_root = 'data/ffhq/images'
 
-data = dict(
-    samples_per_gpu=4,
-    train=dict(dataset=dict(imgs_root=imgs_root)),
-    val=dict(imgs_root=imgs_root))
+train_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
 
-ema_half_life = 10.  # G_smoothing_kimg
+val_dataloader = dict(batch_size=batch_size, dataset=dict(data_root=data_root))
 
+test_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
+
+train_cfg = dict(max_iters=800002)
+
+# VIS_HOOK
 custom_hooks = [
     dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=5000),
-    dict(
-        type='ExponentialMovingAverageHook',
-        module_keys=('generator_ema', ),
-        interp_mode='lerp',
-        interval=1,
-        start_iter=0,
-        momentum_policy='rampup',
-        momentum_cfg=dict(
-            ema_kimg=10, ema_rampup=0.05, batch_size=batch_size, eps=1e-8),
-        priority='VERY_HIGH')
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
 
-inception_pkl = 'work_dirs/inception_pkl/ffhq_noflip_1024x1024.pkl'
-metrics = dict(
-    fid50k=dict(
-        type='FID',
-        num_images=50000,
-        inception_pkl=inception_pkl,
-        inception_args=dict(type='StyleGAN'),
-        bgr2rgb=True))
+# METRICS
+metrics = [
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='ema')
+]
 
-evaluation = dict(
-    type='GenerativeEvalHook',
-    interval=10000,
-    metrics=dict(
-        type='FID',
-        num_images=50000,
-        inception_pkl=inception_pkl,
-        inception_args=dict(type='StyleGAN'),
-        bgr2rgb=True),
-    sample_kwargs=dict(sample_model='ema'))
-
-checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=30)
-lr_config = None
-
-total_iters = 800002
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)
