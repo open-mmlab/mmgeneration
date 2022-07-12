@@ -27,9 +27,6 @@ class StyleGAN2(BaseGAN):
 
     Paper link: https://openaccess.thecvf.com/content_CVPR_2020/html/Karras_Analyzing_and_Improving_the_Image_Quality_of_StyleGAN_CVPR_2020_paper.html. # noqa
 
-    Detailed architecture can be found in
-    mmgen/models/architectures/stylegan/generator_discriminator_v2.py
-
     :class:~`mmgen.models.architectures.stylegan.generator_discriminator_v2.StyleGANv2Generator`  # noqa
     and
     :class:~`mmgen.models.architectures.stylegan.generator_discriminator_v2.StyleGAN2Discriminator`  # noqa
