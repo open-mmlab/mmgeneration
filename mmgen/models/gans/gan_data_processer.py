@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 from mmengine import BaseDataElement
@@ -51,7 +51,9 @@ class GANDataPreprocessor(ImgDataPreprocessor):
                  pad_size_divisor: int = 1,
                  pad_value: Union[float, int] = 0,
                  bgr_to_rgb: bool = False,
-                 rgb_to_bgr: bool = False):
+                 rgb_to_bgr: bool = False,
+                 non_image_keys: Optional[Tuple[str, List[str]]] = None,
+                 non_concentate_keys: Optional[Tuple[str, List[str]]] = None):
 
         super().__init__(mean, std, pad_size_divisor, pad_value, bgr_to_rgb,
                          rgb_to_bgr)
@@ -65,6 +67,16 @@ class GANDataPreprocessor(ImgDataPreprocessor):
             input_color_order = output_color_order = 'bgr'
         self.input_color_order = input_color_order
         self.output_color_order = output_color_order
+
+        # add user defined keys
+        if non_image_keys is not None:
+            if not isinstance(non_image_keys, list):
+                non_image_keys = [non_image_keys]
+            self._NON_IMAGE_KEYS += non_image_keys
+        if non_concentate_keys is not None:
+            if not isinstance(non_concentate_keys, list):
+                non_concentate_keys = [non_concentate_keys]
+            self._NON_CONCENTATE_KEYS += non_concentate_keys
 
     def _check_keys_consistency(self, data) -> None:
         """Ensure keys in all inputs are consistency."""
@@ -122,7 +134,6 @@ class GANDataPreprocessor(ImgDataPreprocessor):
             for k in inputs_keys:
 
                 if k in self._NON_CONCENTATE_KEYS:
-                    # print(k, inputs_list[0][k])
                     first_value = inputs_list[0][k]
                     assert all([
                         input_[k] == first_value for input_ in inputs_list

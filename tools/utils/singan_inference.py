@@ -6,14 +6,18 @@ import sys
 import mmcv
 import torch
 from mmcv import Config
-from mmcv.parallel import MMDataParallel
-from mmcv.runner import load_checkpoint
+from mmcv.runner import load_checkpoint, set_random_seed
+from mmengine import print_log
+from mmengine.logging import MMLogger
 
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../../..')))  # isort:skip  # noqa
 
-from mmgen.apis import set_random_seed  # isort:skip  # noqa
-from mmgen.models import build_model  # isort:skip  # noqa
+from mmgen.core import *  # isort:skip  # noqa: F401,F403,E402
+from mmgen.datasets import *  # isort:skip  # noqa: F401,F403,E402
+from mmgen.models import *  # isort:skip  # noqa: F401,F403,E402
+
+from mmgen.registry import MODELS  # isort:skip  # noqa
 
 # yapf: enable
 
@@ -30,7 +34,7 @@ def parse_args():
     parser.add_argument(
         '--samples-path',
         type=str,
-        default=None,
+        default='./',
         help='path to store images. If not given, remove it after evaluation\
              finished')
     parser.add_argument(
@@ -48,13 +52,15 @@ def parse_args():
 
 def _tensor2img(img):
     img = img[0].permute(1, 2, 0)
-    img = ((img + 1) / 2 * 255).to(torch.uint8)
+    img = ((img + 1) / 2 * 255).clamp(0, 255).to(torch.uint8)
 
     return img.cpu().numpy()
 
 
 @torch.no_grad()
 def main():
+    MMLogger.get_instance('mmgen')
+
     args = parse_args()
     cfg = Config.fromfile(args.config)
     # set cudnn_benchmark
@@ -65,22 +71,25 @@ def main():
     if args.seed is not None:
         set_random_seed(args.seed, deterministic=args.deterministic)
 
+    # set scope manually
+    cfg.model['_scope_'] = 'mmgen'
     # build the model and load checkpoint
-    model = build_model(
-        cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
+    model = MODELS.build(cfg.model)
 
     model.eval()
 
     # load ckpt
-    mmcv.print_log(f'Loading ckpt from {args.checkpoint}', 'mmgen')
+    print_log(f'Loading ckpt from {args.checkpoint}', 'mmgen')
     _ = load_checkpoint(model, args.checkpoint, map_location='cpu')
 
     # add dp wrapper
-    model = MMDataParallel(model, device_ids=[0])
+    if torch.cuda.is_available():
+        model = model.cuda()
 
     pbar = mmcv.ProgressBar(args.num_samples)
     for sample_iter in range(args.num_samples):
-        outputs = model(None, num_batches=1, get_prev_res=args.save_prev_res)
+        outputs = model.test_step(
+            dict(num_batches=1, get_prev_res=args.save_prev_res))
 
         # store results from previous stages
         if args.save_prev_res:

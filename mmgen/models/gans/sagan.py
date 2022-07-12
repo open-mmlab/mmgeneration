@@ -62,7 +62,7 @@ class SAGAN(BaseConditionalGAN):
                          num_classes, ema_config)
 
     def disc_loss(self, disc_pred_fake: Tensor,
-                  disc_pred_real: Tensor) -> Tuple:
+                  disc_pred_real: Tensor) -> Tuple[Tensor, dict]:
         r"""Get disc loss. SAGAN, SNGAN and Proj-GAN use hinge loss to train
         the discriminator.
 
@@ -79,7 +79,7 @@ class SAGAN(BaseConditionalGAN):
                 images.
 
         Returns:
-            tuple[Tensor, dict]: Loss value and a dict of log variables.
+            Tuple[Tensor, dict]: Loss value and a dict of log variables.
         """
         losses_dict = dict()
         losses_dict['loss_disc_fake'] = F.relu(1 + disc_pred_fake).mean()
@@ -88,7 +88,7 @@ class SAGAN(BaseConditionalGAN):
         loss, log_var = self.parse_losses(losses_dict)
         return loss, log_var
 
-    def gen_loss(self, disc_pred_fake):
+    def gen_loss(self, disc_pred_fake: Tensor) -> Tuple[Tensor, dict]:
         r"""Get disc loss. SAGAN, SNGAN and Proj-GAN use hinge loss to train
         the generator.
 
@@ -101,7 +101,7 @@ class SAGAN(BaseConditionalGAN):
                 images.
 
         Returns:
-            tuple[Tensor, dict]: Loss value and a dict of log variables.
+            Tuple[Tensor, dict]: Loss value and a dict of log variables.
         """
         losses_dict = dict()
         losses_dict['loss_gen'] = -disc_pred_fake.mean()

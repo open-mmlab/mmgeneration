@@ -3,36 +3,46 @@ _base_ = [
     '../_base_/default_runtime.py'
 ]
 
+# MODEL WRAPPER
+model_wrapper_cfg = dict(find_unused_parameters=True)
+
+# MODEL
 num_scales = 10  # start from zero
+generator_steps = 3
+discriminator_steps = 3
+iters_per_scale = 2000
+# NOTE: add by user, e.g.:
+# test_pkl_data = ('./work_dirs/singan_fish/pickle/iter_66001.pkl')
+test_pkl_data = None
+
 model = dict(
     generator=dict(num_scales=num_scales),
-    discriminator=dict(num_scales=num_scales))
+    discriminator=dict(num_scales=num_scales),
+    test_pkl_data=test_pkl_data,
+    generator_steps=generator_steps,
+    discriminator_steps=discriminator_steps,
+    iters_per_scale=iters_per_scale,
+    num_scales=num_scales)
 
-train_cfg = dict(
-    noise_weight_init=0.1,
-    iters_per_scale=2000,
-)
+# DATA
+min_size = 25
+max_size = 300
+data_root = './data/singan/fish-crop.jpg'
+train_dataloader = dict(
+    dataset=dict(data_root=data_root, min_size=min_size, max_size=max_size))
 
-# test_cfg = dict(
-#     _delete_ = True
-#     pkl_data = 'path to pkl data'
-# )
+# TRAINING
+optim_wrapper = dict(
+    constructor='SinGANOptimWrapperConstructor',
+    generator=dict(optimizer=dict(type='Adam', lr=0.0005, betas=(0.5, 0.999))),
+    discriminator=dict(
+        optimizer=dict(type='Adam', lr=0.0005, betas=(0.5, 0.999))))
 
-data = dict(
-    train=dict(
-        img_path='./data/singan/fish-crop.jpg', min_size=25, max_size=300))
+total_iters = (num_scales + 1) * iters_per_scale * discriminator_steps
+train_cfg = dict(max_iters=total_iters)
 
-optimizer = None
-lr_config = None
-checkpoint_config = dict(by_epoch=False, interval=2000, max_keep_ckpts=3)
-
+# HOOK
 custom_hooks = [
-    dict(
-        type='MMGenVisualizationHook',
-        output_dir='visual',
-        interval=500,
-        bgr2rgb=True,
-        res_name_list=['fake_imgs', 'recon_imgs', 'real_imgs']),
     dict(
         type='PickleDataHook',
         output_dir='pickle',
@@ -41,4 +51,7 @@ custom_hooks = [
         data_name_list=['noise_weights', 'fixed_noises', 'curr_stage'])
 ]
 
-total_iters = 22000
+# NOTE: SinGAN do not support val_loop and test_loop, please use
+# 'tools/utils/inference_singan.py' to evaluate and generate images.
+val_cfg = test_cfg = None
+val_evaluator = test_evaluator = None

@@ -1,6 +1,11 @@
 _base_ = ['../singan/singan_bohemian.py']
 
-embedding_dim = 4
+# MODEL
+# NOTE: add by user, e.g.:
+# test_pkl_data = './work_dirs/singan_pkl/singan_spe-dim8_bohemian_20210406_175858-7faa50f3.pkl'  # noqa
+test_pkl_data = None
+
+embedding_dim = 8
 num_scales = 10  # start from zero
 model = dict(
     type='PESinGAN',
@@ -17,16 +22,6 @@ model = dict(
             init_size=512,
             div_half_dim=False,
             center_shift=200)),
-    discriminator=dict(num_scales=num_scales))
-
-train_cfg = dict(first_fixed_noises_ch=embedding_dim * 2)
-
-data = dict(
-    train=dict(
-        img_path='./data/singan/bohemian.png',
-        min_size=25,
-        max_size=500,
-    ))
-
-dist_params = dict(backend='nccl')
-total_iters = 22000
+    discriminator=dict(num_scales=num_scales),
+    first_fixed_noises_ch=embedding_dim * 2,
+    test_pkl_data=test_pkl_data)
