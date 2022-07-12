@@ -11,7 +11,6 @@ train_pipeline = [
     dict(type='mmcls.LoadImageFromFile'),
     dict(type='CenterCropLongEdge', keys=['img']),
     dict(type='Resize', scale=(128, 128), backend='pillow'),
-    dict(type='RandomFlip', prob=0.5, direction='horizontal'),
     dict(type='mmcls.PackClsInputs')
 ]
 

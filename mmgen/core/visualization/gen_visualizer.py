@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from functools import partial
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -81,6 +82,7 @@ class GenVisualizer(Visualizer):
 
         n_samples = sample_shape[0]
         n_padding = n_samples % n_rows
+        # n_padding = n_rows - (n_samples % n_rows)
         if n_padding:
             return -1.0 * torch.ones(n_padding, *sample_shape[1:])
         return None
@@ -152,6 +154,89 @@ class GenVisualizer(Visualizer):
         vis_results = vis_results.numpy().astype(np.uint8)
         return vis_results
 
+    def _vis_gif_sample(self, gen_samples: Tuple[dict,
+                                                 Tensor], gt_samples: dict,
+                        draw_gt: bool, gt_keys: Optional[Tuple[str,
+                                                               List[str]]],
+                        color_order: str, target_mean: Sequence[Union[float,
+                                                                      int]],
+                        target_std: Sequence[Union[float, int]], n_row: int):
+        post_process_fn = partial(
+            self._post_process_image,
+            color_order=color_order,
+            mean=target_mean,
+            std=target_std)
+
+        def post_process_sequence(samples):
+            num_timesteps = samples.shape[1]
+            seq_list = [
+                post_process_fn(samples[:, t, ...].cpu())
+                for t in range(num_timesteps)
+            ]
+            return torch.stack(seq_list, dim=1)
+
+        # handle `gen_samples`
+        if isinstance(gen_samples, dict):
+            gen_samples_ = dict()
+            num_timesteps = next(gen_samples.values()).shape[1]
+            for name, samples in gen_samples.items():
+                assert samples.shape[0] == num_timesteps
+                gen_samples_[name] = post_process_sequence(samples)
+        else:
+            num_timesteps = gen_samples.shape[1]
+            gen_samples_ = post_process_sequence(gen_samples)
+
+        padding_tensor = self._get_padding_tensor(gen_samples_, n_rows=n_row)
+
+        # handle `gt_samples`
+        gt_samples_ = dict()
+        if draw_gt:
+            assert gt_samples is not None, (
+                '\'gt_sample\' must not be passed to visualize real images.')
+            gt_keys = ['imgs'] if gt_keys is None else gt_keys
+            for k in gt_keys:
+                assert k in gt_samples['inputs'], (
+                    f'Cannot find \'{k}\' not in \'gt_samples\'.')
+                samples = gt_samples['inputs'][k]
+                if samples.ndim == 4:
+                    samples_ = post_process_fn(samples.cpu())
+                    gt_samples_[k] = samples_[:, None, ...].repeat(
+                        1, num_timesteps, 1, 1, 1)
+                elif samples.ndim == 5:
+                    assert samples.shape[1] == num_timesteps
+                    gt_samples_[k] = post_process_sequence(samples)
+                else:
+                    raise ValueError(
+                        'Only support gt inputs with dimsension of 4 or 5. '
+                        f'But \'{k}\' in \'gt_samples\' have dimension of '
+                        f'{samples.ndim}.')
+
+        vis_results = []
+        for target_samples in [gt_samples_, gen_samples_]:
+            if target_samples == {}:
+                continue
+
+            if isinstance(target_samples, dict):
+                for sample in target_samples.values():
+                    if padding_tensor is not None:
+                        vis_results.append(
+                            torch.cat([sample, padding_tensor], dim=0))
+                    else:
+                        vis_results.append(sample)
+            else:
+                vis_results.append(target_samples)
+
+        # concatnate along batch size
+        vis_results = torch.cat(vis_results)
+        vis_results = [
+            make_grid(vis_results[:, t, ...].cpu(),
+                      nrow=n_row).cpu().permute(1, 2, 0)
+            for t in range(num_timesteps)
+        ]
+        vis_results = torch.stack(vis_results, dim=0)  # [t, H, W, 3]
+        vis_results = vis_results.numpy().astype(np.uint8)
+        return vis_results
+
     def add_datasample(self,
                        name: str,
                        *,
@@ -166,7 +251,8 @@ class GenVisualizer(Visualizer):
                        target_std: Sequence[Union[float, int]] = 127.5,
                        show: bool = False,
                        wait_time: int = 0,
-                       step: int = 0) -> None:
+                       step: int = 0,
+                       **kwargs) -> None:
         """Draw datasample and save to all backends.
 
         - If GT and prediction are plotted at the same time, they are
@@ -204,4 +290,4 @@ class GenVisualizer(Visualizer):
         if show:
             self.show(vis_sample, win_name=name, wait_time=wait_time)
 
-        self.add_image(name, vis_sample, step)
+        self.add_image(name, vis_sample, step, **kwargs)

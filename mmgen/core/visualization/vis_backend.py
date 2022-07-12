@@ -4,6 +4,7 @@ import os.path as osp
 from typing import Optional, Union
 
 import cv2
+import imageio
 import mmcv
 import numpy as np
 import torch
@@ -114,10 +115,28 @@ class GenVisBackend(BaseVisBackend):
             step (int): Global step value to record. Default to 0.
         """
         assert image.dtype == np.uint8
-        drawn_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         os.makedirs(self._img_save_dir, exist_ok=True)
-        save_file_name = f'{name}_{step}.png'
-        cv2.imwrite(osp.join(self._img_save_dir, save_file_name), drawn_image)
+        if image.ndim == 3:
+            drawn_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            save_file_name = f'{name}_{step}.png'
+            cv2.imwrite(
+                osp.join(self._img_save_dir, save_file_name), drawn_image)
+        elif image.ndim == 4:
+            n_skip = kwargs.get('n_skip', 1)
+            fps = kwargs.get('fps', 60)
+            save_file_name = f'{name}_{step}.gif'
+            save_file_path = osp.join(self._img_save_dir, save_file_name)
+
+            frames_list = []
+            for frame in image[::n_skip]:
+                frames_list.append(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+            if not (image.shape[0] % n_skip == 0):
+                frames_list.append(image[-1])
+            imageio.mimsave(save_file_path, frames_list, 'GIF', fps=fps)
+        else:
+            raise ValueError(
+                'Only support visualize image with dimension of 3 or 4. But '
+                f'receive input with shape \'{image.shape}\'.')
         self._upload(osp.join(self._img_save_dir, save_file_name))
 
     @force_init_env
