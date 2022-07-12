@@ -4,6 +4,12 @@ _base_ = [
     '../_base_/default_runtime.py'
 ]
 
+ema_half_life = 10.
+ema_config = dict(
+    type='ExponentialMovingAverage',
+    interval=1,
+    momentum=0.5**(32. / (ema_half_life * 1000.)))
+
 model = dict(
     type='MSPIEStyleGAN2',
     generator=dict(
@@ -22,48 +28,66 @@ model = dict(
         up_config=dict(scale_factor=2, mode='bilinear', align_corners=True),
         out_size=256),
     discriminator=dict(
-        type='MSStyleGAN2Discriminator', in_size=256, with_adaptive_pool=True))
+        type='MSStyleGAN2Discriminator', in_size=256, with_adaptive_pool=True),
+    ema_config=ema_config,
+    train_settings=dict(
+        num_upblocks=6,
+        multi_input_scales=[0, 2, 4],
+        multi_scale_probability=[0.5, 0.25, 0.25]))
 
-train_cfg = dict(
-    num_upblocks=6,
-    multi_input_scales=[0, 2, 4],
-    multi_scale_probability=[0.5, 0.25, 0.25])
+train_cfg = dict(max_iters=1100002)
 
-data = dict(
-    samples_per_gpu=3,
-    train=dict(dataset=dict(imgs_root='./data/ffhq/ffhq_imgs/ffhq_512')))
+# `batch_size` and `data_root` need to be set.
+batch_size = 3
+data_root = './data/ffhq/ffhq_imgs/ffhq_512'
+train_dataloader = dict(
+    batch_size=batch_size,  # set by user
+    dataset=dict(data_root=data_root))
 
-ema_half_life = 10.
+val_dataloader = dict(
+    batch_size=batch_size,  # set by user
+    dataset=dict(data_root=data_root))
+
+test_dataloader = dict(
+    batch_size=batch_size,  # set by user
+    dataset=dict(data_root=data_root))
+
+# define optimizer
+d_reg_interval = 16
+g_reg_interval = 4
+
+g_reg_ratio = g_reg_interval / (g_reg_interval + 1)
+d_reg_ratio = d_reg_interval / (d_reg_interval + 1)
+
+optim_wrapper = dict(
+    generator=dict(
+        optimizer=dict(
+            type='Adam', lr=0.002 * g_reg_ratio, betas=(0,
+                                                        0.99**g_reg_ratio))),
+    discriminator=dict(
+        optimizer=dict(
+            type='Adam', lr=0.002 * d_reg_ratio, betas=(0,
+                                                        0.99**d_reg_ratio))))
+
+# VIS_HOOK
 custom_hooks = [
     dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=5000),
-    dict(
-        type='ExponentialMovingAverageHook',
-        module_keys=('generator_ema', ),
-        interval=1,
-        interp_cfg=dict(momentum=0.5**(32. / (ema_half_life * 1000.))),
-        priority='VERY_HIGH')
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
 
-checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=40)
-lr_config = None
+# METRICS
+metrics = [
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='ema'),
+    dict(type='PrecisionAndRecall', fake_nums=10000, prefix='PR-10K')
+]
 
-log_config = dict(
-    interval=100,
-    hooks=[
-        dict(type='TextLoggerHook'),
-        # dict(type='TensorboardLoggerHook'),
-    ])
-
-cudnn_benchmark = False
-total_iters = 1100002
-
-metrics = dict(
-    fid50k=dict(
-        type='FID',
-        num_images=50000,
-        inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
-        bgr2rgb=True),
-    pr10k3=dict(type='PR', num_images=10000, k=3))
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)

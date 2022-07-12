@@ -36,12 +36,6 @@ custom_hooks = [
 # METRICS
 metrics = [
     dict(
-        type='InceptionScore',
-        prefix='IS-50k',
-        fake_nums=50000,
-        inception_style='StyleGAN',
-        sample_model='orig'),
-    dict(
         type='FrechetInceptionDistance',
         prefix='FID-50k',
         real_nums=50000,

@@ -1,21 +1,27 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import logging
-from functools import partial
+from typing import Dict, Union
 
-import mmcv
 import numpy as np
 import torch
 import torch.distributed as dist
+import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.parallel.distributed import _find_tensors
+from mmengine import MessageHub
+from mmengine.logging import MMLogger
+from mmengine.optim import OptimWrapper, OptimWrapperDict
+from torch import Tensor
 
 from mmgen.registry import MODELS
-from ..common import set_requires_grad
-from .base_gan import BaseGAN
+from mmgen.typing import TrainStepInputs
+from ..common import gather_log_vars, set_requires_grad
+from ..gans.stylegan2 import StyleGAN2
+
+ModelType = Union[Dict, nn.Module]
+TrainInput = Union[dict, Tensor]
 
 
 @MODELS.register_module()
-class MSPIEStyleGAN2(BaseGAN):
+class MSPIEStyleGAN2(StyleGAN2):
     """MS-PIE StyleGAN2.
 
     In this GAN, we adopt the MS-PIE training schedule so that multi-scale
@@ -23,76 +29,127 @@ class MSPIEStyleGAN2(BaseGAN):
     Positional Encoding as Spatial Inductive Bias in GANs, CVPR2021.
 
     Args:
-        generator (dict): Config for generator.
-        discriminator (dict): Config for discriminator.
-        gan_loss (dict): Config for generative adversarial loss.
-        disc_auxiliary_loss (dict): Config for auxiliary loss to
-            discriminator.
-        gen_auxiliary_loss (dict | None, optional): Config for auxiliary loss
-            to generator. Defaults to None.
-        train_cfg (dict | None, optional): Config for training schedule.
-            Defaults to None.
-        test_cfg (dict | None, optional): Config for testing schedule. Defaults
-            to None.
+        train_settings (dict): Config for training settings.
+            Defaults to `dict()`.
     """
 
-    def _parse_train_cfg(self):
-        super(MSPIEStyleGAN2, self)._parse_train_cfg()
-
+    def __init__(self, *args, train_settings=dict(), **kwargs):
+        super().__init__(*args, **kwargs)
+        self.train_settings = train_settings
         # set the number of upsampling blocks. This value will be used to
         # calculate the current result size according to the size of the input
         # feature map, e.g., positional encoding map
-        self.num_upblocks = self.train_cfg.get('num_upblocks', 6)
+        self.num_upblocks = self.train_settings.get('num_upblocks', 6)
 
         # multiple input scales (a list of int) that will be added to the
         # original starting scale.
-        self.multi_input_scales = self.train_cfg.get('multi_input_scales')
-        self.multi_scale_probability = self.train_cfg.get(
+        self.multi_input_scales = self.train_settings.get('multi_input_scales')
+        self.multi_scale_probability = self.train_settings.get(
             'multi_scale_probability')
 
-    def train_step(self,
-                   data_batch,
-                   optimizer,
-                   ddp_reducer=None,
-                   running_status=None):
-        """Train step function.
-
-        This function implements the standard training iteration for
-        asynchronous adversarial training. Namely, in each iteration, we first
-        update discriminator and then compute loss for generator with the newly
-        updated discriminator.
-
-        As for distributed training, we use the ``reducer`` from ddp to
-        synchronize the necessary params in current computational graph.
+    def train_step(self, data: TrainStepInputs,
+                   optim_wrapper: OptimWrapperDict) -> Dict[str, Tensor]:
+        """Train GAN model. In the training of GAN models, generator and
+        discriminator are updated alternatively. In MMGeneration's design,
+        `self.train_step` is called with data input. Therefore we always update
+        discriminator, whose updating is relay on real data, and then determine
+        if the generator needs to be updated based on the current number of
+        iterations. More details about whether to update generator can be found
+        in :meth:`should_gen_update`.
 
         Args:
-            data_batch (dict): Input data from dataloader.
-            optimizer (dict): Dict contains optimizer for generator and
-                discriminator.
-            ddp_reducer (:obj:`Reducer` | None, optional): Reducer from ddp.
-                It is used to prepare for ``backward()`` in ddp. Defaults to
-                None.
-            running_status (dict | None, optional): Contains necessary basic
-                information for training, e.g., iteration number. Defaults to
-                None.
+            data (List[dict]): Data sampled from dataloader.
+            optim_wrapper (OptimWrapperDict): OptimWrapperDict instance
+                contains OptimWrapper of generator and discriminator.
 
         Returns:
-            dict: Contains 'log_vars', 'num_samples', and 'results'.
+            Dict[str, torch.Tensor]: A ``dict`` of tensor for logging.
         """
-        # get data from data_batch
-        real_imgs = data_batch['real_img']
-        # If you adopt ddp, this batch size is local batch size for each GPU.
-        # If you adopt dp, this batch size is the global batch size as usual.
-        batch_size = real_imgs.shape[0]
+        message_hub = MessageHub.get_current_instance()
+        curr_iter = message_hub.get_info('iter')
+        inputs_dict, data_sample = self.data_preprocessor(data, True)
 
-        # get running status
-        if running_status is not None:
-            curr_iter = running_status['iteration']
-        else:
-            # dirty walkround for not providing running status
-            if not hasattr(self, 'iteration'):
-                self.iteration = 0
-            curr_iter = self.iteration
+        disc_optimizer_wrapper: OptimWrapper = optim_wrapper['discriminator']
+        disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
+
+        with disc_optimizer_wrapper.optim_context(self.discriminator):
+            log_vars = self.train_discriminator(inputs_dict, data_sample,
+                                                disc_optimizer_wrapper)
+
+        # add 1 to `curr_iter` because iter is updated in train loop.
+        # Whether to update the generator. We update generator with
+        # discriminator is fully updated for `self.n_discriminator_steps`
+        # iterations. And one full updating for discriminator contains
+        # `disc_accu_counts` times of grad accumulations.
+        if (curr_iter + 1) % (self.discriminator_steps * disc_accu_iters) == 0:
+            set_requires_grad(self.discriminator, False)
+            gen_optimizer_wrapper = optim_wrapper['generator']
+            gen_accu_iters = gen_optimizer_wrapper._accumulative_counts
+
+            log_vars_gen_list = []
+            # init optimizer wrapper status for generator manually
+            gen_optimizer_wrapper.initialize_count_status(
+                self.generator, 0, self.generator_steps * gen_accu_iters)
+            for _ in range(self.generator_steps * gen_accu_iters):
+                with gen_optimizer_wrapper.optim_context(self.generator):
+                    log_vars_gen = self.train_generator(
+                        inputs_dict, data_sample, gen_optimizer_wrapper)
+
+                log_vars_gen_list.append(log_vars_gen)
+            log_vars_gen = gather_log_vars(log_vars_gen_list)
+            log_vars_gen.pop('loss', None)  # remove 'loss' from gen logs
+
+            set_requires_grad(self.discriminator, True)
+
+            # only do ema after generator update
+            if self.with_ema_gen:
+                self.generator_ema.update_parameters(self.generator)
+
+            log_vars.update(log_vars_gen)
+
+        return log_vars
+
+    def train_generator(self, inputs, data_sample,
+                        optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
+        """Train generator.
+
+        Args:
+            inputs (TrainInput): Inputs from dataloader.
+            data_samples (List[GenDataSample]): Data samples from dataloader.
+                Do not used in generator's training.
+            optim_wrapper (OptimWrapper): OptimWrapper instance used to update
+                model parameters.
+
+        Returns:
+            Dict[str, Tensor]: A ``dict`` of tensor for logging.
+        """
+        # num_batches = inputs['real_imgs'].shape[0]
+        num_batches = inputs['img'].shape[0]
+
+        noise = self.noise_fn(num_batches=num_batches)
+        fake_imgs = self.generator(
+            noise, return_noise=False, chosen_scale=self.chosen_scale)
+
+        disc_pred_fake = self.discriminator(fake_imgs)
+        parsed_loss, log_vars = self.gen_loss(disc_pred_fake, num_batches)
+
+        optimizer_wrapper.update_params(parsed_loss)
+        return log_vars
+
+    def train_discriminator(
+            self, inputs, data_sample,
+            optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
+        """Train discriminator.
+
+        Args:
+            inputs (TrainInput): Inputs from dataloader.
+            data_samples (List[GenDataSample]): Data samples from dataloader.
+            optim_wrapper (OptimWrapper): OptimWrapper instance used to update
+                model parameters.
+        Returns:
+            Dict[str, Tensor]: A ``dict`` of tensor for logging.
+        """
+        real_imgs = inputs['img']
 
         if dist.is_initialized():
             # randomly sample a scale for current training iteration
@@ -104,11 +161,10 @@ class MSPIEStyleGAN2(BaseGAN):
             chosen_scale = int(chosen_scale.item())
 
         else:
-            mmcv.print_log(
+            logger = MMLogger.get_instance(name='mmgen')
+            logger.info(
                 'Distributed training has not been initialized. Degrade to '
-                'the standard stylegan2',
-                logger='mmgen',
-                level=logging.WARN)
+                'the standard stylegan2')
             chosen_scale = 0
 
         curr_size = (4 + chosen_scale) * (2**self.num_upblocks)
@@ -120,91 +176,19 @@ class MSPIEStyleGAN2(BaseGAN):
                 mode='bilinear',
                 align_corners=True)
 
-        # disc training
-        set_requires_grad(self.discriminator, True)
-        optimizer['discriminator'].zero_grad()
-        # TODO: add noise sampler to customize noise sampling
+        num_batches = real_imgs.shape[0]
+
+        noise_batch = self.noise_fn(num_batches=num_batches)
         with torch.no_grad():
             fake_imgs = self.generator(
-                None, num_batches=batch_size, chosen_scale=chosen_scale)
+                noise_batch, return_noise=False, chosen_scale=chosen_scale)
+        # store chosen scale for training generator
+        setattr(self, 'chosen_scale', chosen_scale)
 
-        # disc pred for fake imgs and real_imgs
         disc_pred_fake = self.discriminator(fake_imgs)
         disc_pred_real = self.discriminator(real_imgs)
-        # get data dict to compute losses for disc
-        data_dict_ = dict(
-            gen=self.generator,
-            disc=self.discriminator,
-            disc_pred_fake=disc_pred_fake,
-            disc_pred_real=disc_pred_real,
-            fake_imgs=fake_imgs,
-            real_imgs=real_imgs,
-            iteration=curr_iter,
-            batch_size=batch_size,
-            gen_partial=partial(self.generator, chosen_scale=chosen_scale))
 
-        loss_disc, log_vars_disc = self._get_disc_loss(data_dict_)
-
-        # prepare for backward in ddp. If you do not call this function before
-        # back propagation, the ddp will not dynamically find the used params
-        # in current computation.
-        if ddp_reducer is not None:
-            ddp_reducer.prepare_for_backward(_find_tensors(loss_disc))
-        loss_disc.backward()
-        optimizer['discriminator'].step()
-
-        # skip generator training if only train discriminator for current
-        # iteration
-        if (curr_iter + 1) % self.disc_steps != 0:
-            results = dict(
-                fake_imgs=fake_imgs.cpu(), real_imgs=real_imgs.cpu())
-            log_vars_disc['curr_size'] = curr_size
-            outputs = dict(
-                log_vars=log_vars_disc,
-                num_samples=batch_size,
-                results=results)
-            if hasattr(self, 'iteration'):
-                self.iteration += 1
-            return outputs
-
-        # generator training
-        set_requires_grad(self.discriminator, False)
-        optimizer['generator'].zero_grad()
-
-        # TODO: add noise sampler to customize noise sampling
-        fake_imgs = self.generator(
-            None, num_batches=batch_size, chosen_scale=chosen_scale)
-        disc_pred_fake_g = self.discriminator(fake_imgs)
-
-        data_dict_ = dict(
-            gen=self.generator,
-            disc=self.discriminator,
-            fake_imgs=fake_imgs,
-            disc_pred_fake_g=disc_pred_fake_g,
-            iteration=curr_iter,
-            batch_size=batch_size,
-            gen_partial=partial(self.generator, chosen_scale=chosen_scale))
-
-        loss_gen, log_vars_g = self._get_gen_loss(data_dict_)
-
-        # prepare for backward in ddp. If you do not call this function before
-        # back propagation, the ddp will not dynamically find the used params
-        # in current computation.
-        if ddp_reducer is not None:
-            ddp_reducer.prepare_for_backward(_find_tensors(loss_gen))
-
-        loss_gen.backward()
-        optimizer['generator'].step()
-
-        log_vars = {}
-        log_vars.update(log_vars_g)
-        log_vars.update(log_vars_disc)
-        log_vars['curr_size'] = curr_size
-
-        results = dict(fake_imgs=fake_imgs.cpu(), real_imgs=real_imgs.cpu())
-        outputs = dict(
-            log_vars=log_vars, num_samples=batch_size, results=results)
-
-        if hasattr(self, 'iteration'):
-            self.iteration += 1
-        return outputs
+        parsed_losses, log_vars = self.disc_loss(disc_pred_fake,
+                                                 disc_pred_real, real_imgs)
+        optimizer_wrapper.update_params(parsed_losses)
+        return log_vars
