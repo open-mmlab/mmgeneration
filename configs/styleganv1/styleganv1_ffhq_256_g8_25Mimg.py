@@ -65,5 +65,7 @@ default_hooks = dict(checkpoint=dict(save_best='FID-Full-50k/fid'))
 
 # use low resolution image to evaluate
 val_dataloader = test_dataloader = dict(
-    dataset=dict(data_root='./data/ffhq/ffhq_imgs/ffhq_256'))
+    dataset=dict(
+        data_root='./data/ffhq/ffhq_imgs/ffhq_256',
+        file_list='./data/ffhq256.txt'))
 val_evaluator = test_evaluator = dict(metrics=metrics)
