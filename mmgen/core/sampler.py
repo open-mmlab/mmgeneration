@@ -31,7 +31,7 @@ def get_sampler(sample_kwargs: dict, runner: Optional[Runner]):
     return sampler
 
 
-class DummySampler:
+class ArgumentsSampler:
     """Dummy sampler only return input args multiple times."""
 
     def __init__(self,
@@ -50,7 +50,7 @@ class DummySampler:
         return self
 
     def __next__(self):
-        if self._iter > self.max_times:
+        if self.idx >= self.max_times:
             raise StopIteration
         self.idx += 1
         return deepcopy(self.sample_kwargs)

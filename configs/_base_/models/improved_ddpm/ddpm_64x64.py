@@ -1,6 +1,7 @@
 model = dict(
     type='BasicGaussianDiffusion',
     num_timesteps=4000,
+    data_preprocessor=dict(type='GANDataPreprocessor'),
     betas_cfg=dict(type='cosine'),
     denoising=dict(
         type='DenoisingUnet',
@@ -39,7 +40,3 @@ model = dict(
         )
     ],
 )
-
-train_cfg = dict(use_ema=True, real_img_key='img')
-test_cfg = None
-optimizer = dict(denoising=dict(type='AdamW', lr=1e-4, weight_decay=0))

@@ -51,14 +51,14 @@ class GenVisualizationHook(Hook):
     Example:
         >>> # for GAN models
         >>> custom_hooks = [
-        >>>     visualization=dict(
+        >>>     dict(
         >>>         type='GenerationVisualizationHook',
         >>>         interval=1000,
         >>>         fixed_input=True,
         >>>         sample_kwargs_list=dict(type='GAN', name='fake_img'))]
         >>> # for Translation models
         >>> custom_hooks = [
-        >>>     visualization=dict(
+        >>>     dict(
         >>>         type='GenerationVisualizationHook',
         >>>         interval=10,
         >>>         fixed_input=False,
@@ -87,12 +87,22 @@ class GenVisualizationHook(Hook):
 
     priority = 'NORMAL'
 
-    SAMPLE_TYPE_MAPPING = {
-        'GAN': 'noise',
-        'Translation': 'Data',
-        'TranslationVal': 'ValData',
-        'TranslationTest': 'TestData'
-    }
+    SAMPLE_KWARGS_MAPPING = dict(
+        GAN=dict(type='noise', sample_kwargs={}, vis_kwargs={}),
+        Translation=dict(type='Data', sample_kwargs={}),
+        TranslationVal=dict(type='ValData', sample_kwargs={}),
+        TranslationTest=dict(type='TestData', sample_kwargs={}),
+        DDPMDenoising=dict(
+            type='Arguments',
+            sample_kwargs=dict(
+                forward_mode='sampling',
+                name='ddpm_sample',
+                n_samples=16,
+                n_rows=4,
+                vis_mode='gif',
+                save_intermedia=True,
+                show_pbar=True),
+            vis_kwargs=dict(n_skip=1)))
 
     def __init__(self,
                  interval: int = 1000,
@@ -226,10 +236,14 @@ class GenVisualizationHook(Hook):
             sampler_type = sample_kwargs_['type']
 
             # replace with alias
-            for alias in self.SAMPLE_TYPE_MAPPING.keys():
+            for alias in self.SAMPLE_KWARGS_MAPPING.keys():
                 if alias.upper() == sampler_type.upper():
-                    sampler_type = self.SAMPLE_TYPE_MAPPING[alias]
+                    sampler_alias = self.SAMPLE_KWARGS_MAPPING[alias]
+                    sampler_type = sampler_alias['type']
+                    default_sample_kwargs = sampler_alias['sample_kwargs']
                     sample_kwargs_['type'] = sampler_type
+                    for default_k, default_v in default_sample_kwargs.items():
+                        sample_kwargs_.setdefault(default_k, default_v)
                     break
 
             name = sample_kwargs_.pop('name', None)
@@ -245,6 +259,7 @@ class GenVisualizationHook(Hook):
             draw_gt = sample_kwargs_.pop('draw_gt', False)
             gt_keys = sample_kwargs_.pop('gt_keys', None)
             vis_mode = sample_kwargs_.pop('vis_mode', None)
+            vis_kwargs = sample_kwargs_.pop('vis_kwargs', dict())
 
             output_list = []
             input_list = []
@@ -268,7 +283,8 @@ class GenVisualizationHook(Hook):
                     inputs=processed_input, data_sample=data_samples)
                 input_list.append(processed_input_dict)
 
-            inputs = gather_samples(input_list, max_size=n_samples)
+            if sampler_type != 'Arguments':
+                inputs = gather_samples(input_list, max_size=n_samples)
             outputs = gather_samples(output_list, max_size=n_samples)
 
             self._visualizer.add_datasample(
@@ -284,7 +300,8 @@ class GenVisualizationHook(Hook):
                 target_std=std.cpu(),
                 show=self.show,
                 wait_time=self.wait_time,
-                step=batch_idx + 1)
+                step=batch_idx + 1,
+                **vis_kwargs)
 
         module.train()
 

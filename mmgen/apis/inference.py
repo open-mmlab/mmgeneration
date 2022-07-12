@@ -4,9 +4,11 @@ import torch
 from mmcv.parallel import collate, scatter
 from mmcv.runner import load_checkpoint
 from mmengine import is_list_of
+from mmengine.config import Config
 from mmengine.dataset import Compose
 
-from mmgen.models import BaseTranslationModel, build_model
+from mmgen.models import BaseTranslationModel
+from mmgen.registry import MODELS
 
 
 def init_model(config, checkpoint=None, device='cuda:0', cfg_options=None):
@@ -25,15 +27,14 @@ def init_model(config, checkpoint=None, device='cuda:0', cfg_options=None):
     """
 
     if isinstance(config, str):
-        config = mmcv.Config.fromfile(config)
-    elif not isinstance(config, mmcv.Config):
+        config = Config.fromfile(config)
+    elif not isinstance(config, Config):
         raise TypeError('config must be a filename or Config object, '
                         f'but got {type(config)}')
     if cfg_options is not None:
         config.merge_from_dict(cfg_options)
 
-    model = build_model(
-        config.model, train_cfg=config.train_cfg, test_cfg=config.test_cfg)
+    model = MODELS.build(config.model)
 
     if checkpoint is not None:
         load_checkpoint(model, checkpoint, map_location='cpu')
@@ -271,12 +272,13 @@ def sample_ddpm_model(model,
         noise_batch_ = noise_batch[None, ...].expand(batches, -1, -1, -1) \
             if same_noise else None
 
-        res = model.sample_from_noise(
-            noise_batch_,
+        batch_input = dict(
+            noise=noise_batch_,
             num_batches=batches,
             sample_model=sample_model,
             show_pbar=True,
             **kwargs)
+        res = model(batch_input)
         if isinstance(res, dict):
             res = {k: v.cpu() for k, v in res.items()}
         elif isinstance(res, torch.Tensor):
