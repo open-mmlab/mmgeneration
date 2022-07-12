@@ -22,7 +22,7 @@ def register_all_modules(init_default_scope: bool = True) -> None:
 
     if init_default_scope:
         never_created = DefaultScope.get_current_instance() is None \
-                        or not DefaultScope.check_instance_created('mmge')
+                        or not DefaultScope.check_instance_created('mmgen')
         if never_created:
             DefaultScope.get_instance('mmgen', scope_name='mmgen')
             return

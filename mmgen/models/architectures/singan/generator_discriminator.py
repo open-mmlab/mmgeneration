@@ -158,7 +158,8 @@ class SinGANMultiScaleGenerator(nn.Module):
             output_dict = dict(
                 fake_img=g_res,
                 prev_res_list=prev_res_list,
-                noise_batch=noise_list)
+                # noise_batch=noise_list
+            )
             return output_dict
 
         return g_res

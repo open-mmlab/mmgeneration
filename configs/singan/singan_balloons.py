@@ -1,42 +1,24 @@
-_base_ = [
-    '../_base_/models/singan/singan.py', '../_base_/datasets/singan.py',
-    '../_base_/default_runtime.py'
-]
+_base_ = ['./singan_fish.py']
 
+# MODEL
 num_scales = 8  # start from zero
+generator_steps = 3
+discriminator_steps = 3
+iters_per_scale = 2000
+
+# NOTE: add by user, e.g.:
+test_pkl_data = './work_dirs/singan_pkl/singan_balloons_20210406_191047-8fcd94cf.pkl'  # noqa
+# test_pkl_data = None
 model = dict(
+    num_scales=num_scales,
     generator=dict(num_scales=num_scales),
-    discriminator=dict(num_scales=num_scales))
+    discriminator=dict(num_scales=num_scales),
+    test_pkl_data=test_pkl_data)
 
-train_cfg = dict(
-    noise_weight_init=0.1,
-    iters_per_scale=2000,
-)
+# DATA
+data_root = './data/singan/balloons.png'
+train_dataloader = dict(dataset=dict(data_root=data_root))
 
-# test_cfg = dict(
-#     _delete_ = True
-#     pkl_data = 'path to pkl data'
-# )
-
-data = dict(train=dict(img_path='./data/singan/balloons.png'))
-
-optimizer = None
-lr_config = None
-checkpoint_config = dict(by_epoch=False, interval=2000, max_keep_ckpts=3)
-
-custom_hooks = [
-    dict(
-        type='MMGenVisualizationHook',
-        output_dir='visual',
-        interval=500,
-        bgr2rgb=True,
-        res_name_list=['fake_imgs', 'recon_imgs', 'real_imgs']),
-    dict(
-        type='PickleDataHook',
-        output_dir='pickle',
-        interval=-1,
-        after_run=True,
-        data_name_list=['noise_weights', 'fixed_noises', 'curr_stage'])
-]
-
-total_iters = 18000
+# TRAINING
+total_iters = (num_scales + 1) * iters_per_scale * discriminator_steps
+train_cfg = dict(max_iters=total_iters)

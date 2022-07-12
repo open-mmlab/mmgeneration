@@ -1,14 +1,21 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+
 import logging
 import os
 import pickle
+from typing import List, Optional, Sequence, Tuple
 
-import mmcv
+import numpy as np
 import torch
+from mmengine import is_list_of, mkdir_or_exist, print_log
 from mmengine.dist import master_only
 from mmengine.hooks import Hook
+from mmengine.runner import Runner
+from torch import Tensor
 
 from mmgen.registry import HOOKS
+
+DATA_BATCH = Optional[Sequence[dict]]
 
 
 @HOOKS.register_module()
@@ -23,7 +30,7 @@ class PickleDataHook(Hook):
         data_name_list (list[str]): The list contains the name of results in
             outputs dict.
         interval (int): The interval of calling this hook. If set to -1,
-            the visualization hook will not be called. Default: -1.
+            the PickleDataHook will not be called during training. Default: -1.
         before_run (bool, optional): Whether to save before running.
             Defaults to False.
         after_run (bool, optional): Whether to save after running.
@@ -40,7 +47,7 @@ class PickleDataHook(Hook):
                  before_run=False,
                  after_run=False,
                  filename_tmpl='iter_{}.pkl'):
-        assert mmcv.is_list_of(data_name_list, str)
+        assert is_list_of(data_name_list, str)
         self.output_dir = output_dir
         self.data_name_list = data_name_list
         self.interval = interval
@@ -69,42 +76,68 @@ class PickleDataHook(Hook):
             self._pickle_data(runner)
 
     @master_only
-    def after_train_iter(self, runner):
+    def after_train_iter(self,
+                         runner,
+                         batch_idx: int,
+                         data_batch: DATA_BATCH = None,
+                         outputs: Optional[dict] = None):
         """The behavior after each train iteration.
 
         Args:
-            runner (object): The runner.
+            runner (Runner): The runner of the training process.
+            batch_idx (int): The index of the current batch in the train loop.
+            data_batch (Sequence[dict], optional): Data from dataloader.
+                Defaults to None.
+            outputs (dict, optional): Outputs from model.
+                Defaults to None.
         """
-        if not self.every_n_iters(runner, self.interval):
+        if not self.every_n_train_iters(runner, self.interval):
             return
         self._pickle_data(runner)
 
-    def _pickle_data(self, runner):
+    def _pickle_data(self, runner: Runner):
+        """Save target data to pickle file.
+
+        Args:
+            runner (Runner): The runner of the training process.
+        """
         filename = self.filename_tmpl.format(runner.iter + 1)
         if not hasattr(self, '_out_dir'):
             self._out_dir = os.path.join(runner.work_dir, self.output_dir)
-        mmcv.mkdir_or_exist(self._out_dir)
+        mkdir_or_exist(self._out_dir)
         file_path = os.path.join(self._out_dir, filename)
         with open(file_path, 'wb') as f:
-            data = runner.outputs['results']
+            module = runner.model
+            if hasattr(module, 'module'):
+                module = module.module
             not_find_keys = []
             data_dict = {}
             for k in self.data_name_list:
-                if k in data.keys():
-                    data_dict[k] = self._get_numpy_data(data[k])
+                if hasattr(module, k):
+                    data_dict[k] = self._get_numpy_data(getattr(module, k))
                 else:
                     not_find_keys.append(k)
             pickle.dump(data_dict, f)
-            mmcv.print_log(f'Pickle data in {filename}', 'mmgen')
+            print_log(f'Pickle data in {filename}', 'current')
 
             if len(not_find_keys) > 0:
-                mmcv.print_log(
+                print_log(
                     f'Cannot find keys for pickling: {not_find_keys}',
-                    'mmgen',
+                    'current',
                     level=logging.WARN)
             f.flush()
 
-    def _get_numpy_data(self, data):
+    def _get_numpy_data(
+        self, data: Tuple[List[Tensor], Tensor, int]
+    ) -> Tuple[List[np.ndarray], np.ndarray, int]:
+        """Convert tensor or list of tensor to numpy or list of numpy.
+
+        Args:
+            data (Tuple[List[Tensor], Tensor, int]): Data to be converted.
+
+        Returns:
+            Tuple[List[np.ndarray], np.ndarray, int]: Converted data.
+        """
         if isinstance(data, list):
             return [self._get_numpy_data(x) for x in data]
 
