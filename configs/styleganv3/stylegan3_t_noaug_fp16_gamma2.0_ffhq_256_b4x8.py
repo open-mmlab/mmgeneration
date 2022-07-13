@@ -57,7 +57,14 @@ metrics = [
         prefix='FID-Full-50k',
         fake_nums=50000,
         inception_style='StyleGAN',
-        sample_model='ema')
+        sample_model='ema'),
+    dict(
+        type='Equivariance',
+        fake_nums=50000,
+        sample_mode='ema',
+        prefix='EQ',
+        eq_cfg=dict(
+            compute_eqt_int=True, compute_eqt_frac=True, compute_eqr=True))
 ]
 
 val_evaluator = dict(metrics=metrics)
