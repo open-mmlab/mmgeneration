@@ -28,10 +28,10 @@ custom_hooks = [
 
 ema_config = dict(
     type='ExponentialMovingAverage',
-    interval=8,
+    interval=1,
     momentum=0.9999,
     update_buffers=True,
-    start_iter=160000)
+    start_iter=20000)
 
 model = dict(
     generator=dict(sn_style='torch'),

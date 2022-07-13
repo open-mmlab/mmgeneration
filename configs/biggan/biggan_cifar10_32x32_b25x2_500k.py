@@ -19,9 +19,9 @@ custom_hooks = [
 
 ema_config = dict(
     type='ExponentialMovingAverage',
-    interval=4,
+    interval=1,
     momentum=0.9999,
-    start_iter=4000)
+    start_iter=1000)
 
 model = dict(data_preprocessor=dict(rgb_to_bgr=True), ema_config=ema_config)
 
