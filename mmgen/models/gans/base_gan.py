@@ -161,7 +161,6 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
             self.generator) else self.generator
         self.generator_ema = MODELS.build(
             ema_config, default_args=dict(model=src_model))
-        self.generator_ema.update_parameters(src_model)
 
     def _get_valid_model(self, batch_inputs: ForwardInputs) -> str:
         """Try to get the valid forward model from inputs.
@@ -223,10 +222,12 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
         """
         if isinstance(batch_inputs, Tensor):
             noise = batch_inputs
+            sample_kwargs = {}
         else:
             noise = batch_inputs.get('noise', None)
             num_batches = get_valid_num_batches(batch_inputs)
             noise = self.noise_fn(noise, num_batches=num_batches)
+            sample_kwargs = batch_inputs.get('sample_kwargs', dict())
 
         sample_model = self._get_valid_model(batch_inputs)
         if sample_model in ['ema', 'ema/orig']:
@@ -234,11 +235,12 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
         else:  # mode is 'orig'
             generator = self.generator
 
-        outputs = generator(noise, return_noise=False)
+        outputs = generator(noise, return_noise=False, **sample_kwargs)
 
         if sample_model == 'ema/orig':
             generator = self.generator
-            outputs_orig = generator(noise, return_noise=False)
+            outputs_orig = generator(
+                noise, return_noise=False, **sample_kwargs)
             outputs = dict(ema=outputs, orig=outputs_orig)
 
         return outputs

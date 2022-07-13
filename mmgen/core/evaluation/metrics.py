@@ -1660,7 +1660,8 @@ class PerceptualPathLength(GenerativeMetric):
                 self.batch_sizes = [batch_size] * n_batch + ([resid] if
                                                              resid > 0 else [])
                 self.device = get_module_device(generator)
-                self.generator = generator
+                self.generator = generator.module if hasattr(
+                    generator, 'module') else generator
                 self.latent_dim = latent_dim
                 self.space = space
                 self.sampling = sampling
@@ -1669,6 +1670,9 @@ class PerceptualPathLength(GenerativeMetric):
             def __iter__(self):
                 self.idx = 0
                 return self
+
+            def __len__(self):
+                return len(self.batch_sizes)
 
             @torch.no_grad()
             def __next__(self):
@@ -1701,7 +1705,9 @@ class PerceptualPathLength(GenerativeMetric):
                                            1).view(*inputs.shape)
 
                 self.idx += 1
-                return dict(noise=latent_e)
+                return dict(
+                    noise=latent_e,
+                    sample_kwargs=dict(input_is_latent=(self.space == 'W')))
 
         ppl_sampler = PPLSampler(
             model.generator_ema

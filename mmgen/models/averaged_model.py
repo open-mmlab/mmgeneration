@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional
+from typing import List, Optional
 
 import torch
 import torch.nn as nn
@@ -7,6 +7,118 @@ from mmengine.model import BaseAveragedModel
 from torch import Tensor
 
 from mmgen.registry import MODELS
+
+# NOTICE: Since mmengine do not support loading ``state_dict`` without wrap
+# ema module with ``BaseAveragedModel`` currently, we rewrite
+# ``ExponentialMovingAverage`` and add ``_load_from_state_dict`` temporarily
+
+
+@MODELS.register_module()
+class ExponentialMovingAverage(BaseAveragedModel):
+    r"""Implements the exponential moving average (EMA) of the model.
+
+    All parameters are updated by the formula as below:
+
+        .. math::
+
+            Xema_{t+1} = (1 - momentum) * Xema_{t} +  momentum * X_t
+
+    Args:
+        model (nn.Module): The model to be averaged.
+        momentum (float): The momentum used for updating ema parameter.
+            Defaults to 0.0002.
+            Ema's parameter are updated with the formula
+            :math:`averaged\_param = (1-momentum) * averaged\_param +
+            momentum * source\_param`.
+        interval (int): Interval between two updates. Defaults to 1.
+        device (torch.device, optional): If provided, the averaged model will
+            be stored on the :attr:`device`. Defaults to None.
+        update_buffers (bool): if True, it will compute running averages for
+            both the parameters and the buffers of the model. Defaults to
+            False.
+    """  # noqa: W605
+
+    def __init__(self,
+                 model: nn.Module,
+                 momentum: float = 0.0002,
+                 interval: int = 1,
+                 device: Optional[torch.device] = None,
+                 update_buffers: bool = False) -> None:
+        super().__init__(model, interval, device, update_buffers)
+        assert 0.0 < momentum < 1.0, 'momentum must be in range (0.0, 1.0)'\
+                                     f'but got {momentum}'
+        self.momentum = momentum
+
+    def avg_func(self, averaged_param: Tensor, source_param: Tensor,
+                 steps: int) -> None:
+        """Compute the moving average of the parameters using exponential
+        moving average.
+
+        Args:
+            averaged_param (Tensor): The averaged parameters.
+            source_param (Tensor): The source parameters.
+            steps (int): The number of times the parameters have been
+                updated.
+        """
+        averaged_param.mul_(1 - self.momentum).add_(
+            source_param, alpha=self.momentum)
+
+    def _load_from_state_dict(self, state_dict: dict, prefix: str,
+                              local_metadata: dict, strict: bool,
+                              missing_keys: list, unexpected_keys: list,
+                              error_msgs: List[str]) -> None:
+        """Overrides ``nn.Module._load_from_state_dict`` to support loading
+        ``state_dict`` without wrap ema module with ``BaseAveragedModel``.
+
+        In OpenMMLab 1.0, model will not wrap ema submodule with
+        ``BaseAveragedModel``, and the ema weight key in `state_dict` will
+        miss `module` prefix. Therefore, ``BaseAveragedModel`` need to
+        automatically add the ``module`` prefix if the corresponding key in
+        ``state_dict`` misses it.
+
+        Args:
+            state_dict (dict): A dict containing parameters and
+                persistent buffers.
+            prefix (str): The prefix for parameters and buffers used in this
+                module
+            local_metadata (dict): a dict containing the metadata for this
+                module.
+            strict (bool): Whether to strictly enforce that the keys in
+                :attr:`state_dict` with :attr:`prefix` match the names of
+                parameters and buffers in this module
+            missing_keys (List[str]): if ``strict=True``, add missing keys to
+                this list
+            unexpected_keys (List[str]): if ``strict=True``, add unexpected
+                keys to this list
+            error_msgs (List[str]): error messages should be added to this
+                list, and will be reported together in
+                :meth:`~torch.nn.Module.load_state_dict`.
+        """
+
+        for key, value in list(state_dict.items()):
+            # To support load the pretrained model, which does not wrap ema
+            # module with `BaseAveragedModel`, `BaseAveragedModel` will
+            # automatically add `module` prefix to the `state_dict` which
+            # key starts with the custom prefix. For example, the old
+            # checkpoint with `state_dict` with keys:
+            # ['layer.weight', 'layer.bias', 'ema.steps', 'ema.weight', 'ema.bias'] # noqa: E501
+            # will be replaced with:
+            # ['layer.weight', 'layer.bias', 'ema.steps', 'ema.module.weight', 'ema.module.bias'] # noqa: E501
+
+            # The key added with `module` prefix needs to satisfy
+            # three conditions.
+            # 1. key starts with current prefix, such as `model.ema`.
+            # 2. The content after the prefix does not start with the `module`
+            # 3. Key does not end with steps.
+            if key.startswith(prefix) and not key[len(prefix):].startswith(
+                    'module') and not key.endswith('steps'):
+                new_key = key[:len(prefix)] + 'module.' + key[len(prefix):]
+                state_dict[new_key] = value
+                state_dict.pop(key)
+        state_dict.setdefault(prefix + 'steps', torch.tensor(0))
+        super()._load_from_state_dict(state_dict, prefix, local_metadata,
+                                      strict, missing_keys, unexpected_keys,
+                                      error_msgs)
 
 
 @MODELS.register_module()
@@ -89,3 +201,60 @@ class RampUpEMA(BaseAveragedModel):
         momentum = self.rampup(self.steps, self.ema_kimg, self.ema_rampup,
                                self.batch_size, self.eps)
         averaged_param.mul_(1 - momentum).add_(source_param, alpha=momentum)
+
+    def _load_from_state_dict(self, state_dict: dict, prefix: str,
+                              local_metadata: dict, strict: bool,
+                              missing_keys: list, unexpected_keys: list,
+                              error_msgs: List[str]) -> None:
+        """Overrides ``nn.Module._load_from_state_dict`` to support loading
+        ``state_dict`` without wrap ema module with ``BaseAveragedModel``.
+
+        In OpenMMLab 1.0, model will not wrap ema submodule with
+        ``BaseAveragedModel``, and the ema weight key in `state_dict` will
+        miss `module` prefix. Therefore, ``BaseAveragedModel`` need to
+        automatically add the ``module`` prefix if the corresponding key in
+        ``state_dict`` misses it.
+
+        Args:
+            state_dict (dict): A dict containing parameters and
+                persistent buffers.
+            prefix (str): The prefix for parameters and buffers used in this
+                module
+            local_metadata (dict): a dict containing the metadata for this
+                module.
+            strict (bool): Whether to strictly enforce that the keys in
+                :attr:`state_dict` with :attr:`prefix` match the names of
+                parameters and buffers in this module
+            missing_keys (List[str]): if ``strict=True``, add missing keys to
+                this list
+            unexpected_keys (List[str]): if ``strict=True``, add unexpected
+                keys to this list
+            error_msgs (List[str]): error messages should be added to this
+                list, and will be reported together in
+                :meth:`~torch.nn.Module.load_state_dict`.
+        """
+
+        for key, value in list(state_dict.items()):
+            # To support load the pretrained model, which does not wrap ema
+            # module with `BaseAveragedModel`, `BaseAveragedModel` will
+            # automatically add `module` prefix to the `state_dict` which
+            # key starts with the custom prefix. For example, the old
+            # checkpoint with `state_dict` with keys:
+            # ['layer.weight', 'layer.bias', 'ema.steps', 'ema.weight', 'ema.bias'] # noqa: E501
+            # will be replaced with:
+            # ['layer.weight', 'layer.bias', 'ema.steps', 'ema.module.weight', 'ema.module.bias'] # noqa: E501
+
+            # The key added with `module` prefix needs to satisfy
+            # three conditions.
+            # 1. key starts with current prefix, such as `model.ema`.
+            # 2. The content after the prefix does not start with the `module`
+            # 3. Key does not end with steps.
+            if key.startswith(prefix) and not key[len(prefix):].startswith(
+                    'module') and not key.endswith('steps'):
+                new_key = key[:len(prefix)] + 'module.' + key[len(prefix):]
+                state_dict[new_key] = value
+                state_dict.pop(key)
+        state_dict.setdefault(prefix + 'steps', torch.tensor(0))
+        super()._load_from_state_dict(state_dict, prefix, local_metadata,
+                                      strict, missing_keys, unexpected_keys,
+                                      error_msgs)
