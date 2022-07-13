@@ -1212,6 +1212,7 @@ class Equivariance(GenerativeMetric):
         self._eq_cfg.setdefault('compute_eqr', False)
         self._eq_cfg.setdefault('translate_max', 0.125)
         self._eq_cfg.setdefault('rotate_max', 1)
+        self.SAMPLER_MODE = 'EqSampler'
 
         self.sample_kwargs = sample_kwargs
 
@@ -1256,7 +1257,7 @@ class Equivariance(GenerativeMetric):
             max_length=max([metric.fake_nums_per_device
                             for metric in metrics]),
             sample_mode=sample_model,
-            eq_cfg=self.eq_cfg,
+            eq_cfg=self._eq_cfg,
             sample_kwargs=self.sample_kwargs)
 
     def compute_metrics(self, results) -> dict:
@@ -1269,10 +1270,10 @@ class Equivariance(GenerativeMetric):
             dict: The computed metrics. The keys are the names of the metrics,
             and the values are corresponding results.
         """
-        sums = self.fake_results
+        sums = torch.cat(self.fake_results, dim=0)
         mses = sums[0::2] / sums[1::2]
         psnrs = np.log10(2) * 20 - mses.log10() * 10
-        psnrs = tuple(psnrs.numpy())
+        psnrs = tuple(psnrs.cpu().numpy())
 
         results = dict()
         index = 0
@@ -1295,15 +1296,18 @@ class eq_iterator:
         self.batch_size = batch_size
         self.max_length = max_length
         self.sample_mode = sample_mode
-        self.eq_cfg = eq_cfg
+        self.eq_cfg = deepcopy(eq_cfg)
         self.sample_kwargs = sample_kwargs
 
     def __iter__(self) -> Iterator:
         self.idx = 0
         return self
 
+    def __len__(self) -> int:
+        return self.max_length // self.batch_size
+
     def __next__(self) -> ForwardInputs:
-        if self.idx > self.max_length:
+        if self.idx >= self.max_length:
             raise StopIteration
         self.idx += self.batch_size
         mode = dict(
