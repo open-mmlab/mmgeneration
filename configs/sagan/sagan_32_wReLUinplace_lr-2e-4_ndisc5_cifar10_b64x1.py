@@ -48,7 +48,8 @@ metrics = [
         inception_pkl=inception_pkl,
         sample_model='orig')
 ]
-default_hooks = dict(checkpoint=dict(save_best='FID-Full-50k/fid'))
+default_hooks = dict(
+    checkpoint=dict(
+        save_best=['FID-Full-50k/fid', 'IS-50k/is'], rule=['less', 'greater']))
 
-val_evaluator = dict(metrics=metrics)
-test_evaluator = dict(metrics=metrics)
+val_evaluator = test_evaluator = dict(metrics=metrics)

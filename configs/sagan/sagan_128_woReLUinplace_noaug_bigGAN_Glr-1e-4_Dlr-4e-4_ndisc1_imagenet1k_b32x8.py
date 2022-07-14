@@ -9,8 +9,8 @@
 # 6. no data augmentation
 
 _base_ = [
-    '../_base_/models/sagan/sagan_128x128.py',
-    '../_base_/datasets/imagenet_noaug_128.py', '../_base_/default_runtime.py'
+    '../_base_/default_runtime.py', '../_base_/models/sagan/sagan_128x128.py',
+    '../_base_/datasets/imagenet_noaug_128.py'
 ]
 
 # MODEL
@@ -25,18 +25,27 @@ model = dict(
         auto_sync_bn=False,
         with_embedding_spectral_norm=False),
     discriminator=dict(num_classes=1000, init_cfg=init_cfg, sn_eps=1e-8),
-    discriminator_steps=2,
-    ema_config=dict(interval=20, momentum=0.999, start_iter=15))
-# model_wrapper_cfg = dict(find_unused_parameters=True)
+    discriminator_steps=1,
+    ema_config=dict(interval=1, momentum=0.999, start_iter=2000))
 
 # TRAINING
-train_cfg = dict(max_iters=1000000)
+train_cfg = dict(
+    max_iters=1000000, val_interval=10000, dynamic_intervals=[(800000, 4000)])
 train_dataloader = dict(batch_size=32)  # train on 8 gpus
 
 optim_wrapper = dict(
     generator=dict(optimizer=dict(type='Adam', lr=0.0001, betas=(0.0, 0.999))),
     discriminator=dict(
         optimizer=dict(type='Adam', lr=0.0004, betas=(0.0, 0.999))))
+
+# VIS_HOOK
+custom_hooks = [
+    dict(
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img'))
+]
 
 # METRICS
 inception_pkl = './work_dirs/inception_pkl/imagenet-full.pkl'
@@ -55,9 +64,9 @@ metrics = [
         inception_pkl=inception_pkl,
         sample_model='ema')
 ]
-default_hooks = dict(checkpoint=dict(save_best='FID-Full-50k/fid'))
-
-val_evaluator = dict(metrics=metrics)
-test_evaluator = dict(metrics=metrics)
+default_hooks = dict(
+    checkpoint=dict(
+        save_best=['FID-Full-50k/fid', 'IS-50k/is'], rule=['less', 'greater']))
 
 val_dataloader = test_dataloader = dict(batch_size=64)
+val_evaluator = test_evaluator = dict(metrics=metrics)
