@@ -44,6 +44,9 @@ class GenVisBackend(BaseVisBackend):
             Default to 'scalars.json'.
         ceph_path (Optional[str]): The remote path of Ceph cloud storage.
             Defaults to None.
+        delete_local (bool): Whether eelete local after uploading to ceph or
+            not. If ``ceph_path`` is None, this will be ignored. Defaults to
+            True.
     """
 
     def __init__(self,
@@ -51,7 +54,8 @@ class GenVisBackend(BaseVisBackend):
                  img_save_dir: str = 'vis_image',
                  config_save_file: str = 'config.py',
                  scalar_save_file: str = 'scalars.json',
-                 ceph_path: Optional[str] = None):
+                 ceph_path: Optional[str] = None,
+                 delete_local: bool = True):
         assert config_save_file.split('.')[-1] == 'py'
         assert scalar_save_file.split('.')[-1] == 'json'
         super().__init__(save_dir)
@@ -61,6 +65,7 @@ class GenVisBackend(BaseVisBackend):
 
         self._ceph_path = ceph_path
         self._file_client = None
+        self._delete_local = delete_local
 
     def _init_env(self):
         """Init save dir."""
