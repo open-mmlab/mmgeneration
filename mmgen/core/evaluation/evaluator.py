@@ -126,8 +126,7 @@ class GenEvaluator(Evaluator):
 
         Args:
             data_batch (ValTestStepInputs): A batch of data from the
-                metrics specific sampler or the dataloader. If data is from
-                the dataloader, it has been processed by data preprocessor.
+                metrics specific sampler or the dataloader.
             predictions (ForwardOutputs): A batch of generated results from
                 model.
             metrics (Optional[Sequence[BaseMetric]]): Metrics to evaluate.
