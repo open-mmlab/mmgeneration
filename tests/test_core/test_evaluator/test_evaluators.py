@@ -105,5 +105,4 @@ class TestEvaluator(TestCase):
         for metrics, sampler in metrics_sampler_list:
             metric = metrics[0]
             if metric.name == 'toy_normal':
-                self.assertEqual(sampler._dataloader.dataset,
-                                 dataloader.dataset)
+                self.assertEqual(sampler.dataset, dataloader.dataset)
