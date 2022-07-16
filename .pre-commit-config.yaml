@@ -33,12 +33,6 @@ repos:
           - mdformat-gfm
           - mdformat_frontmatter
           - linkify-it-py
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.1.0
-    hooks:
-      - id: codespell
-        # args: ["--exclude-file=mmgen/core/evaluation/metrics.py"]
-        args: ["-L lod"]
   - repo: https://github.com/myint/docformatter
     rev: v1.3.1
     hooks:
