@@ -1,3 +1,4 @@
+import math
 import os
 import os.path as osp
 import pickle
@@ -11,6 +12,7 @@ import torch
 import torch.nn as nn
 from mmengine.logging import MMLogger
 from mmengine.runner import Runner
+from torch.utils.data.dataloader import DataLoader
 
 from mmgen.core import (FrechetInceptionDistance, InceptionScore,
                         MultiScaleStructureSimilarity, PrecisionAndRecall,
@@ -96,19 +98,21 @@ class ToyMetric(GenMetric):
 class TestBaseMetric(TestCase):
 
     def test_init(self):
-        toy_metric = ToyMetric(fake_nums=10)
+        toy_metric = ToyMetric(fake_nums=10, real_nums=10)
         self.assertEquals(toy_metric.SAMPLER_MODE, 'normal')
         self.assertEquals(toy_metric._color_order, 'bgr')
 
         model = MagicMock()
-        dataloader = MagicMock()
         dataset = MagicMock()
-        dataloader.dataset = dataset
-        dataloader.batch_size = 4
+        dataset.__len__ = 20
+        dataloader = DataLoader(dataset=dataset, batch_size=4)
 
         sampler = toy_metric.get_metric_sampler(model, dataloader,
                                                 [toy_metric])
-        self.assertEqual(sampler._dataloader.dataset, dataset)
+        self.assertEqual(sampler.dataset, dataset)
+        self.assertEqual(len(sampler), math.ceil(10 / 4))
+
+        toy_metric = ToyMetric(fake_nums=10, real_nums=20)
 
 
 class TestFID(TestCase):
@@ -390,12 +394,18 @@ class TestSWD(TestCase):
         self.assertEqual(len(swd.real_results), 2)
 
     def test_prosess(self):
-        swd = SlicedWassersteinDistance(fake_nums=4, image_shape=(3, 32, 32))
-        torch.random.manual_seed(42)
-        real_img = torch.rand(100, 3, 32, 32)
-        gen_img = torch.rand(100, 3, 32, 32)
+        model = MagicMock()
+        model.data_preprocessor = GANDataPreprocessor()
 
-        swd.process(real_img, gen_img)
+        swd = SlicedWassersteinDistance(fake_nums=4, image_shape=(3, 32, 32))
+        swd.prepare(model, None)
+
+        torch.random.manual_seed(42)
+        real_img = torch.rand(100, 3, 32, 32) * 255.
+        real_batch = [dict(inputs=real_img[i]) for i in range(100)]
+        gen_img = torch.rand(100, 3, 32, 32) * 2 - 1
+
+        swd.process(real_batch, gen_img)
 
         output = swd.evaluate()
         result = [16.495922580361366, 24.15413036942482, 20.325026474893093]
@@ -409,11 +419,16 @@ class TestSWD(TestCase):
             real_key='img',
             sample_model='orig',
             image_shape=(3, 32, 32))
+        swd.prepare(model, None)
 
         random_tensor = torch.randn(2, 3, 32, 32)
-        real_img = dict(inputs=dict(img=random_tensor, img_1=random_tensor))
+        real_batch = [
+            dict(inputs=dict(img=random_tensor[0], img_1=random_tensor[0])),
+            dict(inputs=dict(img=random_tensor[1], img_1=random_tensor[1]))
+        ]
+
         gen_img = dict(orig=random_tensor)
-        swd.process(real_img, gen_img)
+        swd.process(real_batch, gen_img)
 
         gen_img = dict(orig=dict(fake=random_tensor))
-        swd.process(real_img, gen_img)
+        swd.process(real_batch, gen_img)

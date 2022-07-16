@@ -2,14 +2,13 @@
 from collections import defaultdict
 from typing import Iterator, List, Sequence, Tuple, Union
 
+from mmengine.data import BaseDataElement
 from mmengine.evaluator import BaseMetric, Evaluator
 from mmengine.model import BaseModel
 from torch.utils.data.dataloader import DataLoader
 
 from mmgen.registry import EVALUATOR
-from mmgen.typing import ForwardOutputs
-
-PROCESSED_DATA_BATCH = Union[dict, tuple]
+from mmgen.typing import ForwardOutputs, ValTestStepInputs
 
 
 @EVALUATOR.register_module()
@@ -119,14 +118,14 @@ class GenEvaluator(Evaluator):
 
         return metrics_sampler_list
 
-    def process(self, data_batch: PROCESSED_DATA_BATCH,
+    def process(self, data_batch: ValTestStepInputs,
                 predictions: ForwardOutputs,
                 metrics: Sequence[BaseMetric]) -> None:
         """Pass `data_batch` from dataloader and `predictions` (generated
         results) to corresponding `metrics`.
 
         Args:
-            data_batch (PROCESSED_DATA_BATCH): A batch of data from the
+            data_batch (ValTestStepInputs): A batch of data from the
                 metrics specific sampler or the dataloader. If data is from
                 the dataloader, it has been processed by data preprocessor.
             predictions (ForwardOutputs): A batch of generated results from
@@ -134,10 +133,17 @@ class GenEvaluator(Evaluator):
             metrics (Optional[Sequence[BaseMetric]]): Metrics to evaluate.
         """
 
-        # data batch is loaded from dataloader
-        if isinstance(data_batch, tuple):
-            _data_batch = dict(inputs=data_batch[0], data_sample=data_batch[1])
-        # data_batch is loaded from metrics' sampler, directly pass to metrics
+        # data_batch is loaded from normal dataloader
+        if isinstance(data_batch, list):
+            _data_batch = []
+            for data in data_batch:
+                if isinstance(data['data_sample'], BaseDataElement):
+                    _data_batch.append(
+                        dict(
+                            inputs=data['inputs'],
+                            data_sample=data['data_sample'].to_dict()))
+                else:
+                    _data_batch.append(data)
         else:
             _data_batch = data_batch
 

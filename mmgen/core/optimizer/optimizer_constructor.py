@@ -167,31 +167,49 @@ class PGGANOptimWrapperConstructor:
     Example:
         >>> # build PGGAN model
         >>> model = dict(
-        >>>     type='PGGAN',
-        >>>     data_preprocessor=dict(
-        >>>         type='GANDataPreprocessor',
-        >>>         non_image_keys=['input_sample']),
-        >>>     generator=dict(
-        >>>         type='SinGANMultiScaleGenerator',
-        >>>         in_channels=3,
-        >>>         out_channels=3,
-        >>>         num_scales=2),
-        >>>     discriminator=dict(
-        >>>         type='SinGANMultiScaleDiscriminator',
-        >>>         in_channels=3,
-        >>>         num_scales=3))
+        >>>     type='ProgressiveGrowingGAN',
+        >>>     data_preprocessor=dict(type='GANDataPreprocessor'),
+        >>>     noise_size=512,
+        >>>     generator=dict(type='PGGANGenerator', out_scale=1024,
+        >>>                    noise_size=512),
+        >>>     discriminator=dict(type='PGGANDiscriminator', in_scale=1024),
+        >>>     nkimgs_per_scale={
+        >>>         '4': 600,
+        >>>         '8': 1200,
+        >>>         '16': 1200,
+        >>>         '32': 1200,
+        >>>         '64': 1200,
+        >>>         '128': 1200,
+        >>>         '256': 1200,
+        >>>         '512': 1200,
+        >>>         '1024': 12000,
+        >>>     },
+        >>>     transition_kimgs=600,
+        >>>     ema_config=dict(interval=1))
         >>> pggan = MODELS.build(model)
         >>> # build constructor
         >>> optim_wrapper = dict(
-        >>>     generator=dict(optimizer=dict(type='Adam', lr=0.0005,
-        >>>                                   betas=(0.5, 0.999))),
+        >>>     generator=dict(optimizer=dict(type='Adam', lr=0.001,
+        >>>                                   betas=(0., 0.99))),
         >>>     discriminator=dict(
-        >>>         optimizer=dict(type='Adam', lr=0.0005,
-        >>>                        betas=(0.5, 0.999))))
-        >>> optim_wrapper_dict_builder = SinGANOptimWrapperConstructor(
+        >>>         optimizer=dict(type='Adam', lr=0.001, betas=(0., 0.99))),
+        >>>     lr_schedule=dict(
+        >>>         generator={
+        >>>             '128': 0.0015,
+        >>>             '256': 0.002,
+        >>>             '512': 0.003,
+        >>>             '1024': 0.003
+        >>>         },
+        >>>         discriminator={
+        >>>             '128': 0.0015,
+        >>>             '256': 0.002,
+        >>>             '512': 0.003,
+        >>>             '1024': 0.003
+        >>>         }))
+        >>> optim_wrapper_dict_builder = PGGANOptimWrapperConstructor(
         >>>     optim_wrapper)
         >>> # build optim wrapper dict
-        >>> optim_wrapper_dict = optim_wrapper_dict_builder(singan)
+        >>> optim_wrapper_dict = optim_wrapper_dict_builder(pggan)
 
     Args:
         optim_wrapper_cfg (dict): Config of the optimizer wrapper.

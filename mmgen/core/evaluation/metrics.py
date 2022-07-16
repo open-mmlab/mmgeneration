@@ -11,10 +11,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmengine import is_list_of, print_log
-from mmengine.data import DefaultSampler, pseudo_collate
+from mmengine.data import pseudo_collate
 from mmengine.dist import (all_gather, broadcast_object_list, collect_results,
                            get_dist_info, get_world_size, is_main_process)
 from mmengine.evaluator import BaseMetric
+from mmengine.model import is_model_wrapper
 from PIL import Image
 from scipy import linalg
 from scipy.stats import entropy
@@ -170,8 +171,7 @@ class GenMetric(BaseMetric):
 
         return metrics[0]
 
-    @classmethod
-    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
+    def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
                            metrics: List['GenMetric']) -> DataLoader:
         """Get sampler for normal metrics. Directly returns the dataloader.
 
@@ -184,36 +184,20 @@ class GenMetric(BaseMetric):
             DataLoader: Default sampler for normal metrics.
         """
         batch_size = dataloader.batch_size
-        max_length = max([metric.fake_nums_per_device for metric in metrics])
 
-        class data_iterator:
+        rank, num_gpus = get_dist_info()
+        item_subset = [(i * num_gpus + rank) % self.real_nums
+                       for i in range((self.real_nums - 1) // num_gpus + 1)]
 
-            def __init__(self, batch_size, max_length, dataloader) -> None:
-                self.batch_size = batch_size
-                self.max_length = max_length
-                dataset = dataloader.dataset
-                self._dataloader = DataLoader(
-                    dataset,
-                    batch_size=batch_size,
-                    collate_fn=pseudo_collate,
-                    sampler=DefaultSampler(dataset))
-                self._iterator = iter(self._dataloader)
+        metric_dataloader = DataLoader(
+            dataloader.dataset,
+            batch_size=batch_size,
+            sampler=item_subset,
+            collate_fn=pseudo_collate,
+            shuffle=False,
+            drop_last=False)
 
-            def __iter__(self) -> Iterator:
-                self.idx = 0
-                return self
-
-            def __len__(self) -> int:
-                return math.ceil(self.max_length / self.batch_size)
-
-            def __next__(self):
-                if self.idx > self.max_length:
-                    self._iterator = iter(self._dataloader)
-                    raise StopIteration
-                self.idx += self.batch_size
-                return next(self._iterator)
-
-        return data_iterator(batch_size, max_length, dataloader)
+        return metric_dataloader
 
     def compute_metrics(self, results_fake, results_real) -> dict:
         """Compute the metrics from processed results.
@@ -234,7 +218,9 @@ class GenMetric(BaseMetric):
             module (nn.Module): Model to evaluate.
             dataloader (DataLoader): Dataloader for the real images.
         """
-        return
+        if is_model_wrapper(module):
+            module = module.module
+        self.data_preprocessor = module.data_preprocessor
 
 
 @METRICS.register_module('SWD')
@@ -279,8 +265,8 @@ class SlicedWassersteinDistance(GenMetric):
                  sample_model: str = 'ema',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None):
-        super().__init__(fake_nums, 0, fake_key, real_key, sample_model,
-                         collect_device, prefix)
+        super().__init__(fake_nums, fake_nums, fake_key, real_key,
+                         sample_model, collect_device, prefix)
 
         self.nhood_size = 7  # height and width of the extracted patches
         self.nhoods_per_image = 128  # number of extracted patches per image
@@ -315,13 +301,14 @@ class SlicedWassersteinDistance(GenMetric):
             return
 
         # parse real images
-        if isinstance(data_batch, dict):
-            real_img = data_batch['inputs']
-            # get target image from the dict
+        real_img_list = []
+        for data in data_batch:
+            real_img = data['inputs']
             if isinstance(real_img, dict):
                 real_img = real_img[self.real_key]
-        else:
-            real_img = data_batch
+            real_img_list.append(real_img.to(self.data_preprocessor.device))
+        real_imgs = self.data_preprocessor._preprocess_image_tensor(
+            real_img_list)
 
         # parse fake images
         if isinstance(predictions, dict):
@@ -333,8 +320,8 @@ class SlicedWassersteinDistance(GenMetric):
             fake_img = predictions
 
         # real images
-        assert real_img.shape[1:] == self.image_shape
-        real_pyramid = laplacian_pyramid(real_img, self.n_pyramids - 1,
+        assert real_imgs.shape[1:] == self.image_shape
+        real_pyramid = laplacian_pyramid(real_imgs, self.n_pyramids - 1,
                                          self.gaussian_k)
         # lod: layer_of_descriptors
         for lod, level in enumerate(real_pyramid):
@@ -447,8 +434,7 @@ class GenerativeMetric(GenMetric, metaclass=ABCMeta):
         super().__init__(fake_nums, real_nums, fake_key, real_key,
                          sample_model, collect_device, prefix)
 
-    @classmethod
-    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
+    def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
                            metrics: GenMetric):
         """Get sampler for generative metrics. Returns a dummy iterator, whose
         return value of each iteration is a dict containing batch size and
@@ -1380,8 +1366,7 @@ class TransFID(FrechetInceptionDistance):
 
         self.SAMPLER_MODE = 'normal'
 
-    @classmethod
-    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
+    def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
                            metrics: List['GenMetric']) -> DataLoader:
         """Get sampler for normal metrics. Directly returns the dataloader.
 
@@ -1517,8 +1502,7 @@ class TransIS(InceptionScore):
         # NOTE: feat is shape like (bz, 1000), convert to a list
         self.fake_results += list(torch.tensor_split(feat, feat.shape[0]))
 
-    @classmethod
-    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
+    def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
                            metrics: List['GenMetric']) -> DataLoader:
         """Get sampler for normal metrics. Directly returns the dataloader.
 

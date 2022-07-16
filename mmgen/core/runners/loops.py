@@ -4,7 +4,6 @@ from typing import Dict, List, Sequence, Union
 import torch
 from mmengine import Runner
 from mmengine.evaluator import BaseMetric, Evaluator
-from mmengine.model import is_model_wrapper
 from mmengine.registry import LOOPS
 from mmengine.runner import TestLoop, ValLoop
 from torch.utils.data import DataLoader
@@ -28,10 +27,6 @@ class GenValLoop(ValLoop):
                  evaluator: Union[Evaluator, Dict, List]) -> None:
 
         super().__init__(runner, dataloader, evaluator)
-        model = runner.model
-        if is_model_wrapper(model):
-            model = model.module
-        self.data_preprocessor = model.data_preprocessor
 
     def run(self):
         """Launch validation. The evaluation process consists of four steps.
@@ -92,9 +87,8 @@ class GenValLoop(ValLoop):
             'before_val_iter', batch_idx=idx, data_batch=data_batch)
         # outputs should be sequence of BaseDataElement
         outputs = self.runner.model.val_step(data_batch)
-        processed_data_batch = self.data_preprocessor(data_batch)
 
-        self.evaluator.process(processed_data_batch, outputs, metrics)
+        self.evaluator.process(data_batch, outputs, metrics)
         self.runner.call_hook(
             'after_val_iter',
             batch_idx=idx,
@@ -118,10 +112,6 @@ class GenTestLoop(TestLoop):
                  evaluator: Union[Evaluator, Dict, List]) -> None:
 
         super().__init__(runner, dataloader, evaluator)
-        model = runner.model
-        if is_model_wrapper(model):
-            model = model.module
-        self.data_preprocessor = model.data_preprocessor
 
     def run(self):
         """Launch validation. The evaluation process consists of four steps.
@@ -181,9 +171,8 @@ class GenTestLoop(TestLoop):
             'before_test_iter', batch_idx=idx, data_batch=data_batch)
 
         outputs = self.runner.model.test_step(data_batch)
-        processed_data_batch = self.data_preprocessor(data_batch)
 
-        self.evaluator.process(processed_data_batch, outputs, metrics)
+        self.evaluator.process(data_batch, outputs, metrics)
         self.runner.call_hook(
             'after_test_iter',
             batch_idx=idx,

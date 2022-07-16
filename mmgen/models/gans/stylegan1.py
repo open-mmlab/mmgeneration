@@ -109,7 +109,7 @@ class StyleGANv1(ProgressiveGrowingGAN):
 
         losses_dict = dict()
         losses_dict['loss_disc_fake'] = F.softplus(disc_pred_fake).mean()
-        losses_dict['loss_disc_real'] = F.softplus(disc_pred_real).mean()
+        losses_dict['loss_disc_real'] = F.softplus(-disc_pred_real).mean()
 
         # R1 gradient penalty
         batch_size = real_data.size(0)
