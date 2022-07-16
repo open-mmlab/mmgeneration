@@ -2,6 +2,7 @@
 from typing import Optional
 
 from mmcv import FileClient
+from mmengine import list_from_file
 from mmengine.dataset import BaseDataset
 
 from mmgen.registry import DATASETS
@@ -32,10 +33,12 @@ class UnconditionalImageDataset(BaseDataset):
                  data_root,
                  pipeline,
                  io_backend: Optional[str] = None,
+                 file_list: Optional[str] = None,
                  test_mode=False):
         if io_backend is None:
             io_backend = infer_io_backend(data_root)
         self.file_client = FileClient(backend=io_backend)
+        self.file_list = file_list
         super().__init__(
             data_root=data_root, pipeline=pipeline, test_mode=test_mode)
 
@@ -43,11 +46,17 @@ class UnconditionalImageDataset(BaseDataset):
         """Load annotations."""
         # recursively find all of the valid images from data_root
         data_list = []
-        imgs_list = self.file_client.list_dir_or_file(
-            self.data_root,
-            list_dir=False,
-            suffix=self._VALID_IMG_SUFFIX,
-            recursive=True)
+        if self.file_list is None:
+            imgs_list = self.file_client.list_dir_or_file(
+                self.data_root,
+                list_dir=False,
+                suffix=self._VALID_IMG_SUFFIX,
+                recursive=True)
+        else:
+            file_list_io_backend = infer_io_backend(self.file_list)
+            _file_client_args = dict(backend=file_list_io_backend)
+            imgs_list = list_from_file(
+                self.file_list, file_client_args=_file_client_args)
         data_list = [
             dict(img_path=self.file_client.join_path(self.data_root, x))
             for x in imgs_list

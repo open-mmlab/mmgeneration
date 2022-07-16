@@ -4,43 +4,71 @@ _base_ = [
     '../_base_/default_runtime.py',
 ]
 
-model = dict(generator=dict(out_size=256), discriminator=dict(in_size=256))
-
-train_cfg = dict(nkimgs_per_scale={
-    '8': 1200,
-    '16': 1200,
-    '32': 1200,
-    '64': 1200,
-    '128': 1200,
-    '256': 190000
-})
-
-checkpoint_config = dict(interval=5000, by_epoch=False, max_keep_ckpts=20)
-lr_config = None
-
+# MODEL
+model_wrapper_cfg = dict(find_unused_parameters=True)
 ema_half_life = 10.  # G_smoothing_kimg
+ema_config = dict(interval=1, momentum=0.5**(32. / (ema_half_life * 1000.)))
+model = dict(
+    generator=dict(out_size=256),
+    discriminator=dict(in_size=256),
+    nkimgs_per_scale={
+        '8': 1200,
+        '16': 1200,
+        '32': 1200,
+        '64': 1200,
+        '128': 1200,
+        '256': 190000
+    },
+    ema_config=ema_config)
 
+# TRAIN
+train_cfg = dict(max_iters=670000)
+
+optim_wrapper = dict(
+    constructor='PGGANOptimWrapperConstructor',
+    generator=dict(optimizer=dict(type='Adam', lr=0.001, betas=(0., 0.99))),
+    discriminator=dict(
+        optimizer=dict(type='Adam', lr=0.001, betas=(0., 0.99))),
+    lr_schedule=dict(
+        generator={
+            '128': 0.0015,
+            '256': 0.002
+        },
+        discriminator={
+            '128': 0.0015,
+            '256': 0.002
+        }))
+
+# VIS_HOOK + DATAFETCH
 custom_hooks = [
     dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=5000),
-    dict(type='PGGANFetchDataHook', interval=1),
-    dict(
-        type='ExponentialMovingAverageHook',
-        module_keys=('generator_ema', ),
-        interval=1,
-        interp_cfg=dict(momentum=0.5**(32. / (ema_half_life * 1000.))),
-        priority='VERY_HIGH')
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img')),
+    dict(type='PGGANFetchDataHook')
 ]
 
-total_iters = 670000
+# METRICS
+inception_pkl = './work_dirs/ffhq256-full.pkl'
+metrics = [
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        inception_pkl=inception_pkl,
+        sample_model='ema'),
+    dict(type='PrecisionAndRecall', fake_nums=50000, k=3, prefix='PR-50K'),
+]
+default_hooks = dict(checkpoint=dict(save_best='FID-Full-50k/fid'))
 
-metrics = dict(
-    fid50k=dict(
-        type='FID',
-        num_images=50000,
-        inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
-        bgr2rgb=True),
-    pr50k3=dict(type='PR', num_images=50000, k=3),
-    ppl_wend=dict(type='PPL', space='W', sampling='end', num_images=50000))
+# use low resolution image to evaluate
+# NOTE: use cherry-picked file list?
+# val_dataloader = test_dataloader = dict(
+#     dataset=dict(
+#         data_root='./data/ffhq/ffhq_imgs/ffhq_256',
+#         file_list='./data/ffhq256.txt'))
+val_dataloader = test_dataloader = dict(
+    dataset=dict(data_root='./data/ffhq/ffhq_imgs/ffhq_256'))
+val_evaluator = test_evaluator = dict(metrics=metrics)

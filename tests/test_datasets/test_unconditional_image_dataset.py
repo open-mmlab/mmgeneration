@@ -2,6 +2,9 @@
 import os.path as osp
 
 from mmgen.datasets import UnconditionalImageDataset
+from mmgen.utils import register_all_modules
+
+register_all_modules()
 
 
 class TestUnconditionalImageDataset(object):
@@ -10,7 +13,7 @@ class TestUnconditionalImageDataset(object):
     def setup_class(cls):
         cls.imgs_root = osp.join(osp.dirname(__file__), '..', 'data/image')
         cls.default_pipeline = [
-            dict(type='mmgen.LoadImageFromFile', io_backend='disk', key='img')
+            dict(type='LoadImageFromFile', io_backend='disk', key='img')
         ]
 
     def test_unconditional_imgs_dataset(self):

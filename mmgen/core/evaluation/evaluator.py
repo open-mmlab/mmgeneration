@@ -2,7 +2,7 @@
 from collections import defaultdict
 from typing import Iterator, List, Sequence, Tuple, Union
 
-from mmengine import BaseDataElement
+from mmengine.data import BaseDataElement
 from mmengine.evaluator import BaseMetric, Evaluator
 from mmengine.model import BaseModel
 from torch.utils.data.dataloader import DataLoader
@@ -125,8 +125,8 @@ class GenEvaluator(Evaluator):
         results) to corresponding `metrics`.
 
         Args:
-            data_batch (ValTestStepInputs): A batch of data from the metrics
-                specific sampler.
+            data_batch (ValTestStepInputs): A batch of data from the
+                metrics specific sampler or the dataloader.
             predictions (ForwardOutputs): A batch of generated results from
                 model.
             metrics (Optional[Sequence[BaseMetric]]): Metrics to evaluate.
@@ -143,7 +143,6 @@ class GenEvaluator(Evaluator):
                             data_sample=data['data_sample'].to_dict()))
                 else:
                     _data_batch.append(data)
-        # data_batch is loaded from metrics' sampler, directly pass to metrics
         else:
             _data_batch = data_batch
 

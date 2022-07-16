@@ -92,6 +92,8 @@ class TestEvaluator(TestCase):
         module.data_preprocessor.rgb_to_bgr = False
 
         dataloader = MagicMock()
+        dataloader.batch_size = 10
+        dataloader.dataset = MagicMock()
         evaluator.prepare_metrics(module, dataloader)
         self.assertTrue(evaluator.is_ready)
 
@@ -103,4 +105,4 @@ class TestEvaluator(TestCase):
         for metrics, sampler in metrics_sampler_list:
             metric = metrics[0]
             if metric.name == 'toy_normal':
-                self.assertEqual(sampler, dataloader)
+                self.assertEqual(sampler.dataset, dataloader.dataset)

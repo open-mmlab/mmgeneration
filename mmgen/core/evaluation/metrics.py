@@ -11,9 +11,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmengine import is_list_of, print_log
+from mmengine.data import pseudo_collate
 from mmengine.dist import (all_gather, broadcast_object_list, collect_results,
                            get_dist_info, get_world_size, is_main_process)
 from mmengine.evaluator import BaseMetric
+from mmengine.model import is_model_wrapper
 from PIL import Image
 from scipy import linalg
 from scipy.stats import entropy
@@ -169,8 +171,7 @@ class GenMetric(BaseMetric):
 
         return metrics[0]
 
-    @classmethod
-    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
+    def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
                            metrics: List['GenMetric']) -> DataLoader:
         """Get sampler for normal metrics. Directly returns the dataloader.
 
@@ -182,7 +183,21 @@ class GenMetric(BaseMetric):
         Returns:
             DataLoader: Default sampler for normal metrics.
         """
-        return dataloader
+        batch_size = dataloader.batch_size
+
+        rank, num_gpus = get_dist_info()
+        item_subset = [(i * num_gpus + rank) % self.real_nums
+                       for i in range((self.real_nums - 1) // num_gpus + 1)]
+
+        metric_dataloader = DataLoader(
+            dataloader.dataset,
+            batch_size=batch_size,
+            sampler=item_subset,
+            collate_fn=pseudo_collate,
+            shuffle=False,
+            drop_last=False)
+
+        return metric_dataloader
 
     def compute_metrics(self, results_fake, results_real) -> dict:
         """Compute the metrics from processed results.
@@ -203,7 +218,9 @@ class GenMetric(BaseMetric):
             module (nn.Module): Model to evaluate.
             dataloader (DataLoader): Dataloader for the real images.
         """
-        return
+        if is_model_wrapper(module):
+            module = module.module
+        self.data_preprocessor = module.data_preprocessor
 
 
 @METRICS.register_module('SWD')
@@ -248,8 +265,8 @@ class SlicedWassersteinDistance(GenMetric):
                  sample_model: str = 'ema',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None):
-        super().__init__(fake_nums, 0, fake_key, real_key, sample_model,
-                         collect_device, prefix)
+        super().__init__(fake_nums, fake_nums, fake_key, real_key,
+                         sample_model, collect_device, prefix)
 
         self.nhood_size = 7  # height and width of the extracted patches
         self.nhoods_per_image = 128  # number of extracted patches per image
@@ -284,10 +301,14 @@ class SlicedWassersteinDistance(GenMetric):
             return
 
         # parse real images
-        if isinstance(data_batch, dict):
-            real_img = data_batch[self.real_key]
-        else:
-            real_img = data_batch
+        real_img_list = []
+        for data in data_batch:
+            real_img = data['inputs']
+            if isinstance(real_img, dict):
+                real_img = real_img[self.real_key]
+            real_img_list.append(real_img.to(self.data_preprocessor.device))
+        real_imgs = self.data_preprocessor._preprocess_image_tensor(
+            real_img_list)
 
         # parse fake images
         if isinstance(predictions, dict):
@@ -299,14 +320,14 @@ class SlicedWassersteinDistance(GenMetric):
             fake_img = predictions
 
         # real images
-        assert real_img.shape[1:] == self.image_shape
-        real_pyramid = laplacian_pyramid(real_img, self.n_pyramids - 1,
+        assert real_imgs.shape[1:] == self.image_shape
+        real_pyramid = laplacian_pyramid(real_imgs, self.n_pyramids - 1,
                                          self.gaussian_k)
         # lod: layer_of_descriptors
         for lod, level in enumerate(real_pyramid):
             desc = get_descriptors_for_minibatch(level, self.nhood_size,
                                                  self.nhoods_per_image)
-            self.real_results[lod].append(desc)
+            self.real_results[lod].append(desc.cpu())
 
         # fake images
         assert fake_img.shape[1:] == self.image_shape
@@ -316,7 +337,7 @@ class SlicedWassersteinDistance(GenMetric):
         for lod, level in enumerate(fake_pyramid):
             desc = get_descriptors_for_minibatch(level, self.nhood_size,
                                                  self.nhoods_per_image)
-            self.fake_results[lod].append(desc)
+            self.fake_results[lod].append(desc.cpu())
 
         self._num_processed += real_img.shape[0]
 
@@ -336,8 +357,14 @@ class SlicedWassersteinDistance(GenMetric):
         results = getattr(self, f'{target}_results')
         results_collected = []
         for result in results:
+            # save the original tensor size
+            results_size_list = [res.shape[0] for res in result]
             result_collected = torch.cat(result, dim=0)
             result_collected = torch.cat(all_gather(result_collected), dim=0)
+            # split to tuple
+            result_collected = torch.split(result_collected, results_size_list)
+            # convert to list
+            result_collected = [res for res in result_collected]
             results_collected.append(result_collected)
 
         self._num_processed = 0
@@ -366,7 +393,10 @@ class SlicedWassersteinDistance(GenMetric):
         distance = [d * 1e3 for d in distance]  # multiply by 10^3
         result = distance + [np.mean(distance)]
 
-        return {'score': ', '.join([str(round(d, 2)) for d in result])}
+        return {
+            f'{resolution}': round(d, 4)
+            for resolution, d in zip(self.resolutions + ['avg'], result)
+        }
 
 
 class GenerativeMetric(GenMetric, metaclass=ABCMeta):
@@ -404,8 +434,7 @@ class GenerativeMetric(GenMetric, metaclass=ABCMeta):
         super().__init__(fake_nums, real_nums, fake_key, real_key,
                          sample_model, collect_device, prefix)
 
-    @classmethod
-    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
+    def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
                            metrics: GenMetric):
         """Get sampler for generative metrics. Returns a dummy iterator, whose
         return value of each iteration is a dict containing batch size and
@@ -544,11 +573,11 @@ class FrechetInceptionDistance(GenerativeMetric):
                  inception_pkl: Optional[str] = None,
                  fake_key: Optional[str] = None,
                  real_key: Optional[str] = 'img',
-                 sample_model: str = 'ema',
+                 sample_mode: str = 'ema',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None):
-        super().__init__(fake_nums, real_nums, fake_key, real_key,
-                         sample_model, collect_device, prefix)
+        super().__init__(fake_nums, real_nums, fake_key, real_key, sample_mode,
+                         collect_device, prefix)
         self.real_mean = None
         self.real_cov = None
         self.device = 'cpu'
@@ -1337,8 +1366,7 @@ class TransFID(FrechetInceptionDistance):
 
         self.SAMPLER_MODE = 'normal'
 
-    @classmethod
-    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
+    def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
                            metrics: List['GenMetric']) -> DataLoader:
         """Get sampler for normal metrics. Directly returns the dataloader.
 
@@ -1474,8 +1502,7 @@ class TransIS(InceptionScore):
         # NOTE: feat is shape like (bz, 1000), convert to a list
         self.fake_results += list(torch.tensor_split(feat, feat.shape[0]))
 
-    @classmethod
-    def get_metric_sampler(cls, model: nn.Module, dataloader: DataLoader,
+    def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
                            metrics: List['GenMetric']) -> DataLoader:
         """Get sampler for normal metrics. Directly returns the dataloader.
 

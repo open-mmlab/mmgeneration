@@ -1,34 +1,23 @@
 dataset_type = 'GrowScaleImgDataset'
 
-train_pipeline = [
-    dict(
-        type='LoadImageFromFile',
-        key='real_img',
-        io_backend='disk',
-    ),
-    dict(type='Flip', keys=['real_img'], direction='horizontal'),
-    dict(
-        type='Normalize',
-        keys=['real_img'],
-        mean=[127.5, 127.5, 127.5],
-        std=[127.5, 127.5, 127.5],
-        to_rgb=False),
-    dict(type='ImageToTensor', keys=['real_img']),
-    dict(type='Collect', keys=['real_img'], meta_keys=['real_img_path'])
+pipeline = [
+    dict(type='LoadImageFromFile', key='img'),
+    dict(type='Flip', keys=['img'], direction='horizontal'),
+    dict(type='PackGenInputs')
 ]
 
-data = dict(
-    samples_per_gpu=64,
-    workers_per_gpu=4,
-    train=dict(
+train_dataloader = dict(
+    num_workers=4,
+    batch_size=64,
+    dataset=dict(
         type='GrowScaleImgDataset',
-        imgs_roots=dict({
+        data_roots={
             '1024': './data/ffhq/images',
             '256': './data/ffhq/ffhq_imgs/ffhq_256',
             '64': './data/ffhq/ffhq_imgs/ffhq_64'
-        }),
-        pipeline=train_pipeline,
+        },
         gpu_samples_base=4,
+        # note that this should be changed with total gpu number
         gpu_samples_per_scale={
             '4': 64,
             '8': 32,
@@ -40,4 +29,17 @@ data = dict(
             '512': 4,
             '1024': 4
         },
-        len_per_stage=300000))
+        len_per_stage=300000,
+        pipeline=pipeline),
+    sampler=dict(type='InfiniteSampler', shuffle=True))
+
+test_dataloader = dict(
+    num_workers=4,
+    batch_size=64,
+    dataset=dict(
+        type='UnconditionalImageDataset',
+        pipeline=pipeline,
+        data_root='./data/ffhq/images'),
+    sampler=dict(type='DefaultSampler', shuffle=False))
+
+val_dataloader = test_dataloader

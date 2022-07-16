@@ -1,23 +1,30 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from copy import deepcopy
 from functools import partial
+from typing import Dict, List, Optional, Tuple, Union
 
 import mmcv
 import numpy as np
 import torch
-import torch.distributed as dist
+import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.parallel.distributed import _find_tensors
+from mmengine import MessageHub
+from mmengine.dist import get_world_size
+from mmengine.model import is_model_wrapper
+from mmengine.optim import OptimWrapper, OptimWrapperDict
+from torch import Tensor
 
-from mmgen.core.optimizer import build_optimizers
-from mmgen.models.builder import build_module
+from mmgen.core import GenDataSample
 from mmgen.registry import MODELS
-from ..common import set_requires_grad
+from mmgen.typing import ForwardInputs, TrainStepInputs
+from ..common import gather_log_vars, get_valid_num_batches, set_requires_grad
 from .base_gan import BaseGAN
 
+ModelType = Union[Dict, nn.Module]
+TrainInput = Union[dict, Tensor]
 
-@MODELS.register_module('StyleGANV1')
+
+# @MODELS.register_module('StyleGANV1')
 @MODELS.register_module('PGGAN')
 @MODELS.register_module()
 class ProgressiveGrowingGAN(BaseGAN):
@@ -46,103 +53,30 @@ class ProgressiveGrowingGAN(BaseGAN):
     Args:
         generator (dict): Config for generator.
         discriminator (dict): Config for discriminator.
-        gan_loss (dict): Config for generative adversarial loss.
-        disc_auxiliary_loss (dict): Config for auxiliary loss to
-            discriminator.
-        gen_auxiliary_loss (dict | None, optional): Config for auxiliary loss
-            to generator. Defaults to None.
-        train_cfg (dict | None, optional): Config for training schedule.
-            Defaults to None.
-        test_cfg (dict | None, optional): Config for testing schedule. Defaults
-            to None.
     """
 
     def __init__(self,
                  generator,
                  discriminator,
-                 gan_loss,
-                 disc_auxiliary_loss,
-                 gen_auxiliary_loss=None,
-                 train_cfg=None,
-                 test_cfg=None):
-        super().__init__()
-        self._gen_cfg = deepcopy(generator)
-        self.generator = build_module(generator)
-
-        # support no discriminator in testing
-        if discriminator is not None:
-            self.discriminator = build_module(discriminator)
-        else:
-            self.discriminator = None
-
-        # support no gan_loss in testing
-        if gan_loss is not None:
-            self.gan_loss = build_module(gan_loss)
-        else:
-            self.gan_loss = None
-
-        if disc_auxiliary_loss:
-            self.disc_auxiliary_losses = build_module(disc_auxiliary_loss)
-            if not isinstance(self.disc_auxiliary_losses, nn.ModuleList):
-                self.disc_auxiliary_losses = nn.ModuleList(
-                    [self.disc_auxiliary_losses])
-        else:
-            self.disc_auxiliary_losses = None
-
-        if gen_auxiliary_loss:
-            self.gen_auxiliary_losses = build_module(gen_auxiliary_loss)
-            if not isinstance(self.gen_auxiliary_losses, nn.ModuleList):
-                self.gen_auxiliary_losses = nn.ModuleList(
-                    [self.gen_auxiliary_losses])
-        else:
-            self.gen_auxiliary_losses = None
+                 data_preprocessor,
+                 nkimgs_per_scale,
+                 noise_size=None,
+                 interp_real=None,
+                 transition_kimgs: int = 600,
+                 prev_stage: int = 0,
+                 ema_config: Optional[Dict] = None):
+        super().__init__(generator, discriminator, data_preprocessor, 1, 1,
+                         noise_size, ema_config)
 
         # register necessary training status
         self.register_buffer('shown_nkimg', torch.tensor(0.))
         self.register_buffer('_curr_transition_weight', torch.tensor(1.))
 
-        self.train_cfg = deepcopy(train_cfg) if train_cfg else None
-        self.test_cfg = deepcopy(test_cfg) if test_cfg else None
+        if interp_real is None:
+            interp_real = dict(mode='bilinear', align_corners=True)
+        self.interp_real_to = partial(F.interpolate, **interp_real)
 
-        self._parse_train_cfg()
-        # this buffer is used to resume model easily
-        self.register_buffer(
-            '_next_scale_int',
-            torch.tensor(self.scales[0][0], dtype=torch.int32))
-        # TODO: init it with the same value as `_next_scale_int`
-        # a dirty workaround for testing
-        self.register_buffer(
-            '_curr_scale_int',
-            torch.tensor(self.scales[-1][0], dtype=torch.int32))
-        if test_cfg is not None:
-            self._parse_test_cfg()
-
-    def _parse_train_cfg(self):
-        """Parsing train config and set some attributes for training."""
-        if self.train_cfg is None:
-            self.train_cfg = dict()
-        # control the work flow in train step
-        self.disc_steps = self.train_cfg.get('disc_steps', 1)
-
-        # whether to use exponential moving average for training
-        self.use_ema = self.train_cfg.get('use_ema', False)
-        if self.use_ema:
-            # use deepcopy to guarantee the consistency
-            self.generator_ema = deepcopy(self.generator)
-
-        # setup interpolation operation at the beginning of training iter
-        interp_real_cfg = deepcopy(self.train_cfg.get('interp_real', None))
-        if interp_real_cfg is None:
-            interp_real_cfg = dict(mode='bilinear', align_corners=True)
-
-        self.interp_real_to = partial(F.interpolate, **interp_real_cfg)
-        # parsing the training schedule: scales : kimg
-        assert isinstance(self.train_cfg['nkimgs_per_scale'],
-                          dict), ('Please provide "nkimgs_per_'
-                                  'scale" to schedule the training procedure.')
-        nkimgs_per_scale = deepcopy(self.train_cfg['nkimgs_per_scale'])
-        self.scales = []
-        self.nkimgs = []
+        self.scales, self.nkimgs = [], []
         for k, v in nkimgs_per_scale.items():
             # support for different data types
             if isinstance(k, str):
@@ -156,64 +90,43 @@ class ProgressiveGrowingGAN(BaseGAN):
             assert len(self.scales) == 0 or k[0] > self.scales[-1][0]
             self.scales.append(k)
             self.nkimgs.append(v)
+
         self.cum_nkimgs = np.cumsum(self.nkimgs)
         self.curr_stage = 0
-        self.prev_stage = 0
+        # dirty walkround for avoiding optimizer bug in resuming
+        self.prev_stage = prev_stage
         # actually nkimgs shown at the end of per training stage
         self._actual_nkimgs = []
         # In each scale, transit from previous torgb layer to newer torgb layer
         # with `transition_kimgs` imgs
-        self.transition_kimgs = self.train_cfg.get('transition_kimgs', 600)
+        self.transition_kimgs = transition_kimgs
 
-        # setup optimizer
-        self.optimizer = build_optimizers(
-            self, deepcopy(self.train_cfg['optimizer_cfg']))
-        # get lr schedule
-        self.g_lr_base = self.train_cfg['g_lr_base']
-        self.d_lr_base = self.train_cfg['d_lr_base']
-        # example for lr schedule: {'32': 0.001, '64': 0.0001}
-        self.g_lr_schedule = self.train_cfg.get('g_lr_schedule', dict())
-        self.d_lr_schedule = self.train_cfg.get('d_lr_schedule', dict())
-        # reset the states for optimizers, e.g. momentum in Adam
-        self.reset_optim_for_new_scale = self.train_cfg.get(
-            'reset_optim_for_new_scale', True)
-        # dirty walkround for avoiding optimizer bug in resuming
-        self.prev_stage = self.train_cfg.get('prev_stage', self.prev_stage)
+        # this buffer is used to resume model easily
+        self.register_buffer(
+            '_next_scale_int',
+            torch.tensor(self.scales[0][0], dtype=torch.int32))
+        # TODO: init it with the same value as `_next_scale_int`
+        # a dirty workaround for testing
+        self.register_buffer(
+            '_curr_scale_int',
+            torch.tensor(self.scales[-1][0], dtype=torch.int32))
 
-    def _parse_test_cfg(self):
-        """Parsing train config and set some attributes for testing."""
-        if self.test_cfg is None:
-            self.test_cfg = dict()
+    def forward(self,
+                batch_inputs: ForwardInputs,
+                data_samples: Optional[list] = None,
+                mode: Optional[str] = None):
+        """Sample images from noises by using the generator."""
+        if isinstance(batch_inputs, Tensor):
+            noise = batch_inputs
+            curr_scale = transition_weight = None
+        else:
+            noise = batch_inputs.get('noise', None)
+            num_batches = get_valid_num_batches(batch_inputs)
+            noise = self.noise_fn(noise, num_batches=num_batches)
 
-        # basic testing information
-        self.batch_size = self.test_cfg.get('batch_size', 1)
+            curr_scale = batch_inputs.get('curr_scale', None)
+            transition_weight = batch_inputs.get('transition_weight', None)
 
-        # whether to use exponential moving average for testing
-        self.use_ema = self.test_cfg.get('use_ema', False)
-        # TODO: finish ema part
-
-    def sample_from_noise(self,
-                          noise,
-                          num_batches=0,
-                          curr_scale=None,
-                          transition_weight=None,
-                          sample_model='ema/orig',
-                          **kwargs):
-        """Sample images from noises by using the generator.
-
-        Args:
-            noise (torch.Tensor | callable | None): You can directly give a
-                batch of noise through a ``torch.Tensor`` or offer a callable
-                function to sample a batch of noise data. Otherwise, the
-                ``None`` indicates to use the default noise sampler.
-            num_batches (int, optional):  The number of batch size.
-                Defaults to 0.
-
-        Returns:
-            torch.Tensor | dict: The output may be the direct synthesized \
-                images in ``torch.Tensor``. Otherwise, a dict with queried \
-                data, including generated images, will be returned.
-        """
         # use `self.curr_scale` if curr_scale is None
         if curr_scale is None:
             # in training, 'curr_scale' will be set as attribute
@@ -227,44 +140,157 @@ class ProgressiveGrowingGAN(BaseGAN):
         if transition_weight is None:
             transition_weight = self._curr_transition_weight.item()
 
-        if sample_model == 'ema':
-            assert self.use_ema
-            _model = self.generator_ema
-        elif sample_model == 'ema/orig' and self.use_ema:
+        sample_model = self._get_valid_model(batch_inputs)
+
+        if sample_model in ['ema', 'ema/orig']:
             _model = self.generator_ema
         else:
             _model = self.generator
 
         outputs = _model(
-            noise,
-            num_batches=num_batches,
-            curr_scale=curr_scale,
-            transition_weight=transition_weight,
-            **kwargs)
+            noise, curr_scale=curr_scale, transition_weight=transition_weight)
 
-        if isinstance(outputs, dict) and 'noise_batch' in outputs:
-            noise = outputs['noise_batch']
-
-        if sample_model == 'ema/orig' and self.use_ema:
+        if sample_model == 'ema/orig':
             _model = self.generator
-            outputs_ = _model(
+            outputs_orig = _model(
                 noise,
-                num_batches=num_batches,
                 curr_scale=curr_scale,
-                transition_weight=transition_weight,
-                **kwargs)
-            if isinstance(outputs_, dict):
-                outputs['fake_img'] = torch.cat(
-                    [outputs['fake_img'], outputs_['fake_img']], dim=0)
-            else:
-                outputs = torch.cat([outputs, outputs_], dim=0)
+                transition_weight=transition_weight)
+            outputs = dict(ema=outputs, orig=outputs_orig)
         return outputs
 
-    def train_step(self,
-                   data_batch,
-                   optimizer,
-                   ddp_reducer=None,
-                   running_status=None):
+    def train_discriminator(
+            self, inputs: TrainInput, data_samples: List[GenDataSample],
+            optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
+        real_imgs = inputs
+        num_batches = real_imgs.shape[0]
+        noise_batch = self.noise_fn(num_batches=num_batches)
+
+        with torch.no_grad():
+            fake_imgs = self.generator(
+                noise_batch,
+                curr_scale=self.curr_scale[0],
+                transition_weight=self._curr_transition_weight,
+                return_noise=False)
+
+        disc_pred_fake = self.discriminator(
+            fake_imgs,
+            curr_scale=self.curr_scale[0],
+            transition_weight=self._curr_transition_weight)
+        disc_pred_real = self.discriminator(
+            real_imgs,
+            curr_scale=self.curr_scale[0],
+            transition_weight=self._curr_transition_weight)
+
+        parsed_loss, log_vars = self.disc_loss(disc_pred_fake, disc_pred_real,
+                                               fake_imgs, real_imgs)
+        optimizer_wrapper.update_params(parsed_loss)
+        return log_vars
+
+    def disc_loss(self, disc_pred_fake: Tensor, disc_pred_real: Tensor,
+                  fake_data: Tensor, real_data: Tensor) -> Tuple[Tensor, dict]:
+        r"""Get disc loss. PGGAN use WGAN-GP's loss and discriminator shift
+        loss to train the discriminator.
+
+        .. math:
+            L_{D} = \mathbb{E}_{z\sim{p_{z}}}D\left\(G\left\(z\right\)\right\)
+                - \mathbb{E}_{x\sim{p_{data}}}D\left\(x\right\) + L_{GP} \\
+            L_{GP} = \lambda\mathbb{E}(\Vert\nabla_{\tilde{x}}D(\tilde{x})
+                \Vert_2-1)^2 \\
+            \tilde{x} = \epsilon x + (1-\epsilon)G(z)
+            L_{shift} =
+
+        Args:
+            disc_pred_fake (Tensor): Discriminator's prediction of the fake
+                images.
+            disc_pred_real (Tensor): Discriminator's prediction of the real
+                images.
+            fake_data (Tensor): Generated images, used to calculate gradient
+                penalty.
+            real_data (Tensor): Real images, used to calculate gradient
+                penalty.
+
+        Returns:
+            Tuple[Tensor, dict]: Loss value and a dict of log variables.
+        """
+
+        losses_dict = dict()
+        losses_dict['loss_disc_fake'] = disc_pred_fake.mean()
+        losses_dict['loss_disc_real'] = -disc_pred_real.mean()
+
+        # gradient penalty
+        batch_size = real_data.size(0)
+        alpha = torch.rand(batch_size, 1, 1, 1).to(real_data)
+
+        # interpolate between real_data and fake_data
+        interpolates = alpha * real_data + (1. - alpha) * fake_data
+        interpolates = autograd.Variable(interpolates, requires_grad=True)
+
+        disc_interpolates = self.discriminator(
+            interpolates,
+            curr_scale=self.curr_scale[0],
+            transition_weight=self._curr_transition_weight)
+        gradients = autograd.grad(
+            outputs=disc_interpolates,
+            inputs=interpolates,
+            grad_outputs=torch.ones_like(disc_interpolates),
+            create_graph=True,
+            retain_graph=True,
+            only_inputs=True)[0]
+        # norm_mode is 'HWC'
+        gradients_penalty = ((
+            gradients.reshape(batch_size, -1).norm(2, dim=1) - 1)**2).mean()
+        losses_dict['loss_gp'] = 10 * gradients_penalty
+        losses_dict['loss_disc_shift'] = 0.001 * 0.5 * (
+            disc_pred_fake**2 + disc_pred_real**2)
+
+        parsed_loss, log_vars = self.parse_losses(losses_dict)
+        return parsed_loss, log_vars
+
+    def train_generator(self, inputs: TrainInput,
+                        data_samples: List[GenDataSample],
+                        optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
+        real_imgs = inputs
+        num_batches = real_imgs.shape[0]
+        noise_batch = self.noise_fn(num_batches=num_batches)
+
+        fake_imgs = self.generator(
+            noise_batch,
+            num_batches=num_batches,
+            curr_scale=self.curr_scale[0],
+            transition_weight=self._curr_transition_weight)
+        disc_pred_fake_g = self.discriminator(
+            fake_imgs,
+            curr_scale=self.curr_scale[0],
+            transition_weight=self._curr_transition_weight)
+
+        parsed_loss, log_vars = self.gen_loss(disc_pred_fake_g)
+        optimizer_wrapper.update_params(parsed_loss)
+        return log_vars
+
+    def gen_loss(self, disc_pred_fake: Tensor) -> Tuple[Tensor, dict]:
+        r"""Generator loss for PGGAN. PGGAN use WGAN's loss to train the
+        generator.
+
+        .. math:
+            L_{G} = -\mathbb{E}_{z\sim{p_{z}}}D\left\(G\left\(z\right\)\right\)
+                + L_{MSE}
+
+        Args:
+            disc_pred_fake (Tensor): Discriminator's prediction of the fake
+                images.
+            recon_imgs (Tensor): Reconstructive images.
+
+        Returns:
+            Tuple[Tensor, dict]: Loss value and a dict of log variables.
+        """
+        losses_dict = dict()
+        losses_dict['loss_gen'] = -disc_pred_fake.mean()
+        loss, log_vars = self.parse_losses(losses_dict)
+        return loss, log_vars
+
+    def train_step(self, data: TrainStepInputs,
+                   optim_wrapper: OptimWrapperDict):
         """Train step function.
 
         This function implements the standard training iteration for
@@ -289,23 +315,8 @@ class ProgressiveGrowingGAN(BaseGAN):
         Returns:
             dict: Contains 'log_vars', 'num_samples', and 'results'.
         """
-        # get data from data_batch
-        real_imgs = data_batch['real_img']
-        # If you adopt ddp, this batch size is local batch size for each GPU.
-        batch_size = real_imgs.shape[0]
-
-        # get running status
-        if running_status is not None:
-            curr_iter = running_status['iteration']
-        else:
-            # dirty walkround for not providing running status
-            if not hasattr(self, 'iteration'):
-                self.iteration = 0
-            curr_iter = self.iteration
-
-        # check if optimizer from model
-        if hasattr(self, 'optimizer'):
-            optimizer = self.optimizer
+        message_hub = MessageHub.get_current_instance()
+        curr_iter = message_hub.get_info('iter')
 
         # update current stage
         self.curr_stage = int(
@@ -314,20 +325,23 @@ class ProgressiveGrowingGAN(BaseGAN):
                 len(self.scales) - 1))
         self.curr_scale = self.scales[self.curr_stage]
         self._curr_scale_int = self._next_scale_int.clone()
-        # add new scale and update training status
+
         if self.curr_stage != self.prev_stage:
             self.prev_stage = self.curr_stage
             self._actual_nkimgs.append(self.shown_nkimg.item())
-            # reset optimizer
-            if self.reset_optim_for_new_scale:
-                optim_cfg = deepcopy(self.train_cfg['optimizer_cfg'])
-                optim_cfg['generator']['lr'] = self.g_lr_schedule.get(
-                    str(self.curr_scale[0]), self.g_lr_base)
-                optim_cfg['discriminator']['lr'] = self.d_lr_schedule.get(
-                    str(self.curr_scale[0]), self.d_lr_base)
-                self.optimizer = build_optimizers(self, optim_cfg)
-                optimizer = self.optimizer
-                mmcv.print_log('Reset optimizer for new scale', logger='mmgen')
+
+        inputs, data_sample = self.data_preprocessor(data, True)
+        if isinstance(inputs, dict):
+            real_imgs = inputs['img']
+        else:  # tensor
+            real_imgs = inputs
+
+        curr_scale = str(self.curr_scale[0])
+        disc_optimizer_wrapper: OptimWrapper = optim_wrapper[
+            f'discriminator_{curr_scale}']
+        gen_optimizer_wrapper: OptimWrapper = optim_wrapper[
+            f'generator_{curr_scale}']
+        disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
 
         # update training configs, like transition weight for torgb layers.
         # get current transition weight for interpolating two torgb layers
@@ -342,7 +356,6 @@ class ProgressiveGrowingGAN(BaseGAN):
         self._curr_transition_weight = torch.tensor(transition_weight).to(
             self._curr_transition_weight)
 
-        # resize real image to target scale
         if real_imgs.shape[2:] == self.curr_scale:
             pass
         elif real_imgs.shape[2] >= self.curr_scale[0] and real_imgs.shape[
@@ -353,129 +366,52 @@ class ProgressiveGrowingGAN(BaseGAN):
                 f'The scale of real image {real_imgs.shape[2:]} is smaller '
                 f'than current scale {self.curr_scale}.')
 
-        # disc training
-        set_requires_grad(self.discriminator, True)
-        optimizer['discriminator'].zero_grad()
-        # TODO: add noise sampler to customize noise sampling
-        with torch.no_grad():
-            fake_imgs = self.generator(
-                None,
-                num_batches=batch_size,
-                curr_scale=self.curr_scale[0],
-                transition_weight=transition_weight)
+        # normal gan training process
+        with disc_optimizer_wrapper.optim_context(self.discriminator):
+            log_vars = self.train_discriminator(real_imgs, data_sample,
+                                                disc_optimizer_wrapper)
 
-        # disc pred for fake imgs and real_imgs
-        disc_pred_fake = self.discriminator(
-            fake_imgs,
-            curr_scale=self.curr_scale[0],
-            transition_weight=transition_weight)
-        disc_pred_real = self.discriminator(
-            real_imgs,
-            curr_scale=self.curr_scale[0],
-            transition_weight=transition_weight)
-        # get data dict to compute losses for disc
-        data_dict_ = dict(
-            iteration=curr_iter,
-            gen=self.generator,
-            disc=self.discriminator,
-            disc_pred_fake=disc_pred_fake,
-            disc_pred_real=disc_pred_real,
-            fake_imgs=fake_imgs,
-            real_imgs=real_imgs,
-            curr_scale=self.curr_scale[0],
-            transition_weight=transition_weight,
-            gen_partial=partial(
-                self.generator,
-                curr_scale=self.curr_scale[0],
-                transition_weight=transition_weight),
-            disc_partial=partial(
-                self.discriminator,
-                curr_scale=self.curr_scale[0],
-                transition_weight=transition_weight))
+        # add 1 to `curr_iter` because iter is updated in train loop.
+        # Whether to update the generator. We update generator with
+        # discriminator is fully updated for `self.n_discriminator_steps`
+        # iterations. And one full updating for discriminator contains
+        # `disc_accu_counts` times of grad accumulations.
+        if (curr_iter + 1) % (self.discriminator_steps * disc_accu_iters) == 0:
+            set_requires_grad(self.discriminator, False)
+            gen_accu_iters = gen_optimizer_wrapper._accumulative_counts
 
-        loss_disc, log_vars_disc = self._get_disc_loss(data_dict_)
+            log_vars_gen_list = []
+            # init optimizer wrapper status for generator manually
+            gen_optimizer_wrapper.initialize_count_status(
+                self.generator, 0, self.generator_steps * gen_accu_iters)
+            for _ in range(self.generator_steps * gen_accu_iters):
+                with gen_optimizer_wrapper.optim_context(self.generator):
+                    log_vars_gen = self.train_generator(
+                        real_imgs, data_sample, gen_optimizer_wrapper)
 
-        # prepare for backward in ddp. If you do not call this function before
-        # back propagation, the ddp will not dynamically find the used params
-        # in current computation.
-        if ddp_reducer is not None:
-            ddp_reducer.prepare_for_backward(_find_tensors(loss_disc))
-        loss_disc.backward()
-        optimizer['discriminator'].step()
+                log_vars_gen_list.append(log_vars_gen)
+            log_vars_gen = gather_log_vars(log_vars_gen_list)
+            log_vars_gen.pop('loss', None)  # remove 'loss' from gen logs
 
-        # update training log status
-        if dist.is_initialized():
-            _batch_size = batch_size * dist.get_world_size()
-        else:
-            if 'batch_size' not in running_status:
-                raise RuntimeError(
-                    'You should offer "batch_size" in running status for PGGAN'
-                )
-            _batch_size = running_status['batch_size']
+            set_requires_grad(self.discriminator, True)
+
+            # only do ema after generator update
+            if self.with_ema_gen:
+                self.generator_ema.update_parameters(
+                    self.generator.module
+                    if is_model_wrapper(self.generator) else self.generator)
+
+            log_vars.update(log_vars_gen)
+
+        # add batch size info to log_vars
+        _batch_size = real_imgs.shape[0] * get_world_size()
         self.shown_nkimg += (_batch_size / 1000.)
-        log_vars_disc.update(
+
+        log_vars.update(
             dict(
                 shown_nkimg=self.shown_nkimg.item(),
                 curr_scale=self.curr_scale[0],
                 transition_weight=transition_weight))
-
-        # skip generator training if only train discriminator for current
-        # iteration
-        if (curr_iter + 1) % self.disc_steps != 0:
-            results = dict(
-                fake_imgs=fake_imgs.cpu(), real_imgs=real_imgs.cpu())
-            outputs = dict(
-                log_vars=log_vars_disc,
-                num_samples=batch_size,
-                results=results)
-            if hasattr(self, 'iteration'):
-                self.iteration += 1
-            return outputs
-
-        # generator training
-        set_requires_grad(self.discriminator, False)
-        optimizer['generator'].zero_grad()
-
-        # TODO: add noise sampler to customize noise sampling
-        fake_imgs = self.generator(
-            None,
-            num_batches=batch_size,
-            curr_scale=self.curr_scale[0],
-            transition_weight=transition_weight)
-        disc_pred_fake_g = self.discriminator(
-            fake_imgs,
-            curr_scale=self.curr_scale[0],
-            transition_weight=transition_weight)
-
-        data_dict_ = dict(
-            iteration=curr_iter,
-            gen=self.generator,
-            disc=self.discriminator,
-            fake_imgs=fake_imgs,
-            disc_pred_fake_g=disc_pred_fake_g)
-
-        loss_gen, log_vars_g = self._get_gen_loss(data_dict_)
-
-        # prepare for backward in ddp. If you do not call this function before
-        # back propagation, the ddp will not dynamically find the used params
-        # in current computation.
-        if ddp_reducer is not None:
-            ddp_reducer.prepare_for_backward(_find_tensors(loss_gen))
-
-        loss_gen.backward()
-        optimizer['generator'].step()
-
-        log_vars = {}
-        log_vars.update(log_vars_g)
-        log_vars.update(log_vars_disc)
-        log_vars.update({'batch_size': batch_size})
-
-        results = dict(fake_imgs=fake_imgs.cpu(), real_imgs=real_imgs.cpu())
-        outputs = dict(
-            log_vars=log_vars, num_samples=batch_size, results=results)
-
-        if hasattr(self, 'iteration'):
-            self.iteration += 1
 
         # check if a new scale will be added in the next iteration
         _curr_stage = int(
@@ -486,4 +422,5 @@ class ProgressiveGrowingGAN(BaseGAN):
         if _curr_stage != self.curr_stage:
             # `self._next_scale_int` is updated at the end of `train_step`
             self._next_scale_int = self._next_scale_int * 2
-        return outputs
+
+        return log_vars
