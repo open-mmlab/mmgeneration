@@ -13,8 +13,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 from mmengine import is_filepath, print_log
+from mmengine.data import pseudo_collate
 from mmengine.dataset import BaseDataset, Compose
-from mmengine.dist import all_gather, get_world_size, is_main_process
+from mmengine.dist import (all_gather, get_dist_info, get_world_size,
+                           is_main_process)
 from mmengine.evaluator import BaseMetric
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
@@ -46,14 +48,15 @@ def disable_gpu_fuser_on_pt19():
 
 
 def load_inception(inception_args, metric):
-    """Load Inception Model from given ``inception_args`` and ``metric``. This
+    """Load Inception Model from given ``inception_args`` and ``metric``.
+
+    This
     function would try to load Inception under the guidance of 'type' given in
     `inception_args`, if not given, we would try best to load Tero's ones. In
     detailly, we would first try to load the model from disk with the given
     'inception_path', and then try to download the checkpoint from
     'inception_url'. If both method are failed, pytorch version of Inception
     would be loaded.
-
     Args:
         inception_args (dict): Keyword args for inception net.
         metric (string): Metric to use the Inception. This argument would
@@ -84,6 +87,8 @@ def load_inception(inception_args, metric):
 
     # try to load Tero's version
     path = _inception_args.get('inception_path', TERO_INCEPTION_URL)
+    if path is None:
+        path = TERO_INCEPTION_URL
 
     # try to parse `path` as web url and download
     if 'http' not in path:
@@ -151,12 +156,13 @@ def get_inception_feat_cache_name_and_args(
         dataloader: DataLoader, metric: BaseMetric, real_nums: int,
         capture_mean_cov: bool, capture_all: bool) -> Tuple[str, dict]:
     """Get the name and meta info of the inception feature cache file
-    corresponding to the input dataloader and metric. The meta info includs
+    corresponding to the input dataloader and metric.
+
+    The meta info includs
     'data_root', 'data_prefix', 'meta_info' and 'pipeline' of the dataset, and
     'inception_style' and 'inception_args' of the metric. Then we calculate the
     hash value of the meta info dict with md5, and the name of the inception
     feature cache will be 'inception_feat_{HASH}.pkl'.
-
     Args:
         datalaoder (Dataloader): The dataloader of real images.
         metric (BaseMetric): The metric which needs inception features.
@@ -165,7 +171,6 @@ def get_inception_feat_cache_name_and_args(
             inception feature. Defaults to False.
         capture_all (bool): Whether save the raw inception feature. Defaults
             to False.
-
     Returns:
         Tuple[str, dict]: Filename and meta info dict of the inception feature
             cache.
@@ -179,9 +184,7 @@ def get_inception_feat_cache_name_and_args(
     data_root = deepcopy(dataset.data_root)
     data_prefix = deepcopy(dataset.data_prefix)
     metainfo = dataset.metainfo
-    pipeline = dataset.pipeline
-    if isinstance(pipeline, Compose):
-        pipeline_str = pipeline.__repr__
+    pipeline = repr(dataset.pipeline)
 
     # get metric info
     inception_style = metric.inception_style
@@ -192,7 +195,7 @@ def get_inception_feat_cache_name_and_args(
         data_root=data_root,
         data_prefix=data_prefix,
         metainfo=metainfo,
-        pipeline=pipeline_str,
+        pipeline=pipeline,
         inception_style=inception_style,
         inception_args=inception_args,
         # save `num_gpus` because this may influence the data loading order
@@ -202,6 +205,7 @@ def get_inception_feat_cache_name_and_args(
         real_keys=real_key,
         real_nums=real_nums)
 
+    real_nums_str = 'full' if real_nums == -1 else str(real_nums)
     md5 = hashlib.md5(repr(sorted(args.items())).encode('utf-8'))
     if capture_all:
         prefix = 'inception_state-capture_all'
@@ -216,16 +220,16 @@ def get_inception_feat_cache_name_and_args(
 def get_vgg_feat_cache_name_and_args(dataloader: DataLoader,
                                      metric: BaseMetric) -> Tuple[str, dict]:
     """Get the name and meta info of the vgg feature cache file corresponding
-    to the input dataloader and metric. The meta info includs 'data_root',
+    to the input dataloader and metric.
+
+    The meta info includs 'data_root',
     'data_prefix', 'meta_info' and 'pipeline' of the dataset, and
     'use_tero_scirpt' of the metric. Then we calculate the hash value of the
     meta info dict with md5, and the name of the vgg feature cache will be
     'vgg_feat_{HASH}.pkl'.
-
     Args:
         datalaoder (Dataloader): The dataloader of real images.
         metric (BaseMetric): The metric which needs inception features.
-
     Returns:
         Tuple[str, dict]: Filename and meta info dict of the inception feature
             cache.
@@ -275,7 +279,6 @@ def prepare_inception_feat(dataloader: DataLoader,
       extract the inception feature manually and save to 'inception_pkl'.
     - If `metric.inception_pkl` is not defined, we will extrace the inception
       feature and save it to default cache dir with default name.
-
     Args:
         datalaoder (Dataloader): The dataloader of real images.
         metric (BaseMetric): The metric which needs inception features.
@@ -287,7 +290,6 @@ def prepare_inception_feat(dataloader: DataLoader,
         capture_all (bool): Whether save the raw inception feature. If true,
             it will take a lot of time to save the inception feature. Defaults
             to False.
-
     Returns:
         dict: Dict contains inception feature.
     """
@@ -386,7 +388,7 @@ def prepare_inception_feat(dataloader: DataLoader,
                 total=len(inception_dataloader),
                 visible=True)
 
-    for data in dataloader:
+    for data in inception_dataloader:
         inputs, _ = data_preprocessor(data)
 
         if isinstance(inputs, dict):
@@ -407,7 +409,7 @@ def prepare_inception_feat(dataloader: DataLoader,
 
         real_feat_ = metric.forward_inception(img)
         real_feat.append(real_feat_)
-        # real_feat += torch.tensor_split(real_feat_, real_feat_.shape[0])
+
         if is_main_process():
             if is_slurm:
                 pbar.update(1)
@@ -462,14 +464,12 @@ def prepare_vgg_feat(dataloader: DataLoader,
       extract the vgg feature manually and save to 'vgg_pkl'.
     - If `metric.vgg_pkl` is not defined, we will extrace the vgg
       feature and save it to default cache dir with default name.
-
     Args:
         datalaoder (Dataloader): The dataloader of real images.
         metric (BaseMetric): The metric which needs vgg features.
         data_preprocessor (Optional[nn.Module]): Data preprocessor of the
             module. Used to preprocess the real images. If not passed, real
             images will automatically normalized to [-1, 1]. Defaults to None.
-
         Returns:
             np.ndarray: Loaded vgg feature.
     """
