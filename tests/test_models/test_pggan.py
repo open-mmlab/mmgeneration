@@ -77,7 +77,8 @@ class TestPGGAN(TestCase):
 
         # test forward
         outputs = pggan.forward(dict(num_batches=2))
-        assert outputs.shape == (2, 3, 16, 16)
+        assert len(outputs) == 2
+        assert all([out.fake_img.data.shape == (3, 16, 16) for out in outputs])
 
         outputs = pggan.forward(
             dict(
@@ -85,24 +86,31 @@ class TestPGGAN(TestCase):
                 return_noise=True,
                 transition_weight=0.2,
                 sample_model='ema'))
-        assert outputs.shape == (2, 3, 16, 16)
+        assert len(outputs) == 2
+        assert all([out.fake_img.data.shape == (3, 16, 16) for out in outputs])
 
         outputs = pggan.forward(dict(num_batches=2, sample_model='orig'))
-        assert outputs.shape == (2, 3, 16, 16)
+        assert len(outputs) == 2
+        assert all([out.fake_img.data.shape == (3, 16, 16) for out in outputs])
 
         outputs = pggan.forward(dict(num_batches=2, sample_model='ema/orig'))
-        assert isinstance(outputs, dict)
-        assert list(outputs.keys()) == ['ema', 'orig']
-        assert all([o.shape == (2, 3, 16, 16) for o in outputs.values()])
+        assert len(outputs) == 2
+        assert all(
+            [out.ema.fake_img.data.shape == (3, 16, 16) for out in outputs])
+        assert all(
+            [out.orig.fake_img.data.shape == (3, 16, 16) for out in outputs])
 
         outputs = pggan.forward(dict(num_batches=2, curr_scale=8))
-        assert outputs.shape == (2, 3, 8, 8)
+        assert len(outputs) == 2
+        assert all([out.fake_img.data.shape == (3, 8, 8) for out in outputs])
 
         outputs = pggan.forward(dict(noise=torch.randn(2, 8)))
-        assert outputs.shape == (2, 3, 16, 16)
+        assert len(outputs) == 2
+        assert all([out.fake_img.data.shape == (3, 16, 16) for out in outputs])
 
         outputs = pggan.forward(torch.randn(2, 8))
-        assert outputs.shape == (2, 3, 16, 16)
+        assert len(outputs) == 2
+        assert all([out.fake_img.data.shape == (3, 16, 16) for out in outputs])
 
         # test train_step with error
         with pytest.raises(RuntimeError):

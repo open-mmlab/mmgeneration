@@ -8,6 +8,8 @@ import numpy as np
 import torch
 from mmengine.data import BaseDataElement, LabelData
 
+from .pixel_data import PixelData
+
 
 def format_label(value: Union[torch.Tensor, np.ndarray, Sequence, int],
                  num_classes: int = None) -> LabelData:
@@ -51,7 +53,10 @@ def format_label(value: Union[torch.Tensor, np.ndarray, Sequence, int],
 class GenDataSample(BaseDataElement):
     """A data structure interface of Generation task.
 
-    It's used as interfaces between different components.
+    The attributes in ``GenDataSample`` are divided into several parts:
+        - ``gt_img``: Ground truth image(s).
+        - ``fake_img``: Generated fake image(s).
+        - ``noise``: Input noise of GAN models to generate fake image(s).
 
     Meta field:
         img_shape (Tuple): The shape of the corresponding input image.
@@ -62,6 +67,9 @@ class GenDataSample(BaseDataElement):
             Used for label format conversion.
 
     Data field:
+        gt_img (PixelData): Input real images
+        fake_img (PixelData): Output fake images
+
         gt_label (LabelData): The ground truth label.
         pred_label (LabelData): The predicted label.
         scores (torch.Tensor): The outputs of model.
@@ -108,6 +116,90 @@ class GenDataSample(BaseDataElement):
             score: tensor([0.1, 0.1, 0.6, 0.1, 0.1])
         ) at 0x7fd7d1b41970>
     """
+
+    @property
+    def gt_img(self) -> PixelData:
+        return self._gt_img
+
+    @gt_img.setter
+    def gt_img(self, value: PixelData):
+        self.set_field(value, '_gt_img', dtype=PixelData)
+
+    @gt_img.deleter
+    def gt_img(self):
+        del self._gt_img
+
+    @property
+    def gt_samples(self) -> 'GenDataSample':
+        return self._gt_samples
+
+    @gt_samples.setter
+    def gt_samples(self, value: 'GenDataSample'):
+        self.set_field(value, '_gt_samples', dtype=GenDataSample)
+
+    @gt_samples.deleter
+    def gt_samples(self):
+        del self._gt_samples
+
+    @property
+    def noise(self) -> torch.Tensor:
+        return self._noise
+
+    @noise.setter
+    def noise(self, value: PixelData):
+        self.set_field(value, '_noise', dtype=torch.Tensor)
+
+    @noise.deleter
+    def noise(self):
+        del self._noise
+
+    @property
+    def fake_img(self) -> PixelData:
+        return self._fake_img
+
+    @fake_img.setter
+    def fake_img(self, value: PixelData):
+        self.set_field(value, '_fake_img', dtype=PixelData)
+
+    @fake_img.deleter
+    def fake_img(self):
+        del self._fake_img
+
+    @property
+    def sample_model(self) -> str:
+        return self._sample_model
+
+    @sample_model.setter
+    def sample_model(self, value: str):
+        self.set_field(value, '_sample_model', dtype=str)
+
+    @sample_model.deleter
+    def sample_model(self):
+        del self._sample_model
+
+    @property
+    def ema(self) -> 'GenDataSample':
+        return self._ema
+
+    @ema.setter
+    def ema(self, value: 'GenDataSample'):
+        self.set_field(value, '_ema', dtype=GenDataSample)
+
+    @ema.deleter
+    def ema(self):
+        del self._ema
+
+    @property
+    def orig(self) -> 'GenDataSample':
+        return self._orig
+
+    @orig.setter
+    def orig(self, value: 'GenDataSample'):
+        self.set_field(value, '_orig', dtype=GenDataSample)
+
+    @orig.deleter
+    def orig(self):
+        del self._orig
 
     def set_gt_label(
         self, value: Union[np.ndarray, torch.Tensor, Sequence[Number], Number]

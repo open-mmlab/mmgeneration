@@ -311,13 +311,20 @@ class SlicedWassersteinDistance(GenMetric):
             real_img_list)
 
         # parse fake images
-        if isinstance(predictions, dict):
-            fake_img = predictions[self.sample_model]
-            # get target image from the dict
-            if isinstance(fake_img, dict):
-                fake_img = fake_img[self.fake_key]
-        else:
-            fake_img = predictions
+        fake_imgs = []
+        for pred in predictions:
+            fake_img_ = pred
+            # get ema/orig results
+            if self.sample_model in fake_img_:
+                fake_img_ = fake_img_[self.sample_model]
+            # get specific fake_keys
+            if (self.fake_key is not None and self.fake_key in fake_img_):
+                fake_img_ = fake_img_[self.fake_key]['data']
+            else:
+                # get img tensor
+                fake_img_ = fake_img_['fake_img']['data']
+            fake_imgs.append(fake_img_)
+        fake_imgs = torch.stack(fake_imgs, dim=0)
 
         # real images
         assert real_imgs.shape[1:] == self.image_shape
@@ -330,8 +337,8 @@ class SlicedWassersteinDistance(GenMetric):
             self.real_results[lod].append(desc.cpu())
 
         # fake images
-        assert fake_img.shape[1:] == self.image_shape
-        fake_pyramid = laplacian_pyramid(fake_img, self.n_pyramids - 1,
+        assert fake_imgs.shape[1:] == self.image_shape
+        fake_pyramid = laplacian_pyramid(fake_imgs, self.n_pyramids - 1,
                                          self.gaussian_k)
         # lod: layer_of_descriptors
         for lod, level in enumerate(fake_pyramid):
@@ -554,7 +561,7 @@ class FrechetInceptionDistance(GenerativeMetric):
         real_key (Optional[str]): Key for get real images from the input dict.
             Defaults to 'img'.
         sample_model (str): Sampling mode for the generative model. Support
-            'orig' and 'ema'. Defaults to 'ema'.
+            'orig' and 'ema'. Defaults to 'orig'.
         collect_device (str, optional): Device name used for collecting results
             from different ranks during distributed training. Must be 'cpu' or
             'gpu'. Defaults to 'cpu'.
@@ -573,11 +580,11 @@ class FrechetInceptionDistance(GenerativeMetric):
                  inception_pkl: Optional[str] = None,
                  fake_key: Optional[str] = None,
                  real_key: Optional[str] = 'img',
-                 sample_mode: str = 'ema',
+                 sample_model: str = 'orig',
                  collect_device: str = 'cpu',
                  prefix: Optional[str] = None):
-        super().__init__(fake_nums, real_nums, fake_key, real_key, sample_mode,
-                         collect_device, prefix)
+        super().__init__(fake_nums, real_nums, fake_key, real_key,
+                         sample_model, collect_device, prefix)
         self.real_mean = None
         self.real_cov = None
         self.device = 'cpu'
@@ -644,8 +651,8 @@ class FrechetInceptionDistance(GenerativeMetric):
             feat = self.inception(image)[0].view(image.shape[0], -1)
         return feat
 
-    def process(self, data_batch: ValTestStepInputs,
-                predictions: ForwardOutputs) -> None:
+    def process(self, data_batch: Sequence[dict],
+                predictions: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions. The processed
         results should be stored in ``self.fake_results``, which will be used
         to compute the metrics when all batches have been processed.
@@ -657,14 +664,22 @@ class FrechetInceptionDistance(GenerativeMetric):
         if len(self.fake_results) >= self.fake_nums_per_device:
             return
 
-        # real images should be preprocessed. Ignore data_batch
-        if isinstance(predictions, dict):
-            fake_img = predictions[self.sample_model]
-            if isinstance(fake_img, dict):
-                fake_img = fake_img[self.fake_key]
-        else:
-            fake_img = predictions
-        feat = self.forward_inception(fake_img)
+        fake_imgs = []
+        for pred in predictions:
+            fake_img_ = pred
+            # get ema/orig results
+            if self.sample_model in fake_img_:
+                fake_img_ = fake_img_[self.sample_model]
+            # get specific fake_keys
+            if (self.fake_key is not None and self.fake_key in fake_img_):
+                fake_img_ = fake_img_[self.fake_key]['data']
+            else:
+                # get img tensor
+                fake_img_ = fake_img_['fake_img']['data']
+            fake_imgs.append(fake_img_)
+        fake_imgs = torch.stack(fake_imgs, dim=0)
+
+        feat = self.forward_inception(fake_imgs)
         feat_list = list(torch.tensor_split(feat, feat.shape[0]))
         self.fake_results += feat_list
 
@@ -772,7 +787,7 @@ class InceptionScore(GenerativeMetric):
         real_key (Optional[str]): Key for get real images from the input dict.
             Defaults to 'img'.
         sample_model (str): Sampling mode for the generative model. Support
-            'orig' and 'ema'. Defaults to 'ema'.
+            'orig' and 'ema'. Defaults to 'orig'.
         collect_device (str, optional): Device name used for collecting results
             from different ranks during distributed training. Must be 'cpu' or
             'gpu'. Defaults to 'cpu'.
@@ -870,8 +885,8 @@ class InceptionScore(GenerativeMetric):
             return F.interpolate(
                 image, size=(299, 299), mode=self.resize_method)
 
-    def process(self, data_batch: Optional[Sequence[dict]],
-                predictions: Union[Sequence[dict], Tensor]) -> None:
+    def process(self, data_batch: Sequence[dict],
+                predictions: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions. The processed
         results should be stored in ``self.fake_results``, which will be used
         to compute the metrics when all batches have been processed.
@@ -883,21 +898,28 @@ class InceptionScore(GenerativeMetric):
         if len(self.fake_results) >= self.fake_nums_per_device:
             return
 
-        if isinstance(predictions, dict):
-            fake_img = predictions[self.sample_model]
-            # get target image from the dict
-            if isinstance(fake_img, dict):
-                fake_img = fake_img[self.fake_key]
-        else:
-            fake_img = predictions
+        fake_imgs = []
+        for pred in predictions:
+            fake_img_ = pred
+            # get ema/orig results
+            if self.sample_model in fake_img_:
+                fake_img_ = fake_img_[self.sample_model]
+            # get specific fake_keys
+            if (self.fake_key is not None and self.fake_key in fake_img_):
+                fake_img_ = fake_img_[self.fake_key]['data']
+            else:
+                # get img tensor
+                fake_img_ = fake_img_['fake_img']['data']
+            fake_imgs.append(fake_img_)
+        fake_imgs = torch.stack(fake_imgs, dim=0)
+        fake_imgs = self._preprocess(fake_imgs).to(self.device)
 
-        fake_img = self._preprocess(fake_img).to(self.device)
         if self.inception_style == 'StyleGAN':
-            fake_img = (fake_img * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+            fake_imgs = (fake_imgs * 127.5 + 128).clamp(0, 255).to(torch.uint8)
             with disable_gpu_fuser_on_pt19():
-                feat = self.inception(fake_img, no_output_bias=True)
+                feat = self.inception(fake_imgs, no_output_bias=True)
         else:
-            feat = F.softmax(self.inception(fake_img), dim=1)
+            feat = F.softmax(self.inception(fake_imgs), dim=1)
 
         # NOTE: feat is shape like (bz, 1000), convert to a list
         self.fake_results += list(torch.tensor_split(feat, feat.shape[0]))
@@ -980,12 +1002,20 @@ class MultiScaleStructureSimilarity(GenerativeMetric):
         if len(self.fake_results) >= (self.fake_nums_per_device // 2):
             return
 
-        if isinstance(predictions, dict):
-            minibatch = predictions[self.sample_model]
-            if isinstance(minibatch, dict):
-                minibatch = minibatch[self.fake_key]
-        else:
-            minibatch = predictions
+        fake_imgs = []
+        for pred in predictions:
+            fake_img_ = pred
+            # get ema/orig results
+            if self.sample_model in fake_img_:
+                fake_img_ = fake_img_[self.sample_model]
+            # get specific fake_keys
+            if (self.fake_key is not None and self.fake_key in fake_img_):
+                fake_img_ = fake_img_[self.fake_key]['data']
+            else:
+                # get img tensor
+                fake_img_ = fake_img_['fake_img']['data']
+            fake_imgs.append(fake_img_)
+        minibatch = torch.stack(fake_imgs, dim=0)
 
         assert minibatch.shape[0] % 2 == 0, 'batch size must be divided by 2.'
         minibatch = ((minibatch + 1) / 2)
@@ -1177,8 +1207,8 @@ class PrecisionAndRecall(GenerativeMetric):
         return self._result_dict
 
     @torch.no_grad()
-    def process(self, data_batch: ValTestStepInputs,
-                predictions: ForwardOutputs) -> None:
+    def process(self, data_batch: Sequence[dict],
+                predictions: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions. The processed
         results should be stored in ``self.fake_results``, which will be used
         to compute the metrics when all batches have been processed.
@@ -1187,14 +1217,21 @@ class PrecisionAndRecall(GenerativeMetric):
             data_batch (Sequence[dict]): A batch of data from the dataloader.
             predictions (Sequence[dict]): A batch of outputs from the model.
         """
-        # real images should be preprocessed. Ignore data_batch
-        if isinstance(predictions, dict):
-            fake_img = predictions[self.sample_mode]
-            if isinstance(fake_img, dict):
-                fake_img = fake_img[self.fake_key]
-        else:
-            fake_img = predictions
-        feat = self.extract_features(fake_img)
+        fake_imgs = []
+        for pred in predictions:
+            fake_img_ = pred
+            # get ema/orig results
+            if self.sample_model in fake_img_:
+                fake_img_ = fake_img_[self.sample_model]
+            # get specific fake_keys
+            if (self.fake_key is not None and self.fake_key in fake_img_):
+                fake_img_ = fake_img_[self.fake_key]['data']
+            else:
+                # get img tensor
+                fake_img_ = fake_img_['fake_img']['data']
+            fake_imgs.append(fake_img_)
+        fake_imgs = torch.stack(fake_imgs, dim=0)
+        feat = self.extract_features(fake_imgs)
         feat_list = list(torch.tensor_split(feat, feat.shape[0]))
         self.fake_results += feat_list
 
@@ -1245,8 +1282,8 @@ class Equivariance(GenerativeMetric):
         self.sample_kwargs = sample_kwargs
 
     @torch.no_grad()
-    def process(self, data_batch: ValTestStepInputs,
-                predictions: ForwardOutputs) -> None:
+    def process(self, data_batch: Sequence[dict],
+                predictions: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions. The processed
         results should be stored in ``self.fake_results``, which will be used
         to compute the metrics when all batches have been processed.
@@ -1255,6 +1292,7 @@ class Equivariance(GenerativeMetric):
             data_batch (Sequence[dict]): A batch of data from the dataloader.
             predictions (Sequence[dict]): A batch of outputs from the model.
         """
+        # TODO:
         item = torch.stack([x.to(torch.float64).sum() for x in predictions])
         self.fake_results.append(item)
 
@@ -1390,12 +1428,20 @@ class TransFID(FrechetInceptionDistance):
             data_batch (Sequence[dict]): A batch of data from the dataloader.
             predictions (Sequence[dict]): A batch of outputs from the model.
         """
-        # real images should be preprocessed. Ignore data_batch
-        if isinstance(predictions, dict):
-            fake_img = predictions[self.fake_key]
-        else:
-            fake_img = predictions
-        feat = self.forward_inception(fake_img)
+        fake_imgs = []
+        for pred in predictions:
+            fake_img_ = pred
+            # get ema/orig results
+            if self.sample_model in fake_img_:
+                fake_img_ = fake_img_[self.sample_model]
+            # get specific fake_keys
+            if (self.fake_key is not None and self.fake_key in fake_img_):
+                fake_img_ = fake_img_[self.fake_key]
+            # get img tensor
+            fake_img_ = fake_img_['data']
+            fake_imgs.append(fake_img_)
+        fake_imgs = torch.stack(fake_imgs, dim=0)
+        feat = self.forward_inception(fake_imgs)
         feat_list = list(torch.tensor_split(feat, feat.shape[0]))
         self.fake_results += feat_list
 
@@ -1486,18 +1532,27 @@ class TransIS(InceptionScore):
         if len(self.fake_results) >= self.fake_nums_per_device:
             return
 
-        if isinstance(predictions, dict):
-            fake_img = predictions[self.fake_key]
-        else:
-            fake_img = predictions
+        fake_imgs = []
+        for pred in predictions:
+            fake_img_ = pred
+            # get ema/orig results
+            if self.sample_model in fake_img_:
+                fake_img_ = fake_img_[self.sample_model]
+            # get specific fake_keys
+            if (self.fake_key is not None and self.fake_key in fake_img_):
+                fake_img_ = fake_img_[self.fake_key]
+            # get img tensor
+            fake_img_ = fake_img_['data']
+            fake_imgs.append(fake_img_)
+        fake_imgs = torch.stack(fake_imgs, dim=0)
+        fake_imgs = self._preprocess(fake_imgs).to(self.device)
 
-        fake_img = self._preprocess(fake_img).to(self.device)
         if self.inception_style == 'StyleGAN':
-            fake_img = (fake_img * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+            fake_imgs = (fake_imgs * 127.5 + 128).clamp(0, 255).to(torch.uint8)
             with disable_gpu_fuser_on_pt19():
-                feat = self.inception(fake_img, no_output_bias=True)
+                feat = self.inception(fake_imgs, no_output_bias=True)
         else:
-            feat = F.softmax(self.inception(fake_img), dim=1)
+            feat = F.softmax(self.inception(fake_imgs), dim=1)
 
         # NOTE: feat is shape like (bz, 1000), convert to a list
         self.fake_results += list(torch.tensor_split(feat, feat.shape[0]))
@@ -1577,14 +1632,21 @@ class PerceptualPathLength(GenerativeMetric):
             data_batch (Sequence[dict]): A batch of data from the dataloader.
             predictions (Sequence[dict]): A batch of outputs from the model.
         """
-        # real images should be preprocessed. Ignore data_batch
-        if isinstance(predictions, dict):
-            fake_img = predictions[self.sample_mode]
-            if isinstance(fake_img, dict):
-                fake_img = fake_img[self.fake_key]
-        else:
-            fake_img = predictions
-        feat = self._compute_distance(fake_img)
+        fake_imgs = []
+        for pred in predictions:
+            fake_img_ = pred
+            # get ema/orig results
+            if self.sample_model in fake_img_:
+                fake_img_ = fake_img_[self.sample_model]
+            # get specific fake_keys
+            if (self.fake_key is not None and self.fake_key in fake_img_):
+                fake_img_ = fake_img_[self.fake_key]['data']
+            else:
+                # get img tensor
+                fake_img_ = fake_img_['fake_img']['data']
+            fake_imgs.append(fake_img_)
+        fake_imgs = torch.stack(fake_imgs, dim=0)
+        feat = self._compute_distance(fake_imgs)
         feat_list = list(torch.tensor_split(feat, feat.shape[0]))
         self.fake_results += feat_list
 

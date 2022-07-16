@@ -3,6 +3,8 @@ import torch
 import torch.nn.functional as F
 from mmengine import MessageHub
 
+from mmgen.core.data_structures.gen_data_sample import GenDataSample
+from mmgen.core.data_structures.pixel_data import PixelData
 from mmgen.registry import MODELS
 from mmgen.typing import ForwardOutputs, ValTestStepInputs
 from ..common import set_requires_grad
@@ -154,7 +156,21 @@ class Pix2Pix(StaticTranslationGAN):
         source_domain = self.get_other_domains(target_domain)[0]
         outputs = self.forward_test(
             inputs_dict[f'img_{source_domain}'], target_domain=target_domain)
-        return outputs
+
+        batch_sample_list = []
+        num_batches = next(iter(outputs.values())).shape[0]
+        for idx in range(num_batches):
+            gen_sample = GenDataSample()
+            if data_sample:
+                gen_sample.update(data_sample[idx])
+            setattr(gen_sample, f'gt_{target_domain}',
+                    PixelData(data=inputs_dict[f'img_{target_domain}'][idx]))
+            setattr(gen_sample, f'fake_{target_domain}',
+                    PixelData(data=outputs['target'][idx]))
+            setattr(gen_sample, f'gt_{source_domain}',
+                    PixelData(data=inputs_dict[f'img_{source_domain}'][idx]))
+            batch_sample_list.append(gen_sample)
+        return batch_sample_list
 
     def val_step(self, data: ValTestStepInputs) -> ForwardOutputs:
         """Gets the generated image of given data. Same as :meth:`val_step`.
@@ -171,4 +187,19 @@ class Pix2Pix(StaticTranslationGAN):
         source_domain = self.get_other_domains(target_domain)[0]
         outputs = self.forward_test(
             inputs_dict[f'img_{source_domain}'], target_domain=target_domain)
+
+        batch_sample_list = []
+        num_batches = next(iter(outputs.values())).shape[0]
+        for idx in range(num_batches):
+            gen_sample = GenDataSample()
+            if data_sample:
+                gen_sample.update(data_sample[idx])
+            setattr(gen_sample, f'gt_{target_domain}',
+                    inputs_dict[f'img_{target_domain}'][idx])
+            setattr(gen_sample, f'fake_{target_domain}',
+                    outputs[f'img_{target_domain}'][idx])
+            setattr(gen_sample, f'gt_{source_domain}',
+                    inputs_dict[f'img_{source_domain}'][idx])
+            batch_sample_list.append(gen_sample)
+        return batch_sample_list
         return outputs

@@ -101,7 +101,7 @@ metrics = [
         prefix='IS-Full',
         fake_nums=fake_nums,
         inception_style='PyTorch',
-        fake_key='target',
+        fake_key=f'fake_{target_domain}',
         sample_model='orig'),
     dict(
         type='TransFID',
@@ -109,7 +109,7 @@ metrics = [
         fake_nums=fake_nums,
         inception_style='PyTorch',
         real_key=f'img_{target_domain}',
-        fake_key='target',
+        fake_key=f'fake_{target_domain}',
         sample_model='orig')
 ]
 

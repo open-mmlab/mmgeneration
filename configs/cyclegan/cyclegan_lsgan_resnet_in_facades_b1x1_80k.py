@@ -121,7 +121,7 @@ metrics = [
         type='TransIS',
         prefix='IS-Full',
         fake_nums=num_images,
-        fake_key=f'img_{domain_a}',
+        fake_key=f'fake_{domain_a}',
         inception_style='PyTorch'),
     dict(
         type='TransFID',
@@ -129,7 +129,7 @@ metrics = [
         fake_nums=num_images,
         inception_style='PyTorch',
         real_key=f'img_{domain_a}',
-        fake_key=f'img_{domain_a}')
+        fake_key=f'fake_{domain_a}')
 ]
 
 val_evaluator = dict(metrics=metrics)

@@ -279,21 +279,20 @@ def sample_ddpm_model(model,
             show_pbar=True,
             **kwargs)
         res = model(batch_input)
-        if isinstance(res, dict):
-            res = {k: v.cpu() for k, v in res.items()}
-        elif isinstance(res, torch.Tensor):
-            res = res.cpu()
-        else:
-            raise ValueError('Sample results should be \'dict\' or '
-                             f'\'torch.Tensor\', but receive \'{type(res)}\'')
-        res_list.append(res)
+        for idx in range(len(res)):
+            if res[idx].sample_model == 'ema/orig':
+                res_ = {
+                    'ema': res[idx].ema.fake_img.data.cpu(),
+                    'orig': res[idx].orig.fake_img.data.cpu()
+                }
+            else:
+                res_ = res[idx].fake_img.data.cpu()
+            res_list.append(res_)
 
     # gather the res_list
     if isinstance(res_list[0], dict):
         res_dict = dict()
-        for t in res_list[0].keys():
-            # num_samples x 3 x H x W
-            res_dict[t] = torch.cat([res[t] for res in res_list], dim=0)
+        for k in res_list[0].keys():
+            res_dict[k] = [res[k] for res in res_list]
         return res_dict
-    else:
-        return torch.cat(res_list, dim=0)
+    return res_list
