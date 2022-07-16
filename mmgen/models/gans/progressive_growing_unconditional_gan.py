@@ -14,7 +14,7 @@ from mmengine.model import is_model_wrapper
 from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 
-from mmgen.core import GenDataSample
+from mmgen.core import GenDataSample, PixelData
 from mmgen.registry import MODELS
 from mmgen.typing import ForwardInputs, TrainStepInputs
 from ..common import gather_log_vars, get_valid_num_batches, set_requires_grad
@@ -126,6 +126,7 @@ class ProgressiveGrowingGAN(BaseGAN):
 
             curr_scale = batch_inputs.get('curr_scale', None)
             transition_weight = batch_inputs.get('transition_weight', None)
+        num_batches = noise.shape[0]
 
         # use `self.curr_scale` if curr_scale is None
         if curr_scale is None:
@@ -157,7 +158,32 @@ class ProgressiveGrowingGAN(BaseGAN):
                 curr_scale=curr_scale,
                 transition_weight=transition_weight)
             outputs = dict(ema=outputs, orig=outputs_orig)
-        return outputs
+
+        batch_sample_list = []
+        for idx in range(num_batches):
+            gen_sample = GenDataSample()
+            if data_samples:
+                gen_sample.update(data_samples[idx])
+            if isinstance(outputs, dict):
+                gen_sample.ema = GenDataSample(
+                    fake_img=PixelData(data=outputs['ema'][idx]),
+                    sample_model='ema')
+                gen_sample.orig = GenDataSample(
+                    fake_img=PixelData(data=outputs['orig'][idx]),
+                    sample_model='orig')
+                gen_sample.sample_model = 'ema/orig'
+            else:
+                gen_sample.fake_img = PixelData(data=outputs[idx])
+                gen_sample.sample_model = sample_model
+
+            # Append input condition (noise and sample_kwargs) to
+            # batch_sample_list
+            gen_sample.noise = noise
+            # gen_sample.sample_kwargs = deepcopy(sample_kwargs)
+
+            batch_sample_list.append(gen_sample)
+
+        return batch_sample_list
 
     def train_discriminator(
             self, inputs: TrainInput, data_samples: List[GenDataSample],

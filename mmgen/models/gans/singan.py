@@ -13,7 +13,7 @@ from mmengine.model import is_model_wrapper
 from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 
-from mmgen.core import GenDataSample
+from mmgen.core import GenDataSample, PixelData
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.gans.base_gan import BaseGAN
 from mmgen.registry import MODELS
@@ -222,7 +222,27 @@ class SinGAN(BaseGAN):
                 curr_scale=curr_scale,
                 **gen_kwargs)
             outputs = dict(ema=outputs, orig=outputs_orig)
-        return outputs
+
+        batch_sample_list = []
+        for idx in range(num_batches):
+            gen_sample = GenDataSample()
+            if data_samples:
+                gen_sample.update(data_samples[idx])
+            if isinstance(outputs, dict):
+                gen_sample.ema = GenDataSample(
+                    fake_img=PixelData(data=outputs['ema'][idx]),
+                    sample_model='ema')
+                gen_sample.orig = GenDataSample(
+                    fake_img=PixelData(data=outputs['orig'][idx]),
+                    sample_model='orig')
+                gen_sample.sample_model = 'ema/orig'
+            else:
+                gen_sample.fake_img = PixelData(data=outputs[idx])
+                gen_sample.sample_model = sample_model
+
+            batch_sample_list.append(gen_sample)
+
+        return batch_sample_list
 
     def gen_loss(self, disc_pred_fake: Tensor,
                  recon_imgs: Tensor) -> Tuple[Tensor, dict]:

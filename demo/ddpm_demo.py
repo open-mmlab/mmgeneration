@@ -131,10 +131,13 @@ def main():
     if suffix == '.gif':
         # concentrate all output of each timestep
         results_timestep_list = []
-        for t in results.keys():
-            # make grid
-            results_timestep = utils.make_grid(
-                results[t], nrow=args.nrow, padding=args.padding)
+        n_timesteps = results[0].shape[0]
+        assert all(res.shape[0] == n_timesteps for res in results)
+
+        for t in range(n_timesteps):
+            results_timestep = utils.make_grid([r[t] for r in results],
+                                               nrow=args.nrow,
+                                               padding=args.padding)
             # unsqueeze at 0, because make grid output is size like [H', W', 3]
             results_timestep_list.append(results_timestep[None, ...])
 

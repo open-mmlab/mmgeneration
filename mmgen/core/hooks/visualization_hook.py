@@ -9,11 +9,8 @@ import torch
 from mmengine.dist import master_only
 from mmengine.hooks import Hook
 from mmengine.runner import Runner
-from mmengine.utils import is_list_of
 from mmengine.visualization import Visualizer
-from torch import Tensor
 
-from mmgen.core.data_structures import GenDataSample
 from mmgen.core.sampler import get_sampler
 from mmgen.registry import HOOKS
 
@@ -39,8 +36,8 @@ class GenVisualizationHook(Hook):
         - 'fixed_input': Value must be bool. Whether use the fixed input
             during the loop.
         - 'draw_gt': Value must be bool. Whether save the real images.
-        - 'gt_keys': Value must be string or list of string. The keys of the
-            real images to visualize.
+        - 'target_keys': Value must be string or list of string. The keys of
+            the target image to visualize.
         - 'name': Value must be string. If not passed, will use
             `sample_kwargs['type']` as default.
 
@@ -52,14 +49,14 @@ class GenVisualizationHook(Hook):
         >>> # for GAN models
         >>> custom_hooks = [
         >>>     dict(
-        >>>         type='GenerationVisualizationHook',
+        >>>         type='GenVisualizationHook',
         >>>         interval=1000,
         >>>         fixed_input=True,
         >>>         sample_kwargs_list=dict(type='GAN', name='fake_img'))]
         >>> # for Translation models
         >>> custom_hooks = [
         >>>     dict(
-        >>>         type='GenerationVisualizationHook',
+        >>>         type='GenVisualizationHook',
         >>>         interval=10,
         >>>         fixed_input=False,
         >>>         sample_kwargs_list=[dict(type='Translation',
@@ -204,7 +201,6 @@ class GenVisualizationHook(Hook):
                 Defaults to None.
             outputs (dict, optional): Outputs from model. Defaults to None.
         """
-
         if isinstance(data_batch, dict):
             num_batches = data_batch['num_batches']
         else:
@@ -257,7 +253,7 @@ class GenVisualizationHook(Hook):
             sample_kwargs_['num_batches'] = num_batches
             fixed_input = sample_kwargs_.pop('fixed_input', self.fixed_input)
             draw_gt = sample_kwargs_.pop('draw_gt', False)
-            gt_keys = sample_kwargs_.pop('gt_keys', None)
+            target_keys = sample_kwargs_.pop('target_keys', None)
             vis_mode = sample_kwargs_.pop('vis_mode', None)
             vis_kwargs = sample_kwargs_.pop('vis_kwargs', dict())
 
@@ -271,7 +267,8 @@ class GenVisualizationHook(Hook):
             need_save = fixed_input and not self.inputs_buffer[sampler_type]
 
             for inputs in sampler:
-                output_list.append(forward_func(inputs))
+                output_list += [out for out in forward_func(inputs)]
+                # output_list.append(forward_func(inputs))
 
                 # save inputs
                 if need_save:
@@ -283,16 +280,11 @@ class GenVisualizationHook(Hook):
                     inputs=processed_input, data_sample=data_samples)
                 input_list.append(processed_input_dict)
 
-            if sampler_type != 'Arguments':
-                inputs = gather_samples(input_list, max_size=n_samples)
-            outputs = gather_samples(output_list, max_size=n_samples)
-
             self._visualizer.add_datasample(
                 name=name,
-                gen_samples=outputs,
-                gt_samples=inputs,
+                gen_samples=output_list[:n_samples],
                 draw_gt=draw_gt,
-                gt_keys=gt_keys,
+                target_keys=target_keys,
                 vis_mode=vis_mode,
                 n_rows=n_rows,
                 color_order=output_color_order,
@@ -304,47 +296,3 @@ class GenVisualizationHook(Hook):
                 **vis_kwargs)
 
         module.train()
-
-
-def gather_samples(samples: List[dict],
-                   max_size: Optional[int] = None) -> Tuple[dict, Tensor]:
-    """Gather a list of dict altogether.
-
-    Args:
-        samples (List[dict]): List of sample to gather.
-        max_size (Optional[int]): Max size of the sample. If the length of
-            `samples` after gathering is larger than `max_size`, `samples`
-            will be truncated to `max_size`.
-
-    Returns:
-        Tuple [dict, Tensor]: Gathered samples.
-    """
-    if is_list_of(samples, dict):
-        first_element_key = samples[0].keys()
-        samples_dict = dict()
-        for k in first_element_key:
-            sample_gathered = [s[k] for s in samples]
-            samples_dict[k] = gather_samples(sample_gathered, max_size)
-        return samples_dict
-
-    elif is_list_of(samples, Tensor):
-        sample_gathered = torch.cat(samples, dim=0)
-        if max_size is not None:
-            sample_gathered = sample_gathered[:max_size]
-        return sample_gathered
-
-    elif is_list_of(samples, list):
-        # list of empty list, directly return
-        if all([not s for s in samples]):
-            return []
-        # flatten the list
-        samples_ = [s[0] for s in samples]
-        return gather_samples(samples_, max_size)
-
-    elif is_list_of(samples, GenDataSample):
-        if max_size is not None:
-            return samples[:max_size]
-        return samples
-
-    else:
-        raise ValueError('Only support list of dict or tensor.')

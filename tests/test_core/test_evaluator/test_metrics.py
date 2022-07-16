@@ -14,8 +14,9 @@ from mmengine.logging import MMLogger
 from mmengine.runner import Runner
 from torch.utils.data.dataloader import DataLoader
 
-from mmgen.core import (FrechetInceptionDistance, InceptionScore,
-                        MultiScaleStructureSimilarity, PrecisionAndRecall,
+from mmgen.core import (FrechetInceptionDistance, GenDataSample,
+                        InceptionScore, MultiScaleStructureSimilarity,
+                        PixelData, PrecisionAndRecall,
                         SlicedWassersteinDistance)
 from mmgen.core.evaluation.metrics import (Equivariance, GenMetric,
                                            PerceptualPathLength, TransFID,
@@ -171,6 +172,7 @@ class TestFID(TestCase):
                 inception_pkl=self.inception_pkl)
         fid.prepare(module, dataloader)
 
+    # NOTE: do not test load inception network to save time
     # def test_load_inception(self):
     #     fid = FrechetInceptionDistance(
     #         fake_nums=2,
@@ -191,14 +193,26 @@ class TestFID(TestCase):
                 fake_key='fake',
                 inception_pkl=self.inception_pkl)
         gen_images = torch.randn(4, 3, 2, 2)
-        fid.process(None, gen_images)
-        fid.process(None, gen_images)
+        gen_samples = [
+            GenDataSample(fake_img=PixelData(data=gen_images[i])).to_dict()
+            for i in range(4)
+        ]
+        fid.process(None, gen_samples)
+        fid.process(None, gen_samples)
 
         fid.fake_results.clear()
-        gen_images = {'ema': {'fake': torch.randn(1, 3, 2, 2)}}
-        fid.process(None, gen_images)
-        gen_images = {'ema': torch.randn(1, 3, 2, 2)}
-        fid.process(None, gen_images)
+        gen_sample = [
+            GenDataSample(
+                ema=GenDataSample(fake=PixelData(
+                    data=torch.randn(3, 2, 2)))).to_dict()
+        ]
+        fid.process(None, gen_sample)
+        gen_sample = [
+            GenDataSample(
+                ema=GenDataSample(
+                    fake_img=PixelData(data=torch.randn(3, 2, 2)))).to_dict()
+        ]
+        fid.process(None, gen_sample)
 
         with patch.object(FrechetInceptionDistance, '_load_inception',
                           self.mock_inception_pytorch):
@@ -215,7 +229,11 @@ class TestFID(TestCase):
         module.data_preprocessor.device = 'cpu'
         dataloader = MagicMock()
         fid.prepare(module, dataloader)
-        fid.process(None, torch.randn(4, 3, 2, 2))
+        gen_samples = [
+            GenDataSample(fake_img=PixelData(
+                data=torch.randn(3, 2, 2))).to_dict() for _ in range(4)
+        ]
+        fid.process(None, gen_samples)
 
         metric = fid.evaluate()
         self.assertIsInstance(metric, dict)
@@ -252,39 +270,63 @@ class TestIS(TestCase):
         dataloader = MagicMock()
         IS.prepare(module, dataloader)
 
+    # NOTE: do not test load inception network to save time
+    # def test_load_inception(self):
+    #     IS = InceptionScore(fake_nums=2, inception_style='PyTorch')
+    #     self.assertEqual(IS.inception_style.upper(), 'PYTORCH')
+
     def test_process_and_compute(self):
         with patch.object(InceptionScore, '_load_inception',
                           self.mock_inception_stylegan):
             IS = InceptionScore(fake_nums=2, fake_key='fake')
         gen_images = torch.randn(4, 3, 2, 2)
-        IS.process(None, gen_images)
-        IS.process(None, gen_images)
+        gen_samples = [
+            GenDataSample(fake_img=PixelData(data=img)).to_dict()
+            for img in gen_images
+        ]
+        IS.process(None, gen_samples)
+        IS.process(None, gen_samples)
 
         with patch.object(InceptionScore, '_load_inception',
                           self.mock_inception_pytorch):
             IS = InceptionScore(
                 fake_nums=2, fake_key='fake', inception_style='PyTorch')
         gen_images = torch.randn(4, 3, 2, 2)
-        IS.process(None, gen_images)
+        gen_samples = [
+            GenDataSample(fake_img=PixelData(data=img)).to_dict()
+            for img in gen_images
+        ]
+        IS.process(None, gen_samples)
 
         with patch.object(InceptionScore, '_load_inception',
                           self.mock_inception_stylegan):
             IS = InceptionScore(
                 fake_nums=2, fake_key='fake', sample_model='orig')
-        gen_images = {
-            'orig': torch.randn(1, 3, 2, 2),
-            'ema': torch.randn(1, 3, 2, 2)
-        }
-        IS.process(None, gen_images)
-        gen_images = {'orig': {'fake': torch.randn(1, 3, 2, 2)}}
-        IS.process(None, gen_images)
+        gen_samples = [
+            GenDataSample(
+                ema=GenDataSample(
+                    fake_img=PixelData(data=torch.randn(3, 2, 2))),
+                orig=GenDataSample(
+                    fake_img=PixelData(data=torch.randn(3, 2, 2)))).to_dict()
+        ]
+        IS.process(None, gen_samples)
+        gen_samples = [
+            GenDataSample(
+                orig=GenDataSample(fake=PixelData(
+                    data=torch.randn(3, 2, 2)))).to_dict()
+        ]
+        IS.process(None, gen_samples)
 
         with patch.object(InceptionScore, '_load_inception',
                           self.mock_inception_stylegan):
             IS = InceptionScore(
                 fake_nums=2, fake_key='fake', sample_model='orig')
         IS.set_color_order('rgb')
-        IS.process(None, torch.randn(4, 3, 2, 2))
+        gen_samples = [
+            GenDataSample(fake_img=PixelData(
+                data=torch.randn(3, 2, 2))).to_dict() for _ in range(4)
+        ]
+        IS.process(None, gen_samples)
 
         metric = IS.evaluate()
         self.assertIsInstance(metric, dict)
@@ -297,7 +339,8 @@ class TestPR:
     @classmethod
     def setup_class(cls):
         pipeline = [
-            dict(type='mmgen.LoadImageFromFile', key='img', io_backend='disk'),
+            dict(type='mmgen.LoadImageFromFile', key='img',
+                 io_backend='disk'),  # noqa
             dict(type='mmgen.Resize', scale=(128, 128)),
             PackGenInputs(meta_keys=[])
         ]
@@ -310,12 +353,14 @@ class TestPR:
                 sampler=dict(type='DefaultSampler')))
         gan_data_preprocessor = GANDataPreprocessor()
         generator = DCGANGenerator(128, noise_size=10, base_channels=20)
-        cls.module = LSGAN(generator, data_preprocessor=gan_data_preprocessor)
+        cls.module = LSGAN(
+            generator, data_preprocessor=gan_data_preprocessor)  # noqa
 
         cls.mock_vgg_pytorch = MagicMock(
             return_value=(vgg_mock('PyTorch'), 'False'))
 
-    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
+    @pytest.mark.skipif(
+        not torch.cuda.is_available(), reason='requires cuda')  # noqa
     def test_pr_cuda(self):
         pr = PrecisionAndRecall(10, sample_model='orig', auto_save=False)
         self.module.cuda()
@@ -323,6 +368,7 @@ class TestPR:
         pr.prepare(self.module, self.dataloader)
         for data_batch in sampler:
             predictions = self.module.test_step(data_batch)
+            predictions = [pred.to_dict() for pred in predictions]
             pr.process(data_batch, predictions)
         pr_score = pr.compute_metrics(pr.fake_results)
         print(pr_score)
@@ -336,6 +382,7 @@ class TestPR:
         pr.prepare(self.module, self.dataloader)
         for data_batch in sampler:
             predictions = self.module.test_step(data_batch)
+            predictions = [pred.to_dict() for pred in predictions]
             pr.process(data_batch, predictions)
         pr_score = pr.evaluate()
         print(pr_score)
@@ -359,28 +406,40 @@ class TestMS_SSIM(TestCase):
         input_batch_size = 6
         input_pairs = 6 // 2
         gen_images = torch.randn(input_batch_size, 3, 32, 32)
+        gen_samples = [
+            GenDataSample(fake_img=PixelData(data=img)).to_dict()
+            for img in gen_images
+        ]
 
-        MS_SSIM.process(None, gen_images)
-        MS_SSIM.process(None, gen_images)
+        MS_SSIM.process(None, gen_samples)
+        MS_SSIM.process(None, gen_samples)
         self.assertEqual(len(MS_SSIM.fake_results), input_pairs)
         metric_1 = MS_SSIM.evaluate()
         self.assertTrue('avg' in metric_1)
 
         MS_SSIM.fake_results.clear()
-        MS_SSIM.process(None, gen_images[:4])
+        MS_SSIM.process(None, gen_samples[:4])
         self.assertEqual(len(MS_SSIM.fake_results), 4 // 2)
         metric_2 = MS_SSIM.evaluate()
         self.assertTrue('avg' in metric_2)
 
         MS_SSIM.fake_results.clear()
-        gen_images = {
-            'orig': torch.randn(2, 3, 32, 32),
-            'ema': torch.randn(2, 3, 32, 32)
-        }
-        MS_SSIM.process(None, gen_images)
+        gen_samples = [
+            GenDataSample(
+                ema=GenDataSample(
+                    fake_img=PixelData(data=torch.randn(3, 32, 32))),
+                orig=GenDataSample(
+                    fake_img=PixelData(
+                        data=torch.randn(3, 32, 32)))).to_dict()
+        ] * 2
+        MS_SSIM.process(None, gen_samples)
 
-        gen_images = {'ema': {'fake': torch.randn(2, 3, 32, 32)}}
-        MS_SSIM.process(None, gen_images)
+        gen_samples = [
+            GenDataSample(
+                ema=GenDataSample(fake=PixelData(
+                    data=torch.randn(3, 32, 32)))).to_dict()
+        ] * 2
+        MS_SSIM.process(None, gen_samples)
 
         # test prefix
         MS_SSIM = MultiScaleStructureSimilarity(
@@ -390,23 +449,27 @@ class TestMS_SSIM(TestCase):
 class TestSWD(TestCase):
 
     def test_init(self):
-        swd = SlicedWassersteinDistance(fake_nums=10, image_shape=(3, 32, 32))
+        swd = SlicedWassersteinDistance(
+            fake_nums=10, image_shape=(3, 32, 32))  # noqa
         self.assertEqual(len(swd.real_results), 2)
 
     def test_prosess(self):
         model = MagicMock()
         model.data_preprocessor = GANDataPreprocessor()
-
-        swd = SlicedWassersteinDistance(fake_nums=4, image_shape=(3, 32, 32))
+        swd = SlicedWassersteinDistance(fake_nums=100, image_shape=(3, 32, 32))
         swd.prepare(model, None)
 
         torch.random.manual_seed(42)
-        real_img = torch.rand(100, 3, 32, 32) * 255.
-        real_batch = [dict(inputs=real_img[i]) for i in range(100)]
-        gen_img = torch.rand(100, 3, 32, 32) * 2 - 1
+        real_samples = [
+            dict(inputs=torch.rand(3, 32, 32) * 255.) for _ in range(100)
+        ]
+        fake_samples = [
+            GenDataSample(
+                fake_img=PixelData(data=torch.rand(3, 32, 32) * 2 -
+                                   1)).to_dict() for _ in range(100)
+        ]
 
-        swd.process(real_batch, gen_img)
-
+        swd.process(real_samples, fake_samples)
         output = swd.evaluate()
         result = [16.495922580361366, 24.15413036942482, 20.325026474893093]
         output = [item / 100 for item in output.values()]
@@ -421,17 +484,13 @@ class TestSWD(TestCase):
             image_shape=(3, 32, 32))
         swd.prepare(model, None)
 
-        random_tensor = torch.randn(2, 3, 32, 32)
-        real_batch = [
-            dict(inputs=dict(img=random_tensor[0], img_1=random_tensor[0])),
-            dict(inputs=dict(img=random_tensor[1], img_1=random_tensor[1]))
+        real_samples = [dict(inputs=torch.rand(3, 32, 32)) for _ in range(2)]
+        fake_samples = [
+            GenDataSample(
+                orig=GenDataSample(
+                    fake_img=PixelData(data=torch.rand(3, 32, 32)))).to_dict()
+            for _ in range(2)
         ]
-
-        gen_img = dict(orig=random_tensor)
-        swd.process(real_batch, gen_img)
-
-        gen_img = dict(orig=dict(fake=random_tensor))
-        swd.process(real_batch, gen_img)
 
 
 class TestEquivariance:

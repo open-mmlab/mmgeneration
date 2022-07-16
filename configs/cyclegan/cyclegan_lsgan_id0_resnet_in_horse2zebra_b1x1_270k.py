@@ -118,7 +118,7 @@ metrics = [
         type='TransIS',
         prefix='IS-Full',
         fake_nums=num_images,
-        fake_key='img_zebra',
+        fake_key='fake_zebra',
         inception_style='PyTorch'),
     dict(
         type='TransFID',
@@ -126,7 +126,7 @@ metrics = [
         fake_nums=num_images,
         inception_style='PyTorch',
         real_key='img_zebra',
-        fake_key='img_zebra')
+        fake_key='fake_zebra')
 ]
 
 val_evaluator = dict(metrics=metrics)

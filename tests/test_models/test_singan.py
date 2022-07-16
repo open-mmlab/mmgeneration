@@ -63,8 +63,9 @@ class TestSinGAN:
         for i in range(6):
             singan.train_step(self.data_batch, optim_wrapper_dict)
             message_hub.update_info('iter', message_hub.get_info('iter') + 1)
-            img = singan.forward(dict(num_batches=1), None)
+            outputs = singan.forward(dict(num_batches=1), None)
 
+            img = torch.stack([out.fake_img.data for out in outputs], dim=0)
             if i in [0, 1]:
                 assert singan.curr_stage == 0
                 assert img.shape[-2:] == (25, 25)
@@ -176,8 +177,8 @@ class TestPESinGAN:
         for i in range(6):
             singan.train_step(self.data_batch, optim_wrapper_dict)
             message_hub.update_info('iter', message_hub.get_info('iter') + 1)
-            img = singan.forward(dict(num_batches=1), None)
-
+            outputs = singan.forward(dict(num_batches=1), None)
+            img = torch.stack([out.fake_img.data for out in outputs])
             if i in [0, 1]:
                 assert singan.curr_stage == 0
                 assert img.shape[-2:] == (25, 25)
