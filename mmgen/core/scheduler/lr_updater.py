@@ -20,7 +20,7 @@ class LinearLrInterval(LinearLR):
         interval (int): The interval to update the learning rate. Default: 1.
     """
 
-    def __init__(self, interval=1, *args, **kwargs):
+    def __init__(self, *args, interval=1, **kwargs):
         self.interval = interval
         super().__init__(*args, **kwargs)
 
