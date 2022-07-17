@@ -97,8 +97,8 @@ class GenVisualizationHook(Hook):
                 n_samples=16,
                 n_rows=4,
                 vis_mode='gif',
-                save_intermedia=True,
-                show_pbar=True),
+                sample_kwargs=dict(show_pbar=True, save_intermedia=True),
+            ),
             vis_kwargs=dict(n_skip=1)))
 
     def __init__(self,
@@ -226,7 +226,6 @@ class GenVisualizationHook(Hook):
         std = data_preprocessor.std
 
         for sample_kwargs in self.sample_kwargs_list:
-
             # pop the sample-unrelated values
             sample_kwargs_ = deepcopy(sample_kwargs)
             sampler_type = sample_kwargs_['type']

@@ -87,8 +87,10 @@ class GenVisualizer(Visualizer):
             sample_shape = samples.shape
 
         n_samples = sample_shape[0]
-        # n_padding = n_samples % n_rows
-        n_padding = n_rows - (n_samples % n_rows)
+        if n_samples % n_rows == 0:
+            n_padding = 0
+        else:
+            n_padding = n_rows - (n_samples % n_rows)
         if n_padding:
             return -1.0 * torch.ones(n_padding, *sample_shape[1:])
         return None
@@ -124,16 +126,12 @@ class GenVisualizer(Visualizer):
         for sample in gen_samples:
             sample_dict = dict()
             for k in target_keys:
-                assert hasattr(sample, k)
-                pixel_data = getattr(sample, k)
-                assert isinstance(pixel_data, PixelData)
-                sample_dict[k] = pixel_data.data
+                sample_dict[k] = self._get_pixel_data_by_key(sample, k)
             sample_list.append(sample_dict)
 
         for k in sample_list[0].keys():
             sample_ = torch.stack([samp[k] for samp in sample_list], dim=0)
-            sample_ = post_process_sequence(sample_.cpu(), color_order,
-                                            target_mean, target_std)
+            sample_ = post_process_sequence(sample_.cpu())
             sample_dict[k] = sample_
 
         padding_tensor = self._get_padding_tensor(sample_dict, n_row)
@@ -173,10 +171,7 @@ class GenVisualizer(Visualizer):
         for sample in gen_samples:
             sample_dict = dict()
             for k in target_keys:
-                assert hasattr(sample, k)
-                pixel_data = getattr(sample, k)
-                assert isinstance(pixel_data, PixelData)
-                sample_dict[k] = pixel_data.data
+                sample_dict[k] = self._get_pixel_data_by_key(sample, k)
             sample_list.append(sample_dict)
 
         for k in sample_list[0].keys():
@@ -199,6 +194,20 @@ class GenVisualizer(Visualizer):
         vis_results = make_grid(vis_results, nrow=n_row).cpu().permute(1, 2, 0)
         vis_results = vis_results.numpy().astype(np.uint8)
         return vis_results
+
+    def _get_pixel_data_by_key(self, sample: GenDataSample,
+                               key: Union[str, List[str]]) -> Tensor:
+        if '.' in key:
+            key_list = key.split('.')
+        else:
+            key_list = [key]
+        pixel_data = sample
+        for k in key_list:
+            # get pixel data step by step
+            assert hasattr(pixel_data, k)
+            pixel_data = getattr(pixel_data, k)
+        assert isinstance(pixel_data, PixelData)
+        return pixel_data.data
 
     def add_datasample(self,
                        name: str,

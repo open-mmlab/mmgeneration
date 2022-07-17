@@ -246,11 +246,13 @@ class BasicGaussianDiffusion(BaseModel):
         if isinstance(batch_inputs, Tensor):
             noise = batch_inputs
             forward_mode = 'sample'
+            sample_kwargs = {}
         else:
             noise = batch_inputs.get('noise', None)
             num_batches = get_valid_num_batches(batch_inputs)
             noise = self.noise_fn(noise=noise, num_batches=num_batches)
             forward_mode = batch_inputs.get('forward_mode', 'sampling')
+            sample_kwargs = batch_inputs.get('sample_kwargs', dict())
         assert forward_mode in [
             'sampling', 'recon'
         ], ('Only support \'sampling\' and \'recon\' for \'forward_mode\'. '
@@ -258,13 +260,6 @@ class BasicGaussianDiffusion(BaseModel):
 
         # get sample model
         sample_model = self._get_valid_model(batch_inputs)
-
-        # pop noise and sample_model from batch_inputs
-        forward_kwargs = {
-            k: v
-            for k, v in batch_inputs.items() if k not in
-            ['noise', 'num_batches', 'sample_model', 'forward_mode']
-        }
 
         # forward_method = self.ddpm_sampling if forward_mode == 'sampling' \
         #     else self.reconstruction_step
@@ -278,10 +273,7 @@ class BasicGaussianDiffusion(BaseModel):
             denoising = self.denoising
 
         outputs = forward_method(
-            denoising,
-            noise=noise,
-            return_as_datasample=True,
-            **forward_kwargs)
+            denoising, noise=noise, return_as_datasample=True, **sample_kwargs)
 
         if sample_model == 'ema/orig':
             denoising = self.denoising
@@ -289,7 +281,7 @@ class BasicGaussianDiffusion(BaseModel):
                 denoising,
                 noise=noise,
                 num_batches=num_batches,
-                **forward_kwargs)
+                **sample_kwargs)
             outputs = dict(ema=outputs, orig=outputs_orig)
 
         if isinstance(outputs, dict):
@@ -300,7 +292,11 @@ class BasicGaussianDiffusion(BaseModel):
                 orig_sample = outputs['orig'][idx]
                 orig_sample.sample_model = 'orig'
                 gen_sample = GenDataSample(
-                    ema=ema_sample, orig=orig_sample, sample_model='ema/orig')
+                    ema=ema_sample,
+                    orig=orig_sample,
+                    sample_model='ema/orig',
+                    forward_mode=forward_mode,
+                    sample_kwargs=sample_kwargs)
                 batch_sample_list.append(gen_sample)
         else:
             batch_sample_list = []
