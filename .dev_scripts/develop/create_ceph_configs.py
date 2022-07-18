@@ -11,11 +11,15 @@ def update_ceph_config(filename, args, dry_run=False):
         # Skip base configs
         return None
 
-    if args.ceph_path.endswith('/'):
-        args.ceph_path = args.ceph_path[:-1]
-    ceph_path = f'{args.ceph_path}/{args.work_dir_prefix}'
-    if not ceph_path.endswith('/'):
-        ceph_path = ceph_path + '/'
+    if args.ceph is not None:
+        if args.ceph_path.endswith('/'):
+            args.ceph_path = args.ceph_path[:-1]
+        ceph_path = f'{args.ceph_path}/{args.work_dir_prefix}'
+        if not ceph_path.endswith('/'):
+            ceph_path = ceph_path + '/'
+    else:
+        # disable save local results to ceph
+        ceph_path = None
 
     try:
         # 0. load config
@@ -93,7 +97,8 @@ def update_ceph_config(filename, args, dry_run=False):
         # 2. change visualizer
         for vis_cfg in config['vis_backends']:
             if vis_cfg['type'] == 'GenVisBackend':
-                vis_cfg['ceph_path'] = ceph_path
+                if ceph_path is not None:
+                    vis_cfg['ceph_path'] = ceph_path
 
         # add pavi config
         if args.add_pavi:
@@ -118,6 +123,9 @@ def update_ceph_config(filename, args, dry_run=False):
         file_client_args = dict(backend='petrel')
 
         for name, hooks in config['default_hooks'].items():
+            # ignore ceph path
+            if ceph_path is None:
+                continue
             if name == 'logger':
                 hooks['out_dir'] = ceph_path
                 hooks['file_client_args'] = file_client_args
@@ -140,7 +148,7 @@ def update_ceph_config(filename, args, dry_run=False):
 if __name__ == '__main__':
 
     parser = ArgumentParser()
-    parser.add_argument('--ceph-path', type=str, required=True)
+    parser.add_argument('--ceph-path', type=str, default=None)
     parser.add_argument(
         '--work-dir-prefix',
         type=str,
