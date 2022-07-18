@@ -17,9 +17,13 @@ from torch.utils.data.dataloader import DataLoader
 from mmgen.core import (FrechetInceptionDistance, InceptionScore,
                         MultiScaleStructureSimilarity, PrecisionAndRecall,
                         SlicedWassersteinDistance)
-from mmgen.core.evaluation.metrics import GenMetric
-from mmgen.datasets import PackGenInputs, UnconditionalImageDataset
-from mmgen.models import LSGAN, DCGANGenerator, GANDataPreprocessor
+from mmgen.core.evaluation.metrics import (Equivariance, GenMetric,
+                                           PerceptualPathLength, TransFID,
+                                           TransIS)
+from mmgen.datasets import (PackGenInputs, PairedImageDataset,
+                            UnconditionalImageDataset)
+from mmgen.models import (LSGAN, DCGANGenerator, GANDataPreprocessor, Pix2Pix,
+                          StyleGAN3, StyleGANv2Generator, StyleGANv3Generator)
 
 logger = MMLogger(name='mmgen')
 
@@ -248,10 +252,6 @@ class TestIS(TestCase):
         dataloader = MagicMock()
         IS.prepare(module, dataloader)
 
-    # def test_load_inception(self):
-    #     IS = InceptionScore(fake_nums=2, inception_style='PyTorch')
-    #     self.assertEqual(IS.inception_style.upper(), 'PYTORCH')
-
     def test_process_and_compute(self):
         with patch.object(InceptionScore, '_load_inception',
                           self.mock_inception_stylegan):
@@ -432,3 +432,353 @@ class TestSWD(TestCase):
 
         gen_img = dict(orig=dict(fake=random_tensor))
         swd.process(real_batch, gen_img)
+
+
+class TestEquivariance:
+
+    @classmethod
+    def setup_class(cls):
+        pipeline = [
+            dict(type='mmgen.LoadImageFromFile', key='img', io_backend='disk'),
+            dict(type='mmgen.Resize', scale=(64, 64)),
+            PackGenInputs(meta_keys=[])
+        ]
+        dataset = UnconditionalImageDataset(
+            data_root='tests/data/image', pipeline=pipeline, test_mode=True)
+        cls.dataloader = Runner.build_dataloader(
+            dict(
+                batch_size=2,
+                dataset=dataset,
+                sampler=dict(type='DefaultSampler')))
+        gan_data_preprocessor = GANDataPreprocessor()
+        generator = StyleGANv3Generator(64, 8, 3, noise_size=8)
+        cls.module = StyleGAN3(
+            generator, data_preprocessor=gan_data_preprocessor)
+
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
+    @torch.no_grad()
+    def test_eq_cuda(self):
+        eq = Equivariance(
+            2,
+            eq_cfg=dict(
+                compute_eqt_int=True, compute_eqt_frac=True, compute_eqr=True),
+            sample_mode='orig')
+        self.module.cuda()
+        sampler = eq.get_metric_sampler(self.module, self.dataloader, [eq])
+        eq.prepare(self.module, self.dataloader)
+        for data_batch in sampler:
+            predictions = self.module.test_step(data_batch)
+            eq.process(data_batch, predictions)
+        eq_res = eq.compute_metrics(eq.fake_results)
+        isinstance(eq_res['eqt_int'], float) and isinstance(
+            eq_res['eqt_frac'], float) and isinstance(eq_res['eqr'], float)
+
+    @torch.no_grad()
+    def test_eq_cpu(self):
+        eq = Equivariance(
+            2,
+            eq_cfg=dict(
+                compute_eqt_int=True, compute_eqt_frac=True, compute_eqr=True),
+            sample_mode='orig')
+        sampler = eq.get_metric_sampler(self.module, self.dataloader, [eq])
+        eq.prepare(self.module, self.dataloader)
+        for data_batch in sampler:
+            predictions = self.module.test_step(data_batch)
+            eq.process(data_batch, predictions)
+        eq_res = eq.compute_metrics(eq.fake_results)
+        isinstance(eq_res['eqt_int'], float) and isinstance(
+            eq_res['eqt_frac'], float) and isinstance(eq_res['eqr'], float)
+
+
+class TestPPL:
+
+    @classmethod
+    def setup_class(cls):
+        pipeline = [
+            dict(type='mmgen.LoadImageFromFile', key='img', io_backend='disk'),
+            dict(type='mmgen.Resize', scale=(64, 64)),
+            PackGenInputs(meta_keys=[])
+        ]
+        dataset = UnconditionalImageDataset(
+            data_root='tests/data/image', pipeline=pipeline, test_mode=True)
+        cls.dataloader = Runner.build_dataloader(
+            dict(
+                batch_size=2,
+                dataset=dataset,
+                sampler=dict(type='DefaultSampler')))
+        gan_data_preprocessor = GANDataPreprocessor()
+        generator = StyleGANv2Generator(64, 8)
+        cls.module = LSGAN(generator, data_preprocessor=gan_data_preprocessor)
+
+        cls.mock_vgg_pytorch = MagicMock(
+            return_value=(vgg_mock('PyTorch'), 'False'))
+
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
+    def test_ppl_cuda(self):
+        ppl = PerceptualPathLength(
+            fake_nums=2,
+            prefix='ppl-z',
+            space='Z',
+            sample_model='orig',
+            latent_dim=8)
+        self.module.cuda()
+        sampler = ppl.get_metric_sampler(self.module, self.dataloader, [ppl])
+        ppl.prepare(self.module, self.dataloader)
+        for data_batch in sampler:
+            predictions = self.module.test_step(data_batch)
+            ppl.process(data_batch, predictions)
+        ppl_res = ppl.compute_metrics(ppl.fake_results)
+        assert ppl_res['ppl_score'] >= 0
+        ppl = PerceptualPathLength(
+            fake_nums=2,
+            prefix='ppl-w',
+            space='W',
+            sample_model='orig',
+            latent_dim=8)
+        sampler = ppl.get_metric_sampler(self.module, self.dataloader, [ppl])
+        ppl.prepare(self.module, self.dataloader)
+        for data_batch in sampler:
+            predictions = self.module.test_step(data_batch)
+            ppl.process(data_batch, predictions)
+        ppl_res = ppl.compute_metrics(ppl.fake_results)
+        assert ppl_res['ppl_score'] >= 0
+
+    def test_ppl_cpu(self):
+        ppl = PerceptualPathLength(
+            fake_nums=2,
+            prefix='ppl-z',
+            space='Z',
+            sample_model='orig',
+            latent_dim=8)
+        sampler = ppl.get_metric_sampler(self.module, self.dataloader, [ppl])
+        ppl.prepare(self.module, self.dataloader)
+        for data_batch in sampler:
+            predictions = self.module.test_step(data_batch)
+            ppl.process(data_batch, predictions)
+        ppl_res = ppl.compute_metrics(ppl.fake_results)
+        assert ppl_res['ppl_score'] >= 0
+        ppl = PerceptualPathLength(
+            fake_nums=2,
+            prefix='ppl-w',
+            space='W',
+            sample_model='orig',
+            latent_dim=8)
+        sampler = ppl.get_metric_sampler(self.module, self.dataloader, [ppl])
+        ppl.prepare(self.module, self.dataloader)
+        for data_batch in sampler:
+            predictions = self.module.test_step(data_batch)
+            ppl.process(data_batch, predictions)
+        ppl_res = ppl.compute_metrics(ppl.fake_results)
+        assert ppl_res['ppl_score'] >= 0
+
+
+class TestTransFID:
+    inception_pkl = osp.join(
+        osp.dirname(__file__), '..', '..',
+        'data/inception_pkl/inception_feat.pkl')
+
+    mock_inception_stylegan = MagicMock(
+        return_value=(inception_mock('StyleGAN'), 'StyleGAN'))
+    mock_inception_pytorch = MagicMock(
+        return_value=(inception_mock('PyTorch'), 'PyTorch'))
+
+    @classmethod
+    def setup_class(cls):
+        pipeline = [
+            dict(
+                type='mmgen.LoadPairedImageFromFile',
+                io_backend='disk',
+                key='pair',
+                domain_a='edge',
+                domain_b='shoe',
+                flag='color'),
+            dict(
+                type='TransformBroadcaster',
+                mapping={'img': ['img_edge', 'img_shoe']},
+                auto_remap=True,
+                share_random_params=True,
+                transforms=[
+                    dict(
+                        type='mmgen.Resize',
+                        scale=(286, 286),
+                        interpolation='bicubic'),
+                    dict(type='mmgen.FixedCrop', crop_size=(256, 256))
+                ]),
+            dict(
+                type='mmgen.PackGenInputs',
+                keys=['img_edge', 'img_shoe', 'pair'])
+        ]
+        dataset = PairedImageDataset(
+            data_root='tests/data/paired', pipeline=pipeline, test_mode=True)
+        cls.dataloader = Runner.build_dataloader(
+            dict(
+                batch_size=2,
+                dataset=dataset,
+                sampler=dict(type='DefaultSampler')))
+        gan_data_preprocessor = GANDataPreprocessor()
+        generator = dict(
+            type='UnetGenerator',
+            in_channels=3,
+            out_channels=3,
+            num_down=8,
+            base_channels=64,
+            norm_cfg=dict(type='BN'),
+            use_dropout=True,
+            init_cfg=dict(type='normal', gain=0.02))
+        discriminator = dict(
+            type='PatchDiscriminator',
+            in_channels=6,
+            base_channels=64,
+            num_conv=3,
+            norm_cfg=dict(type='BN'),
+            init_cfg=dict(type='normal', gain=0.02))
+        cls.module = Pix2Pix(
+            generator,
+            discriminator,
+            data_preprocessor=gan_data_preprocessor,
+            default_domain='shoe',
+            reachable_domains=['shoe'],
+            related_domains=['shoe', 'edge'])
+
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
+    def test_trans_fid_cuda(self):
+        with patch.object(TransFID, '_load_inception',
+                          self.mock_inception_stylegan):
+            fid = TransFID(
+                prefix='FID-Full',
+                fake_nums=2,
+                real_key='img_shoe',
+                fake_key='target',
+                inception_style='PyTorch')
+        self.module.cuda()
+        sampler = fid.get_metric_sampler(self.module, self.dataloader, [fid])
+        fid.prepare(self.module, self.dataloader)
+        for data_batch in sampler:
+            predictions = self.module.test_step(data_batch)
+        fid.process(data_batch, predictions)
+        fid_res = fid.compute_metrics(fid.fake_results)
+        assert fid_res['fid'] >= 0 and fid_res['mean'] >= 0 and fid_res[
+            'cov'] >= 0
+
+    def test_trans_fid_cpu(self):
+        with patch.object(TransFID, '_load_inception',
+                          self.mock_inception_stylegan):
+            fid = TransFID(
+                prefix='FID-Full',
+                fake_nums=2,
+                real_key='img_shoe',
+                fake_key='target',
+                inception_style='PyTorch')
+        sampler = fid.get_metric_sampler(self.module, self.dataloader, [fid])
+        fid.prepare(self.module, self.dataloader)
+        for data_batch in sampler:
+            predictions = self.module.test_step(data_batch)
+        fid.process(data_batch, predictions)
+        fid_res = fid.compute_metrics(fid.fake_results)
+        assert fid_res['fid'] >= 0 and fid_res['mean'] >= 0 and fid_res[
+            'cov'] >= 0
+
+
+class TestTransIS:
+    inception_pkl = osp.join(
+        osp.dirname(__file__), '..', '..',
+        'data/inception_pkl/inception_feat.pkl')
+
+    mock_inception_stylegan = MagicMock(
+        return_value=(inception_mock('StyleGAN'), 'StyleGAN'))
+    mock_inception_pytorch = MagicMock(
+        return_value=(inception_mock('PyTorch'), 'PyTorch'))
+
+    @classmethod
+    def setup_class(cls):
+        pipeline = [
+            dict(
+                type='mmgen.LoadPairedImageFromFile',
+                io_backend='disk',
+                key='pair',
+                domain_a='edge',
+                domain_b='shoe',
+                flag='color'),
+            dict(
+                type='TransformBroadcaster',
+                mapping={'img': ['img_edge', 'img_shoe']},
+                auto_remap=True,
+                share_random_params=True,
+                transforms=[
+                    dict(
+                        type='mmgen.Resize',
+                        scale=(286, 286),
+                        interpolation='bicubic'),
+                    dict(type='mmgen.FixedCrop', crop_size=(256, 256))
+                ]),
+            dict(
+                type='mmgen.PackGenInputs',
+                keys=['img_edge', 'img_shoe', 'pair'])
+        ]
+        dataset = PairedImageDataset(
+            data_root='tests/data/paired', pipeline=pipeline, test_mode=True)
+        cls.dataloader = Runner.build_dataloader(
+            dict(
+                batch_size=2,
+                dataset=dataset,
+                sampler=dict(type='DefaultSampler')))
+        gan_data_preprocessor = GANDataPreprocessor()
+        generator = dict(
+            type='UnetGenerator',
+            in_channels=3,
+            out_channels=3,
+            num_down=8,
+            base_channels=64,
+            norm_cfg=dict(type='BN'),
+            use_dropout=True,
+            init_cfg=dict(type='normal', gain=0.02))
+        discriminator = dict(
+            type='PatchDiscriminator',
+            in_channels=6,
+            base_channels=64,
+            num_conv=3,
+            norm_cfg=dict(type='BN'),
+            init_cfg=dict(type='normal', gain=0.02))
+        cls.module = Pix2Pix(
+            generator,
+            discriminator,
+            data_preprocessor=gan_data_preprocessor,
+            default_domain='shoe',
+            reachable_domains=['shoe'],
+            related_domains=['shoe', 'edge'])
+
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
+    def test_trans_is_cuda(self):
+        with patch.object(TransIS, '_load_inception',
+                          self.mock_inception_stylegan):
+            IS = TransIS(
+                prefix='IS-Full',
+                fake_nums=2,
+                inception_style='PyTorch',
+                fake_key='target',
+                sample_model='orig')
+        self.module.cuda()
+        sampler = IS.get_metric_sampler(self.module, self.dataloader, [IS])
+        IS.prepare(self.module, self.dataloader)
+        for data_batch in sampler:
+            predictions = self.module.test_step(data_batch)
+        IS.process(data_batch, predictions)
+        IS_res = IS.compute_metrics(IS.fake_results)
+        assert 'is' in IS_res and 'is_std' in IS_res
+
+    def test_trans_is_cpu(self):
+        with patch.object(TransIS, '_load_inception',
+                          self.mock_inception_stylegan):
+            IS = TransIS(
+                prefix='IS-Full',
+                fake_nums=2,
+                inception_style='PyTorch',
+                fake_key='target',
+                sample_model='orig')
+        sampler = IS.get_metric_sampler(self.module, self.dataloader, [IS])
+        IS.prepare(self.module, self.dataloader)
+        for data_batch in sampler:
+            predictions = self.module.test_step(data_batch)
+        IS.process(data_batch, predictions)
+        IS_res = IS.compute_metrics(IS.fake_results)
+        assert 'is' in IS_res and 'is_std' in IS_res

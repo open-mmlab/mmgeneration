@@ -13,7 +13,7 @@ from .pggan import (EqualizedLR, EqualizedLRConvDownModule,
                     EqualizedLRLinearModule, MiniBatchStddevLayer,
                     PGGANDiscriminator, PGGANGenerator, PGGANNoiseTo2DFeat,
                     PixelNorm, equalized_lr)
-from .pix2pix import PatchDiscriminator, generation_init_weights
+from .pix2pix import PatchDiscriminator, UnetGenerator, generation_init_weights
 from .positional_encoding import CatersianGrid, SinusoidalPositionalEmbedding
 from .singan import SinGANMultiScaleDiscriminator, SinGANMultiScaleGenerator
 from .sngan_proj import ProjDiscriminator, SNGANGenerator
@@ -38,5 +38,5 @@ __all__ = [
     'LSGANDiscriminator', 'LSGANGenerator', 'ProjDiscriminator',
     'SNGANGenerator', 'BigGANGenerator', 'SNConvModule', 'BigGANDiscriminator',
     'BigGANDeepGenerator', 'BigGANDeepDiscriminator', 'DenoisingUnet',
-    'StyleGANv3Generator', 'IDLossModel'
+    'StyleGANv3Generator', 'IDLossModel', 'UnetGenerator'
 ]
