@@ -2,6 +2,7 @@
 import numpy as np
 import torch
 
+from mmgen.core import GenDataSample
 from mmgen.models.architectures.common import get_module_device
 from mmgen.registry import MODELS
 from mmgen.typing import ForwardOutputs, ValTestStepInputs
@@ -104,6 +105,7 @@ class StyleGAN3(StyleGAN2):
         transform_matrix[:] = identity_matrix
         orig = generator.synthesis(ws=ws, **sample_kwargs)
 
+        batch_sample = [GenDataSample() for _ in range(batch_size)]
         # Integer translation (EQ-T).
         if eq_cfg['compute_eqt_int']:
             t = (torch.rand(2, device=device) * 2 -
@@ -113,6 +115,13 @@ class StyleGAN3(StyleGAN2):
             transform_matrix[:2, 2] = -t
             img = generator.synthesis(ws=ws, **sample_kwargs)
             ref, mask = apply_integer_translation(orig, t[0], t[1])
+
+            diff = (ref - img).square() * mask
+            for idx in range(batch_size):
+                data_sample = batch_sample[idx]
+                setattr(data_sample, 'eqt_int',
+                        GenDataSample(diff=diff, mask=mask))
+
             s += [(ref - img).square() * mask, mask]
 
         # Fractional translation (EQ-T_frac).
@@ -123,6 +132,13 @@ class StyleGAN3(StyleGAN2):
             transform_matrix[:2, 2] = -t
             img = generator.synthesis(ws=ws, **sample_kwargs)
             ref, mask = apply_fractional_translation(orig, t[0], t[1])
+
+            diff = (ref - img).square() * mask
+            for idx in range(batch_size):
+                data_sample = batch_sample[idx]
+                setattr(data_sample, 'eqt_frac',
+                        GenDataSample(diff=diff, mask=mask))
+
             s += [(ref - img).square() * mask, mask]
 
         # Rotation (EQ-R).
@@ -134,5 +150,13 @@ class StyleGAN3(StyleGAN2):
             ref, ref_mask = apply_fractional_rotation(orig, angle)
             pseudo, pseudo_mask = apply_fractional_pseudo_rotation(img, angle)
             mask = ref_mask * pseudo_mask
+
+            diff = (ref - pseudo).square() * mask
+            for idx in range(batch_size):
+                data_sample = batch_sample[idx]
+                setattr(data_sample, 'eqr',
+                        GenDataSample(diff=diff, mask=mask))
+
             s += [(ref - pseudo).square() * mask, mask]
-        return s
+
+        return batch_sample

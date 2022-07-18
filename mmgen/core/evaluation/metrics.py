@@ -3,6 +3,7 @@ import math
 import os
 import warnings
 from abc import ABCMeta
+from collections import defaultdict
 from copy import deepcopy
 from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
 
@@ -1289,6 +1290,8 @@ class Equivariance(GenerativeMetric):
         if self._eq_cfg['compute_eqr']:
             self.n_sub_metric += 1
 
+        self.fake_results = defaultdict(list)
+
     @torch.no_grad()
     def process(self, data_batch: Sequence[dict],
                 predictions: Sequence[dict]) -> None:
@@ -1300,9 +1303,17 @@ class Equivariance(GenerativeMetric):
             data_batch (Sequence[dict]): A batch of data from the dataloader.
             predictions (Sequence[dict]): A batch of outputs from the model.
         """
-        # TODO:
-        item = torch.stack([x.to(torch.float64).sum() for x in predictions])
-        self.fake_results.append(item)
+        cfg_key_list = ['compute_eqt_int', 'compute_eqt_frac', 'compute_eqr']
+        sample_key_list = ['eqt_int', 'eqt_frac', 'eqr']
+        for pred in predictions:
+            for cfg_key, sample_key in zip(cfg_key_list, sample_key_list):
+                if self._eq_cfg[cfg_key]:
+                    assert sample_key in pred
+                    # assert hasattr(pred, sample_key)
+                    eq_sample = pred[sample_key]
+                    diff = eq_sample['diff'].to(torch.float64).sum()
+                    mask = eq_sample['mask'].to(torch.float64).sum()
+                    self.fake_results[sample_key] += [diff, mask]
 
     def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
                            metrics: GenMetric):
@@ -1344,25 +1355,39 @@ class Equivariance(GenerativeMetric):
             dict: The computed metrics. The keys are the names of the metrics,
             and the values are corresponding results.
         """
-        sums = torch.cat(
-            self.fake_results, dim=0).view(-1,
-                                           2 * self.n_sub_metric).sum(dim=0)
-        mses = sums[0::2] / sums[1::2]
-        psnrs = np.log10(2) * 20 - mses.log10() * 10
-        psnrs = tuple(psnrs.cpu().numpy())
-
         results = dict()
-        index = 0
-        if self._eq_cfg['compute_eqt_int']:
-            results['eqt_int'] = psnrs[index]
-            index += 1
-        if self._eq_cfg['compute_eqt_frac']:
-            results['eqt_frac'] = psnrs[index]
-            index += 1
-        if self._eq_cfg['compute_eqr']:
-            results['eqr'] = psnrs[index]
-            index += 1
+        for key in ['eqt_int', 'eqt_frac', 'eqr']:
+            if key not in self.fake_results:
+                continue
+            sums = torch.stack(self.fake_results[key], dim=0)
+            mses = (sums[0::2] / sums[1::2]).mean()
+            psnrs = np.log10(2) * 20 - mses.log10() * 10
+            psnrs = psnrs.cpu().numpy()
+            results[key] = psnrs
         return results
+
+    def _collect_target_results(self, target: str) -> Optional[list]:
+        """Collect function for Eq metric. This function support collect
+        results typing as Dict[List[Tensor]]`.
+
+        Args:
+            target (str): Target results to collect.
+
+        Returns:
+            Optional[list]: The collected results.
+        """
+        if target == 'real':
+            return
+        results = getattr(self, f'{target}_results')
+        results_collected = []
+        results_collected = dict()
+        for key, result in results.items():
+            result_collected = torch.stack(result)
+            result_collected = torch.cat(all_gather(result_collected), dim=0)
+            results_collected[key] = torch.split(result_collected,
+                                                 len(result_collected))
+
+        return results_collected
 
 
 class eq_iterator:
