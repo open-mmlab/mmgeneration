@@ -5,8 +5,6 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from mmengine import MessageHub
-from mmengine.optim import build_optim_wrapper
-from mmengine.optim.scheduler import _ParamScheduler
 
 from mmgen.core.scheduler import LinearLrInterval
 
