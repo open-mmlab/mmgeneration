@@ -1243,6 +1243,14 @@ class Equivariance(GenerativeMetric):
         self.SAMPLER_MODE = 'EqSampler'
 
         self.sample_kwargs = sample_kwargs
+        # compute numbers of eq
+        self.n_sub_metric = 0
+        if self._eq_cfg['compute_eqt_int']:
+            self.n_sub_metric += 1
+        if self._eq_cfg['compute_eqt_frac']:
+            self.n_sub_metric += 1
+        if self._eq_cfg['compute_eqr']:
+            self.n_sub_metric += 1
 
     @torch.no_grad()
     def process(self, data_batch: ValTestStepInputs,
@@ -1298,7 +1306,9 @@ class Equivariance(GenerativeMetric):
             dict: The computed metrics. The keys are the names of the metrics,
             and the values are corresponding results.
         """
-        sums = torch.cat(self.fake_results, dim=0)
+        sums = torch.cat(
+            self.fake_results, dim=0).view(-1,
+                                           2 * self.n_sub_metric).sum(dim=0)
         mses = sums[0::2] / sums[1::2]
         psnrs = np.log10(2) * 20 - mses.log10() * 10
         psnrs = tuple(psnrs.cpu().numpy())
