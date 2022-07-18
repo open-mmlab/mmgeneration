@@ -11,7 +11,7 @@ def update_ceph_config(filename, args, dry_run=False):
         # Skip base configs
         return None
 
-    if args.ceph is not None:
+    if args.ceph_path is not None:
         if args.ceph_path.endswith('/'):
             args.ceph_path = args.ceph_path[:-1]
         ceph_path = f'{args.ceph_path}/{args.work_dir_prefix}'
