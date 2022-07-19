@@ -70,13 +70,16 @@ def parse_args():
 
 
 def create_test_job_batch(commands, model_info, args, port, script_name):
-    config_http_prefix = ('https://github.com/open-mmlab/mmgeneration/'
-                          'blob/master/')
+    config_http_prefix_blob = ('https://github.com/open-mmlab/mmgeneration/'
+                               'blob/master/')
+    config_http_prefix_tree = ('https://github.com/open-mmlab/mmgeneration/'
+                               'tree/master/')
     fname = model_info.name
 
     config = model_info.config
     if config.startswith('http'):
-        config = config.replace(config_http_prefix, './')
+        config = config.replace(config_http_prefix_blob, './')
+        config = config.replace(config_http_prefix_tree, './')
     config = Path(config)
     assert config.exists(), f'{fname}: {config} not found.'
 
