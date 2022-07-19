@@ -12,9 +12,10 @@ from mmengine.model import BaseModel
 from mmengine.optim import OptimWrapperDict
 from torch import Tensor
 
+from mmgen.core import GenDataSample, PixelData
 from mmgen.registry import MODELS, MODULES
-from mmgen.typing import (ForwardInputs, ForwardOutputs, NoiseVar,
-                          TrainStepInputs, ValTestStepInputs)
+from mmgen.typing import (ForwardInputs, NoiseVar, SampleList, TrainStepInputs,
+                          ValTestStepInputs)
 from ..architectures.common import get_module_device
 from ..common import get_valid_num_batches, noise_sample_fn
 from .utils import cosine_beta_schedule, linear_beta_schedule, var_to_tensor
@@ -245,11 +246,13 @@ class BasicGaussianDiffusion(BaseModel):
         if isinstance(batch_inputs, Tensor):
             noise = batch_inputs
             forward_mode = 'sample'
+            sample_kwargs = {}
         else:
             noise = batch_inputs.get('noise', None)
             num_batches = get_valid_num_batches(batch_inputs)
             noise = self.noise_fn(noise=noise, num_batches=num_batches)
             forward_mode = batch_inputs.get('forward_mode', 'sampling')
+            sample_kwargs = batch_inputs.get('sample_kwargs', dict())
         assert forward_mode in [
             'sampling', 'recon'
         ], ('Only support \'sampling\' and \'recon\' for \'forward_mode\'. '
@@ -258,22 +261,19 @@ class BasicGaussianDiffusion(BaseModel):
         # get sample model
         sample_model = self._get_valid_model(batch_inputs)
 
-        # pop noise and sample_model from batch_inputs
-        forward_kwargs = {
-            k: v
-            for k, v in batch_inputs.items() if k not in
-            ['noise', 'num_batches', 'sample_model', 'forward_mode']
-        }
-
-        forward_method = self.ddpm_sampling if forward_mode == 'sampling' \
-            else self.reconstruction_step
+        # forward_method = self.ddpm_sampling if forward_mode == 'sampling' \
+        #     else self.reconstruction_step
+        assert forward_mode == 'sampling', (
+            'Only support DDPM sampling currently.')
+        forward_method = self.ddpm_sampling
 
         if sample_model in ['ema', 'ema/orig']:
             denoising = self.denoising_ema
         else:  # mode is 'orig'
             denoising = self.denoising
 
-        outputs = forward_method(denoising, noise=noise, **forward_kwargs)
+        outputs = forward_method(
+            denoising, noise=noise, return_as_datasample=True, **sample_kwargs)
 
         if sample_model == 'ema/orig':
             denoising = self.denoising
@@ -281,10 +281,30 @@ class BasicGaussianDiffusion(BaseModel):
                 denoising,
                 noise=noise,
                 num_batches=num_batches,
-                **forward_kwargs)
+                **sample_kwargs)
             outputs = dict(ema=outputs, orig=outputs_orig)
 
-        return outputs
+        if isinstance(outputs, dict):
+            batch_sample_list = []
+            for idx in range(num_batches):
+                ema_sample = outputs['ema'][idx]
+                ema_sample.sample_model = 'ema'
+                orig_sample = outputs['orig'][idx]
+                orig_sample.sample_model = 'orig'
+                gen_sample = GenDataSample(
+                    ema=ema_sample,
+                    orig=orig_sample,
+                    sample_model='ema/orig',
+                    forward_mode=forward_mode,
+                    sample_kwargs=sample_kwargs)
+                batch_sample_list.append(gen_sample)
+        else:
+            batch_sample_list = []
+            for idx in range(num_batches):
+                out = outputs[idx]
+                out.sample_model = sample_model
+                batch_sample_list.append(out)
+        return batch_sample_list
 
     @torch.no_grad()
     def ddpm_sampling(
@@ -296,6 +316,7 @@ class BasicGaussianDiffusion(BaseModel):
             save_intermedia=False,
             timesteps_noise=None,
             show_pbar=False,
+            return_as_datasample=False,
             # return_noise=False,
             **kwargs):
 
@@ -334,9 +355,18 @@ class BasicGaussianDiffusion(BaseModel):
         if show_pbar:
             sys.stdout.write('\n')
 
+        # convert to data sample if need
+        if return_as_datasample:
+            batch_sample_list = []
+            for res in denoising_results:
+                gen_sample = GenDataSample(fake_img=PixelData(data=res))
+                batch_sample_list.append(gen_sample)
+            return batch_sample_list
+
+        # return tensor
         return denoising_results
 
-    def val_step(self, data: ValTestStepInputs) -> ForwardOutputs:
+    def val_step(self, data: ValTestStepInputs) -> SampleList:
         """Gets the generated image of given data.
 
         Calls ``self.data_preprocessor(data)`` and
@@ -348,13 +378,13 @@ class BasicGaussianDiffusion(BaseModel):
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
-            ForwardOutputs: Generated image or image dict.
+            SampleList: Generated image or image dict.
         """
         inputs_dict, data_sample = self.data_preprocessor(data)
         outputs = self(inputs_dict, data_sample)
         return outputs
 
-    def test_step(self, data: ValTestStepInputs) -> ForwardOutputs:
+    def test_step(self, data: ValTestStepInputs) -> SampleList:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
@@ -362,7 +392,7 @@ class BasicGaussianDiffusion(BaseModel):
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
-            ForwardOutputs: Generated image or image dict.
+            SampleList: Generated image or image dict.
         """
         inputs_dict, data_sample = self.data_preprocessor(data)
         outputs = self(inputs_dict, data_sample)
@@ -397,16 +427,14 @@ class BasicGaussianDiffusion(BaseModel):
         optimizer_wrapper['denoising'].update_params(loss)
         return log_vars
 
-    def reconstruction_step(
-            self,
-            model,
-            real_imgs,
-            noise=None,
-            label=None,
-            timesteps=None,
-            # sample_model='orig',
-            return_noise=False,
-            **kwargs):
+    def reconstruction_step(self,
+                            model,
+                            real_imgs,
+                            noise=None,
+                            label=None,
+                            timesteps=None,
+                            return_noise=False,
+                            **kwargs):
         """Reconstruction step at corresponding `timestep`. To be noted that,
         denoisint target ``x_t`` for each timestep are all generated from real
         images, but not the denoising result from denoising network.
@@ -461,13 +489,6 @@ class BasicGaussianDiffusion(BaseModel):
         if timesteps.ndim == 1:
             timesteps = timesteps.unsqueeze(0)
         timesteps = timesteps.to(get_module_device(self))
-
-        # if noise is not None:
-        #     assert 'noise' not in real_imgs, (
-        #         'Receive \'noise\' in both data_batch and passed arguments.')
-        # TODO: bug here
-        # if noise is None:
-        #     noise = real_imgs['noise'] if 'noise' in real_imgs else None
 
         output_dict = defaultdict(list)
         # loop all timesteps

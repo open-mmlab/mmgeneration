@@ -9,6 +9,7 @@ from mmengine.optim import OptimWrapper, OptimWrapperDict
 from mmengine.testing import assert_allclose
 from torch.optim import SGD
 
+from mmgen.core.data_structures.gen_data_sample import GenDataSample
 from mmgen.models import BaseGAN, GANDataPreprocessor
 from mmgen.models.builder import build_module
 
@@ -184,15 +185,23 @@ class TestBaseGAN(TestCase):
         inputs = dict(num_batches=3)
         outputs_val = gan.val_step(inputs)
         outputs_test = gan.test_step(inputs)
-        self.assertEqual(outputs_val.shape, (3, 3, 8, 8))
-        self.assertEqual(outputs_test.shape, (3, 3, 8, 8))
+        self.assertEqual(len(outputs_val), 3)
+        self.assertEqual(len(outputs_test), 3)
+        for idx in range(3):
+            self.assertEqual(outputs_val[idx].fake_img.data.shape, (3, 8, 8))
+            self.assertEqual(outputs_test[idx].fake_img.data.shape, (3, 8, 8))
 
         # set mode
         inputs = dict(num_batches=4, sample_model='orig')
         outputs_val = gan.val_step(inputs)
         outputs_test = gan.test_step(inputs)
-        self.assertEqual(outputs_val.shape, (4, 3, 8, 8))
-        self.assertEqual(outputs_test.shape, (4, 3, 8, 8))
+        self.assertEqual(len(outputs_val), 4)
+        self.assertEqual(len(outputs_test), 4)
+        for idx in range(4):
+            self.assertEqual(outputs_val[idx].sample_model, 'orig')
+            self.assertEqual(outputs_test[idx].sample_model, 'orig')
+            self.assertEqual(outputs_val[idx].fake_img.data.shape, (3, 8, 8))
+            self.assertEqual(outputs_test[idx].fake_img.data.shape, (3, 8, 8))
 
         inputs = dict(num_batches=4, sample_model='orig/ema')
         self.assertRaises(AssertionError, gan.val_step, inputs)
@@ -204,7 +213,12 @@ class TestBaseGAN(TestCase):
         inputs = dict(noise=torch.randn(4, 10))
         outputs_val = gan.val_step(inputs)
         outputs_test = gan.test_step(inputs)
-        assert_allclose(outputs_test, outputs_val)
+        self.assertEqual(len(outputs_val), 4)
+        self.assertEqual(len(outputs_val), 4)
+        for idx in range(4):
+            test_fake_img = outputs_test[idx].fake_img.data
+            val_fake_img = outputs_val[idx].fake_img.data
+            assert_allclose(test_fake_img, val_fake_img)
 
     def test_forward(self):
         # set a gan w/o EMA
@@ -214,13 +228,19 @@ class TestBaseGAN(TestCase):
             data_preprocessor=GANDataPreprocessor())
         inputs = dict(num_batches=3)
         outputs = gan(inputs, None)
-        self.assertEqual(outputs.shape, (3, 3, 8, 8))
+        self.assertEqual(len(outputs), 3)
+        for idx in range(3):
+            self.assertTrue(outputs[idx].fake_img.data.shape == (3, 8, 8))
 
         outputs = gan(inputs)
-        self.assertEqual(outputs.shape, (3, 3, 8, 8))
+        self.assertEqual(len(outputs), 3)
+        for idx in range(3):
+            self.assertEqual(outputs[idx].fake_img.data.shape, (3, 8, 8))
 
         outputs = gan(torch.randn(3, 10))
-        self.assertEqual(outputs.shape, (3, 3, 8, 8))
+        self.assertEqual(len(outputs), 3)
+        for idx in range(3):
+            self.assertEqual(outputs[idx].fake_img.data.shape, (3, 8, 8))
 
         # set a gan w EMA
         gan = ToyGAN(
@@ -230,13 +250,34 @@ class TestBaseGAN(TestCase):
             ema_config=dict(interval=1))
         inputs = dict(num_batches=3)
         outputs = gan(inputs)
-        self.assertEqual(outputs.shape, (3, 3, 8, 8))
+        self.assertEqual(len(outputs), 3)
+        for idx in range(3):
+            self.assertEqual(outputs[idx].fake_img.data.shape, (3, 8, 8))
 
         inputs = dict(num_batches=3, sample_model='ema/orig')
         outputs = gan(inputs)
-        self.assertEqual(set(outputs.keys()), set(['ema', 'orig']))
-        self.assertEqual(outputs['ema'].shape, outputs['orig'].shape)
+        self.assertEqual(len(outputs), 3)
+        for idx in range(3):
+            ema_img = outputs[idx].ema
+            orig_img = outputs[idx].orig
+            self.assertEqual(ema_img.fake_img.data.shape,
+                             orig_img.fake_img.data.shape)
+            self.assertTrue(outputs[idx].sample_model, 'ema/orig')
 
         inputs = dict(noise=torch.randn(4, 10))
         outputs = gan(inputs)
-        self.assertEqual(outputs.shape, (4, 3, 8, 8))
+        self.assertEqual(len(outputs), 4)
+        for idx in range(4):
+            self.assertEqual(outputs[idx].fake_img.data.shape, (3, 8, 8))
+
+        # test when data samples is not None
+        inputs = dict(num_batches=3, sample_model='ema/orig')
+        data_samples = [
+            GenDataSample(id=1),
+            GenDataSample(id=2),
+            GenDataSample(id=3)
+        ]
+        outputs = gan(inputs, data_samples)
+        self.assertEqual(len(outputs), 3)
+        for idx, output in enumerate(outputs):
+            self.assertEqual(output.id, idx + 1)

@@ -146,9 +146,13 @@ class GenEvaluator(Evaluator):
         else:
             _data_batch = data_batch
 
+        _predictions = []
+        for pred in predictions:
+            _predictions.append(pred.to_dict())
+
         # feed to the specifics metrics
         for metric in metrics:
-            metric.process(_data_batch, predictions)
+            metric.process(_data_batch, _predictions)
 
     def evaluate(self) -> dict:
         """Invoke ``evaluate`` method of each metric and collect the metrics

@@ -2,6 +2,7 @@
 import numpy as np
 import torch
 
+from mmgen.core import GenDataSample
 from mmgen.models.architectures.common import get_module_device
 from mmgen.registry import MODELS
 from mmgen.typing import ForwardOutputs, ValTestStepInputs
@@ -91,8 +92,6 @@ class StyleGAN3(StyleGAN2):
         device = get_module_device(generator)
         identity_matrix = torch.eye(3, device=device)
 
-        s = []
-
         # Run mapping network.
         z = torch.randn([batch_size, self.noise_size], device=device)
         ws = generator.style_mapping(z=z)
@@ -104,6 +103,7 @@ class StyleGAN3(StyleGAN2):
         transform_matrix[:] = identity_matrix
         orig = generator.synthesis(ws=ws, **sample_kwargs)
 
+        batch_sample = [GenDataSample() for _ in range(batch_size)]
         # Integer translation (EQ-T).
         if eq_cfg['compute_eqt_int']:
             t = (torch.rand(2, device=device) * 2 -
@@ -113,7 +113,12 @@ class StyleGAN3(StyleGAN2):
             transform_matrix[:2, 2] = -t
             img = generator.synthesis(ws=ws, **sample_kwargs)
             ref, mask = apply_integer_translation(orig, t[0], t[1])
-            s += [(ref - img).square() * mask, mask]
+
+            diff = (ref - img).square() * mask
+            for idx in range(batch_size):
+                data_sample = batch_sample[idx]
+                setattr(data_sample, 'eqt_int',
+                        GenDataSample(diff=diff, mask=mask))
 
         # Fractional translation (EQ-T_frac).
         if eq_cfg['compute_eqt_frac']:
@@ -123,7 +128,12 @@ class StyleGAN3(StyleGAN2):
             transform_matrix[:2, 2] = -t
             img = generator.synthesis(ws=ws, **sample_kwargs)
             ref, mask = apply_fractional_translation(orig, t[0], t[1])
-            s += [(ref - img).square() * mask, mask]
+
+            diff = (ref - img).square() * mask
+            for idx in range(batch_size):
+                data_sample = batch_sample[idx]
+                setattr(data_sample, 'eqt_frac',
+                        GenDataSample(diff=diff, mask=mask))
 
         # Rotation (EQ-R).
         if eq_cfg['compute_eqr']:
@@ -134,5 +144,11 @@ class StyleGAN3(StyleGAN2):
             ref, ref_mask = apply_fractional_rotation(orig, angle)
             pseudo, pseudo_mask = apply_fractional_pseudo_rotation(img, angle)
             mask = ref_mask * pseudo_mask
-            s += [(ref - pseudo).square() * mask, mask]
-        return s
+
+            diff = (ref - pseudo).square() * mask
+            for idx in range(batch_size):
+                data_sample = batch_sample[idx]
+                setattr(data_sample, 'eqr',
+                        GenDataSample(diff=diff, mask=mask))
+
+        return batch_sample

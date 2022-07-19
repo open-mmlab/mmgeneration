@@ -8,8 +8,11 @@ from mmengine import Visualizer
 from torch import Tensor
 from torchvision.utils import make_grid
 
+from mmgen.core import GenDataSample, PixelData
 from mmgen.registry import VISUALIZERS
-from mmgen.typing import DataSetOutputs
+from mmgen.typing import SampleList
+
+mean_std_type = Optional[Sequence[Union[float, int]]]
 
 
 @VISUALIZERS.register_module()
@@ -43,11 +46,10 @@ class GenVisualizer(Visualizer):
         super().__init__(name, vis_backends=vis_backends, save_dir=save_dir)
 
     @staticmethod
-    def _post_process_image(
-            image: Tensor,
-            color_order: str,
-            mean: Optional[Sequence[Union[float, int]]] = None,
-            std: Optional[Sequence[Union[float, int]]] = None) -> Tensor:
+    def _post_process_image(image: Tensor,
+                            color_order: str,
+                            mean: mean_std_type = None,
+                            std: mean_std_type = None) -> Tensor:
         """Post process images. First convert image to `rgb` order. And then
         de-norm image to fid `mean` and `std` if `mean` and `std` is passed.
 
@@ -76,91 +78,27 @@ class GenVisualizer(Visualizer):
         """Get tensor for padding the empty position."""
 
         if isinstance(samples, dict):
-            sample_shape = next(iter(samples.values())).shape
+            for sample in iter(samples.values()):
+                # NOTE: dirty way to get the shape of image tensor
+                if isinstance(sample, Tensor) and sample.ndim in [4, 5]:
+                    sample_shape = sample.shape
+                    break
         else:
             sample_shape = samples.shape
 
         n_samples = sample_shape[0]
-        n_padding = n_samples % n_rows
-        # n_padding = n_rows - (n_samples % n_rows)
+        if n_samples % n_rows == 0:
+            n_padding = 0
+        else:
+            n_padding = n_rows - (n_samples % n_rows)
         if n_padding:
             return -1.0 * torch.ones(n_padding, *sample_shape[1:])
         return None
 
-    def _vis_image_sample(self, gen_samples: Tuple[dict,
-                                                   Tensor], gt_samples: dict,
-                          draw_gt: bool, gt_keys: Optional[Tuple[str,
-                                                                 List[str]]],
-                          color_order: str, target_mean: Sequence[Union[float,
-                                                                        int]],
-                          target_std: Sequence[Union[float, int]],
-                          n_row: int) -> np.ndarray:
-        """Visualize image sample.
-
-        Args:
-            gen_samples (Tuple[dict, Tensor]): Generated samples to visualize.
-            gt_samples (dict): Real images to visualize.
-            n_row (int): The number of samples in a row.
-
-        Returns:
-            np.ndarray: The visualization result.
-        """
-
-        # handle `gt_samples`
-        gt_samples_ = dict()
-        if draw_gt:
-            assert gt_samples is not None, (
-                '\'gt_sample\' must not be passed to visualize real images.')
-            gt_keys = ['imgs'] if gt_keys is None else gt_keys
-            for k in gt_keys:
-                assert k in gt_samples['inputs'], (
-                    f'Cannot find \'{k}\' not in \'gt_samples\'.')
-                gt_samples_[k] = self._post_process_image(
-                    gt_samples['inputs'][k].cpu(), color_order, target_mean,
-                    target_std)
-
-        # handle `gen_samples`
-        if isinstance(gen_samples, dict):
-            gen_samples_ = dict()
-            for name, sample in gen_samples.items():
-                gen_samples_[name] = self._post_process_image(
-                    sample.cpu(), color_order, target_mean, target_std)
-        else:
-            gen_samples_ = self._post_process_image(gen_samples.cpu(),
-                                                    color_order, target_mean,
-                                                    target_std)
-
-        padding_tensor = self._get_padding_tensor(gen_samples, n_row)
-
-        vis_results = []
-
-        for target_samples in [gt_samples_, gen_samples_]:
-            if target_samples == {}:
-                continue
-
-            if isinstance(target_samples, dict):
-                for sample in target_samples.values():
-                    if padding_tensor is not None:
-                        vis_results.append(
-                            torch.cat([sample, padding_tensor], dim=0))
-                    else:
-                        vis_results.append(sample)
-            else:
-                vis_results.append(target_samples)
-
-        # concatnate along batch size
-        vis_results = torch.cat(vis_results, dim=0)
-        vis_results = make_grid(vis_results, nrow=n_row).cpu().permute(1, 2, 0)
-        vis_results = vis_results.numpy().astype(np.uint8)
-        return vis_results
-
-    def _vis_gif_sample(self, gen_samples: Tuple[dict,
-                                                 Tensor], gt_samples: dict,
-                        draw_gt: bool, gt_keys: Optional[Tuple[str,
-                                                               List[str]]],
-                        color_order: str, target_mean: Sequence[Union[float,
-                                                                      int]],
-                        target_std: Sequence[Union[float, int]], n_row: int):
+    def _vis_gif_sample(self, gen_samples: SampleList,
+                        target_keys: Union[str, List[str], None],
+                        color_order: str, target_mean: mean_std_type,
+                        target_std: mean_std_type, n_row: int):
         post_process_fn = partial(
             self._post_process_image,
             color_order=color_order,
@@ -175,56 +113,36 @@ class GenVisualizer(Visualizer):
             ]
             return torch.stack(seq_list, dim=1)
 
-        # handle `gen_samples`
-        if isinstance(gen_samples, dict):
-            gen_samples_ = dict()
-            num_timesteps = next(gen_samples.values()).shape[1]
-            for name, samples in gen_samples.items():
-                assert samples.shape[0] == num_timesteps
-                gen_samples_[name] = post_process_sequence(samples)
-        else:
-            num_timesteps = gen_samples.shape[1]
-            gen_samples_ = post_process_sequence(gen_samples)
+        if target_keys is None:
+            target_keys = [
+                k for k, v in gen_samples[0].items()
+                if ((not k.startswith('_')) and (
+                    isinstance(v, PixelData)) and (v.data.ndim == 4))
+            ]
+        target_keys = [target_keys] if isinstance(target_keys, str) \
+            else target_keys
 
-        padding_tensor = self._get_padding_tensor(gen_samples_, n_rows=n_row)
+        sample_list = list()
+        for sample in gen_samples:
+            sample_dict = dict()
+            for k in target_keys:
+                sample_dict[k] = self._get_pixel_data_by_key(sample, k)
+            sample_list.append(sample_dict)
 
-        # handle `gt_samples`
-        gt_samples_ = dict()
-        if draw_gt:
-            assert gt_samples is not None, (
-                '\'gt_sample\' must not be passed to visualize real images.')
-            gt_keys = ['imgs'] if gt_keys is None else gt_keys
-            for k in gt_keys:
-                assert k in gt_samples['inputs'], (
-                    f'Cannot find \'{k}\' not in \'gt_samples\'.')
-                samples = gt_samples['inputs'][k]
-                if samples.ndim == 4:
-                    samples_ = post_process_fn(samples.cpu())
-                    gt_samples_[k] = samples_[:, None, ...].repeat(
-                        1, num_timesteps, 1, 1, 1)
-                elif samples.ndim == 5:
-                    assert samples.shape[1] == num_timesteps
-                    gt_samples_[k] = post_process_sequence(samples)
-                else:
-                    raise ValueError(
-                        'Only support gt inputs with dimsension of 4 or 5. '
-                        f'But \'{k}\' in \'gt_samples\' have dimension of '
-                        f'{samples.ndim}.')
+        for k in sample_list[0].keys():
+            sample_ = torch.stack([samp[k] for samp in sample_list], dim=0)
+            sample_ = post_process_sequence(sample_.cpu())
+            sample_dict[k] = sample_
+
+        padding_tensor = self._get_padding_tensor(sample_dict, n_row)
+        num_timesteps = next(iter(sample_dict.values())).shape[1]
 
         vis_results = []
-        for target_samples in [gt_samples_, gen_samples_]:
-            if target_samples == {}:
-                continue
-
-            if isinstance(target_samples, dict):
-                for sample in target_samples.values():
-                    if padding_tensor is not None:
-                        vis_results.append(
-                            torch.cat([sample, padding_tensor], dim=0))
-                    else:
-                        vis_results.append(sample)
+        for sample in sample_dict.values():
+            if padding_tensor is not None:
+                vis_results.append(torch.cat([sample, padding_tensor], dim=0))
             else:
-                vis_results.append(target_samples)
+                vis_results.append(sample)
 
         # concatnate along batch size
         vis_results = torch.cat(vis_results)
@@ -237,13 +155,66 @@ class GenVisualizer(Visualizer):
         vis_results = vis_results.numpy().astype(np.uint8)
         return vis_results
 
+    def _vis_image_sample(self, gen_samples: SampleList,
+                          target_keys: Union[str, List[str], None],
+                          color_order: str, target_mean: mean_std_type,
+                          target_std: mean_std_type, n_row: int) -> np.ndarray:
+        if target_keys is None:
+            target_keys = [
+                k for k, v in gen_samples[0].items()
+                if not k.startswith('_') and isinstance(v, PixelData)
+            ]
+        target_keys = [target_keys] if isinstance(target_keys, str) \
+            else target_keys
+
+        sample_list = list()
+        for sample in gen_samples:
+            sample_dict = dict()
+            for k in target_keys:
+                sample_dict[k] = self._get_pixel_data_by_key(sample, k)
+            sample_list.append(sample_dict)
+
+        for k in sample_list[0].keys():
+            sample_ = torch.stack([samp[k] for samp in sample_list], dim=0)
+            sample_ = self._post_process_image(sample_.cpu(), color_order,
+                                               target_mean, target_std)
+            sample_dict[k] = sample_
+
+        padding_tensor = self._get_padding_tensor(sample_dict, n_row)
+
+        vis_results = []
+        for sample in sample_dict.values():
+            if padding_tensor is not None:
+                vis_results.append(torch.cat([sample, padding_tensor], dim=0))
+            else:
+                vis_results.append(sample)
+
+        # concatnate along batch size
+        vis_results = torch.cat(vis_results, dim=0)
+        vis_results = make_grid(vis_results, nrow=n_row).cpu().permute(1, 2, 0)
+        vis_results = vis_results.numpy().astype(np.uint8)
+        return vis_results
+
+    def _get_pixel_data_by_key(self, sample: GenDataSample,
+                               key: Union[str, List[str]]) -> Tensor:
+        if '.' in key:
+            key_list = key.split('.')
+        else:
+            key_list = [key]
+        pixel_data = sample
+        for k in key_list:
+            # get pixel data step by step
+            assert hasattr(pixel_data, k)
+            pixel_data = getattr(pixel_data, k)
+        assert isinstance(pixel_data, PixelData)
+        return pixel_data.data
+
     def add_datasample(self,
                        name: str,
                        *,
-                       gen_samples: Tuple[dict, Tensor],
-                       gt_samples: Optional[DataSetOutputs] = None,
+                       gen_samples: Sequence[GenDataSample],
                        draw_gt: bool = False,
-                       gt_keys: Optional[Tuple[str, List[str]]] = None,
+                       target_keys: Optional[Tuple[str, List[str]]] = None,
                        vis_mode: Optional[str] = None,
                        n_rows: Optional[int] = None,
                        color_order: str = 'bgr',
@@ -264,7 +235,6 @@ class GenVisualizer(Visualizer):
         Args:
             name (str): The image identifier.
             gen_samples ()
-            gt_samples
             draw_gt
             gt_keys
             vis_mode
@@ -284,8 +254,8 @@ class GenVisualizer(Visualizer):
         else:
             vis_func = getattr(self, f'_vis_{vis_mode}_sample')
 
-        vis_sample = vis_func(gen_samples, gt_samples, draw_gt, gt_keys,
-                              color_order, target_mean, target_std, n_rows)
+        vis_sample = vis_func(gen_samples, target_keys, color_order,
+                              target_mean, target_std, n_rows)
 
         if show:
             self.show(vis_sample, win_name=name, wait_time=wait_time)
