@@ -92,8 +92,6 @@ class StyleGAN3(StyleGAN2):
         device = get_module_device(generator)
         identity_matrix = torch.eye(3, device=device)
 
-        s = []
-
         # Run mapping network.
         z = torch.randn([batch_size, self.noise_size], device=device)
         ws = generator.style_mapping(z=z)
@@ -122,8 +120,6 @@ class StyleGAN3(StyleGAN2):
                 setattr(data_sample, 'eqt_int',
                         GenDataSample(diff=diff, mask=mask))
 
-            s += [(ref - img).square() * mask, mask]
-
         # Fractional translation (EQ-T_frac).
         if eq_cfg['compute_eqt_frac']:
             t = (torch.rand(2, device=device) * 2 -
@@ -138,8 +134,6 @@ class StyleGAN3(StyleGAN2):
                 data_sample = batch_sample[idx]
                 setattr(data_sample, 'eqt_frac',
                         GenDataSample(diff=diff, mask=mask))
-
-            s += [(ref - img).square() * mask, mask]
 
         # Rotation (EQ-R).
         if eq_cfg['compute_eqr']:
@@ -156,7 +150,5 @@ class StyleGAN3(StyleGAN2):
                 data_sample = batch_sample[idx]
                 setattr(data_sample, 'eqr',
                         GenDataSample(diff=diff, mask=mask))
-
-            s += [(ref - pseudo).square() * mask, mask]
 
         return batch_sample
