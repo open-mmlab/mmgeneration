@@ -3,16 +3,18 @@ import math
 import warnings
 from collections import defaultdict
 from copy import deepcopy
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
+from mmengine import MessageHub
+from mmengine.data import BaseDataElement
 from mmengine.dist import master_only
 from mmengine.hooks import Hook
 from mmengine.runner import Runner
 from mmengine.utils import is_list_of
 from mmengine.visualization import Visualizer
 
-from mmgen.core import PixelData
+from mmgen.core import GenDataSample, PixelData
 from mmgen.core.sampler import get_sampler
 from mmgen.registry import HOOKS
 
@@ -111,8 +113,10 @@ class GenVisualizationHook(Hook):
                  fixed_input: bool = True,
                  n_samples: Optional[int] = 64,
                  n_rows: Optional[int] = 8,
+                 message_hub_vis_kwargs: Optional[Tuple[str, dict, List[str],
+                                                        List[Dict]]] = None,
                  save_at_test: bool = True,
-                 test_vis_keys_list: Optional[Union[str, List[str]]] = None,
+                 test_vis_keys: Optional[Union[str, List[str]]] = None,
                  show: bool = False,
                  wait_time: float = 0):
 
@@ -140,7 +144,8 @@ class GenVisualizationHook(Hook):
 
         self.wait_time = wait_time
         self.save_at_test = save_at_test
-        self.test_vis_keys_list = test_vis_keys_list
+        self.test_vis_keys_list = test_vis_keys
+        self.message_vis_kwargs = message_hub_vis_kwargs
 
     @master_only
     def after_val_iter(self, runner: Runner, batch_idx: int,
@@ -300,7 +305,7 @@ class GenVisualizationHook(Hook):
                 sampler = get_sampler(vis_kwargs_, runner)
             need_save = fixed_input and not self.inputs_buffer[sampler_type]
 
-            for idx, inputs in enumerate(sampler):
+            for inputs in sampler:
                 output_list += [out for out in forward_func(inputs)]
 
                 # save inputs
@@ -321,4 +326,84 @@ class GenVisualizationHook(Hook):
                 step=batch_idx + 1,
                 **vis_kwargs_)
 
+        # save images in message_hub
+        self.vis_from_message_hub(batch_idx, output_color_order, mean, std)
+
         module.train()
+
+    def vis_from_message_hub(self, batch_idx: int, color_order: str,
+                             target_mean: Sequence[Union[float, int]],
+                             target_std: Sequence[Union[float, int]]):
+        """Visualize samples from message hub.
+
+        Args:
+            batch_idx (int): The index of the current batch in the test loop.
+            color_order (str): The color order of generated images.
+            target_mean (Sequence[Union[float, int]]): The original mean
+                of the image tensor before preprocessing. Image will be
+                re-shifted to ``target_mean`` before visualizing.
+            target_std (Sequence[Union[float, int]]): The original std of the
+                image tensor before preprocessing. Image will be re-scaled to
+                ``target_std`` before visualizing.
+        """
+        if self.message_vis_kwargs is None:
+            return
+
+        message_hub = MessageHub.get_current_instance()
+        if 'vis_results' not in message_hub.runtime_info:
+            raise RuntimeError('Cannot find \'vis_results\' in '
+                               '\'message_hub.runtime_info\'. Cannot perform '
+                               'visualization from messageHub.')
+
+        vis_results = message_hub.get_info('vis_results')
+        if isinstance(self.message_vis_kwargs, str):
+            target_keys, vis_modes = [self.message_vis_kwargs], [None]
+        elif isinstance(self.message_vis_kwargs, dict):
+            target_keys = [self.message_vis_kwargs['key']]
+            vis_modes = [self.message_vis_kwargs['vis_mode']]
+        elif is_list_of(self.message_vis_kwargs, str):
+            target_keys = self.message_vis_kwargs
+            vis_modes = [None for _ in range(len(target_keys))]
+        else:
+            # list of dict
+            target_keys = [kwargs['key'] for kwargs in self.message_vis_kwargs]
+            vis_modes = [
+                kwargs.pop('vis_mode', None)
+                for kwargs in deepcopy(self.message_vis_kwargs)
+            ]
+
+        for key, vis_mode in zip(target_keys, vis_modes):
+            if key not in vis_results:
+                raise RuntimeError(
+                    f'Cannot find \'{key}\' in '
+                    'message_hub.runtime_info[\'vis_results\'].')
+
+            value = vis_results[key]
+            # pack to list of GenDataSample
+            if isinstance(value, torch.Tensor):
+                gen_samples = []
+                num_batches = value.shape[0]
+                for idx in range(num_batches):
+                    gen_sample = GenDataSample()
+                    setattr(gen_sample, key, PixelData(data=value[idx]))
+                    gen_samples.append(gen_sample)
+            elif is_list_of(value, BaseDataElement):
+                # already packed
+                gen_samples = value
+                num_batches = len(gen_samples)
+            else:
+                raise TypeError(
+                    'Only support to visualize Tensor or list of DataSample '
+                    f'in MessageHub. But \'{key}\' is \'{type(value)}\'.')
+
+            self._visualizer.add_datasample(
+                name=f'train_{key}',
+                gen_samples=gen_samples,
+                target_keys=key,
+                vis_mode=vis_mode,
+                n_rows=min(self.n_rows, num_batches),
+                color_order=color_order,
+                target_mean=target_mean.cpu(),
+                target_std=target_std.cpu(),
+                show=self.show,
+                step=batch_idx)

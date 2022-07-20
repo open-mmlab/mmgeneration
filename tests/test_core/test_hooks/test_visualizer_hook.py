@@ -2,6 +2,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock
 
 import torch
+from mmengine import MessageHub
 from mmengine.testing import assert_allclose
 from mmengine.visualization import Visualizer
 from torch.utils.data.dataset import Dataset
@@ -17,6 +18,7 @@ from mmgen.registry import MODELS  # isort:skip  # noqa
 class TestGenVisualizationHook(TestCase):
 
     Visualizer.get_instance('mmgen')
+    MessageHub.get_instance('mmgen')
 
     def test_init(self):
         hook = GenVisualizationHook(
@@ -299,12 +301,102 @@ class TestGenVisualizationHook(TestCase):
             hook.after_train_iter(runner, idx, data_batch, None)
         self.assertEqual(mock_visualuzer.add_datasample.call_count, 1)
 
+        # test vis with messagehub info --> str
+        mock_visualuzer.add_datasample.reset_mock()
+        message_hub = MessageHub.get_current_instance()
+
+        feat_map = torch.randn(4, 16, 4, 4)
+        vis_results = dict(feat_map=feat_map)
+        message_hub.update_info('vis_results', vis_results)
+
+        hook.message_vis_kwargs = 'feat_map'
+        for idx in range(3):
+            hook.after_train_iter(runner, idx, data_batch, None)
+        called_args_list = mock_visualuzer.add_datasample.call_args_list
+        self.assertEqual(len(called_args_list), 2)  # outputs + messageHub
+        messageHub_vis_args = called_args_list[1].kwargs
+        self.assertEqual(messageHub_vis_args['name'], 'train_feat_map')
+        self.assertEqual(len(messageHub_vis_args['gen_samples']), 4)
+        self.assertEqual(messageHub_vis_args['vis_mode'], None)
+        self.assertEqual(messageHub_vis_args['n_rows'], 4)
+
+        # test vis with messagehub info --> list[str]
+        mock_visualuzer.add_datasample.reset_mock()
+
+        hook.message_vis_kwargs = ['feat_map']
+        for idx in range(3):
+            hook.after_train_iter(runner, idx, data_batch, None)
+        called_args_list = mock_visualuzer.add_datasample.call_args_list
+        self.assertEqual(len(called_args_list), 2)  # outputs + messageHub
+        messageHub_vis_args = called_args_list[1].kwargs
+        self.assertEqual(messageHub_vis_args['name'], 'train_feat_map')
+        self.assertEqual(len(messageHub_vis_args['gen_samples']), 4)
+        self.assertEqual(messageHub_vis_args['vis_mode'], None)
+        self.assertEqual(messageHub_vis_args['n_rows'], 4)
+
+        # test vis with messagehub info --> dict
+        mock_visualuzer.add_datasample.reset_mock()
+
+        hook.message_vis_kwargs = dict(key='feat_map', vis_mode='feature_map')
+        for idx in range(3):
+            hook.after_train_iter(runner, idx, data_batch, None)
+        called_args_list = mock_visualuzer.add_datasample.call_args_list
+        self.assertEqual(len(called_args_list), 2)  # outputs + messageHub
+        messageHub_vis_args = called_args_list[1].kwargs
+        self.assertEqual(messageHub_vis_args['name'], 'train_feat_map')
+        self.assertEqual(len(messageHub_vis_args['gen_samples']), 4)
+        self.assertEqual(messageHub_vis_args['vis_mode'], 'feature_map')
+        self.assertEqual(messageHub_vis_args['n_rows'], 4)
+
+        # test vis with messagehub info --> list[dict]
+        mock_visualuzer.add_datasample.reset_mock()
+
+        feat_map = torch.randn(4, 16, 4, 4)
+        x_t = [GenDataSample(info='x_t')]
+        vis_results = dict(feat_map=feat_map, x_t=x_t)
+        message_hub.update_info('vis_results', vis_results)
+
+        hook.message_vis_kwargs = [
+            dict(key='feat_map', vis_mode='feature_map'),
+            dict(key='x_t')
+        ]
+        for idx in range(3):
+            hook.after_train_iter(runner, idx, data_batch, None)
+        called_args_list = mock_visualuzer.add_datasample.call_args_list
+        self.assertEqual(len(called_args_list), 3)  # outputs + messageHub
+        # output_vis_args = called_args_list[0].kwargs
+        feat_map_vis_args = called_args_list[1].kwargs
+        self.assertEqual(feat_map_vis_args['name'], 'train_feat_map')
+        self.assertEqual(len(feat_map_vis_args['gen_samples']), 4)
+        self.assertEqual(feat_map_vis_args['vis_mode'], 'feature_map')
+        self.assertEqual(feat_map_vis_args['n_rows'], 4)
+
+        x_t_vis_args = called_args_list[2].kwargs
+        self.assertEqual(x_t_vis_args['name'], 'train_x_t')
+        self.assertEqual(len(x_t_vis_args['gen_samples']), 1)
+        self.assertEqual(x_t_vis_args['vis_mode'], None)
+        self.assertEqual(x_t_vis_args['n_rows'], 1)
+
+        # test vis messageHub info --> errors
+        hook.message_vis_kwargs = 'error'
+        with self.assertRaises(RuntimeError):
+            hook.after_train_iter(runner, 1, data_batch, None)
+
+        message_hub.runtime_info.clear()
+        with self.assertRaises(RuntimeError):
+            hook.after_train_iter(runner, 1, data_batch, None)
+
+        hook.message_vis_kwargs = dict(key='feat_map', vis_mode='feature_map')
+        message_hub.update_info('vis_results', dict(feat_map='feat_map'))
+        with self.assertRaises(TypeError):
+            hook.after_train_iter(runner, 1, data_batch, None)
+
     def test_after_test_iter(self):
         model = MagicMock()
         hook = GenVisualizationHook(
             interval=10,
             n_samples=2,
-            test_vis_keys_list=['ema', 'orig', 'new_model.x_t', 'gt_img'],
+            test_vis_keys=['ema', 'orig', 'new_model.x_t', 'gt_img'],
             vis_kwargs_list=dict(type='GAN'))
         mock_visualuzer = MagicMock()
         mock_visualuzer.add_datasample = MagicMock()
