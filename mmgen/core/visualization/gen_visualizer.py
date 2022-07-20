@@ -206,24 +206,39 @@ class GenVisualizer(Visualizer):
             # get pixel data step by step
             assert hasattr(pixel_data, k)
             pixel_data = getattr(pixel_data, k)
-        assert isinstance(pixel_data, PixelData)
+        if isinstance(pixel_data, PixelData):
+            return pixel_data
+        else:
+            # check only one pixel data in current datasample
+            elements = [
+                element for k, element in pixel_data.items()
+                if '_' in k and isinstance(element, PixelData)
+            ]
+            assert len(elements) == 1, (
+                f'Find {len(elements)} PixelData in DataSample with '
+                f'key {key}.')
+
+        assert isinstance(
+            pixel_data,
+            PixelData), (f'Element with key \'{key}\' is not a PixelData.')
         return pixel_data.data
 
-    def add_datasample(self,
-                       name: str,
-                       *,
-                       gen_samples: Sequence[GenDataSample],
-                       draw_gt: bool = False,
-                       target_keys: Optional[Tuple[str, List[str]]] = None,
-                       vis_mode: Optional[str] = None,
-                       n_rows: Optional[int] = None,
-                       color_order: str = 'bgr',
-                       target_mean: Sequence[Union[float, int]] = 127.5,
-                       target_std: Sequence[Union[float, int]] = 127.5,
-                       show: bool = False,
-                       wait_time: int = 0,
-                       step: int = 0,
-                       **kwargs) -> None:
+    def add_datasample(
+            self,
+            name: str,
+            *,
+            gen_samples: Sequence[GenDataSample],
+            # draw_gt: bool = False,
+            target_keys: Optional[Tuple[str, List[str]]] = None,
+            vis_mode: Optional[str] = None,
+            n_rows: Optional[int] = None,
+            color_order: str = 'bgr',
+            target_mean: Sequence[Union[float, int]] = 127.5,
+            target_std: Sequence[Union[float, int]] = 127.5,
+            show: bool = False,
+            wait_time: int = 0,
+            step: int = 0,
+            **kwargs) -> None:
         """Draw datasample and save to all backends.
 
         - If GT and prediction are plotted at the same time, they are

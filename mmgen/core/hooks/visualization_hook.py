@@ -3,14 +3,16 @@ import math
 import warnings
 from collections import defaultdict
 from copy import deepcopy
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple, Union
 
 import torch
 from mmengine.dist import master_only
 from mmengine.hooks import Hook
 from mmengine.runner import Runner
+from mmengine.utils import is_list_of
 from mmengine.visualization import Visualizer
 
+from mmgen.core import PixelData
 from mmgen.core.sampler import get_sampler
 from mmgen.registry import HOOKS
 
@@ -52,14 +54,14 @@ class GenVisualizationHook(Hook):
         >>>         type='GenVisualizationHook',
         >>>         interval=1000,
         >>>         fixed_input=True,
-        >>>         sample_kwargs_list=dict(type='GAN', name='fake_img'))]
+        >>>         vis_kwargs_list=dict(type='GAN', name='fake_img'))]
         >>> # for Translation models
         >>> custom_hooks = [
         >>>     dict(
         >>>         type='GenVisualizationHook',
         >>>         interval=10,
         >>>         fixed_input=False,
-        >>>         sample_kwargs_list=[dict(type='Translation',
+        >>>         vis_kwargs_list=[dict(type='Translation',
         >>>                                  name='translation_train',
         >>>                                  n_samples=6, draw_gt=True,
         >>>                                  n_rows=3),
@@ -67,6 +69,8 @@ class GenVisualizationHook(Hook):
         >>>                                  name='translation_val',
         >>>                                  n_samples=16, draw_gt=True,
         >>>                                  n_rows=4)])]
+
+    # NOTE: user-defined vis_kwargs > vis_kwargs_mapping > hook init args
 
     Args:
         interval (int): Visualization interval. Default: 1000.
@@ -84,38 +88,40 @@ class GenVisualizationHook(Hook):
 
     priority = 'NORMAL'
 
-    SAMPLE_KWARGS_MAPPING = dict(
-        GAN=dict(type='noise', sample_kwargs={}, vis_kwargs={}),
-        Translation=dict(type='Data', sample_kwargs={}),
-        TranslationVal=dict(type='ValData', sample_kwargs={}),
-        TranslationTest=dict(type='TestData', sample_kwargs={}),
+    VIS_KWARGS_MAPPING = dict(
+        GAN=dict(type='Noise', vis_kwargs={}),
+        Translation=dict(type='Data', vis_kwargs={}),
+        TranslationVal=dict(type='ValData', vis_kwargs={}),
+        TranslationTest=dict(type='TestData', vis_kwargs={}),
         DDPMDenoising=dict(
             type='Arguments',
-            sample_kwargs=dict(
+            forward_mode='sampling',
+            name='ddpm_sample',
+            n_samples=16,
+            n_rows=4,
+            vis_mode='gif',
+            n_skip=1,
+            forward_kwargs=dict(
                 forward_mode='sampling',
-                name='ddpm_sample',
-                n_samples=16,
-                n_rows=4,
-                vis_mode='gif',
-                sample_kwargs=dict(show_pbar=True, save_intermedia=True),
-            ),
-            vis_kwargs=dict(n_skip=1)))
+                sample_kwargs=dict(show_pbar=True, save_intermedia=True))))
 
     def __init__(self,
                  interval: int = 1000,
-                 sample_kwargs_list: Tuple[List[dict], dict] = None,
+                 vis_kwargs_list: Tuple[List[dict], dict] = None,
                  fixed_input: bool = True,
                  n_samples: Optional[int] = 64,
                  n_rows: Optional[int] = 8,
+                 save_at_test: bool = True,
+                 test_vis_keys_list: Optional[Union[str, List[str]]] = None,
                  show: bool = False,
                  wait_time: float = 0):
 
         self._visualizer: Visualizer = Visualizer.get_current_instance()
         self.interval = interval
 
-        self.sample_kwargs_list = deepcopy(sample_kwargs_list)
-        if isinstance(self.sample_kwargs_list, dict):
-            self.sample_kwargs_list = [self.sample_kwargs_list]
+        self.vis_kwargs_list = deepcopy(vis_kwargs_list)
+        if isinstance(self.vis_kwargs_list, dict):
+            self.vis_kwargs_list = [self.vis_kwargs_list]
 
         self.fixed_input = fixed_input
         self.inputs_buffer = defaultdict(list)
@@ -123,7 +129,6 @@ class GenVisualizationHook(Hook):
         self.n_samples = n_samples
         self.n_rows = n_rows
 
-        # NOTE: copy from mmdet
         self.show = show
         if self.show:
             # No need to think about vis backends.
@@ -134,13 +139,14 @@ class GenVisualizationHook(Hook):
                           'needs to be excluded.')
 
         self.wait_time = wait_time
+        self.save_at_test = save_at_test
+        self.test_vis_keys_list = test_vis_keys_list
 
     @master_only
     def after_val_iter(self, runner: Runner, batch_idx: int,
                        data_batch: Sequence[dict], outputs) -> None:
-        """NOTE: do not support visualize during validation
-
-        Visualize samples after valditaion iteraiton.
+        """:class:`GenVisualizationHook` do not support visualize during
+        validation.
 
         Args:
             runner (Runner): The runner of the training process.
@@ -149,7 +155,7 @@ class GenVisualizationHook(Hook):
                 Defaults to None.
             outputs: outputs of the generation model
         """
-        pass
+        return
 
     @master_only
     def after_test_iter(self, runner: Runner, batch_idx, data_batch, outputs):
@@ -162,9 +168,48 @@ class GenVisualizationHook(Hook):
                 Defaults to None.
             outputs: outputs of the generation model Defaults to None.
         """
-        if self.every_n_inner_iters(batch_idx, self.interval):
-            self.vis_sample(
-                runner, batch_idx, data_batch, outputs, mode='test')
+        if not self.save_at_test:
+            return
+
+        # get color order, mean and std
+        module = runner.model
+        if hasattr(module, 'module'):
+            module = module.module
+        data_preprocessor = module.data_preprocessor
+        if hasattr(data_preprocessor, 'output_color_order'):
+            output_color_order = data_preprocessor.output_color_order
+        else:
+            output_color_order = 'bgr'
+        mean = data_preprocessor.mean
+        std = data_preprocessor.std
+        for idx, sample in enumerate(outputs):
+            curr_idx = batch_idx * len(outputs) + idx
+            if self.test_vis_keys_list is None:
+                target_keys = [
+                    k for k, v in sample.items()
+                    if not k.startswith('_') and isinstance(v, PixelData)
+                ]
+                assert len(target_keys), (
+                    'Cannot found PixelData in outputs. Please specific '
+                    '\'vis_test_keys_list\'.')
+            elif isinstance(self.test_vis_keys_list, str):
+                target_keys = [self.test_vis_keys_list]
+            else:
+                assert is_list_of(self.test_vis_keys_list, str), (
+                    'test_vis_keys_list must be str or list of str or None.')
+                target_keys = self.test_vis_keys_list
+
+            for key in target_keys:
+                name = key.replace('.', '_')
+                self._visualizer.add_datasample(
+                    name=name,
+                    gen_samples=[sample],
+                    batch_idx=curr_idx,
+                    target_keys=key,
+                    n_rows=1,
+                    color_order=output_color_order,
+                    target_mean=mean.cpu(),
+                    target_std=std.cpu())
 
     @master_only
     def after_train_iter(self,
@@ -182,16 +227,14 @@ class GenVisualizationHook(Hook):
             outputs (dict, optional): Outputs from model. Defaults to None.
         """
         if self.every_n_inner_iters(batch_idx, self.interval):
-            self.vis_sample(
-                runner, batch_idx, data_batch, outputs, mode='train')
+            self.vis_sample(runner, batch_idx, data_batch, outputs)
 
     @torch.no_grad()
     def vis_sample(self,
                    runner: Runner,
                    batch_idx: int,
                    data_batch: DATA_BATCH,
-                   outputs: Optional[dict] = None,
-                   mode: str = 'train') -> None:
+                   outputs: Optional[dict] = None) -> None:
         """Visualize samples.
 
         Args:
@@ -211,11 +254,7 @@ class GenVisualizationHook(Hook):
         if hasattr(module, 'module'):
             module = module.module
 
-        if mode in ['train', 'val']:
-            forward_func = module.val_step
-        else:
-            forward_func = module.test_step
-
+        forward_func = module.val_step
         # get color order, mean and std
         data_preprocessor = module.data_preprocessor
         if hasattr(data_preprocessor, 'output_color_order'):
@@ -225,64 +264,52 @@ class GenVisualizationHook(Hook):
         mean = data_preprocessor.mean
         std = data_preprocessor.std
 
-        for sample_kwargs in self.sample_kwargs_list:
+        for vis_kwargs in self.vis_kwargs_list:
             # pop the sample-unrelated values
-            sample_kwargs_ = deepcopy(sample_kwargs)
-            sampler_type = sample_kwargs_['type']
+            vis_kwargs_ = deepcopy(vis_kwargs)
+            sampler_type = vis_kwargs_['type']
 
             # replace with alias
-            for alias in self.SAMPLE_KWARGS_MAPPING.keys():
+            for alias in self.VIS_KWARGS_MAPPING.keys():
                 if alias.upper() == sampler_type.upper():
-                    sampler_alias = self.SAMPLE_KWARGS_MAPPING[alias]
-                    sampler_type = sampler_alias['type']
-                    default_sample_kwargs = sampler_alias['sample_kwargs']
-                    sample_kwargs_['type'] = sampler_type
-                    for default_k, default_v in default_sample_kwargs.items():
-                        sample_kwargs_.setdefault(default_k, default_v)
+                    sampler_alias = deepcopy(self.VIS_KWARGS_MAPPING[alias])
+                    vis_kwargs_['type'] = sampler_alias.pop('type')
+                    for default_k, default_v in sampler_alias.items():
+                        vis_kwargs_.setdefault(default_k, default_v)
                     break
 
-            name = sample_kwargs_.pop('name', None)
+            name = vis_kwargs_.pop('name', None)
             if not name:
-                name = sampler_type
+                name = sampler_type.lower()
 
-            n_samples = sample_kwargs_.pop('n_samples', self.n_samples)
-            n_rows = sample_kwargs_.pop('n_rows', self.n_rows)
+            n_samples = vis_kwargs_.pop('n_samples', self.n_samples)
+            n_rows = vis_kwargs_.pop('n_rows', self.n_rows)
+            n_rows = min(n_rows, n_samples)
+
             num_iters = math.ceil(n_samples / num_batches)
-            sample_kwargs_['max_times'] = num_iters
-            sample_kwargs_['num_batches'] = num_batches
-            fixed_input = sample_kwargs_.pop('fixed_input', self.fixed_input)
-            draw_gt = sample_kwargs_.pop('draw_gt', False)
-            target_keys = sample_kwargs_.pop('target_keys', None)
-            vis_mode = sample_kwargs_.pop('vis_mode', None)
-            vis_kwargs = sample_kwargs_.pop('vis_kwargs', dict())
+            vis_kwargs_['max_times'] = num_iters
+            vis_kwargs_['num_batches'] = num_batches
+            fixed_input = vis_kwargs_.pop('fixed_input', self.fixed_input)
+            target_keys = vis_kwargs_.pop('target_keys', None)
+            vis_mode = vis_kwargs_.pop('vis_mode', None)
 
             output_list = []
-            input_list = []
-
             if fixed_input and self.inputs_buffer[sampler_type]:
                 sampler = self.inputs_buffer[sampler_type]
             else:
-                sampler = get_sampler(sample_kwargs_, runner)
+                sampler = get_sampler(vis_kwargs_, runner)
             need_save = fixed_input and not self.inputs_buffer[sampler_type]
 
-            for inputs in sampler:
+            for idx, inputs in enumerate(sampler):
                 output_list += [out for out in forward_func(inputs)]
-                # output_list.append(forward_func(inputs))
 
                 # save inputs
                 if need_save:
                     self.inputs_buffer[sampler_type].append(inputs)
 
-                # save processed input to visualize
-                processed_input, data_samples = data_preprocessor(inputs)
-                processed_input_dict = dict(
-                    inputs=processed_input, data_sample=data_samples)
-                input_list.append(processed_input_dict)
-
             self._visualizer.add_datasample(
                 name=name,
                 gen_samples=output_list[:n_samples],
-                draw_gt=draw_gt,
                 target_keys=target_keys,
                 vis_mode=vis_mode,
                 n_rows=n_rows,
@@ -292,6 +319,6 @@ class GenVisualizationHook(Hook):
                 show=self.show,
                 wait_time=self.wait_time,
                 step=batch_idx + 1,
-                **vis_kwargs)
+                **vis_kwargs_)
 
         module.train()
