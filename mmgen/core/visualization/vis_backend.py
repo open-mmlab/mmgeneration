@@ -69,8 +69,7 @@ class GenVisBackend(BaseVisBackend):
 
     def _init_env(self):
         """Init save dir."""
-        if not os.path.exists(self._save_dir):
-            os.makedirs(self._save_dir, exist_ok=True)
+        os.makedirs(self._save_dir, exist_ok=True)
         self._img_save_dir = osp.join(
             self._save_dir,  # type: ignore
             self._img_save_dir)
@@ -182,7 +181,13 @@ class GenVisBackend(BaseVisBackend):
                 Default to None.
         """
         assert isinstance(scalar_dict, dict)
-        scalar_dict.setdefault('step', step)
+        scalar_dict_new = dict()
+        for k, v in scalar_dict.items():
+            if isinstance(v, torch.Tensor):
+                scalar_dict_new[k] = v.item()
+            else:
+                scalar_dict[k] = v
+        scalar_dict_new.setdefault('step', step)
 
         if file_path is not None:
             assert file_path.split('.')[-1] == 'json'
@@ -192,8 +197,8 @@ class GenVisBackend(BaseVisBackend):
             assert new_save_file_path != self._scalar_save_file, \
                 '``file_path`` and ``scalar_save_file`` have the ' \
                 'same name, please set ``file_path`` to another value'
-            self._dump(scalar_dict, new_save_file_path, 'json')
-        self._dump(scalar_dict, self._scalar_save_file, 'json')
+            self._dump(scalar_dict_new, new_save_file_path, 'json')
+        self._dump(scalar_dict_new, self._scalar_save_file, 'json')
         self._upload(self._scalar_save_file)
 
     def _dump(self, value_dict: dict, file_path: str,

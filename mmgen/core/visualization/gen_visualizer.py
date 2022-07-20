@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import math
 from functools import partial
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
@@ -73,9 +74,21 @@ class GenVisualizer(Visualizer):
         return image
 
     @staticmethod
-    def _get_padding_tensor(samples: Tuple[dict, Tensor],
-                            n_rows: int) -> Optional[Tensor]:
-        """Get tensor for padding the empty position."""
+    def _get_n_row_and_padding(
+            samples: Tuple[dict, Tensor],
+            n_row: Optional[int] = None) -> Tuple[int, Optional[Tensor]]:
+        """Get number of sample in each row and tensor for padding the empty
+        position.
+
+        Args:
+            samples (Tuple[dict, Tensor]): Samples to visualize.
+            n_row (int, optional): Number of images displayed in each row of.
+                If not passed, n_row will be set as ``int(sqrt(batch_size))``.
+
+        Returns:
+            Tuple[int, Optional[int]]: Number of sample in each row and tensor
+                for padding the empty position.
+        """
 
         if isinstance(samples, dict):
             for sample in iter(samples.values()):
@@ -87,13 +100,15 @@ class GenVisualizer(Visualizer):
             sample_shape = samples.shape
 
         n_samples = sample_shape[0]
-        if n_samples % n_rows == 0:
+        if n_row is None:
+            n_row = int(math.sqrt(n_samples))
+        if n_samples % n_row == 0:
             n_padding = 0
         else:
-            n_padding = n_rows - (n_samples % n_rows)
+            n_padding = n_row - (n_samples % n_row)
         if n_padding:
-            return -1.0 * torch.ones(n_padding, *sample_shape[1:])
-        return None
+            return n_row, -1.0 * torch.ones(n_padding, *sample_shape[1:])
+        return n_row, None
 
     def _vis_gif_sample(self, gen_samples: SampleList,
                         target_keys: Union[str, List[str], None],
@@ -134,7 +149,7 @@ class GenVisualizer(Visualizer):
             sample_ = post_process_sequence(sample_.cpu())
             sample_dict[k] = sample_
 
-        padding_tensor = self._get_padding_tensor(sample_dict, n_row)
+        n_row, padding_tensor = self._get_n_row_and_padding(sample_dict, n_row)
         num_timesteps = next(iter(sample_dict.values())).shape[1]
 
         vis_results = []
@@ -162,7 +177,8 @@ class GenVisualizer(Visualizer):
         if target_keys is None:
             target_keys = [
                 k for k, v in gen_samples[0].items()
-                if not k.startswith('_') and isinstance(v, PixelData)
+                if ((not k.startswith('_')) and (
+                    isinstance(v, PixelData)) and (v.data.ndim == 3))
             ]
         target_keys = [target_keys] if isinstance(target_keys, str) \
             else target_keys
@@ -180,7 +196,7 @@ class GenVisualizer(Visualizer):
                                                target_mean, target_std)
             sample_dict[k] = sample_
 
-        padding_tensor = self._get_padding_tensor(sample_dict, n_row)
+        n_row, padding_tensor = self._get_n_row_and_padding(sample_dict, n_row)
 
         vis_results = []
         for sample in sample_dict.values():
@@ -197,6 +213,15 @@ class GenVisualizer(Visualizer):
 
     def _get_pixel_data_by_key(self, sample: GenDataSample,
                                key: Union[str, List[str]]) -> Tensor:
+        """Get tensor in ``GenDataSample`` by the given key.
+
+        Args:
+            sample (GenDataSample): Input data sample.
+            key (Union[str, List[str]]): Name of the target tensor.
+
+        Returns:
+            Tensor: Tensor from the data sample.
+        """
         if '.' in key:
             key_list = key.split('.')
         else:
@@ -207,21 +232,22 @@ class GenVisualizer(Visualizer):
             assert hasattr(pixel_data, k)
             pixel_data = getattr(pixel_data, k)
         if isinstance(pixel_data, PixelData):
-            return pixel_data
+            return pixel_data.data
         else:
             # check only one pixel data in current datasample
             elements = [
                 element for k, element in pixel_data.items()
-                if '_' in k and isinstance(element, PixelData)
+                if not k.startswith('_') and isinstance(element, PixelData)
             ]
             assert len(elements) == 1, (
                 f'Find {len(elements)} PixelData in DataSample with '
                 f'key {key}.')
+            pixel_data = elements[0]
 
-        assert isinstance(
-            pixel_data,
-            PixelData), (f'Element with key \'{key}\' is not a PixelData.')
-        return pixel_data.data
+            assert isinstance(
+                pixel_data,
+                PixelData), (f'Element with key \'{key}\' is not a PixelData.')
+            return pixel_data.data
 
     def add_datasample(
             self,
@@ -231,7 +257,7 @@ class GenVisualizer(Visualizer):
             # draw_gt: bool = False,
             target_keys: Optional[Tuple[str, List[str]]] = None,
             vis_mode: Optional[str] = None,
-            n_rows: Optional[int] = None,
+            n_row: Optional[int] = 1,
             color_order: str = 'bgr',
             target_mean: Sequence[Union[float, int]] = 127.5,
             target_std: Sequence[Union[float, int]] = 127.5,
@@ -250,7 +276,6 @@ class GenVisualizer(Visualizer):
         Args:
             name (str): The image identifier.
             gen_samples ()
-            draw_gt
             gt_keys
             vis_mode
             n_rows
@@ -270,7 +295,7 @@ class GenVisualizer(Visualizer):
             vis_func = getattr(self, f'_vis_{vis_mode}_sample')
 
         vis_sample = vis_func(gen_samples, target_keys, color_order,
-                              target_mean, target_std, n_rows)
+                              target_mean, target_std, n_row)
 
         if show:
             self.show(vis_sample, win_name=name, wait_time=wait_time)
