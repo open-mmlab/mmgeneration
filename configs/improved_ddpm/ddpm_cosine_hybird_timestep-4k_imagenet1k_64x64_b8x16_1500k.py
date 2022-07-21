@@ -16,7 +16,7 @@ custom_hooks = [
         type='GenVisualizationHook',
         interval=5000,
         fixed_input=True,
-        sample_kwargs_list=dict(type='DDPMDenoising'))
+        vis_kwargs_list=dict(type='DDPMDenoising'))
 ]
 
 # METRICS

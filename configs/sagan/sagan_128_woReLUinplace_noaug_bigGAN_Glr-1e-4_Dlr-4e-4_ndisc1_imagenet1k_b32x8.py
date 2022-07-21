@@ -45,7 +45,7 @@ custom_hooks = [
         interval=5000,
         fixed_input=True,
         # vis ema and orig at the same time
-        sample_kwargs_list=dict(
+        vis_kwargs_list=dict(
             type='Noise',
             name='fake_img',
             sample_model='ema/orig',
