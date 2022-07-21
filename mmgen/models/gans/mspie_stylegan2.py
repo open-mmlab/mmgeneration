@@ -15,6 +15,7 @@ from mmgen.registry import MODELS
 from mmgen.typing import TrainStepInputs
 from ..common import gather_log_vars, set_requires_grad
 from ..gans.stylegan2 import StyleGAN2
+from copy import deepcopy
 
 ModelType = Union[Dict, nn.Module]
 TrainInput = Union[dict, Tensor]
@@ -35,7 +36,7 @@ class MSPIEStyleGAN2(StyleGAN2):
 
     def __init__(self, *args, train_settings=dict(), **kwargs):
         super().__init__(*args, **kwargs)
-        self.train_settings = train_settings
+        self.train_settings = deepcopy(train_settings)
         # set the number of upsampling blocks. This value will be used to
         # calculate the current result size according to the size of the input
         # feature map, e.g., positional encoding map
