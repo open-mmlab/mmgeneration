@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from copy import deepcopy
 from typing import Dict, Union
 
 import numpy as np
@@ -15,7 +16,6 @@ from mmgen.registry import MODELS
 from mmgen.typing import TrainStepInputs
 from ..common import gather_log_vars, set_requires_grad
 from ..gans.stylegan2 import StyleGAN2
-from copy import deepcopy
 
 ModelType = Union[Dict, nn.Module]
 TrainInput = Union[dict, Tensor]
