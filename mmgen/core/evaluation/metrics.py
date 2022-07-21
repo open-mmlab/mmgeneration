@@ -364,9 +364,10 @@ class SlicedWassersteinDistance(GenMetric):
         ], ('Only support to collect \'fake\' or \'real\' results.')
         results = getattr(self, f'{target}_results')
         results_collected = []
+        world_size = get_world_size()
         for result in results:
             # save the original tensor size
-            results_size_list = [res.shape[0] for res in result]
+            results_size_list = [res.shape[0] for res in result] * world_size
             result_collected = torch.cat(result, dim=0)
             result_collected = torch.cat(all_gather(result_collected), dim=0)
             # split to tuple
