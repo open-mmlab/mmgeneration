@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from copy import deepcopy
 from typing import Dict, Union
 
 import numpy as np
@@ -35,7 +36,7 @@ class MSPIEStyleGAN2(StyleGAN2):
 
     def __init__(self, *args, train_settings=dict(), **kwargs):
         super().__init__(*args, **kwargs)
-        self.train_settings = train_settings
+        self.train_settings = deepcopy(train_settings)
         # set the number of upsampling blocks. This value will be used to
         # calculate the current result size according to the size of the input
         # feature map, e.g., positional encoding map
