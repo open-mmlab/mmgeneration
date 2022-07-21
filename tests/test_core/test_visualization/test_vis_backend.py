@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from mmengine import Config
 
-from mmgen.core import GenVisBackend, PaviGenVisBackend
+from mmgen.core import GenVisBackend, PaviGenVisBackend, WandbGenVisBackend
 
 
 class TestGenVisBackend(TestCase):
@@ -95,3 +95,20 @@ class TestPaviBackend(TestCase):
         vis_backend.add_scalars(
             scalar_dict=dict(lr=0.001, loss=torch.FloatTensor([0.693])),
             step=3)
+
+
+class TestWandbBackend(TestCase):
+
+    def test_wandb(self):
+        sys.modules['wandb'] = MagicMock()
+
+        vis_backend = WandbGenVisBackend(
+            save_dir='tmp_dir', init_kwargs=dict(project='test_backend'))
+        # test save gif image
+        rgb_np = np.random.rand(11, 4, 4, 3).astype(np.uint8)
+        vis_backend.add_image('test_gif', rgb_np, n_skip=2)
+        vis_backend.add_image('test_gif', rgb_np, n_skip=1)
+
+        # test save rgb image
+        rgb_np = np.random.rand(4, 4, 3).astype(np.uint8)
+        vis_backend.add_image('test_rgb', rgb_np)

@@ -117,6 +117,23 @@ def update_ceph_config(filename, args, dry_run=False):
                 pavi_cfg = dict(
                     type='PaviGenVisBackend', exp_name=name, project=project)
                 config['vis_backends'].append(pavi_cfg)
+        # add wandb config
+        if args.add_wandb:
+            _, project, name = filename.split('/')
+            name = name[:-2]
+            # check if wandb config is inheritance from _base_
+            find_inherit = False
+            for vis_cfg in config['vis_backends']:
+                if vis_cfg['type'] == 'WandbGenVisBackend':
+                    vis_cfg['name'] = name  # name of config
+                    vis_cfg['project'] = project  # name of model
+                    find_inherit = True
+                    break
+
+            if not find_inherit:
+                pavi_cfg = dict(
+                    type='WandbGenVisBackend', exp_name=name, project=project)
+                config['vis_backends'].append(pavi_cfg)
         config['visualizer']['vis_backends'] = config['vis_backends']
 
         # 3. change logger hook and checkpoint hook
@@ -158,6 +175,8 @@ if __name__ == '__main__':
         '--test-file', type=str, default=None, help='Dry-run on a test file.')
     parser.add_argument(
         '--add-pavi', action='store_true', help='Add pavi config or not.')
+    parser.add_argument(
+        '--add-wandb', action='store_true', help='Add wandb config or not.')
 
     args = parser.parse_args()
 

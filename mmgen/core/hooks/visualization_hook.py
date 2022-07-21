@@ -82,7 +82,7 @@ class GenVisualizationHook(Hook):
             generate samples during the loop. Defaults to True.
         n_samples (Optional[int]): The default value of number of samples to
             visualize. Defaults to 64.
-        n_rows (Optional[int]): The default value of number of images in each
+        n_row (Optional[int]): The default value of number of images in each
             row in the visualization results. Defaults to 8.
         show (bool): Whether to display the drawn image. Default to False.
         wait_time (float): The interval of show (s). Defaults to 0.
@@ -97,12 +97,11 @@ class GenVisualizationHook(Hook):
         TranslationTest=dict(type='TestData', vis_kwargs={}),
         DDPMDenoising=dict(
             type='Arguments',
-            forward_mode='sampling',
             name='ddpm_sample',
             n_samples=16,
-            n_rows=4,
+            n_row=4,
             vis_mode='gif',
-            n_skip=1,
+            n_skip=100,
             forward_kwargs=dict(
                 forward_mode='sampling',
                 sample_kwargs=dict(show_pbar=True, save_intermedia=True))))
@@ -112,7 +111,7 @@ class GenVisualizationHook(Hook):
                  vis_kwargs_list: Tuple[List[dict], dict] = None,
                  fixed_input: bool = True,
                  n_samples: Optional[int] = 64,
-                 n_rows: Optional[int] = 8,
+                 n_row: Optional[int] = 8,
                  message_hub_vis_kwargs: Optional[Tuple[str, dict, List[str],
                                                         List[Dict]]] = None,
                  save_at_test: bool = True,
@@ -131,7 +130,7 @@ class GenVisualizationHook(Hook):
         self.inputs_buffer = defaultdict(list)
 
         self.n_samples = n_samples
-        self.n_rows = n_rows
+        self.n_row = n_row
 
         self.show = show
         if self.show:
@@ -211,7 +210,7 @@ class GenVisualizationHook(Hook):
                     gen_samples=[sample],
                     batch_idx=curr_idx,
                     target_keys=key,
-                    n_rows=1,
+                    n_row=1,
                     color_order=output_color_order,
                     target_mean=mean.cpu(),
                     target_std=std.cpu())
@@ -282,14 +281,15 @@ class GenVisualizationHook(Hook):
                     for default_k, default_v in sampler_alias.items():
                         vis_kwargs_.setdefault(default_k, default_v)
                     break
+            # sampler_type = vis_kwargs_.pop('type')
 
             name = vis_kwargs_.pop('name', None)
             if not name:
                 name = sampler_type.lower()
 
             n_samples = vis_kwargs_.pop('n_samples', self.n_samples)
-            n_rows = vis_kwargs_.pop('n_rows', self.n_rows)
-            n_rows = min(n_rows, n_samples)
+            n_row = vis_kwargs_.pop('n_row', self.n_row)
+            n_row = min(n_row, n_samples)
 
             num_iters = math.ceil(n_samples / num_batches)
             vis_kwargs_['max_times'] = num_iters
@@ -317,7 +317,7 @@ class GenVisualizationHook(Hook):
                 gen_samples=output_list[:n_samples],
                 target_keys=target_keys,
                 vis_mode=vis_mode,
-                n_rows=n_rows,
+                n_row=n_row,
                 color_order=output_color_order,
                 target_mean=mean.cpu(),
                 target_std=std.cpu(),
@@ -401,7 +401,7 @@ class GenVisualizationHook(Hook):
                 gen_samples=gen_samples,
                 target_keys=key,
                 vis_mode=vis_mode,
-                n_rows=min(self.n_rows, num_batches),
+                n_row=min(self.n_row, num_batches),
                 color_order=color_order,
                 target_mean=target_mean.cpu(),
                 target_std=target_std.cpu(),

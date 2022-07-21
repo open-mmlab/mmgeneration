@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import torch
 from mmengine import Visualizer
+from mmengine.dist import master_only
 from torch import Tensor
 from torchvision.utils import make_grid
 
@@ -301,3 +302,20 @@ class GenVisualizer(Visualizer):
             self.show(vis_sample, win_name=name, wait_time=wait_time)
 
         self.add_image(name, vis_sample, step, **kwargs)
+
+    @master_only
+    def add_image(self,
+                  name: str,
+                  image: np.ndarray,
+                  step: int = 0,
+                  **kwargs) -> None:
+        """Record the image. Support input kwargs.
+
+        Args:
+            name (str): The image identifier.
+            image (np.ndarray, optional): The image to be saved. The format
+                should be RGB. Default to None.
+            step (int): Global step value to record. Default to 0.
+        """
+        for vis_backend in self._vis_backends.values():
+            vis_backend.add_image(name, image, step, **kwargs)  # type: ignore

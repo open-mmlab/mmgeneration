@@ -232,7 +232,7 @@ class TestGenVisualizationHook(TestCase):
         called_kwargs = mock_visualuzer.add_datasample.call_args.kwargs
         gen_samples = called_kwargs['gen_samples']
         self.assertEqual(len(gen_samples), 3)
-        self.assertEqual(called_kwargs['n_rows'], min(hook.n_rows, 3))
+        self.assertEqual(called_kwargs['n_row'], min(hook.n_row, 3))
 
         # test user defined vis kwargs
         hook.vis_kwargs_list = [
@@ -241,7 +241,7 @@ class TestGenVisualizationHook(TestCase):
                 forward_mode='sampling',
                 name='ddpm_sample',
                 n_samples=2,
-                n_rows=4,
+                n_row=4,
                 vis_mode='gif',
                 n_skip=1,
                 forward_kwargs=dict(
@@ -260,7 +260,7 @@ class TestGenVisualizationHook(TestCase):
         called_kwargs = mock_visualuzer.add_datasample.call_args.kwargs
         gen_samples = called_kwargs['gen_samples']
         self.assertEqual(len(gen_samples), 2)
-        self.assertEqual(called_kwargs['n_rows'], min(hook.n_rows, 2))
+        self.assertEqual(called_kwargs['n_row'], min(hook.n_row, 2))
 
     def test_after_val_iter(self):
         model = MagicMock()
@@ -318,7 +318,7 @@ class TestGenVisualizationHook(TestCase):
         self.assertEqual(messageHub_vis_args['name'], 'train_feat_map')
         self.assertEqual(len(messageHub_vis_args['gen_samples']), 4)
         self.assertEqual(messageHub_vis_args['vis_mode'], None)
-        self.assertEqual(messageHub_vis_args['n_rows'], 4)
+        self.assertEqual(messageHub_vis_args['n_row'], 4)
 
         # test vis with messagehub info --> list[str]
         mock_visualuzer.add_datasample.reset_mock()
@@ -332,7 +332,7 @@ class TestGenVisualizationHook(TestCase):
         self.assertEqual(messageHub_vis_args['name'], 'train_feat_map')
         self.assertEqual(len(messageHub_vis_args['gen_samples']), 4)
         self.assertEqual(messageHub_vis_args['vis_mode'], None)
-        self.assertEqual(messageHub_vis_args['n_rows'], 4)
+        self.assertEqual(messageHub_vis_args['n_row'], 4)
 
         # test vis with messagehub info --> dict
         mock_visualuzer.add_datasample.reset_mock()
@@ -346,7 +346,7 @@ class TestGenVisualizationHook(TestCase):
         self.assertEqual(messageHub_vis_args['name'], 'train_feat_map')
         self.assertEqual(len(messageHub_vis_args['gen_samples']), 4)
         self.assertEqual(messageHub_vis_args['vis_mode'], 'feature_map')
-        self.assertEqual(messageHub_vis_args['n_rows'], 4)
+        self.assertEqual(messageHub_vis_args['n_row'], 4)
 
         # test vis with messagehub info --> list[dict]
         mock_visualuzer.add_datasample.reset_mock()
@@ -369,13 +369,13 @@ class TestGenVisualizationHook(TestCase):
         self.assertEqual(feat_map_vis_args['name'], 'train_feat_map')
         self.assertEqual(len(feat_map_vis_args['gen_samples']), 4)
         self.assertEqual(feat_map_vis_args['vis_mode'], 'feature_map')
-        self.assertEqual(feat_map_vis_args['n_rows'], 4)
+        self.assertEqual(feat_map_vis_args['n_row'], 4)
 
         x_t_vis_args = called_args_list[2].kwargs
         self.assertEqual(x_t_vis_args['name'], 'train_x_t')
         self.assertEqual(len(x_t_vis_args['gen_samples']), 1)
         self.assertEqual(x_t_vis_args['vis_mode'], None)
-        self.assertEqual(x_t_vis_args['n_rows'], 1)
+        self.assertEqual(x_t_vis_args['n_row'], 1)
 
         # test vis messageHub info --> errors
         hook.message_vis_kwargs = 'error'
