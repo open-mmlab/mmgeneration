@@ -116,8 +116,6 @@ class BasicGaussianDiffusion(BaseModel):
             ema_config (dict): Config to initialize the EMA model.
         """
         ema_config.setdefault('type', 'ExponentialMovingAverage')
-        import ipdb
-        ipdb.set_trace()
         self.ema_start = ema_config.pop('start_iter', 0)
         src_model = self.denoising.module if is_model_wrapper(
             self.denoising) else self.denoising
