@@ -6,43 +6,65 @@ _base_ = [
     '../_base_/default_runtime.py'
 ]
 
-model = dict(generator=dict(out_size=256), discriminator=dict(in_size=256))
+# reg params
+d_reg_interval = 16
+g_reg_interval = 4
 
-data = dict(
-    samples_per_gpu=3,
-    train=dict(dataset=dict(imgs_root='./data/ffhq/ffhq_imgs/ffhq_256')))
+g_reg_ratio = g_reg_interval / (g_reg_interval + 1)
+d_reg_ratio = d_reg_interval / (d_reg_interval + 1)
 
 ema_half_life = 10.  # G_smoothing_kimg
 
+model = dict(
+    generator=dict(out_size=256),
+    discriminator=dict(in_size=256),
+    ema_config=dict(
+        type='ExponentialMovingAverage',
+        interval=1,
+        momentum=0.5**(32. / (ema_half_life * 1000.))))
+
+optim_wrapper = dict(
+    generator=dict(
+        optimizer=dict(
+            type='Adam', lr=0.002 * g_reg_ratio, betas=(0,
+                                                        0.99**g_reg_ratio))),
+    discriminator=dict(
+        optimizer=dict(
+            type='Adam', lr=0.002 * d_reg_ratio, betas=(0,
+                                                        0.99**d_reg_ratio))))
+
+batch_size = 3
+data_root = './data/ffhq/ffhq_imgs/ffhq_256'
+
+train_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
+
+val_dataloader = dict(batch_size=batch_size, dataset=dict(data_root=data_root))
+
+test_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
+
+train_cfg = dict(max_iters=1100002)
+
+# VIS_HOOK
 custom_hooks = [
     dict(
-        type='VisualizeUnconditionalSamples',
-        output_dir='training_samples',
-        interval=5000),
-    dict(
-        type='ExponentialMovingAverageHook',
-        module_keys=('generator_ema', ),
-        interval=1,
-        interp_cfg=dict(momentum=0.5**(32. / (ema_half_life * 1000.))),
-        priority='VERY_HIGH')
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        sample_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
 
-metrics = dict(
-    fid50k=dict(
-        type='FID',
-        num_images=50000,
-        inception_pkl='work_dirs/inception_pkl/ffhq-256-50k-rgb.pkl',
-        bgr2rgb=True),
-    pr10k3=dict(type='PR', num_images=10000, k=3))
+# METRICS
+metrics = [
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='ema'),
+    dict(type='PrecisionAndRecall', fake_nums=10000, prefix='PR-10K')
+]
 
-checkpoint_config = dict(interval=10000, by_epoch=False, max_keep_ckpts=30)
-lr_config = None
-
-log_config = dict(
-    interval=100,
-    hooks=[
-        dict(type='TextLoggerHook'),
-        # dict(type='TensorboardLoggerHook'),
-    ])
-
-total_iters = 1100002
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)
