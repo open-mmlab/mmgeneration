@@ -105,7 +105,6 @@ class TestBaseMetric(TestCase):
     def test_init(self):
         toy_metric = ToyMetric(fake_nums=10, real_nums=10)
         self.assertEquals(toy_metric.SAMPLER_MODE, 'normal')
-        self.assertEquals(toy_metric._color_order, 'bgr')
 
         model = MagicMock()
         dataset = MagicMock()
@@ -194,7 +193,7 @@ class TestFID(TestCase):
                 inception_pkl=self.inception_pkl)
         gen_images = torch.randn(4, 3, 2, 2)
         gen_samples = [
-            GenDataSample(fake_img=PixelData(data=gen_images[i])).to_dict()
+            GenDataSample(fake=PixelData(data=gen_images[i])).to_dict()
             for i in range(4)
         ]
         fid.process(None, gen_samples)
@@ -203,13 +202,13 @@ class TestFID(TestCase):
         fid.fake_results.clear()
         gen_sample = [
             GenDataSample(
-                ema=GenDataSample(fake=PixelData(
+                orig=GenDataSample(fake=PixelData(
                     data=torch.randn(3, 2, 2)))).to_dict()
         ]
         fid.process(None, gen_sample)
         gen_sample = [
             GenDataSample(
-                ema=GenDataSample(
+                orig=GenDataSample(
                     fake_img=PixelData(data=torch.randn(3, 2, 2)))).to_dict()
         ]
         fid.process(None, gen_sample)
@@ -223,7 +222,6 @@ class TestFID(TestCase):
                 fake_key='fake',
                 inception_style='PyTorch',
                 inception_pkl=self.inception_pkl)
-        fid.set_color_order('rgb')
         module = MagicMock()
         module.data_preprocessor = MagicMock()
         module.data_preprocessor.device = 'cpu'
@@ -321,7 +319,6 @@ class TestIS(TestCase):
                           self.mock_inception_stylegan):
             IS = InceptionScore(
                 fake_nums=2, fake_key='fake', sample_model='orig')
-        IS.set_color_order('rgb')
         gen_samples = [
             GenDataSample(fake_img=PixelData(
                 data=torch.randn(3, 2, 2))).to_dict() for _ in range(4)

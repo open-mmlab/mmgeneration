@@ -107,6 +107,10 @@ class SNGANGenerator(nn.Module):
             dict containing information for pretained models whose necessary
             key is 'ckpt_path'. Besides, you can also provide 'prefix' to load
             the generator part from the whole state dict.  Defaults to None.
+        rgb_to_bgr (bool, optional): Whether to reformat the output channels
+                with order `bgr`. We provide several pre-trained BigGAN
+                weights whose output channels order is `rgb`. You can set
+                this argument to True to use the weights.
     """
 
     # default channel factors
@@ -136,7 +140,8 @@ class SNGANGenerator(nn.Module):
                  norm_eps=1e-4,
                  sn_eps=1e-12,
                  init_cfg=dict(type='BigGAN'),
-                 pretrained=None):
+                 pretrained=None,
+                 rgb_to_bgr=False):
 
         super().__init__()
 
@@ -145,6 +150,7 @@ class SNGANGenerator(nn.Module):
         self.noise_size = noise_size
         self.num_classes = num_classes
         self.init_type = init_cfg.get('type', None)
+        self.rgb_to_bgr = rgb_to_bgr
 
         self.blocks_cfg = deepcopy(blocks_cfg)
 
@@ -300,6 +306,9 @@ class SNGANGenerator(nn.Module):
 
         out_feat = self.to_rgb(x)
         out_img = self.final_act(out_feat)
+
+        if self.rgb_to_bgr:
+            out_img = out_img[:, [2, 1, 0], ...]
 
         if return_noise:
             return dict(
