@@ -80,8 +80,6 @@ class GenMetric(BaseMetric):
         self.real_results: List[Any] = []
         self.fake_results: List[Any] = []
 
-        self._color_order = 'bgr'
-
     @property
     def real_nums_per_device(self):
         """Number of real images need for current device."""
@@ -91,14 +89,6 @@ class GenMetric(BaseMetric):
     def fake_nums_per_device(self):
         """Number of fake images need for current device."""
         return math.ceil(self.fake_nums / get_world_size())
-
-    def set_color_order(self, color_order: str) -> None:
-        """Set color order for the input image.
-
-        Args:
-            color_order (str): The color order of input image.
-        """
-        self._color_order = color_order
 
     def _collect_target_results(self, target: str) -> Optional[list]:
         """Collected results in distributed environments.
@@ -640,9 +630,8 @@ class FrechetInceptionDistance(GenerativeMetric):
             Tensor: Image feature extracted from inception.
         """
 
-        if self._color_order == 'bgr':
-            image = image[:, [2, 1, 0]]
-
+        # image must passed with 'bgr'
+        image = image[:, [2, 1, 0]]
         image = image.to(self.device)
         if self.inception_style == 'StyleGAN':
             image = (image * 127.5 + 128).clamp(0, 255).to(torch.uint8)
@@ -868,8 +857,8 @@ class InceptionScore(GenerativeMetric):
             Tensor: Image tensor after resize and channel conversion
                 (if need.)
         """
-        if self._color_order == 'bgr':
-            image = image[:, [2, 1, 0]]
+        # image must passed in 'bgr'
+        image = image[:, [2, 1, 0]]
         if not self.resize:
             return image
         if self.use_pillow_resize:
@@ -1113,7 +1102,6 @@ class PrecisionAndRecall(GenerativeMetric):
         self.auto_save = auto_save
         self.row_batch_size = row_batch_size
         self.col_batch_size = col_batch_size
-        self._color_order = 'bgr'
 
     def _load_vgg(self, vgg16_script: Optional[str]) -> Tuple[nn.Module, bool]:
         """Load VGG network from the given path.
@@ -1146,8 +1134,8 @@ class PrecisionAndRecall(GenerativeMetric):
         Returns:
             torch.Tensor: Vgg16 features of input images.
         """
-        if self._color_order == 'bgr':
-            images = images[:, [2, 1, 0], ...]
+        # image must passed in 'bgr'
+        images = images[:, [2, 1, 0], ...]
         if self.use_tero_scirpt:
             images = (images * 127.5 + 128).clamp(0, 255).to(torch.uint8)
             feature = self.vgg16(images, return_features=True)

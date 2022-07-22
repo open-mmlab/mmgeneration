@@ -3,11 +3,8 @@ _base_ = [
     '../_base_/datasets/imagenet_noaug_128.py', '../_base_/default_runtime.py'
 ]
 
-# NOTE:
-# * ImageNet is loaded in 'BGR'
-# * studio GAN train their model in 'RGB' order
-model = dict(
-    data_preprocessor=dict(input_color_order='bgr', output_color_order='rgb'))
+# NOTE: studio GAN train their model in 'RGB' order
+model = dict(generator=dict(rgb_to_bgr=True))
 
 # NOTE: do not support training for converted configs
 train_cfg = train_dataloader = optim_wrapper = None

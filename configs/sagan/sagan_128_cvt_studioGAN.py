@@ -4,10 +4,8 @@ _base_ = [
 ]
 
 # NOTE:
-# * ImageNet is loaded in 'RGB'
 # * studio GAN train their model in 'RGB' order
-model = dict(
-    data_preprocessor=dict(input_color_order='bgr', output_color_order='rgb'))
+model = dict(generator=dict(rgb_to_bgr=True))
 
 # NOTE: do not support training for converted configs
 train_cfg = train_dataloader = optim_wrapper = None
