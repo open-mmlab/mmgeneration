@@ -8,7 +8,7 @@ import mmcv
 import numpy as np
 import torch
 import torch.nn as nn
-from mmengine.model import BaseModel
+from mmengine.model import BaseModel, is_model_wrapper
 from mmengine.optim import OptimWrapperDict
 from torch import Tensor
 
@@ -116,8 +116,11 @@ class BasicGaussianDiffusion(BaseModel):
             ema_config (dict): Config to initialize the EMA model.
         """
         ema_config.setdefault('type', 'ExponentialMovingAverage')
+        self.ema_start = ema_config.pop('start_iter', 0)
+        src_model = self.denoising.module if is_model_wrapper(
+            self.denoising) else self.denoising
         self.denoising_ema = MODELS.build(
-            ema_config, default_args=dict(model=deepcopy(self.denoising)))
+            ema_config, default_args=dict(model=src_model))
 
     def noise_fn(self,
                  noise: NoiseVar,

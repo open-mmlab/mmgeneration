@@ -5,7 +5,7 @@ _base_ = [
 
 # MODEL
 # CIFAR images are RGB, convert to BGR
-model = dict(data_preprocessor=dict(rgb_to_bgr=True), num_timesteps=10)
+model = dict(data_preprocessor=dict(rgb_to_bgr=True), num_timesteps=4000)
 
 # TRAIN
 train_cfg = dict(max_iters=500000)  # 500k
