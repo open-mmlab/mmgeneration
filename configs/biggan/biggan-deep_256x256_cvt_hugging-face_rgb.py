@@ -1,5 +1,8 @@
+_base_ = [
+    '../_base_/datasets/imagenet_noaug_256.py', '../_base_/default_runtime.py'
+]
 model = dict(
-    type='BasiccGAN',
+    type='BigGAN',
     generator=dict(
         type='BigGANDeepGenerator',
         output_scale=256,
@@ -24,12 +27,23 @@ model = dict(
         sn_style='torch',
         init_type='ortho',
         act_cfg=dict(type='ReLU', inplace=True),
-        with_spectral_norm=True),
-    gan_loss=dict(type='GANLoss', gan_type='hinge'))
+        with_spectral_norm=True))
 
-train_cfg = dict(
-    disc_steps=8, gen_steps=1, batch_accumulation_steps=8, use_ema=True)
-test_cfg = None
-optimizer = dict(
-    generator=dict(type='Adam', lr=0.0001, betas=(0.0, 0.999), eps=1e-6),
-    discriminator=dict(type='Adam', lr=0.0004, betas=(0.0, 0.999), eps=1e-6))
+train_cfg = train_dataloader = optim_wrapper = None
+
+metrics = [
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='ema'),
+    dict(
+        type='IS',
+        prefix='IS-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='ema')
+]
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)
