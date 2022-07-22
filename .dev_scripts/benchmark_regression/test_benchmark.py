@@ -94,6 +94,11 @@ def parse_args():
         help='Slurm job name prefix')
     parser.add_argument('--port', type=int, default=29666, help='dist port')
     parser.add_argument(
+        '--use-ceph-config',
+        action='store_true',
+        default=False,
+        help='Use ceph configs or not.')
+    parser.add_argument(
         '--models', nargs='+', type=str, help='Specify model names to run.')
     parser.add_argument(
         '--work-dir',
@@ -139,6 +144,9 @@ def create_test_job_batch(commands, model_info, args, port, script_name):
     if config.startswith('http'):
         config = config.replace(config_http_prefix_blob, './')
         config = config.replace(config_http_prefix_tree, './')
+    if args.use_ceph_config:
+        config = config.replace('configs', 'configs_ceph')
+
     config = Path(config)
     assert config.exists(), f'{fname}: {config} not found.'
 
@@ -264,41 +272,6 @@ def test(args):
         os.system(command_str)
     else:
         console.print('Please set "--run" to start the job')
-
-
-def save_summary(summary_data, models_map, work_dir):
-    summary_path = work_dir / 'test_benchmark_summary.md'
-    file = open(summary_path, 'w')
-    headers = [
-        'Model', 'Top-1 Expected(%)', 'Top-1 (%)', 'Top-5 Expected (%)',
-        'Top-5 (%)', 'Config'
-    ]
-    file.write('# Test Benchmark Regression Summary\n')
-    file.write('| ' + ' | '.join(headers) + ' |\n')
-    file.write('|:' + ':|:'.join(['---'] * len(headers)) + ':|\n')
-    for model_name, summary in summary_data.items():
-        if len(summary) == 0:
-            # Skip models without results
-            continue
-        row = [model_name]
-        if 'Top 1 Accuracy' in summary:
-            metric = summary['Top 1 Accuracy']
-            row.append(str(round(metric['expect'], 2)))
-            row.append(str(round(metric['result'], 2)))
-        else:
-            row.extend([''] * 2)
-        if 'Top 5 Accuracy' in summary:
-            metric = summary['Top 5 Accuracy']
-            row.append(str(round(metric['expect'], 2)))
-            row.append(str(round(metric['result'], 2)))
-        else:
-            row.extend([''] * 2)
-
-        model_info = models_map[model_name]
-        row.append(model_info.config)
-        file.write('| ' + ' | '.join(row) + ' |\n')
-    file.close()
-    print('Summary file saved at ' + str(summary_path))
 
 
 def show_summary(summary_data, models_map, work_dir, save=False):
