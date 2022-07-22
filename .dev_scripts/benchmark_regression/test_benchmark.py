@@ -15,10 +15,69 @@ from rich.table import Table
 console = Console()
 MMGEN_ROOT = Path(__file__).absolute().parents[2]
 
-# TODO:
+# key-in-metafile: key-in-results.pkl
 METRICS_MAP = {
-    'Top 1 Accuracy': 'accuracy/top1',
-    'Top 5 Accuracy': 'accuracy/top5'
+    'SWD': {
+        'keys': ['SWD/avg'],
+        'tolerance': 0.1,
+        'rule': 'less'
+    },
+    'MS-SSIM': {
+        'keys': ['MS-SSIM'],
+        'tolerance': 0.1,
+        'rule': 'larger'
+    },
+    'FID': {
+        'keys': ['FID-Full-50k/fid'],
+        'tolerance': 0.1,
+        'rule': 'less'
+    },
+    'FID50k': {
+        'keys': ['FID-Full-50k/fid'],
+        'tolerance': 0.1,
+        'rule': 'less'
+    },
+    'IS': {
+        'keys': ['IS-50k/is'],
+        'tolerance': 0.1,
+        'rule': 'larger'
+    },
+    'IS50k': {
+        'keys': ['IS-50k/is'],
+        'tolerance': 0.1,
+        'rule': 'larger'
+    },
+    'Precision50k': {
+        'keys': ['PR-50K/precision'],
+        'tolerance': 0.1,
+        'rule': 'large'
+    },
+    'Recall50k': {
+        'keys': ['PR-50K/recall'],
+        'tolerance': 0.1,
+        'rule': 'large'
+    },
+    'Precision10k': {
+        'keys': ['PR-10K/precision'],
+        'tolerance': 0.1,
+        'rule': 'large'
+    },
+    'Recall10k': {
+        'keys': ['PR-10K/recall'],
+        'tolerance': 0.1,
+        'rule': 'large'
+    },
+    # 'PPL': {},  # TODO: no ppl in metafiles?
+    'EQ-R': {
+        'keys': ['EQ/eqr'],
+        'tolerance': 0.1,
+        'rule': 'larger'
+    },
+    'EQ-T': {
+        'keys': ['EQ/eqt_int'],
+        'tolerance': 0.1,
+        'rule': 'larger'
+    },
 }
 
 
@@ -105,7 +164,7 @@ def create_test_job_batch(commands, model_info, args, port, script_name):
     job_name = f'{args.job_name}_{fname}'
     work_dir = Path(args.work_dir) / fname
     work_dir.mkdir(parents=True, exist_ok=True)
-    # result_file = work_dir / 'result.pkl'
+    result_file = work_dir / 'result.pkl'
 
     if args.mail is not None and 'NONE' not in args.mail_type:
         mail_cfg = (f'#SBATCH --mail {args.mail}\n'
@@ -121,21 +180,20 @@ def create_test_job_batch(commands, model_info, args, port, script_name):
     launcher = 'none' if args.local else 'slurm'
     runner = 'python' if args.local else 'srun python'
 
-    job_script = (
-        f'#!/bin/bash\n'
-        f'#SBATCH --output {work_dir}/job.%j.out\n'
-        f'#SBATCH --partition={args.partition}\n'
-        f'#SBATCH --job-name {job_name}\n'
-        f'#SBATCH --gres=gpu:8\n'
-        f'{mail_cfg}{quota_cfg}'
-        f'#SBATCH --ntasks-per-node=8\n'
-        f'#SBATCH --ntasks=8\n'
-        f'#SBATCH --cpus-per-task=5\n\n'
-        f'{runner} -u {script_name} {config} {checkpoint} '
-        f'--work-dir={work_dir} '
-        # f'--out={result_file} ' # NOTE: do not have this
-        f'--cfg-option dist_params.port={port} '
-        f'--launcher={launcher}\n')
+    job_script = (f'#!/bin/bash\n'
+                  f'#SBATCH --output {work_dir}/job.%j.out\n'
+                  f'#SBATCH --partition={args.partition}\n'
+                  f'#SBATCH --job-name {job_name}\n'
+                  f'#SBATCH --gres=gpu:8\n'
+                  f'{mail_cfg}{quota_cfg}'
+                  f'#SBATCH --ntasks-per-node=8\n'
+                  f'#SBATCH --ntasks=8\n'
+                  f'#SBATCH --cpus-per-task=5\n\n'
+                  f'{runner} -u {script_name} {config} {checkpoint} '
+                  f'--work-dir={work_dir} '
+                  f'--out={result_file} '
+                  f'--cfg-option dist_params.port={port} '
+                  f'--launcher={launcher}\n')
 
     with open(work_dir / 'job.sh', 'w') as f:
         f.write(job_script)
@@ -243,41 +301,67 @@ def save_summary(summary_data, models_map, work_dir):
     print('Summary file saved at ' + str(summary_path))
 
 
-def show_summary(summary_data):
+def show_summary(summary_data, models_map, work_dir, save=False):
     table = Table(title='Test Benchmark Regression Summary')
     table.add_column('Model')
+    md_header = ['Model']
     for metric in METRICS_MAP:
         table.add_column(f'{metric} (expect)')
         table.add_column(f'{metric}')
+        md_header.append(f'{metric} (expect)')
+        md_header.append(f'{metric}')
     table.add_column('Date')
+    md_header.append('Config')
 
-    def set_color(value, expect):
-        if value > expect + 0.01:
-            return 'green'
-        elif value >= expect - 0.01:
-            return 'white'
+    def set_color(value, expect, tolerance, rule):
+        if value > expect + tolerance:
+            return 'green' if rule == 'larger' else 'red'
+        elif value < expect - tolerance:
+            return 'red' if rule == 'larger' else 'green'
         else:
-            return 'red'
+            return 'white'
+
+    md_rows = ['| ' + ' | '.join(md_header) + ' |\n']
+    md_rows.append('|:' + ':|:'.join(['---'] * len(md_header)) + ':|\n')
 
     for model_name, summary in summary_data.items():
         row = [model_name]
+        md_row = [model_name]
         for metric_key in METRICS_MAP:
             if metric_key in summary:
                 metric = summary[metric_key]
                 expect = round(metric['expect'], 2)
                 result = round(metric['result'], 2)
-                color = set_color(result, expect)
+                tolerance = metric['tolerance']
+                rule = metric['rule']
+                color = set_color(result, expect, tolerance, rule)
                 row.append(f'{expect:.2f}')
                 row.append(f'[{color}]{result:.2f}[/{color}]')
+                md_row.append(f'{expect:.2f}')
+                md_row.append(f'{result:.2f}')
             else:
                 row.extend([''] * 2)
+                md_row.extend([''] * 2)
         if 'date' in summary:
             row.append(summary['date'])
+            md_row.append(summary['date'])
         else:
             row.append('')
+            md_row.append('')
         table.add_row(*row)
 
+        # add config to row
+        model_info = models_map[model_name]
+        md_row.append(model_info.config)
+        md_rows.append('| ' + ' | '.join(md_row) + ' |\n')
+
     console.print(table)
+
+    if save:
+        summary_path = work_dir / 'test_benchmark_summary.md'
+        with open(summary_path, 'w') as file:
+            file.write('# Test Benchmark Regression Summary\n')
+            file.writelines(md_rows)
 
 
 def summary(args):
@@ -320,17 +404,26 @@ def summary(args):
 
         # extract metrics
         summary = {'date': date.strftime('%Y-%m-%d')}
-        for key_yml, key_res in METRICS_MAP.items():
-            if key_yml in expect_metrics and key_res in results:
-                expect_result = float(expect_metrics[key_yml])
-                result = float(results[key_res])
-                summary[key_yml] = dict(expect=expect_result, result=result)
+        for key_yml, key_tolerance in METRICS_MAP.items():
+            key_results = key_tolerance['keys']
+            tolerance = key_tolerance['tolerance']
+            rule = key_tolerance['rule']
+
+            for key_result in key_results:
+                if key_yml in expect_metrics and key_result in results:
+                    expect_result = float(expect_metrics[key_yml])
+                    result = float(results[key_result])
+                    summary[key_yml] = dict(
+                        expect=expect_result,
+                        result=result,
+                        tolerance=tolerance,
+                        rule=rule)
 
         summary_data[model_name] = summary
 
-    show_summary(summary_data)
-    if args.save:
-        save_summary(summary_data, models, work_dir)
+    show_summary(summary_data, models, work_dir, args.save)
+    # if args.save:
+    #     save_summary(summary_data, models, work_dir)
 
 
 def main():
