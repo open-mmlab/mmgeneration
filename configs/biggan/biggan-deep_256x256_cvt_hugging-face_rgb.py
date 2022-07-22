@@ -3,6 +3,8 @@ _base_ = [
 ]
 model = dict(
     type='BigGAN',
+    num_classes=1000,
+    data_preprocessor=dict(type='GANDataPreprocessor'),
     generator=dict(
         type='BigGANDeepGenerator',
         output_scale=256,

@@ -1183,8 +1183,8 @@ class PrecisionAndRecall(GenerativeMetric):
                     col_features=manifold,
                     col_batch_size=self.col_batch_size)
                 kth.append(
-                    distance.to(torch.float32).kthvalue(self.k + 1).values.
-                    to(torch.float16))
+                    distance.to(torch.float32).kthvalue(self.k + 1).values.to(
+                        torch.float16))
             kth = torch.cat(kth)
             pred = []
             for probes_batch in probes.split(self.row_batch_size):
@@ -1192,8 +1192,7 @@ class PrecisionAndRecall(GenerativeMetric):
                     row_features=probes_batch,
                     col_features=manifold,
                     col_batch_size=self.col_batch_size)
-                pred.append((distance <= kth).any(
-                    dim=1))
+                pred.append((distance <= kth).any(dim=1))
             self._result_dict[name] = float(
                 torch.cat(pred).to(torch.float32).mean())
 

@@ -1,9 +1,11 @@
 _base_ = [
-    '../_base_/models/biggan/biggan_128x128.py',
     '../_base_/datasets/imagenet_noaug_128.py', '../_base_/default_runtime.py'
 ]
 
 model = dict(
+    type='BigGAN',
+    num_classes=1000,
+    data_preprocessor=dict(type='GANDataPreprocessor'),
     generator=dict(
         type='BigGANGenerator',
         output_scale=128,
