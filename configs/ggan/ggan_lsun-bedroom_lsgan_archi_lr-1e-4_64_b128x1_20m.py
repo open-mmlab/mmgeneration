@@ -4,7 +4,7 @@ _base_ = [
 ]
 
 model = dict(
-    type='StaticUnconditionalGAN',
+    type='GGAN',
     generator=dict(type='LSGANGenerator', output_scale=64),
     discriminator=dict(type='LSGANDiscriminator', input_scale=64))
 
