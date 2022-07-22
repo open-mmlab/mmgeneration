@@ -7,10 +7,22 @@ synthesis_cfg = {
     'magnitude_ema_beta': 0.999
 }
 model = dict(
-    type='StaticUnconditionalGAN',
     generator=dict(
         out_size=256,
         img_channels=3,
         rgb2bgr=True,
         synthesis_cfg=synthesis_cfg),
     discriminator=dict(in_size=256, channel_multiplier=1))
+
+train_cfg = train_dataloader = optim_wrapper = None
+
+metrics = [
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='ema')
+]
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)

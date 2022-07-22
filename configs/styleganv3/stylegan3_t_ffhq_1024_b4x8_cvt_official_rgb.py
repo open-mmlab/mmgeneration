@@ -8,10 +8,22 @@ synthesis_cfg = {
 }
 
 model = dict(
-    type='StaticUnconditionalGAN',
     generator=dict(
         out_size=1024,
         img_channels=3,
         synthesis_cfg=synthesis_cfg,
         rgb2bgr=True),
     discriminator=dict(in_size=1024))
+
+train_cfg = train_dataloader = optim_wrapper = None
+
+metrics = [
+    dict(
+        type='FrechetInceptionDistance',
+        prefix='FID-Full-50k',
+        fake_nums=50000,
+        inception_style='StyleGAN',
+        sample_model='ema')
+]
+val_evaluator = dict(metrics=metrics)
+test_evaluator = dict(metrics=metrics)
