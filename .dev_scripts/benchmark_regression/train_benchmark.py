@@ -83,15 +83,16 @@ METRICS_MAP = {
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Test all models' accuracy in model-index.yml")
+        description="Train models' accuracy in model-index.yml")
     parser.add_argument(
         'partition', type=str, help='Cluster partition to use.')
-    parser.add_argument('checkpoint_root', help='Checkpoint file root path.')
     parser.add_argument(
         '--job-name',
         type=str,
-        default='gen-test-benchmark',
+        default='gen-train-benchmark',
         help='Slurm job name prefix')
+    parser.add_argument(
+        '--train-all', action='store_true', help='Train all model or not.')
     parser.add_argument('--port', type=int, default=29666, help='dist port')
     parser.add_argument(
         '--use-ceph-config',
@@ -133,7 +134,7 @@ def parse_args():
     return args
 
 
-def create_test_job_batch(commands, model_info, args, port, script_name):
+def create_train_job_batch(commands, model_info, args, port, script_name):
     config_http_prefix_blob = ('https://github.com/open-mmlab/mmgeneration/'
                                'blob/master/')
     config_http_prefix_tree = ('https://github.com/open-mmlab/mmgeneration/'
@@ -150,29 +151,22 @@ def create_test_job_batch(commands, model_info, args, port, script_name):
     config = Path(config)
     assert config.exists(), f'{fname}: {config} not found.'
 
-    http_prefix = 'https://download.openmmlab.com/mmgen/'
-    if 's3://' in args.checkpoint_root:
-        from mmcv.fileio import FileClient
-        from petrel_client.common.exception import AccessDeniedError
-        file_client = FileClient.infer_client(uri=args.checkpoint_root)
-        checkpoint = file_client.join_path(
-            args.checkpoint_root, model_info.weights[len(http_prefix):])
-        try:
-            exists = file_client.exists(checkpoint)
-        except AccessDeniedError:
-            exists = False
+    # get n gpus
+    if 'singan' in config.name:
+        # sinGAN use only 1 gpu
+        n_gpus = 1
     else:
-        checkpoint_root = Path(args.checkpoint_root)
-        checkpoint = checkpoint_root / model_info.weights[len(http_prefix):]
-        exists = checkpoint.exists()
-    if not exists:
-        print(f'WARNING: {fname}: {checkpoint} not found.')
-        return None
+        # parse n gpus from config (b{batch_size}x{n_gpu})
+        pattern = r'b\d+x\d+'
+        parse_res = re.search(pattern, config.name)
+        if not parse_res:
+            n_gpus = 8  # defaults as 8 gpu
+        else:
+            n_gpus = int(parse_res.group().split('x')[-1])
 
     job_name = f'{args.job_name}_{fname}'
     work_dir = Path(args.work_dir) / fname
     work_dir.mkdir(parents=True, exist_ok=True)
-    result_file = work_dir / 'result.pkl'
 
     if args.mail is not None and 'NONE' not in args.mail_type:
         mail_cfg = (f'#SBATCH --mail {args.mail}\n'
@@ -192,14 +186,13 @@ def create_test_job_batch(commands, model_info, args, port, script_name):
                   f'#SBATCH --output {work_dir}/job.%j.out\n'
                   f'#SBATCH --partition={args.partition}\n'
                   f'#SBATCH --job-name {job_name}\n'
-                  f'#SBATCH --gres=gpu:8\n'
+                  f'#SBATCH --gres=gpu:{n_gpus}\n'
                   f'{mail_cfg}{quota_cfg}'
-                  f'#SBATCH --ntasks-per-node=8\n'
-                  f'#SBATCH --ntasks=8\n'
+                  f'#SBATCH --ntasks-per-node={max(n_gpus, 8)}\n'
+                  f'#SBATCH --ntasks={n_gpus}\n'
                   f'#SBATCH --cpus-per-task=5\n\n'
-                  f'{runner} -u {script_name} {config} {checkpoint} '
+                  f'{runner} -u {script_name} {config} '
                   f'--work-dir={work_dir} '
-                  f'--out={result_file} '
                   f'--cfg-option dist_params.port={port} '
                   f'--launcher={launcher}\n')
 
@@ -215,14 +208,18 @@ def create_test_job_batch(commands, model_info, args, port, script_name):
     return work_dir / 'job.sh'
 
 
-def test(args):
+def train(args):
     # parse model-index.yml
-    model_index_file = MMGEN_ROOT / 'model-index.yml'
+    if args.train_all:
+        model_index_file = MMGEN_ROOT / 'model-index.yml'
+    else:
+        print('Not implemented yet.')
+        exit()
     model_index = load(str(model_index_file))
     model_index.build_models_with_collections()
     models = OrderedDict({model.name: model for model in model_index.models})
 
-    script_name = osp.join('tools', 'test.py')
+    script_name = osp.join('tools', 'train.py')
     port = args.port
 
     commands = []
@@ -244,8 +241,12 @@ def test(args):
         if model_info.results is None:
             continue
 
-        script_path = create_test_job_batch(commands, model_info, args, port,
-                                            script_name)
+        model_name = model_info.name
+        if 'cvt' in model_name:
+            print(f'Skip converted config: {model_name} ({model_info.config})')
+            continue
+        script_path = create_train_job_batch(commands, model_info, args, port,
+                                             script_name)
         preview_script = script_path or preview_script
         port += 1
 
@@ -331,9 +332,9 @@ def show_summary(summary_data, models_map, work_dir, save=False):
     console.print(table)
 
     if save:
-        summary_path = work_dir / 'test_benchmark_summary.md'
+        summary_path = work_dir / 'train_benchmark_summary.md'
         with open(summary_path, 'w') as file:
-            file.write('# Test Benchmark Regression Summary\n')
+            file.write('# Train Benchmark Regression Summary\n')
             file.writelines(md_rows)
 
 
@@ -395,6 +396,8 @@ def summary(args):
         summary_data[model_name] = summary
 
     show_summary(summary_data, models, work_dir, args.save)
+    # if args.save:
+    #     save_summary(summary_data, models, work_dir)
 
 
 def main():
@@ -403,7 +406,7 @@ def main():
     if args.summary:
         summary(args)
     else:
-        test(args)
+        train(args)
 
 
 if __name__ == '__main__':
