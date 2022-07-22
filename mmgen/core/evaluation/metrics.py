@@ -1171,7 +1171,6 @@ class PrecisionAndRecall(GenerativeMetric):
         real_features = self.results_real
 
         self._result_dict = {}
-        rank, ws = get_dist_info()
 
         for name, manifold, probes in [
             ('precision', real_features, gen_features),
@@ -1182,26 +1181,21 @@ class PrecisionAndRecall(GenerativeMetric):
                 distance = compute_pr_distances(
                     row_features=manifold_batch,
                     col_features=manifold,
-                    num_gpus=ws,
-                    rank=rank,
                     col_batch_size=self.col_batch_size)
                 kth.append(
                     distance.to(torch.float32).kthvalue(self.k + 1).values.
-                    to(torch.float16) if rank == 0 else None)
-            kth = torch.cat(kth) if rank == 0 else None
+                    to(torch.float16))
+            kth = torch.cat(kth)
             pred = []
             for probes_batch in probes.split(self.row_batch_size):
                 distance = compute_pr_distances(
                     row_features=probes_batch,
                     col_features=manifold,
-                    num_gpus=ws,
-                    rank=rank,
                     col_batch_size=self.col_batch_size)
                 pred.append((distance <= kth).any(
-                    dim=1) if rank == 0 else None)
+                    dim=1))
             self._result_dict[name] = float(
-                torch.cat(pred).to(torch.float32).mean() if rank ==
-                0 else 'nan')
+                torch.cat(pred).to(torch.float32).mean())
 
         precision = self._result_dict['precision']
         recall = self._result_dict['recall']
