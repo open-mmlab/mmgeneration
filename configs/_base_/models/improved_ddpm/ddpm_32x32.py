@@ -15,6 +15,7 @@ model = dict(
         num_heads=4,
         use_rescale_timesteps=True,
         output_cfg=dict(mean='eps', var='learned_range')),
+    ema_config=dict(momentum=0.9999),
     timestep_sampler=dict(type='UniformTimeStepSampler'),
     ddpm_loss=[
         dict(
