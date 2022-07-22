@@ -2,10 +2,18 @@ _base_ = [
     '../_base_/datasets/imagenet_noaug_128.py', '../_base_/default_runtime.py'
 ]
 
+ema_config = dict(
+    type='ExponentialMovingAverage',
+    interval=1,
+    momentum=0.9999,
+    update_buffers=True,
+    start_iter=20000)
+
 model = dict(
     type='BigGAN',
     num_classes=1000,
     data_preprocessor=dict(type='GANDataPreprocessor'),
+    ema_config=ema_config,
     generator=dict(
         type='BigGANGenerator',
         output_scale=128,
