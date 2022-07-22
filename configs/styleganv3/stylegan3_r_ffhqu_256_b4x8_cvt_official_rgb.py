@@ -1,4 +1,8 @@
-_base_ = ['./stylegan3_base.py']
+_base_ = [
+    '../_base_/models/stylegan/stylegan3_base.py',
+    '../_base_/datasets/unconditional_imgs_flip_lanczos_resize_256x256.py',
+    '../_base_/default_runtime.py'
+]
 
 synthesis_cfg = {
     'type': 'SynthesisNetwork',
@@ -15,6 +19,17 @@ model = dict(
         rgb2bgr=True,
         synthesis_cfg=synthesis_cfg),
     discriminator=dict(in_size=256, channel_multiplier=1))
+
+batch_size = 4
+data_root = './data/ffhqu/images'
+
+train_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
+
+val_dataloader = dict(batch_size=batch_size, dataset=dict(data_root=data_root))
+
+test_dataloader = dict(
+    batch_size=batch_size, dataset=dict(data_root=data_root))
 
 train_cfg = train_dataloader = optim_wrapper = None
 
