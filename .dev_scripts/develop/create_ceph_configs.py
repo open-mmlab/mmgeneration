@@ -132,7 +132,8 @@ def update_ceph_config(filename, args, dry_run=False):
 
             if not find_inherit:
                 pavi_cfg = dict(
-                    type='WandbGenVisBackend', exp_name=name, project=project)
+                    type='WandbGenVisBackend',
+                    init_kwargs=dict(name=name, project=project))
                 config['vis_backends'].append(pavi_cfg)
         config['visualizer']['vis_backends'] = config['vis_backends']
 
