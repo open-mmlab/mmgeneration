@@ -186,7 +186,7 @@ class GenVisBackend(BaseVisBackend):
             if isinstance(v, torch.Tensor):
                 scalar_dict_new[k] = v.item()
             else:
-                scalar_dict[k] = v
+                scalar_dict_new[k] = v
         scalar_dict_new.setdefault('step', step)
 
         if file_path is not None:
@@ -363,6 +363,8 @@ class WandbGenVisBackend(WandbVisBackend):
             frames_np = np.transpose(
                 np.stack(frames_list, axis=0), (0, 3, 1, 2))
             self._wandb.log(
-                {name: wandb.Video(frames_np, fps=fps, format='gif')})
+                {name: wandb.Video(frames_np, fps=fps, format='gif')},
+                commit=self._commit)
         else:
-            super().add_image(name, image, step, **kwargs)
+            # write normal image
+            self._wandb.log({name: wandb.Image(image)}, commit=self._commit)
