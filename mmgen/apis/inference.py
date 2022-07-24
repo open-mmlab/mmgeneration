@@ -78,12 +78,11 @@ def sample_unconditional_model(model,
 
     # inference
     for batches in batches_list:
-        res = model.sample_from_noise(
-            None, num_batches=batches, sample_model=sample_model, **kwargs)
-        res_list.append(res.cpu())
+        res = model(
+            dict(num_batches=batches, sample_model=sample_model), **kwargs)
+        res_list.extend([item.fake_img.data.cpu() for item in res])
 
-    results = torch.cat(res_list, dim=0)
-
+    results = torch.stack(res_list, dim=0)
     return results
 
 
