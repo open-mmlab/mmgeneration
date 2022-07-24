@@ -4,11 +4,8 @@ We list some common troubles faced by many users and their corresponding solutio
 
 ## Installation
 
-- Compatible MMGeneration and MMCV versions are shown as below. Please choose the correct version of MMCV to avoid installation issues.
+Compatible MMGeneration 1.x and MMCV versions are shown as below. Please choose the correct version of MMCV to avoid installation issues.
 
-| MMGeneration version |   MMCV version   |
-| :------------------: | :--------------: |
-|        master        | mmcv-full>=1.3.0 |
-
-Note: You need to run `pip uninstall mmcv` first if you have mmcv installed.
-If mmcv and mmcv-full are both installed, there will be `ModuleNotFoundError`.
+| MMDetection version | MMCV version |
+| :-----------------: | :----------: |
+|       dev-1.x       | mmcv>=2.0.0  |
