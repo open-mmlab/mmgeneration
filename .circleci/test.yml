@@ -25,7 +25,7 @@ jobs:
           name: Check docstring coverage
           command: |
             pip install interrogate
-            interrogate -v --ignore-init-method --ignore-module --ignore-nested-functions --ignore-magic --ignore-regex "__repr__" --fail-under 85 mmgen
+            interrogate -v --ignore-init-method --ignore-module --ignore-nested-functions --ignore-magic --ignore-regex "__repr__" --fail-under 60 mmgen
   build_cpu:
     parameters:
       # The python version must match available image tags in
@@ -51,30 +51,24 @@ jobs:
       - run:
           name: Configure Python & pip
           command: |
-            pip install --upgrade pip
-            pip install wheel
+            python -m pip install --upgrade pip
+            python -m pip install wheel
       - run:
           name: Install PyTorch
           command: |
             python -V
             python -m pip install torch==<< parameters.torch >>+cpu torchvision==<< parameters.torchvision >>+cpu -f https://download.pytorch.org/whl/torch_stable.html
-      - when:
-          condition:
-            equal: [ "3.9.0", << parameters.python >> ]
-          steps:
-            - run: pip install "protobuf <= 3.20.1" && sudo apt-get update && sudo apt-get -y install libprotobuf-dev protobuf-compiler cmake
       - run:
           name: Install mmgen dependencies
           command: |
             python -m pip install git+ssh://git@github.com/open-mmlab/mmengine.git@main
             python -m pip install << parameters.mmcv >>
-            pip install -r requirements/tests.txt -r requirements/optional.txt
-            pip install albumentations>=0.3.2 --no-binary imgaug,albumentations
-            pip install git+https://github.com/cocodataset/panopticapi.git
+            python -m pip install git+ssh://git@github.com/open-mmlab/mmclassification.git@dev-1.x
+            python -m pip install -r requirements.txt
       - run:
           name: Build and install
           command: |
-            pip install -e .
+            python -m pip install -e .
       - run:
           name: Run unittests
           command: |
@@ -100,34 +94,31 @@ jobs:
     steps:
       - checkout
       - run:
-          # CLoning repos in VM since Docker doesn't have access to the private key
+          # Cloning repos in VM since Docker doesn't have access to the private key
           name: Clone Repos
           command: |
             git clone -b main --depth 1 ssh://git@github.com/open-mmlab/mmengine.git /home/circleci/mmengine
+            git clone -b dev-1.x --depth 1 ssh://git@github.com/open-mmlab/mmclassification.git /home/circleci/mmclassification
       - run:
           name: Build Docker image
           command: |
-            docker build .circleci/docker -t mmgeneration:gpu --build-arg PYTORCH=<< parameters.torch >> --build-arg CUDA=<< parameters.cuda >> --build-arg CUDNN=<< parameters.cudnn >>
-            docker run --gpus all -t -d -v /home/circleci/project:/mmgeneration -v /home/circleci/mmengine:/mmengine -w /mmgeneration --name mmgeneration mmgeneration:gpu
+            docker build .circleci/docker -t mmgen:gpu --build-arg PYTORCH=<< parameters.torch >> --build-arg CUDA=<< parameters.cuda >> --build-arg CUDNN=<< parameters.cudnn >>
+            docker run --gpus all -t -d -v /home/circleci/project:/mmgen -v /home/circleci/mmengine:/mmengine -v /home/circleci/mmclassification:/mmclassification -w /mmgen --name mmgen mmgen:gpu
       - run:
           name: Install mmgen dependencies
-          # pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu101/torch${{matrix.torch_version}}/index.html
           command: |
-            docker exec mmgeneration pip install -e /mmengine
-            docker exec mmgeneration pip install << parameters.mmcv >>
-            pip install -r requirements/tests.txt -r requirements/optional.txt
-            pip install pycocotools
-            pip install albumentations>=0.3.2 --no-binary imgaug,albumentations
-            pip install git+https://github.com/cocodataset/panopticapi.git
-            python -c 'import mmcv; print(mmcv.__version__)'
+            docker exec mmgen pip install -e /mmengine
+            docker exec mmgen pip install << parameters.mmcv >>
+            docker exec mmgen pip install -e /mmclassification
+            docker exec mmgen pip install -r requirements.txt
       - run:
           name: Build and install
           command: |
-            docker exec mmgeneration pip install -e .
+            docker exec mmgen pip install -e .
       - run:
           name: Run unittests
           command: |
-            docker exec mmgeneration python -m pytest tests/
+            docker exec mmgen python -m pytest tests/
 workflows:
   pr_stage_lint:
     when: << pipeline.parameters.lint_only >>
@@ -149,14 +140,14 @@ workflows:
             branches:
               ignore:
                 - dev-1.x
-      # - build_cpu:
-      #     name: minimum_version_cpu
-      #     torch: 1.6.0
-      #     torchvision: 0.7.0
-      #     python: 3.6.9  # The lowest python 3.6.x version available on CircleCI images
-      #     mmcv: https://download.openmmlab.com/mmcv/dev-2.x/cpu/torch1.6.0/mmcv_full-2.0.0rc0-cp36-cp36m-manylinux1_x86_64.whl
-      #     requires:
-      #       - lint
+      - build_cpu:
+          name: minimum_version_cpu
+          torch: 1.6.0
+          torchvision: 0.7.0
+          python: 3.6.9  # The lowest python 3.6.x version available on CircleCI images
+          mmcv: https://download.openmmlab.com/mmcv/dev-2.x/cpu/torch1.6.0/mmcv_full-2.0.0rc0-cp36-cp36m-manylinux1_x86_64.whl
+          requires:
+            - lint
       - build_cpu:
           name: maximum_version_cpu
           torch: 1.9.0
