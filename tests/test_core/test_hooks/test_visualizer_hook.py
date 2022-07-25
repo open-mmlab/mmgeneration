@@ -60,7 +60,7 @@ class TestGenVisualizationHook(TestCase):
             dict(inputs=None, data_sample=GenDataSample()) for idx in range(10)
         ]
         hook.vis_sample(runner, 0, data_batch, None)
-        called_kwargs = mock_visualuzer.add_datasample.call_args.kwargs
+        _, called_kwargs = mock_visualuzer.add_datasample.call_args
         self.assertEqual(called_kwargs['name'], 'gan')
         self.assertEqual(called_kwargs['target_keys'], None)
         self.assertEqual(called_kwargs['vis_mode'], None)
@@ -74,7 +74,7 @@ class TestGenVisualizationHook(TestCase):
         self.assertTrue((noise_in_gen_batches == noise_in_buffer).all())
 
         hook.vis_sample(runner, 1, data_batch, None)
-        called_kwargs = mock_visualuzer.add_datasample.call_args.kwargs
+        _, called_kwargs = mock_visualuzer.add_datasample.call_args
         gen_batches = called_kwargs['gen_samples']
         noise_in_gen_batches_new = torch.stack(
             [gen_batches[idx].noise for idx in range(9)], 0)
@@ -154,8 +154,8 @@ class TestGenVisualizationHook(TestCase):
         called_kwargs_list = mock_visualuzer.add_datasample.call_args_list
         self.assertEqual(len(called_kwargs_list), 2)
         # trans_called_kwargs, trans_val_called_kwargs = called_kwargs_list
-        trans_called_kwargs = called_kwargs_list[0].kwargs
-        trans_val_called_kwargs = called_kwargs_list[1].kwargs
+        _, trans_called_kwargs = called_kwargs_list[0]
+        _, trans_val_called_kwargs = called_kwargs_list[1]
         self.assertEqual(trans_called_kwargs['name'], 'translation')
         self.assertEqual(trans_val_called_kwargs['name'], 'cyclegan_val')
 
@@ -229,7 +229,7 @@ class TestGenVisualizationHook(TestCase):
             dict(inputs=None, data_sample=GenDataSample()) for idx in range(10)
         ]
         hook.vis_sample(runner, 0, data_batch, None)
-        called_kwargs = mock_visualuzer.add_datasample.call_args.kwargs
+        _, called_kwargs = mock_visualuzer.add_datasample.call_args
         gen_samples = called_kwargs['gen_samples']
         self.assertEqual(len(gen_samples), 3)
         self.assertEqual(called_kwargs['n_row'], min(hook.n_row, 3))
@@ -257,7 +257,7 @@ class TestGenVisualizationHook(TestCase):
             dict(inputs=None, data_sample=GenDataSample()) for idx in range(10)
         ]
         hook.vis_sample(runner, 0, data_batch, None)
-        called_kwargs = mock_visualuzer.add_datasample.call_args.kwargs
+        _, called_kwargs = mock_visualuzer.add_datasample.call_args
         gen_samples = called_kwargs['gen_samples']
         self.assertEqual(len(gen_samples), 2)
         self.assertEqual(called_kwargs['n_row'], min(hook.n_row, 2))
@@ -314,7 +314,7 @@ class TestGenVisualizationHook(TestCase):
             hook.after_train_iter(runner, idx, data_batch, None)
         called_args_list = mock_visualuzer.add_datasample.call_args_list
         self.assertEqual(len(called_args_list), 2)  # outputs + messageHub
-        messageHub_vis_args = called_args_list[1].kwargs
+        _, messageHub_vis_args = called_args_list[1]
         self.assertEqual(messageHub_vis_args['name'], 'train_feat_map')
         self.assertEqual(len(messageHub_vis_args['gen_samples']), 4)
         self.assertEqual(messageHub_vis_args['vis_mode'], None)
@@ -328,7 +328,7 @@ class TestGenVisualizationHook(TestCase):
             hook.after_train_iter(runner, idx, data_batch, None)
         called_args_list = mock_visualuzer.add_datasample.call_args_list
         self.assertEqual(len(called_args_list), 2)  # outputs + messageHub
-        messageHub_vis_args = called_args_list[1].kwargs
+        _, messageHub_vis_args = called_args_list[1]
         self.assertEqual(messageHub_vis_args['name'], 'train_feat_map')
         self.assertEqual(len(messageHub_vis_args['gen_samples']), 4)
         self.assertEqual(messageHub_vis_args['vis_mode'], None)
@@ -342,7 +342,7 @@ class TestGenVisualizationHook(TestCase):
             hook.after_train_iter(runner, idx, data_batch, None)
         called_args_list = mock_visualuzer.add_datasample.call_args_list
         self.assertEqual(len(called_args_list), 2)  # outputs + messageHub
-        messageHub_vis_args = called_args_list[1].kwargs
+        _, messageHub_vis_args = called_args_list[1]
         self.assertEqual(messageHub_vis_args['name'], 'train_feat_map')
         self.assertEqual(len(messageHub_vis_args['gen_samples']), 4)
         self.assertEqual(messageHub_vis_args['vis_mode'], 'feature_map')
@@ -365,13 +365,13 @@ class TestGenVisualizationHook(TestCase):
         called_args_list = mock_visualuzer.add_datasample.call_args_list
         self.assertEqual(len(called_args_list), 3)  # outputs + messageHub
         # output_vis_args = called_args_list[0].kwargs
-        feat_map_vis_args = called_args_list[1].kwargs
+        _, feat_map_vis_args = called_args_list[1]
         self.assertEqual(feat_map_vis_args['name'], 'train_feat_map')
         self.assertEqual(len(feat_map_vis_args['gen_samples']), 4)
         self.assertEqual(feat_map_vis_args['vis_mode'], 'feature_map')
         self.assertEqual(feat_map_vis_args['n_row'], 4)
 
-        x_t_vis_args = called_args_list[2].kwargs
+        _, x_t_vis_args = called_args_list[2]
         self.assertEqual(x_t_vis_args['name'], 'train_x_t')
         self.assertEqual(len(x_t_vis_args['gen_samples']), 1)
         self.assertEqual(x_t_vis_args['vis_mode'], None)
@@ -426,7 +426,7 @@ class TestGenVisualizationHook(TestCase):
             len(hook.test_vis_keys_list) * len(gt_list))
         # check target consistency
         for idx, args in enumerate(args_list):
-            called_kwargs = args.kwargs
+            _, called_kwargs = args
             gen_samples = called_kwargs['gen_samples']
             name = called_kwargs['name']
             batch_idx = called_kwargs['batch_idx']
@@ -459,9 +459,10 @@ class TestGenVisualizationHook(TestCase):
         mock_visualuzer.add_datasample.reset_mock()
         hook.after_test_iter(runner, 42, [], outputs)
 
-        args_list = mock_visualuzer.add_datasample.call_args_list
-        self.assertTrue(
-            all([args.kwargs['target_keys'] for args in args_list]))
+        kwargs_list = [
+            args[1] for args in mock_visualuzer.add_datasample.call_args_list
+        ]
+        self.assertTrue(all([kwargs['target_keys'] for kwargs in kwargs_list]))
 
         # test get target key automatically with error
         outputs = [
