@@ -43,7 +43,7 @@ class SiLU(nn.Module):
 
     def __init__(self, inplace=False):
         super().__init__()
-        if torch.__version__ < '1.6.0' and inplace:
+        if torch.__version__ <= '1.6.0' and inplace:
             mmcv.print_log('Inplace version of \'SiLU\' is not supported for '
                            f'torch < 1.6.0, found \'{torch.version}\'.')
         self.inplace = inplace

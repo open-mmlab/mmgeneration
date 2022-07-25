@@ -513,6 +513,7 @@ class TestSWD(TestCase):
         ]
 
 
+@pytest.mark.skipif(torch.__version__ <= '1.6.0', reason='version limitation')
 class TestEquivariance:
 
     @classmethod
