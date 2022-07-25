@@ -274,7 +274,7 @@ class DDPMLoss(nn.Module):
         Returns:
             dict: Collected log variables.
         """
-        if torch.__version__ < '1.6.0':
+        if torch.__version__ <= '1.6.0':
             # use true_divide in older torch version
             quartile = torch.true_divide(timesteps, total_timesteps) * 4
         else:
