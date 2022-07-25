@@ -24,7 +24,12 @@ custom_hooks = [
         type='GenVisualizationHook',
         interval=5000,
         fixed_input=True,
-        sample_kwargs_list=dict(type='GAN', name='fake_img')),
+        # vis ema and orig at the same time
+        vis_kwargs_list=dict(
+            type='Noise',
+            name='fake_img',
+            sample_model='ema/orig',
+            target_keys=['ema', 'orig'])),
     dict(type='PGGANFetchDataHook')
 ]
 

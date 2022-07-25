@@ -264,7 +264,7 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
 
             # Append input condition (noise and sample_kwargs) to
             # batch_sample_list
-            gen_sample.noise = noise
+            gen_sample.noise = noise[idx]
             gen_sample.sample_kwargs = deepcopy(sample_kwargs)
 
             batch_sample_list.append(gen_sample)
@@ -609,7 +609,7 @@ class BaseConditionalGAN(BaseGAN):
 
             # Append input condition (noise and sample_kwargs) to
             # batch_sample_list
-            gen_sample.noise = noise
+            gen_sample.noise = noise[idx]
             gen_sample.sample_kwargs = deepcopy(sample_kwargs)
             batch_sample_list.append(gen_sample)
         return batch_sample_list
