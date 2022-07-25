@@ -245,8 +245,9 @@ def _conv2d_gradfix(transpose, weight_shape, stride, padding, output_padding,
             flags = [
                 torch.backends.cudnn.benchmark,
                 torch.backends.cudnn.deterministic,
-                torch.backends.cudnn.allow_tf32
             ]
+            if torch.__version__ > '1.6.0':
+                flags.append(torch.backends.cudnn.allow_tf32)
             return torch._C._jit_get_operation(name)(weight_shape, grad_output,
                                                      input, padding, stride,
                                                      dilation, groups, *flags)
