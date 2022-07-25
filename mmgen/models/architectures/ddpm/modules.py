@@ -57,7 +57,7 @@ class SiLU(nn.Module):
             torch.Tensor: Tensor after activation.
         """
 
-        if torch.__version__ < '1.6.0':
+        if torch.__version__ <= '1.6.0':
             return x * torch.sigmoid(x)
 
         return F.silu(x, inplace=self.inplace)
