@@ -13,6 +13,7 @@ import torch.nn as nn
 from mmengine import BaseDataElement
 from mmengine.logging import MMLogger
 from mmengine.runner import Runner
+from mmengine.utils import TORCH_VERSION, digit_version
 from torch.utils.data.dataloader import DataLoader
 
 from mmgen.core import (FrechetInceptionDistance, GenDataSample,
@@ -513,6 +514,9 @@ class TestSWD(TestCase):
         ]
 
 
+@pytest.mark.skipif(
+    digit_version(TORCH_VERSION) <= digit_version('1.6.0'),
+    reason='version limitation')
 class TestEquivariance:
 
     @classmethod

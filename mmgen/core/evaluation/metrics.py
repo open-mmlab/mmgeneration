@@ -116,7 +116,7 @@ class GenMetric(BaseMetric):
             # apply all_gather for tensor results
             results = torch.cat(results, dim=0)
             results = torch.cat(all_gather(results), dim=0)[:size]
-            results = torch.tensor_split(results, size)
+            results = torch.split(results, 1)
         else:
             # apply collect_results (all_gather_object) for non-tensor results
             results = collect_results(results, size, self.collect_device)
@@ -671,7 +671,7 @@ class FrechetInceptionDistance(GenerativeMetric):
         fake_imgs = torch.stack(fake_imgs, dim=0)
 
         feat = self.forward_inception(fake_imgs)
-        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
+        feat_list = list(torch.split(feat, 1))
         self.fake_results += feat_list
 
     @staticmethod
@@ -913,7 +913,7 @@ class InceptionScore(GenerativeMetric):
             feat = F.softmax(self.inception(fake_imgs), dim=1)
 
         # NOTE: feat is shape like (bz, 1000), convert to a list
-        self.fake_results += list(torch.tensor_split(feat, feat.shape[0]))
+        self.fake_results += list(torch.split(feat, 1))
 
     def compute_metrics(self, fake_results: list) -> dict:
         """Compute the results of Inception Score metric.
@@ -1018,6 +1018,38 @@ class MultiScaleStructureSimilarity(GenerativeMetric):
 
         scores = ms_ssim(half1, half2, reduce_mean=False)
         self.fake_results += [torch.Tensor([s]) for s in scores.tolist()]
+
+    def _collect_target_results(self, target: str) -> Optional[list]:
+        """Collected results for MS-SSIM metric. Size of `self.fake_results` in
+        MS-SSIM does not relay on `self.fake_nums` but `self.num_pairs`.
+
+        Args:
+            target (str): Target results to collect.
+
+        Returns:
+            Optional[list]: The collected results.
+        """
+        assert target in 'fake', 'Only support to collect \'fake\' results.'
+        results = getattr(self, f'{target}_results')
+        size = self.num_pairs
+        size = len(results) * get_world_size() if size == -1 else size
+
+        if len(results) == 0:
+            warnings.warn(
+                f'{self.__class__.__name__} got empty `self.{target}_results`.'
+                ' Please ensure that the processed results are properly added '
+                f'into `self.{target}_results` in `process` method.')
+
+        # apply all_gather for tensor results
+        results = torch.cat(results, dim=0)
+        results = torch.cat(all_gather(results), dim=0)[:size]
+        results = torch.split(results, 1)
+
+        # on non-main process, results should be `None`
+        if is_main_process() and len(results) != size:
+            raise ValueError(f'Length of results is \'{len(results)}\', not '
+                             f'equals to target size \'{size}\'.')
+        return results
 
     def compute_metrics(self, results_fake: List):
         """Computed the result of MS-SSIM.
@@ -1215,7 +1247,7 @@ class PrecisionAndRecall(GenerativeMetric):
             fake_imgs.append(fake_img_)
         fake_imgs = torch.stack(fake_imgs, dim=0)
         feat = self.extract_features(fake_imgs)
-        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
+        feat_list = list(torch.split(feat, 1))
         self.fake_results += feat_list
 
     @torch.no_grad()
@@ -1459,7 +1491,7 @@ class TransFID(FrechetInceptionDistance):
             fake_imgs.append(fake_img_)
         fake_imgs = torch.stack(fake_imgs, dim=0)
         feat = self.forward_inception(fake_imgs)
-        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
+        feat_list = list(torch.split(feat, 1))
         self.fake_results += feat_list
 
 
@@ -1572,7 +1604,7 @@ class TransIS(InceptionScore):
             feat = F.softmax(self.inception(fake_imgs), dim=1)
 
         # NOTE: feat is shape like (bz, 1000), convert to a list
-        self.fake_results += list(torch.tensor_split(feat, feat.shape[0]))
+        self.fake_results += list(torch.split(feat, 1))
 
     def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
                            metrics: List['GenMetric']) -> DataLoader:
@@ -1664,7 +1696,7 @@ class PerceptualPathLength(GenerativeMetric):
             fake_imgs.append(fake_img_)
         fake_imgs = torch.stack(fake_imgs, dim=0)
         feat = self._compute_distance(fake_imgs)
-        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
+        feat_list = list(torch.split(feat, 1))
         self.fake_results += feat_list
 
     @torch.no_grad()
