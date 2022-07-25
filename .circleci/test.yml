@@ -98,7 +98,7 @@ jobs:
           name: Clone Repos
           command: |
             git clone -b main --depth 1 ssh://git@github.com/open-mmlab/mmengine.git /home/circleci/mmengine
-            git clone -b dev-3.x --depth 1 ssh://git@github.com/open-mmlab/mmclassification.git /home/circleci/mmclassification
+            git clone -b dev-1.x --depth 1 ssh://git@github.com/open-mmlab/mmclassification.git /home/circleci/mmclassification
       - run:
           name: Build Docker image
           command: |
@@ -107,10 +107,10 @@ jobs:
       - run:
           name: Install mmocr dependencies
           command: |
-            docker exec mmocr pip install -e /mmengine
-            docker exec mmocr pip install << parameters.mmcv >>
-            docker exec mmocr pip install -e /mmclassification
-            docker exec mmocr pip install -r requirements.txt
+            docker exec mmgen pip install -e /mmengine
+            docker exec mmgen pip install << parameters.mmcv >>
+            docker exec mmgen pip install -e /mmclassification
+            docker exec mmgen pip install -r requirements.txt
       - run:
           name: Build and install
           command: |
