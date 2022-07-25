@@ -12,14 +12,12 @@ If you are experienced with PyTorch and have already installed it, just skip thi
 
 **Step 1.** Create a conda environment and activate it.
 
-On GPU platforms:
-
 ```shell
-conda create -name openmmlab python=3.8 -y
+conda create --name openmmlab python=3.8 -y
 conda activate openmmlab
 ```
 
-**Step 2.** Install Pytorch following [official instructions](https://pytorch.org/get-started/locally/), e.g.
+**Step 2.** Install PyTorch following [official instructions](https://pytorch.org/get-started/locally/), e.g.
 
 On GPU platforms:
 
@@ -35,7 +33,7 @@ conda install pytorch torchvision cpuonly -c pytorch
 
 # Installation
 
-We recommend that users follow our best practices to install MMGeneration. However, the whole process is highly customizable. See [Customize Installation](#customize-installation) section for more information.
+We recommend that users follow our best practices to install MMGeneration 1.x . However, the whole process is highly customizable. See [Customize Installation](#customize-installation) section for more information.
 
 ## Best Practices
 
@@ -43,24 +41,25 @@ We recommend that users follow our best practices to install MMGeneration. Howev
 
 ```shell
 pip install -U openmim
-mim install mmcv-full
+# wait for more pre-compiled pkgs to release
+mim install mmcv-full==2.0.0rc0
 ```
 
-**Step 1.** Install MMGeneration.
+**Step 1.** Install [MMEngine](https://github.com/open-mmlab/mmengine).
 
 ```shell
-git clone https://github.com/open-mmlab/mmgeneration.git
+pip install git+https://github.com/open-mmlab/mmengine.git
+```
+
+**Step 2.** Install MMGeneration 1.x .
+
+```shell
+git clone -b dev-1.x https://github.com/open-mmlab/mmgeneration.git
 cd mmgeneration
 pip install -v -e .
 # "-v" means verbose, or more output
 # "-e" means installing a project in editable mode,
 # thus any local modifications made to the code will take effect without reinstallation.
-```
-
-Case b: If you use mmgeneration as a dependency or third-party package, install it with pip:
-
-```shell
-pip install mmgen
 ```
 
 ## Verify the Installation
