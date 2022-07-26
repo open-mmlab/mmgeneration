@@ -384,7 +384,7 @@ Models:
       Scales: 256, 512, 1024
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c1_config-f_ffhq_256-1024_b2x8_1600k_20210406_144716-81cbdc96.pth
-- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/singan_interp-pad_balloons.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/positional_encoding_in_gans/singan_interp-pad_balloons.py
   In Collection: Positional Encoding in GANs
   Metadata:
     Training Data: Others
