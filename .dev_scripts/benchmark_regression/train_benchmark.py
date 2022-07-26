@@ -103,7 +103,7 @@ def parse_args():
         '--models', nargs='+', type=str, help='Specify model names to run.')
     parser.add_argument(
         '--work-dir',
-        default='work_dirs/benchmark_test',
+        default='work_dirs/benchmark_train',
         help='the dir to save metric')
     parser.add_argument(
         '--run', action='store_true', help='run script directly')
@@ -112,13 +112,13 @@ def parse_args():
         action='store_true',
         help='run at local instead of cluster.')
     parser.add_argument(
-        '--mail', type=str, help='Mail address to watch test status.')
+        '--mail', type=str, help='Mail address to watch train status.')
     parser.add_argument(
         '--mail-type',
         nargs='+',
         default=['BEGIN'],
         choices=['NONE', 'BEGIN', 'END', 'FAIL', 'REQUEUE', 'ALL'],
-        help='Mail address to watch test status.')
+        help='Mail address to watch train status.')
     parser.add_argument(
         '--quotatype',
         default=None,
@@ -127,7 +127,7 @@ def parse_args():
     parser.add_argument(
         '--summary',
         action='store_true',
-        help='Summarize benchmark test results.')
+        help='Summarize benchmark train results.')
     parser.add_argument('--save', action='store_true', help='Save the summary')
 
     args = parser.parse_args()
@@ -188,7 +188,7 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
                   f'#SBATCH --job-name {job_name}\n'
                   f'#SBATCH --gres=gpu:{n_gpus}\n'
                   f'{mail_cfg}{quota_cfg}'
-                  f'#SBATCH --ntasks-per-node={max(n_gpus, 8)}\n'
+                  f'#SBATCH --ntasks-per-node={min(n_gpus, 8)}\n'
                   f'#SBATCH --ntasks={n_gpus}\n'
                   f'#SBATCH --cpus-per-task=5\n\n'
                   f'{runner} -u {script_name} {config} '
@@ -276,7 +276,7 @@ def train(args):
 
 
 def show_summary(summary_data, models_map, work_dir, save=False):
-    table = Table(title='Test Benchmark Regression Summary')
+    table = Table(title='Train Benchmark Regression Summary')
     table.add_column('Model')
     md_header = ['Model']
     for metric in METRICS_MAP:
