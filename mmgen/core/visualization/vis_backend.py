@@ -10,7 +10,8 @@ import numpy as np
 import torch
 from mmengine.config import Config
 from mmengine.fileio import dump
-from mmengine.visualization import BaseVisBackend, WandbVisBackend
+from mmengine.visualization import (BaseVisBackend, TensorboardVisBackend,
+                                    WandbVisBackend)
 from mmengine.visualization.vis_backend import force_init_env
 
 from mmgen.registry import VISBACKENDS
@@ -226,6 +227,42 @@ class GenVisBackend(BaseVisBackend):
             self._file_client.put(file, path)
         if self._delete_local:
             os.remove(path)
+
+
+@VISBACKENDS.register_module()
+class TensorboardGenVisBackend(TensorboardVisBackend):
+
+    @force_init_env
+    def add_image(self, name: str, image: np.array, step: int = 0, **kwargs):
+        """Record the image to Tensorboard. Additional support upload gif
+        files.
+
+        Args:
+            name (str): The image identifier.
+            image (np.ndarray): The image to be saved. The format
+                should be RGB.
+            step (int): Useless parameter. Wandb does not
+                need this parameter. Default to 0.
+        """
+
+        if image.ndim == 4:
+            n_skip = kwargs.get('n_skip', 1)
+            fps = kwargs.get('fps', 60)
+
+            frames_list = []
+            for frame in image[::n_skip]:
+                frames_list.append(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+            if not (image.shape[0] % n_skip == 0):
+                frames_list.append(image[-1])
+
+            frames_np = np.transpose(
+                np.stack(frames_list, axis=0), (0, 3, 1, 2))
+            frames_tensor = torch.from_numpy(frames_np)[None, ...]
+            self._tensorboard.add_video(
+                name, frames_tensor, global_step=step, fps=fps)
+        else:
+            # write normal image
+            self._tensorboard.add_image(name, image, step, dataformats='HWC')
 
 
 @VISBACKENDS.register_module()
