@@ -79,7 +79,7 @@ class TestTensorboardBackend(TestCase):
     def test_tensorboard(self):
         save_dir = 'tmp_dir'
         vis_backend = TensorboardGenVisBackend(save_dir)
-        sys.modules['tensorboard.utils.tensorboard'] = MagicMock()
+        sys.modules['torch.utils.tensorboard'] = MagicMock()
 
         # add image
         vis_backend.add_image(
