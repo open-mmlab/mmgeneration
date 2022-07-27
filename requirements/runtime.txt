@@ -1,4 +1,4 @@
-mmcls
+mmcls>=1.0.0rc0
 ninja
 numpy
 prettytable
