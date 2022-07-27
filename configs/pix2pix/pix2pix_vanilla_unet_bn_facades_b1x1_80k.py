@@ -68,7 +68,8 @@ test_pipeline = [
         ]),
     dict(
         type='PackGenInputs',
-        keys=[f'img_{domain_a}', f'img_{domain_b}', 'pair'])
+        keys=[f'img_{domain_a}', f'img_{domain_b}', 'pair'],
+        meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
 ]
 
 dataroot = 'data/pix2pix/facades'
