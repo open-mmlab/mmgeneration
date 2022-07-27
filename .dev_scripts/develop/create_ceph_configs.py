@@ -117,6 +117,7 @@ def update_ceph_config(filename, args, dry_run=False):
                 pavi_cfg = dict(
                     type='PaviGenVisBackend', exp_name=name, project=project)
                 config['vis_backends'].append(pavi_cfg)
+
         # add wandb config
         if args.add_wandb:
             _, project, name = filename.split('/')
@@ -135,6 +136,19 @@ def update_ceph_config(filename, args, dry_run=False):
                     type='WandbGenVisBackend',
                     init_kwargs=dict(name=name, project=project))
                 config['vis_backends'].append(pavi_cfg)
+
+        # add tensorboard config
+        if args.add_tensorboard:
+            find_inherit = False
+            for vis_cfg in config['vis_backends']:
+                if vis_cfg['type'] == 'TensorboardGenVisBackend':
+                    find_inherit = True
+                    break
+
+            if not find_inherit:
+                tensorboard_cfg = dict(type='TensorboardGenVisBackend')
+                config['vis_backends'].append(tensorboard_cfg)
+
         config['visualizer']['vis_backends'] = config['vis_backends']
 
         # 3. change logger hook and checkpoint hook
@@ -178,6 +192,10 @@ if __name__ == '__main__':
         '--add-pavi', action='store_true', help='Add pavi config or not.')
     parser.add_argument(
         '--add-wandb', action='store_true', help='Add wandb config or not.')
+    parser.add_argument(
+        '--add-tensorboard',
+        action='store_true',
+        help='Add Tensorboard config or not.')
 
     args = parser.parse_args()
 

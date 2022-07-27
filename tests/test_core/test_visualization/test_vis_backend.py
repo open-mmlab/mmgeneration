@@ -8,7 +8,8 @@ import numpy as np
 import torch
 from mmengine import Config
 
-from mmgen.core import GenVisBackend, PaviGenVisBackend, WandbGenVisBackend
+from mmgen.core import (GenVisBackend, PaviGenVisBackend,
+                        TensorboardGenVisBackend, WandbGenVisBackend)
 
 
 class TestGenVisBackend(TestCase):
@@ -71,6 +72,26 @@ class TestGenVisBackend(TestCase):
                 scalar_dict=dict(lr=0.001), step=3, file_path='new_scalars')
 
         shutil.rmtree('tmp_dir')
+
+
+class TestTensorboardBackend(TestCase):
+
+    def test_tensorboard(self):
+        save_dir = 'tmp_dir'
+        vis_backend = TensorboardGenVisBackend(save_dir)
+        sys.modules['tensorboard.utils.tensorboard'] = MagicMock()
+
+        # add image
+        vis_backend.add_image(
+            name='add_img', image=np.random.random((8, 8, 3)).astype(np.uint8))
+        vis_backend.add_image(
+            name='add_img',
+            image=np.random.random((10, 8, 8, 3)).astype(np.uint8))
+
+        # add scalars
+        vis_backend.add_scalars(
+            scalar_dict=dict(lr=0.001, loss=torch.FloatTensor([0.693])),
+            step=3)
 
 
 class TestPaviBackend(TestCase):
