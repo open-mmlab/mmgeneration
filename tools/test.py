@@ -19,6 +19,10 @@ def parse_args():
         '--work-dir',
         help='the directory to save the file containing evaluation metrics')
     parser.add_argument(
+        '--save-image',
+        action='store_true',
+        help='whether save generated image in test process.')
+    parser.add_argument(
         '--cfg-options',
         nargs='+',
         action=DictAction,
@@ -63,6 +67,14 @@ def main():
                                 osp.splitext(osp.basename(args.config))[0])
 
     cfg.load_from = args.checkpoint
+
+    if args.save_vis:
+        custom_hooks = cfg.custom_hooks
+        for hook in custom_hooks:
+            hook_type = hook['type']
+            if hook_type == 'GenVisualizationHook':
+                hook['save_at_test'] = True
+                break
 
     # build the runner from config
     runner = Runner.from_cfg(cfg)
