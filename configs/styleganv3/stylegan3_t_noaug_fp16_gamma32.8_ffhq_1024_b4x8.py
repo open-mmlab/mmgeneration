@@ -24,7 +24,6 @@ ema_config = dict(
     start_iter=0)
 
 model = dict(
-    type='StaticUnconditionalGAN',
     generator=dict(out_size=1024, img_channels=3, synthesis_cfg=synthesis_cfg),
     discriminator=dict(in_size=1024),
     loss_config=dict(r1_loss_weight=r1_gamma / 2.0 * d_reg_interval),
