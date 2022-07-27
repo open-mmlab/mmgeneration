@@ -191,9 +191,9 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
                   f'#SBATCH --ntasks-per-node={min(n_gpus, 8)}\n'
                   f'#SBATCH --ntasks={n_gpus}\n'
                   f'#SBATCH --cpus-per-task=5\n\n'
+                  f'export MASTER_PORT={port}\n'
                   f'{runner} -u {script_name} {config} '
                   f'--work-dir={work_dir} '
-                  f'--cfg-option dist_params.port={port} '
                   f'--launcher={launcher}\n')
 
     with open(work_dir / 'job.sh', 'w') as f:
