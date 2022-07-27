@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import torch
-from mmcv.parallel import collate, scatter
 from mmcv.runner import load_checkpoint
 from mmengine import is_list_of
 from mmengine.config import Config
@@ -9,6 +8,9 @@ from mmengine.dataset import Compose
 
 from mmgen.models import BaseTranslationModel
 from mmgen.registry import MODELS
+from mmgen.utils import register_all_modules
+
+register_all_modules()
 
 
 def init_model(config, checkpoint=None, device='cuda:0', cfg_options=None):
@@ -21,7 +23,6 @@ def init_model(config, checkpoint=None, device='cuda:0', cfg_options=None):
             will not load any weights.
         cfg_options (dict): Options to override some settings in the used
             config.
-
     Returns:
         nn.Module: The constructed unconditional model.
     """
@@ -62,7 +63,6 @@ def sample_unconditional_model(model,
             Defaults to 4.
         sample_model (str, optional): Which model you want to use. ['ema',
             'orig']. Defaults to 'ema'.
-
     Returns:
         Tensor: Generated image tensor.
     """
@@ -78,12 +78,11 @@ def sample_unconditional_model(model,
 
     # inference
     for batches in batches_list:
-        res = model.sample_from_noise(
-            None, num_batches=batches, sample_model=sample_model, **kwargs)
-        res_list.append(res.cpu())
+        res = model(
+            dict(num_batches=batches, sample_model=sample_model), **kwargs)
+        res_list.extend([item.fake_img.data.cpu() for item in res])
 
-    results = torch.cat(res_list, dim=0)
-
+    results = torch.stack(res_list, dim=0)
     return results
 
 
@@ -106,7 +105,6 @@ def sample_conditional_model(model,
             'orig']. Defaults to 'ema'.
         label (int | torch.Tensor | list[int], optional): Labels used to
             generate images. Default to None.,
-
     Returns:
         Tensor: Generated image tensor.
     """
@@ -169,16 +167,12 @@ def sample_conditional_model(model,
 
     # inference
     for batches, labels in zip(batches_list, label_list):
-        res = model.sample_from_noise(
-            None,
-            num_batches=batches,
-            label=labels,
-            sample_model=sample_model,
+        res = model(
+            dict(
+                num_batches=batches, labels=labels, sample_model=sample_model),
             **kwargs)
-        res_list.append(res.cpu())
-
-    results = torch.cat(res_list, dim=0)
-
+        res_list.extend([item.fake_img.data.cpu() for item in res])
+    results = torch.stack(res_list, dim=0)
     return results
 
 
@@ -200,7 +194,6 @@ def sample_img2img_model(model, image_path, target_domain=None, **kwargs):
     source_domain = model.get_other_domains(target_domain)[0]
 
     cfg = model._cfg
-    device = next(model.parameters()).device  # model device
     # build the data pipeline
     test_pipeline = Compose(cfg.test_pipeline)
 
@@ -211,14 +204,12 @@ def sample_img2img_model(model, image_path, target_domain=None, **kwargs):
     data[f'img_{source_domain}_path'] = image_path
     data[f'img_{target_domain}_path'] = image_path
 
-    data = test_pipeline(data)
-    if device.type == 'cpu':
-        data = collate([data], samples_per_gpu=1)
-        data['meta'] = []
-    else:
-        data = scatter(collate([data], samples_per_gpu=1), [device])[0]
+    data = [test_pipeline(data)]
 
-    source_image = data[f'img_{source_domain}']
+    inputs_dict, data_sample = model.data_preprocessor(data, False)
+
+    source_image = inputs_dict[f'img_{source_domain}']
+
     # forward the model
     with torch.no_grad():
         results = model(
@@ -249,7 +240,6 @@ def sample_ddpm_model(model,
             'orig']. Defaults to 'ema'.
         noise_batch (torch.Tensor): Noise batch used as denoising starting up.
             Defaults to None.
-
     Returns:
         list[Tensor | dict]: Generated image tensor.
     """

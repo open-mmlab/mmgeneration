@@ -148,6 +148,7 @@ def main():
         results_timestep = (results_timestep + 1.) / 2.
         create_gif(results_timestep, args.save_path, n_skip=args.n_skip)
     else:
+        results = torch.stack(results, dim=0)
         if not args.is_rgb:
             results = results[:, [2, 1, 0]]
 

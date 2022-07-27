@@ -169,7 +169,10 @@ class SinGAN(BaseGAN):
                 noise = torch.zeros_like(real)
                 self.fixed_noises.append(noise)
 
-    def forward(self, batch_inputs, data_samples, mode=None):
+    def forward(self,
+                batch_inputs,
+                data_samples: Optional[list] = None,
+                mode=None):
         """Forward function for SinGAN. For SinGAN, `batch_inputs` should be a
         dict contains 'num_batches', 'mode' and other input arguments for the
         generator.
@@ -192,6 +195,9 @@ class SinGAN(BaseGAN):
         mode = gen_kwargs.pop('mode', mode)
         mode = 'rand' if mode is None else mode
         curr_scale = gen_kwargs.pop('curr_scale', self.curr_stage)
+
+        # remove  sample_model from gen_kwargs
+        gen_kwargs.pop('sample_model', None)
 
         if sample_model in ['ema', 'ema/orig']:
             generator = self.generator_ema
@@ -228,18 +234,43 @@ class SinGAN(BaseGAN):
             gen_sample = GenDataSample()
             if data_samples:
                 gen_sample.update(data_samples[idx])
-            if isinstance(outputs, dict):
-                gen_sample.ema = GenDataSample(
-                    fake_img=PixelData(data=outputs['ema'][idx]),
-                    sample_model='ema')
-                gen_sample.orig = GenDataSample(
-                    fake_img=PixelData(data=outputs['orig'][idx]),
-                    sample_model='orig')
+            if sample_model == 'ema/orig':
+                output_ema = outputs['ema']
+                output_orig = outputs['orig']
+                if gen_kwargs.get('get_prev_res', False):
+                    gen_sample.ema = GenDataSample(
+                        fake_img=PixelData(data=output_ema['fake_img'][idx]),
+                        prev_res_lsit=[
+                            res[idx] for res in output_ema['prev_res_list']
+                        ],
+                        sample_model='ema')
+                    gen_sample.orig = GenDataSample(
+                        fake_img=PixelData(data=output_orig['fake_img'][idx]),
+                        prev_res_lsit=[
+                            res[idx] for res in output_orig['prev_res_list']
+                        ],
+                        sample_model='orig')
+                else:
+                    gen_sample.ema = GenDataSample(
+                        fake_img=PixelData(data=output_ema[idx]),
+                        sample_model='ema')
+                    gen_sample.orig = GenDataSample(
+                        fake_img=PixelData(data=output_orig[idx]),
+                        sample_model='orig')
                 gen_sample.sample_model = 'ema/orig'
             else:
-                gen_sample.fake_img = PixelData(data=outputs[idx])
+                if gen_kwargs.get('get_prev_res', False):
+                    gen_sample.fake_img = PixelData(
+                        data=outputs['fake_img'][idx])
+                    gen_sample.prev_res_list = [
+                        res[idx] for res in outputs['prev_res_list']
+                    ]
+                else:
+                    gen_sample.fake_img = PixelData(data=outputs[idx])
                 gen_sample.sample_model = sample_model
 
+            # import ipdb
+            # ipdb.set_trace()
             batch_sample_list.append(gen_sample)
 
         return batch_sample_list

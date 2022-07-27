@@ -9,7 +9,7 @@ from torchvision import utils
 
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
-
+from mmgen.utils import register_all_modules  # isort:skip  # noqa
 from mmgen.apis import init_model, sample_conditional_model  # isort:skip  # noqa
 # yapf: enable
 
@@ -75,6 +75,7 @@ def parse_args():
 
 def main():
     args = parse_args()
+    register_all_modules()
     model = init_model(
         args.config, checkpoint=args.checkpoint, device=args.device)
 

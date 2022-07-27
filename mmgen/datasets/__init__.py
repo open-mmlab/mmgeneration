@@ -11,9 +11,8 @@ from .unconditional_image_dataset import UnconditionalImageDataset
 from .unpaired_image_dataset import UnpairedImageDataset
 
 __all__ = [
-    'build_dataloader', 'build_dataset', 'LoadImageFromFile',
-    'DistributedSampler', 'UnconditionalImageDataset', 'Flip', 'Resize',
-    'RepeatDataset', 'GrowScaleImgDataset', 'SinGANDataset',
+    'LoadImageFromFile', 'DistributedSampler', 'UnconditionalImageDataset',
+    'Flip', 'Resize', 'RepeatDataset', 'GrowScaleImgDataset', 'SinGANDataset',
     'PairedImageDataset', 'UnpairedImageDataset', 'QuickTestImageDataset',
     'PackGenInputs', 'FixedCrop'
 ]
