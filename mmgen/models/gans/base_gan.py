@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import itertools
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 from typing import Dict, List, Optional, Union
@@ -364,6 +365,23 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
                 self.generator_ema.update_parameters(
                     self.generator.module
                     if is_model_wrapper(self.generator) else self.generator)
+                # if not update buffer, copy buffer from orig model
+                if not self.generator_ema.update_buffers:
+                    avg_buffer = itertools.chain(
+                        self.generator_ema.module.buffers())
+                    orig_buffer = itertools.chain(self.generator.buffers())
+                    for b_avg, b_orig in zip(avg_buffer, orig_buffer):
+                        b_avg.data.copy_(b_orig.data)
+            else:
+                # before ema, copy weights from orig
+                avg_param = (
+                    itertools.chain(self.ema_model.module.parameters(),
+                                    self.ema_model.module.buffers()))
+                src_param = (
+                    itertools.chain(self.src_model.parameters(),
+                                    self.src_model.buffers()))
+                for p_avg, p_src in zip(avg_param, src_param):
+                    p_avg.data.copy_(p_src.data)
 
             log_vars.update(log_vars_gen)
 
