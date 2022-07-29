@@ -81,12 +81,15 @@ class GenVisBackend(BaseVisBackend):
             self._save_dir,  # type: ignore
             self._scalar_save_file)
 
+        import ipdb
+        ipdb.set_trace()
         if self._ceph_path is not None:
-            # file_client_args = dict(
-            #     path_mapping={self._save_dir: self._ceph_path})
-            # self._file_client = mmcv.FileClient(
-            #     backend='petrel', **file_client_args)
-            self._file_client = mmcv.FileClient(backend='petrel')
+            src_path = self._save_dir.strip('/')
+            tar_path = self._ceph_path.strip('/')
+
+            file_client_args = dict(path_mapping={src_path: tar_path})
+            self._file_client = mmcv.FileClient(
+                backend='petrel', **file_client_args)
 
     @property  # type: ignore
     @force_init_env
