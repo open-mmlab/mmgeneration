@@ -82,10 +82,11 @@ class GenVisBackend(BaseVisBackend):
             self._scalar_save_file)
 
         if self._ceph_path is not None:
-            file_client_args = dict(
-                path_mapping={self._save_dir: self._ceph_path})
-            self._file_client = mmcv.FileClient(
-                backend='petrel', **file_client_args)
+            # file_client_args = dict(
+            #     path_mapping={self._save_dir: self._ceph_path})
+            # self._file_client = mmcv.FileClient(
+            #     backend='petrel', **file_client_args)
+            self._file_client = mmcv.FileClient(backend='petrel')
 
     @property  # type: ignore
     @force_init_env
@@ -225,8 +226,10 @@ class GenVisBackend(BaseVisBackend):
         """
         if self._file_client is None:
             return
+        file_name = osp.basename(path)
+        upload_path = self._file_client.join_path(self._ceph_path, file_name)
         with open(path, 'rb') as file:
-            self._file_client.put(file, path)
+            self._file_client.put(file, upload_path)
         if delete_local:
             os.remove(path)
 
