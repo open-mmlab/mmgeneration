@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import itertools
+import warnings
 from typing import List, Optional
 
 import torch
@@ -119,6 +121,36 @@ class ExponentialMovingAverage(BaseAveragedModel):
         super()._load_from_state_dict(state_dict, prefix, local_metadata,
                                       strict, missing_keys, unexpected_keys,
                                       error_msgs)
+
+    def sync_buffers(self, model: nn.Module) -> None:
+        """Copy buffer from model to averaged model.
+
+        Args:
+            model (nn.Module): The model whose parameters will be averaged.
+        """
+        # if not update buffer, copy buffer from orig model
+        if self.update_buffers:
+            warnings.warn(
+                '`update_buffers` is set to True in this ema model, and '
+                'buffers will be updated in `update_parameters`.')
+
+        avg_buffer = itertools.chain(self.module.buffers())
+        orig_buffer = itertools.chain(model.buffers())
+        for b_avg, b_orig in zip(avg_buffer, orig_buffer):
+            b_avg.data.copy_(b_orig.data)
+
+    def sync_parameters(self, model: nn.Module) -> None:
+        """Copy buffer and parameters from model to averaged model.
+
+        Args:
+            model (nn.Module): The model whose parameters will be averaged.
+        """
+        # before ema, copy weights from orig
+        avg_param = (
+            itertools.chain(self.module.parameters(), self.module.buffers()))
+        src_param = (itertools.chain(model.parameters(), model.buffers()))
+        for p_avg, p_src in zip(avg_param, src_param):
+            p_avg.data.copy_(p_src.data)
 
 
 @MODELS.register_module()

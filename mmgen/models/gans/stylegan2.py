@@ -286,6 +286,16 @@ class StyleGAN2(BaseGAN):
                 self.generator_ema.update_parameters(
                     self.generator.module
                     if is_model_wrapper(self.generator) else self.generator)
+                # if not update buffer, copy buffer from orig model
+                if not self.generator_ema.update_buffers:
+                    self.generator_ema.sync_buffers(
+                        self.generator.module if is_model_wrapper(
+                            self.generator) else self.generator)
+            elif self.with_ema_gen:
+                # before ema, copy weights from orig
+                self.generator_ema.sync_parameters(
+                    self.generator.module
+                    if is_model_wrapper(self.generator) else self.generator)
 
             log_vars.update(log_vars_gen)
 
