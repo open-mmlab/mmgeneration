@@ -2,11 +2,15 @@ import glob
 import os.path as osp
 import shutil
 from argparse import ArgumentParser
+from importlib.machinery import SourceFileLoader
 
 from mmengine import Config
 
 
-def update_ceph_config(filename, args, dry_run=False):
+def update_ceph_config(filename,
+                       args,
+                       dry_run=False,
+                       data_root_mapping=dict()):
     if filename.startswith(osp.join('configs_ceph', '_base_')):
         # Skip base configs
         return None
@@ -62,6 +66,7 @@ def update_ceph_config(filename, args, dry_run=False):
                         # add '/' at the end
                         if not data_root.endswith('/'):
                             data_root = data_root + '/'
+                        data_root = data_root_mapping.get(data_root, data_root)
                         dataset['data_root'] = data_root
 
             elif 'data_roots' in dataset:
@@ -79,6 +84,8 @@ def update_ceph_config(filename, args, dry_run=False):
                             # add '/' at the end
                             if not data_root.endswith('/'):
                                 data_root = data_root + '/'
+                            data_root = data_root_mapping.get(
+                                data_root, data_root)
                             data_roots[k] = data_root
                 dataset['data_roots'] = data_roots
 
@@ -196,8 +203,19 @@ if __name__ == '__main__':
         '--add-tensorboard',
         action='store_true',
         help='Add Tensorboard config or not.')
+    parser.add_argument(
+        '--data-remapping',
+        type=str,
+        default='',
+        help='Path of dataroot remapping file which contain a dict'
+        ' of root mapping named ``ROOT_MAP``.')
 
     args = parser.parse_args()
+
+    ROOT_MAP = dict()
+    if len(args.data_remapping) > 0:
+        ROOT_MAP = SourceFileLoader('ROOT_MAP',
+                                    args.data_remapping).load_module().ROOT_MAP
 
     if args.test_file is None:
 
@@ -207,7 +225,10 @@ if __name__ == '__main__':
         print('Updating ceph configuration ...')
         files = glob.glob(
             osp.join('configs_ceph', '**', '*.py'), recursive=True)
-        res = [update_ceph_config(f, args) for f in files]
+        res = [
+            update_ceph_config(f, args, data_root_mapping=ROOT_MAP)
+            for f in files
+        ]
 
         count_skip = res.count(None)
         count_done = res.count(True)
@@ -221,4 +242,5 @@ if __name__ == '__main__':
             print(fn)
 
     else:
-        update_ceph_config(args.test_file, args, dry_run=True)
+        update_ceph_config(
+            args.test_file, args, dry_run=True, data_root_mapping=ROOT_MAP)

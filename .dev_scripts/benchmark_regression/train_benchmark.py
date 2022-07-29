@@ -92,6 +92,10 @@ def parse_args():
         default='gen-train-benchmark',
         help='Slurm job name prefix')
     parser.add_argument(
+        '--amp', action='store_true', help='whether use amp training')
+    parser.add_argument(
+        '--cpu', action='store_true', help='whether use cpu training')
+    parser.add_argument(
         '--train-all', action='store_true', help='Train all model or not.')
     parser.add_argument('--port', type=int, default=29666, help='dist port')
     parser.add_argument(
@@ -164,6 +168,14 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
         else:
             n_gpus = int(parse_res.group().split('x')[-1])
 
+    # deal cpu train
+    ntasks_per_node = min(n_gpus, 8)
+    ntasks = n_gpus
+    if args.cpu:
+        n_gpus = 0
+        ntasks_per_node = 1
+        ntasks = 1
+
     job_name = f'{args.job_name}_{fname}'
     work_dir = Path(args.work_dir) / fname
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -188,13 +200,16 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
                   f'#SBATCH --job-name {job_name}\n'
                   f'#SBATCH --gres=gpu:{n_gpus}\n'
                   f'{mail_cfg}{quota_cfg}'
-                  f'#SBATCH --ntasks-per-node={min(n_gpus, 8)}\n'
-                  f'#SBATCH --ntasks={n_gpus}\n'
+                  f'#SBATCH --ntasks-per-node={ntasks_per_node}\n'
+                  f'#SBATCH --ntasks={ntasks}\n'
                   f'#SBATCH --cpus-per-task=5\n\n'
                   f'export MASTER_PORT={port}\n'
                   f'{runner} -u {script_name} {config} '
                   f'--work-dir={work_dir} '
                   f'--launcher={launcher}\n')
+
+    if args.amp:
+        job_script += ' --amp'
 
     with open(work_dir / 'job.sh', 'w') as f:
         f.write(job_script)
@@ -213,7 +228,7 @@ def train(args):
     if args.train_all:
         model_index_file = MMGEN_ROOT / 'model-index.yml'
     else:
-        print('Not implemented yet.')
+        print('P0 list not implemented yet. Please add `--train-all`')
         exit()
     model_index = load(str(model_index_file))
     model_index.build_models_with_collections()
