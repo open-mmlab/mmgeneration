@@ -21,6 +21,14 @@ def parse_args():
         default=False,
         help='enable automatic-mixed-precision training')
     parser.add_argument(
+        '--resume',
+        nargs='?',
+        type=str,
+        const='auto',
+        help='If specify checkpint path, resume from it, while if not '
+        'specify, try to auto resume from the latest checkpoint '
+        'in the work directory.')
+    parser.add_argument(
         '--cfg-options',
         nargs='+',
         action=DictAction,
@@ -97,6 +105,13 @@ def main():
                     f' is `OptimWrapper` but got {optim_wrapper}.')
                 cfg.optim_wrapper.type = 'AmpOptimWrapper'
                 cfg.optim_wrapper.loss_scale = 'dynamic'
+    # resume training
+    if args.resume == 'auto':
+        cfg.resume = True
+        cfg.load_from = None
+    elif args.resume is not None:
+        cfg.resume = True
+        cfg.load_from = args.resume
 
     runner = Runner.from_cfg(cfg)
     runner.train()
