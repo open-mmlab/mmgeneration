@@ -98,7 +98,7 @@ def update_ceph_config(filename, args, dry_run=False):
         for vis_cfg in config['vis_backends']:
             if vis_cfg['type'] == 'GenVisBackend':
                 if ceph_path is not None:
-                    vis_cfg['ceph_path'] = ceph_path
+                    vis_cfg['ceph_path'] = osp.join(ceph_path, 'vis_data')
 
         # add pavi config
         if args.add_pavi:
