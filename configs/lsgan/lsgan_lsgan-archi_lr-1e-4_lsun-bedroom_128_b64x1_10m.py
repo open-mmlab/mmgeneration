@@ -15,10 +15,10 @@ data_root = './data/lsun/bedroom_train'
 train_dataloader = dict(
     batch_size=batch_size, dataset=dict(data_root=data_root))
 
-val_dataloader = dict(batch_size=batch_size, dataset=dict(data_root=data_root))
+test_bs = 32
+val_dataloader = dict(batch_size=test_bs, dataset=dict(data_root=data_root))
 
-test_dataloader = dict(
-    batch_size=batch_size, dataset=dict(data_root=data_root))
+test_dataloader = dict(batch_size=test_bs, dataset=dict(data_root=data_root))
 
 optim_wrapper = dict(
     generator=dict(optimizer=dict(type='Adam', lr=0.0001, betas=(0.5, 0.99))),
