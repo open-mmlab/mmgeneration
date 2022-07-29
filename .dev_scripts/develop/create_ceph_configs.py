@@ -106,7 +106,7 @@ def update_ceph_config(filename,
             if vis_cfg['type'] == 'GenVisBackend':
                 if ceph_path is not None:
                     vis_cfg['ceph_path'] = ceph_path
-                    if args.not_delete_local_image:
+                    if args.not_delete_local:
                         vis_cfg['delete_local_image'] = False
 
         # add pavi config
