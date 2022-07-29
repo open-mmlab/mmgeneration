@@ -95,14 +95,14 @@ def update_ceph_config(filename, args, dry_run=False):
             config[prefix]['dataset'] = dataset
 
         # 2. change visualizer
+        _, project, name = filename.split('/')
         for vis_cfg in config['vis_backends']:
             if vis_cfg['type'] == 'GenVisBackend':
                 if ceph_path is not None:
-                    vis_cfg['ceph_path'] = osp.join(ceph_path, 'vis_data')
+                    vis_cfg['ceph_path'] = osp.join(ceph_path, project, name)
 
         # add pavi config
         if args.add_pavi:
-            _, project, name = filename.split('/')
             name = name[:-2]
             # check if pavi config is inheritance from _base_
             find_inherit = False
@@ -120,7 +120,6 @@ def update_ceph_config(filename, args, dry_run=False):
 
         # add wandb config
         if args.add_wandb:
-            _, project, name = filename.split('/')
             name = name[:-2]
             # check if wandb config is inheritance from _base_
             find_inherit = False
