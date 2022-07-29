@@ -269,8 +269,6 @@ class SinGAN(BaseGAN):
                     gen_sample.fake_img = PixelData(data=outputs[idx])
                 gen_sample.sample_model = sample_model
 
-            # import ipdb
-            # ipdb.set_trace()
             batch_sample_list.append(gen_sample)
 
         return batch_sample_list
