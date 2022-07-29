@@ -106,6 +106,8 @@ def update_ceph_config(filename,
             if vis_cfg['type'] == 'GenVisBackend':
                 if ceph_path is not None:
                     vis_cfg['ceph_path'] = ceph_path
+                    if args.not_delete_local_image:
+                        vis_cfg['delete_local_image'] = False
 
         # add pavi config
         if args.add_pavi:
@@ -203,6 +205,10 @@ if __name__ == '__main__':
         '--add-tensorboard',
         action='store_true',
         help='Add Tensorboard config or not.')
+    parser.add_argument(
+        '--not-delete-local',
+        action='store_true',
+        help='Do not delete local image')
     parser.add_argument(
         '--data-remapping',
         type=str,

@@ -113,6 +113,17 @@ optim_wrapper = dict(
     discriminators=dict(
         optimizer=dict(type='Adam', lr=0.0002, betas=(0.5, 0.999))))
 
+custom_hooks = [
+    dict(
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        vis_kwargs_list=[
+            dict(type='Translation', name='trans'),
+            dict(type='TranslationVal', name='trans_val')
+        ])
+]
+
 # learning policy
 num_images = 106
 metrics = [

@@ -110,6 +110,17 @@ param_scheduler = dict(
     begin=135000,
     end=270000)
 
+custom_hooks = [
+    dict(
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        vis_kwargs_list=[
+            dict(type='Translation', name='trans'),
+            dict(type='TranslationVal', name='trans_val')
+        ])
+]
+
 num_images = 140
 metrics = [
     dict(

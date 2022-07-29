@@ -66,6 +66,12 @@ metrics = [
         eq_cfg=dict(
             compute_eqt_int=True, compute_eqt_frac=True, compute_eqr=True))
 ]
+# NOTE: config for save multi best checkpoints
+# default_hooks = dict(
+#     checkpoint=dict(
+#         save_best=['FID-Full-50k/fid', 'IS-50k/is'],
+#         rule=['less', 'greater']))
+default_hooks = dict(checkpoint=dict(save_best='FID-Full-50k/fid'))
 
 val_evaluator = dict(metrics=metrics)
 test_evaluator = dict(metrics=metrics)
