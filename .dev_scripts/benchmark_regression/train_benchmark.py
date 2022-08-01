@@ -5,6 +5,7 @@ import pickle
 import re
 from collections import OrderedDict
 from datetime import datetime
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 from modelindex.load_model_index import load
@@ -95,8 +96,6 @@ def parse_args():
         '--amp', action='store_true', help='whether use amp training')
     parser.add_argument(
         '--cpu', action='store_true', help='whether use cpu training')
-    parser.add_argument(
-        '--train-all', action='store_true', help='Train all model or not.')
     parser.add_argument('--port', type=int, default=29666, help='dist port')
     parser.add_argument(
         '--use-ceph-config',
@@ -133,7 +132,8 @@ def parse_args():
         action='store_true',
         help='Summarize benchmark train results.')
     parser.add_argument('--save', action='store_true', help='Save the summary')
-
+    parser.add_argument(
+        '--P0', type=str, default='', help='Path of P0 algorithm list')
     args = parser.parse_args()
     return args
 
@@ -225,11 +225,8 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
 
 def train(args):
     # parse model-index.yml
-    if args.train_all:
-        model_index_file = MMGEN_ROOT / 'model-index.yml'
-    else:
-        print('P0 list not implemented yet. Please add `--train-all`')
-        exit()
+    model_index_file = MMGEN_ROOT / 'model-index.yml'
+
     model_index = load(str(model_index_file))
     model_index.build_models_with_collections()
     models = OrderedDict({model.name: model for model in model_index.models})
@@ -250,6 +247,11 @@ def train(args):
             return
         models = filter_models
 
+    p0_train_list = None
+    if len(args.P0) > 0:
+        p0_train_list = SourceFileLoader('p0_train_list',
+                                         args.P0).load_module().p0_train_list
+
     preview_script = ''
     for model_info in models.values():
 
@@ -260,6 +262,10 @@ def train(args):
         if 'cvt' in model_name:
             print(f'Skip converted config: {model_name} ({model_info.config})')
             continue
+
+        if p0_train_list is not None and model_info.name not in p0_train_list:
+            continue
+
         script_path = create_train_job_batch(commands, model_info, args, port,
                                              script_name)
         preview_script = script_path or preview_script

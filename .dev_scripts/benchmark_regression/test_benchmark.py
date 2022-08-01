@@ -5,6 +5,7 @@ import pickle
 import re
 from collections import OrderedDict
 from datetime import datetime
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 from modelindex.load_model_index import load
@@ -127,6 +128,8 @@ def parse_args():
         '--summary',
         action='store_true',
         help='Summarize benchmark test results.')
+    parser.add_argument(
+        '--P0', type=str, default='', help='Path of P0 algorithm list')
     parser.add_argument('--save', action='store_true', help='Save the summary')
 
     args = parser.parse_args()
@@ -238,10 +241,18 @@ def test(args):
             return
         models = filter_models
 
+    p0_test_list = None
+    if len(args.P0) > 0:
+        p0_test_list = SourceFileLoader('p0_test_list',
+                                        args.P0).load_module().p0_test_list
+
     preview_script = ''
     for model_info in models.values():
 
         if model_info.results is None:
+            continue
+
+        if p0_test_list is not None and model_info.name not in p0_test_list:
             continue
 
         script_path = create_test_job_batch(commands, model_info, args, port,
