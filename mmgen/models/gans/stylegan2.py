@@ -195,7 +195,8 @@ class StyleGAN2(BaseGAN):
                                                  disc_pred_real, real_imgs)
         optimizer_wrapper.update_params(parsed_losses)
         # save ada info
-        log_vars['disc_pred_real'] = disc_pred_real
+        message_hub = MessageHub.get_current_instance()
+        message_hub.update_info('disc_pred_real', disc_pred_real)
         return log_vars
 
     def train_generator(self, inputs, data_sample,
@@ -304,8 +305,9 @@ class StyleGAN2(BaseGAN):
         if hasattr(self.discriminator,
                    'with_ada') and self.discriminator.with_ada:
             self.discriminator.ada_aug.log_buffer[0] += batch_size
-            self.discriminator.ada_aug.log_buffer[1] += log_vars[
-                'disc_pred_real'].sign().sum()
+            self.discriminator.ada_aug.log_buffer[1] += message_hub.get_info(
+                'disc_pred_real').sign().sum()
+
             self.discriminator.ada_aug.update(
                 iteration=curr_iter, num_batches=batch_size)
             log_vars['augment'] = (

@@ -29,6 +29,21 @@ model = dict(
     loss_config=dict(r1_loss_weight=r1_gamma / 2.0 * d_reg_interval),
     ema_config=ema_config)
 
+g_reg_interval = 4
+
+g_reg_ratio = g_reg_interval / (g_reg_interval + 1)
+d_reg_ratio = d_reg_interval / (d_reg_interval + 1)
+
+optim_wrapper = dict(
+    generator=dict(
+        optimizer=dict(
+            type='Adam', lr=0.0025 * g_reg_ratio, betas=(0,
+                                                         0.99**g_reg_ratio))),
+    discriminator=dict(
+        optimizer=dict(
+            type='Adam', lr=0.002 * d_reg_ratio, betas=(0,
+                                                        0.99**d_reg_ratio))))
+
 batch_size = 4
 data_root = 'data/ffhq/images'
 
