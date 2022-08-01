@@ -31,7 +31,7 @@ train_pipeline = [
         auto_remap=True,
         share_random_params=True,
         transforms=dict(
-            type='Resize', scale=(286, 286), interpolation='bicubic'),
+            type='Resize', scale=(256, 256), interpolation='bicubic'),
     ),
     dict(
         type='Crop',
@@ -63,7 +63,7 @@ test_pipeline = [
         auto_remap=True,
         share_random_params=True,
         transforms=dict(
-            type='Resize', scale=(286, 286), interpolation='bicubic'),
+            type='Resize', scale=(256, 256), interpolation='bicubic'),
     ),
     dict(
         type='PackGenInputs',
