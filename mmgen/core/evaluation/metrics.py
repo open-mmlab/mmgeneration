@@ -322,6 +322,8 @@ class SlicedWassersteinDistance(GenMetric):
         real_pyramid = laplacian_pyramid(real_imgs, self.n_pyramids - 1,
                                          self.gaussian_k)
         # lod: layer_of_descriptors
+        if self.real_results == []:
+            self.real_results = [[] for res in self.resolutions]
         for lod, level in enumerate(real_pyramid):
             desc = get_descriptors_for_minibatch(level, self.nhood_size,
                                                  self.nhoods_per_image)
@@ -332,6 +334,8 @@ class SlicedWassersteinDistance(GenMetric):
         fake_pyramid = laplacian_pyramid(fake_imgs, self.n_pyramids - 1,
                                          self.gaussian_k)
         # lod: layer_of_descriptors
+        if self.fake_results == []:
+            self.fake_results = [[] for res in self.resolutions]
         for lod, level in enumerate(fake_pyramid):
             desc = get_descriptors_for_minibatch(level, self.nhood_size,
                                                  self.nhoods_per_image)
