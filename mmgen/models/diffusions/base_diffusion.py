@@ -417,7 +417,7 @@ class BasicGaussianDiffusion(BaseModel):
         return loss, log_vars
 
     def train_step(self, data: TrainStepInputs,
-                   optimizer_wrapper: OptimWrapperDict):
+                   optim_wrapper: OptimWrapperDict):
 
         real_imgs, data_samples = self.data_preprocessor(data)
         denoising_dict_ = self.reconstruction_step(
@@ -427,7 +427,7 @@ class BasicGaussianDiffusion(BaseModel):
             return_noise=True)
         denoising_dict_['real_imgs'] = real_imgs
         loss, log_vars = self.denoising_loss(denoising_dict_)
-        optimizer_wrapper['denoising'].update_params(loss)
+        optim_wrapper['denoising'].update_params(loss)
         return log_vars
 
     def reconstruction_step(self,
