@@ -195,11 +195,10 @@ class Pix2Pix(StaticTranslationGAN):
             if data_sample:
                 gen_sample.update(data_sample[idx])
             setattr(gen_sample, f'gt_{target_domain}',
-                    inputs_dict[f'img_{target_domain}'][idx])
+                    PixelData(data=inputs_dict[f'img_{target_domain}'][idx]))
             setattr(gen_sample, f'fake_{target_domain}',
-                    outputs[f'img_{target_domain}'][idx])
+                    PixelData(data=outputs['target'][idx]))
             setattr(gen_sample, f'gt_{source_domain}',
-                    inputs_dict[f'img_{source_domain}'][idx])
+                    PixelData(data=inputs_dict[f'img_{source_domain}'][idx]))
             batch_sample_list.append(gen_sample)
         return batch_sample_list
-        return outputs
