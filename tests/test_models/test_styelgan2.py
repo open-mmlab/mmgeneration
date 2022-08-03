@@ -61,11 +61,4 @@ class TestStyleGAN2(TestCase):
 
         # simulate train_loop here
         message_hub.update_info('iter', 0)
-        log = stylegan2.train_step([data], optim_wrapper_dict)
-
-        self.assertEqual(
-            set(log.keys()),
-            set([
-                'loss', 'loss_disc_fake', 'loss_disc_real', 'loss_gen',
-                'loss_r1_gp', 'loss_path_regular', 'disc_pred_real'
-            ]))
+        _ = stylegan2.train_step([data], optim_wrapper_dict)
