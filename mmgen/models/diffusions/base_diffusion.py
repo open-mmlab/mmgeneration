@@ -8,6 +8,7 @@ import mmcv
 import numpy as np
 import torch
 import torch.nn as nn
+from mmengine import MessageHub
 from mmengine.model import BaseModel, is_model_wrapper
 from mmengine.optim import OptimWrapperDict
 from torch import Tensor
@@ -419,6 +420,9 @@ class BasicGaussianDiffusion(BaseModel):
     def train_step(self, data: TrainStepInputs,
                    optim_wrapper: OptimWrapperDict):
 
+        message_hub = MessageHub.get_current_instance()
+        curr_iter = message_hub.get_info('iter')
+
         real_imgs, data_samples = self.data_preprocessor(data)
         denoising_dict_ = self.reconstruction_step(
             self.denoising,
@@ -428,6 +432,23 @@ class BasicGaussianDiffusion(BaseModel):
         denoising_dict_['real_imgs'] = real_imgs
         loss, log_vars = self.denoising_loss(denoising_dict_)
         optim_wrapper['denoising'].update_params(loss)
+
+        # update EMA
+        if self.with_ema_denoising and (curr_iter + 1) >= self.ema_start:
+            self.denoising_ema.update_parameters(
+                self.denoising_ema.
+                module if is_model_wrapper(self.denoising) else self.denoising)
+            # if not update buffer, copy buffer from orig model
+            if not self.denoising_ema.update_buffers:
+                self.denoising_ema.sync_buffers(
+                    self.denoising.module
+                    if is_model_wrapper(self.denoising) else self.denoising)
+        elif self.with_ema_denoising:
+            # before ema, copy weights from orig
+            self.denoising_ema.sync_parameters(
+                self.denoising.
+                module if is_model_wrapper(self.denoising) else self.denoising)
+
         return log_vars
 
     def reconstruction_step(self,
