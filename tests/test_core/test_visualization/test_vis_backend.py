@@ -30,7 +30,7 @@ class TestGenVisBackend(TestCase):
             step=3)
 
         # test with `delete_local` is False
-        vis_backend._delete_local = False
+        vis_backend._delete_local_image = False
         vis_backend.add_config(Config(dict(name='test')))
         vis_backend.add_image(
             name='add_img', image=np.random.random((8, 8, 3)).astype(np.uint8))

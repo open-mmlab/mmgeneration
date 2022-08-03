@@ -3,7 +3,7 @@ from copy import deepcopy
 from unittest import TestCase
 
 import torch
-from mmcls.data import ClsDataSample
+from mmcls.structures import ClsDataSample
 from mmengine.data import LabelData
 from mmengine.testing import assert_allclose
 
