@@ -22,6 +22,10 @@ def parse_args():
         help='Whether force re-download the checkpoints.')
     parser.add_argument(
         '--model-list', type=str, help='Path of algorithm list to download')
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Only show download command but not run')
 
     args = parser.parse_args()
     return args
@@ -62,7 +66,12 @@ def download(args):
             continue
 
         model_weight_url = model_info.weights
-        model_name = model_weight_url[len(http_prefix):].split('/')[0]
+
+        # use [:-1] because download url for translation is
+        # 'METHOD/refactor/NAME.pth', use [:-1] can remain
+        # `refactor` in `model_name` (`refactor/NAME.pth`)
+        model_name = osp.join(
+            *model_weight_url[len(http_prefix):].split('/')[:-1])
         download_path = osp.join(args.checkpoint_root, model_name)
         if osp.exists(download_path):
             print(f'Already exists {download_path}')
@@ -71,8 +80,13 @@ def download(args):
                 os.system(f'rm -rf {download_path}')
             else:
                 continue
-        os.system(
-            f'wget -q --show-progress -P {download_path} {model_weight_url}')
+        cmd_str = (f'wget -q --show-progress -P {download_path} '
+                   f'{model_weight_url}')
+
+        if args.dry_run:
+            print(cmd_str)
+        else:
+            os.system(cmd_str)
 
 
 if __name__ == '__main__':
