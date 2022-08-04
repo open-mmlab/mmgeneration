@@ -128,13 +128,11 @@ def parse_args():
         '--summary',
         action='store_true',
         help='Summarize benchmark test results.')
-    parser.add_argument(
-        '--P0', type=str, default='', help='Path of P0 algorithm list')
     parser.add_argument('--save', action='store_true', help='Save the summary')
 
     group_parser = parser.add_mutually_exclusive_group()
     group_parser.add_argument(
-        '--P0', action='store_true', help='Whether train model in P0 list')
+        '--P0', action='store_true', help='Whether test model in P0 list')
     group_parser.add_argument(
         '--model-list',
         type=str,
@@ -251,7 +249,7 @@ def test(args):
 
     # load model list
     if args.P0:
-        file_list = osp.join(osp.dirname(__file__), 'p0_train_list.py')
+        file_list = osp.join(osp.dirname(__file__), 'p0_test_list.py')
     elif args.model_list:
         file_list = args.model_list
     else:
