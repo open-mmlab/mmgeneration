@@ -62,8 +62,8 @@ def download(args):
             continue
 
         model_weight_url = model_info.weights
-        download_path = osp.join(args.checkpoint_root,
-                                 model_weight_url.replace(http_prefix, ''))
+        model_name = model_weight_url[len(http_prefix):].split('/')[0]
+        download_path = osp.join(args.checkpoint_root, model_name)
         if osp.exists(download_path):
             print(f'Already exists {download_path}')
             if args.force:
