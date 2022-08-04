@@ -3,6 +3,7 @@ import os
 import os.path as osp
 import re
 from collections import OrderedDict
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 from modelindex.load_model_index import load
@@ -15,6 +16,12 @@ def parse_args():
     parser.add_argument('checkpoint_root', help='Checkpoint file root path.')
     parser.add_argument(
         '--models', nargs='+', type=str, help='Specify model names to run.')
+    parser.add_argument(
+        '--force',
+        action='store_true',
+        help='Whether force re-download the checkpoints.')
+    parser.add_argument(
+        '--model-list', type=str, help='Path of algorithm list to download')
 
     args = parser.parse_args()
     return args
@@ -29,6 +36,14 @@ def download(args):
 
     http_prefix = 'https://download.openmmlab.com/mmgen/'
 
+    # load model list
+    if args.model_list:
+        file_list_path = args.model_list
+        file_list = SourceFileLoader('model_list',
+                                     file_list_path).load_module().model_list
+    else:
+        file_list = None
+
     if args.models:
         patterns = [re.compile(pattern) for pattern in args.models]
         filter_models = {}
@@ -42,16 +57,21 @@ def download(args):
         models = filter_models
 
     for model_info in models.values():
-        # model_weight = model_info.weights
-        model_weight_url = model_info.weights
-        model_weight = model_weight_url.replace(http_prefix, '')
-        # print(model_weight)
-        model_weight = osp.join(args.checkpoint_root, model_weight)
-        print(model_weight)
-        if osp.exists(model_weight):
-            print(f'Already exists {model_weight}')
+
+        if file_list is not None and model_info.name not in file_list:
             continue
-        os.system(f'wget -P {args.checkpoint_root} {model_weight}')
+
+        model_weight_url = model_info.weights
+        download_path = osp.join(args.checkpoint_root,
+                                 model_weight_url.replace(http_prefix, ''))
+        if osp.exists(download_path):
+            print(f'Already exists {download_path}')
+            if args.force:
+                print(f'Delete {download_path} to force re-download.')
+                os.system(f'rm {download_path}')
+                pass
+            continue
+        os.system(f'wget -P {download_path} {model_weight_url}')
 
 
 if __name__ == '__main__':

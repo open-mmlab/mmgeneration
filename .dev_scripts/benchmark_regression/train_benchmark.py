@@ -132,8 +132,15 @@ def parse_args():
         action='store_true',
         help='Summarize benchmark train results.')
     parser.add_argument('--save', action='store_true', help='Save the summary')
-    parser.add_argument(
-        '--P0', type=str, default='', help='Path of P0 algorithm list')
+
+    group_parser = parser.add_mutually_exclusive_group()
+    group_parser.add_argument(
+        '--P0', action='store_true', help='Whether train model in P0 list')
+    group_parser.add_argument(
+        '--model-list',
+        type=str,
+        default='',
+        help='Path of algorithm list to load')
     args = parser.parse_args()
     return args
 
@@ -247,10 +254,19 @@ def train(args):
             return
         models = filter_models
 
-    p0_train_list = None
-    if len(args.P0) > 0:
-        p0_train_list = SourceFileLoader('p0_train_list',
-                                         args.P0).load_module().p0_train_list
+    # load model list
+    if args.P0:
+        file_list = osp.join(osp.dirname(__file__), 'p0_train_list.py')
+    elif args.model_list:
+        file_list = args.model_list
+    else:
+        file_list = None
+
+    if file_list:
+        train_list = SourceFileLoader('model_list',
+                                      file_list).load_module().model_list
+    else:
+        train_list = None
 
     preview_script = ''
     for model_info in models.values():
@@ -263,7 +279,7 @@ def train(args):
             print(f'Skip converted config: {model_name} ({model_info.config})')
             continue
 
-        if p0_train_list is not None and model_info.name not in p0_train_list:
+        if train_list is not None and model_info.name not in train_list:
             continue
 
         script_path = create_train_job_batch(commands, model_info, args, port,

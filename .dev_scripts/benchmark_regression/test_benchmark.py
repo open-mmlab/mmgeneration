@@ -132,6 +132,14 @@ def parse_args():
         '--P0', type=str, default='', help='Path of P0 algorithm list')
     parser.add_argument('--save', action='store_true', help='Save the summary')
 
+    group_parser = parser.add_mutually_exclusive_group()
+    group_parser.add_argument(
+        '--P0', action='store_true', help='Whether train model in P0 list')
+    group_parser.add_argument(
+        '--model-list',
+        type=str,
+        default='',
+        help='Path of algorithm list to load')
     args = parser.parse_args()
     return args
 
@@ -241,10 +249,19 @@ def test(args):
             return
         models = filter_models
 
-    p0_test_list = None
-    if len(args.P0) > 0:
-        p0_test_list = SourceFileLoader('p0_test_list',
-                                        args.P0).load_module().p0_test_list
+    # load model list
+    if args.P0:
+        file_list = osp.join(osp.dirname(__file__), 'p0_train_list.py')
+    elif args.model_list:
+        file_list = args.model_list
+    else:
+        file_list = None
+
+    if file_list:
+        test_list = SourceFileLoader('model_list',
+                                     file_list).load_module().model_list
+    else:
+        test_list = None
 
     preview_script = ''
     for model_info in models.values():
@@ -252,7 +269,7 @@ def test(args):
         if model_info.results is None:
             continue
 
-        if p0_test_list is not None and model_info.name not in p0_test_list:
+        if test_list is not None and model_info.name not in test_list:
             continue
 
         script_path = create_test_job_batch(commands, model_info, args, port,
