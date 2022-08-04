@@ -75,18 +75,27 @@ def download(args):
         download_path = osp.join(args.checkpoint_root, model_name)
         if osp.exists(download_path):
             print(f'Already exists {download_path}')
-            if args.force:
+            # do not delete when dry-run is true
+            if args.force and not args.dry_run:
                 print(f'Delete {download_path} to force re-download.')
                 os.system(f'rm -rf {download_path}')
             else:
                 continue
-        cmd_str = (f'wget -q --show-progress -P {download_path} '
-                   f'{model_weight_url}')
+        try:
+            cmd_str = (f'wget -q --show-progress -P {download_path} '
+                       f'{model_weight_url}')
 
-        if args.dry_run:
-            print(cmd_str)
-        else:
-            os.system(cmd_str)
+            if args.dry_run:
+                print(cmd_str)
+            else:
+                os.system(cmd_str)
+        except Exception:
+            # for older version of wget
+            cmd_str = (f'wget -P {download_path} {model_weight_url}')
+            if args.dry_run:
+                print(cmd_str)
+            else:
+                os.system(cmd_str)
 
 
 if __name__ == '__main__':
