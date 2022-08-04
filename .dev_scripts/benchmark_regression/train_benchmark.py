@@ -5,6 +5,7 @@ import pickle
 import re
 from collections import OrderedDict
 from datetime import datetime
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 from modelindex.load_model_index import load
@@ -92,7 +93,9 @@ def parse_args():
         default='gen-train-benchmark',
         help='Slurm job name prefix')
     parser.add_argument(
-        '--train-all', action='store_true', help='Train all model or not.')
+        '--amp', action='store_true', help='whether use amp training')
+    parser.add_argument(
+        '--cpu', action='store_true', help='whether use cpu training')
     parser.add_argument('--port', type=int, default=29666, help='dist port')
     parser.add_argument(
         '--use-ceph-config',
@@ -130,6 +133,14 @@ def parse_args():
         help='Summarize benchmark train results.')
     parser.add_argument('--save', action='store_true', help='Save the summary')
 
+    group_parser = parser.add_mutually_exclusive_group()
+    group_parser.add_argument(
+        '--P0', action='store_true', help='Whether train model in P0 list')
+    group_parser.add_argument(
+        '--model-list',
+        type=str,
+        default='',
+        help='Path of algorithm list to load')
     args = parser.parse_args()
     return args
 
@@ -164,6 +175,14 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
         else:
             n_gpus = int(parse_res.group().split('x')[-1])
 
+    # deal cpu train
+    ntasks_per_node = min(n_gpus, 8)
+    ntasks = n_gpus
+    if args.cpu:
+        n_gpus = 0
+        ntasks_per_node = 1
+        ntasks = 1
+
     job_name = f'{args.job_name}_{fname}'
     work_dir = Path(args.work_dir) / fname
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -188,13 +207,16 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
                   f'#SBATCH --job-name {job_name}\n'
                   f'#SBATCH --gres=gpu:{n_gpus}\n'
                   f'{mail_cfg}{quota_cfg}'
-                  f'#SBATCH --ntasks-per-node={min(n_gpus, 8)}\n'
-                  f'#SBATCH --ntasks={n_gpus}\n'
+                  f'#SBATCH --ntasks-per-node={ntasks_per_node}\n'
+                  f'#SBATCH --ntasks={ntasks}\n'
                   f'#SBATCH --cpus-per-task=5\n\n'
                   f'export MASTER_PORT={port}\n'
                   f'{runner} -u {script_name} {config} '
                   f'--work-dir={work_dir} '
                   f'--launcher={launcher}\n')
+
+    if args.amp:
+        job_script += ' --amp'
 
     with open(work_dir / 'job.sh', 'w') as f:
         f.write(job_script)
@@ -210,11 +232,8 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
 
 def train(args):
     # parse model-index.yml
-    if args.train_all:
-        model_index_file = MMGEN_ROOT / 'model-index.yml'
-    else:
-        print('Not implemented yet.')
-        exit()
+    model_index_file = MMGEN_ROOT / 'model-index.yml'
+
     model_index = load(str(model_index_file))
     model_index.build_models_with_collections()
     models = OrderedDict({model.name: model for model in model_index.models})
@@ -235,6 +254,20 @@ def train(args):
             return
         models = filter_models
 
+    # load model list
+    if args.P0:
+        file_list = osp.join(osp.dirname(__file__), 'p0_train_list.py')
+    elif args.model_list:
+        file_list = args.model_list
+    else:
+        file_list = None
+
+    if file_list:
+        train_list = SourceFileLoader('model_list',
+                                      file_list).load_module().model_list
+    else:
+        train_list = None
+
     preview_script = ''
     for model_info in models.values():
 
@@ -245,6 +278,10 @@ def train(args):
         if 'cvt' in model_name:
             print(f'Skip converted config: {model_name} ({model_info.config})')
             continue
+
+        if train_list is not None and model_info.name not in train_list:
+            continue
+
         script_path = create_train_job_batch(commands, model_info, args, port,
                                              script_name)
         preview_script = script_path or preview_script

@@ -56,7 +56,7 @@ class GenVisBackend(BaseVisBackend):
                  config_save_file: str = 'config.py',
                  scalar_save_file: str = 'scalars.json',
                  ceph_path: Optional[str] = None,
-                 delete_local: bool = True):
+                 delete_local_image: bool = True):
         assert config_save_file.split('.')[-1] == 'py'
         assert scalar_save_file.split('.')[-1] == 'json'
         super().__init__(save_dir)
@@ -66,7 +66,7 @@ class GenVisBackend(BaseVisBackend):
 
         self._ceph_path = ceph_path
         self._file_client = None
-        self._delete_local = delete_local
+        self._delete_local_image = delete_local_image
 
     def _init_env(self):
         """Init save dir."""
@@ -142,7 +142,9 @@ class GenVisBackend(BaseVisBackend):
             raise ValueError(
                 'Only support visualize image with dimension of 3 or 4. But '
                 f'receive input with shape \'{image.shape}\'.')
-        self._upload(osp.join(self._img_save_dir, save_file_name))
+        self._upload(
+            osp.join(self._img_save_dir, save_file_name),
+            self._delete_local_image)
 
     @force_init_env
     def add_scalar(self,
@@ -215,7 +217,7 @@ class GenVisBackend(BaseVisBackend):
             dump(value_dict, f, file_format=file_format)
             f.write('\n')
 
-    def _upload(self, path: str) -> None:
+    def _upload(self, path: str, delete_local=False) -> None:
         """Upload file at path to remote.
 
         Args:
@@ -225,7 +227,7 @@ class GenVisBackend(BaseVisBackend):
             return
         with open(path, 'rb') as file:
             self._file_client.put(file, path)
-        if self._delete_local:
+        if delete_local:
             os.remove(path)
 
 

@@ -101,6 +101,17 @@ optim_wrapper = dict(
         type='OptimWrapper',
         optimizer=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999))))
 
+custom_hooks = [
+    dict(
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        vis_kwargs_list=[
+            dict(type='Translation', name='trans'),
+            dict(type='TranslationVal', name='trans_val')
+        ])
+]
+
 fake_nums = 1098
 metrics = [
     dict(
@@ -115,7 +126,7 @@ metrics = [
         prefix='FID-Full',
         fake_nums=fake_nums,
         inception_style='PyTorch',
-        real_key=f'real_{target_domain}',
+        real_key=f'img_{target_domain}',
         fake_key=f'fake_{target_domain}',
         sample_model='orig')
 ]
