@@ -68,10 +68,11 @@ def download(args):
             print(f'Already exists {download_path}')
             if args.force:
                 print(f'Delete {download_path} to force re-download.')
-                os.system(f'rm {download_path}')
-                pass
-            continue
-        os.system(f'wget -P {download_path} {model_weight_url}')
+                os.system(f'rm -rf {download_path}')
+            else:
+                continue
+        os.system(
+            f'wget -q --show-progress -P {download_path} {model_weight_url}')
 
 
 if __name__ == '__main__':
