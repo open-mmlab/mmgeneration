@@ -12,6 +12,7 @@ from modelindex.load_model_index import load
 from rich.console import Console
 from rich.syntax import Syntax
 from rich.table import Table
+from task_watcher import start_from_proc
 
 console = Console()
 MMGEN_ROOT = Path(__file__).absolute().parents[2]
@@ -216,6 +217,7 @@ def create_test_job_batch(commands, model_info, args, port, script_name):
         f.write(job_script)
 
     commands.append(f'echo "{config}"')
+    commands.append(f'echo "{work_dir}"')
     if args.local:
         commands.append(f'bash {work_dir}/job.sh')
     else:
@@ -295,7 +297,8 @@ def test(args):
     console.print(preview)
 
     if args.run:
-        os.system(command_str)
+        proc = os.popen(command_str)
+        start_from_proc(args.work_dir, proc)
     else:
         console.print('Please set "--run" to start the job')
 
