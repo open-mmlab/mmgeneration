@@ -225,8 +225,8 @@ def finalize_descriptors(desc):
 
 def compute_pr_distances(row_features,
                          col_features,
-                         num_gpus,
-                         rank,
+                         num_gpus=1,
+                         rank=0,
                          col_batch_size=10000):
     r"""Compute distances between real images and fake images.
 

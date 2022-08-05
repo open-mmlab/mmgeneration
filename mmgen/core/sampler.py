@@ -26,7 +26,7 @@ def get_sampler(sample_kwargs: dict, runner: Optional[Runner]):
     """
     _check_keys(sample_kwargs, 'type')
     sampler_kwargs_ = deepcopy(sample_kwargs)
-    sampler_type = sampler_kwargs_.pop('type').capitalize()
+    sampler_type = sampler_kwargs_.pop('type')
     sampler = eval(f'{sampler_type}Sampler')(sampler_kwargs_, runner)
     return sampler
 
@@ -43,6 +43,10 @@ class ArgumentsSampler:
 
         self.sample_kwargs = deepcopy(sample_kwargs)
         self.max_times = self.sample_kwargs.pop('max_times')
+        self.forward_kwargs = self.sample_kwargs.pop('forward_kwargs')
+        # set default num_batches from forward_kwargs
+        self.forward_kwargs.setdefault('num_batches',
+                                       self.sample_kwargs['num_batches'])
         self.idx = 0
 
     def __iter__(self):
@@ -53,7 +57,7 @@ class ArgumentsSampler:
         if self.idx >= self.max_times:
             raise StopIteration
         self.idx += 1
-        return deepcopy(self.sample_kwargs)
+        return deepcopy(self.forward_kwargs)
 
 
 class NoiseSampler:
@@ -127,7 +131,12 @@ class ValDataSampler:
         self.sample_kwargs = deepcopy(sample_kwargs)
         self.max_times = self.sample_kwargs.pop('max_times')
 
-        self._dataloader = runner.val_dataloader
+        # build a new vanilla dataloader, because we should not reset the one
+        # used in the training process.
+        dataset = runner.val_dataloader.dataset
+        batch_size = runner.val_dataloader.batch_size
+        self._dataloader = DataLoader(
+            dataset, batch_size=batch_size, collate_fn=pseudo_collate)
         self._iterator = iter(self._dataloader)
 
     def __iter__(self):

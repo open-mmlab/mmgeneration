@@ -17,7 +17,8 @@ Models:
     Metrics:
       Comment: official weight
       FID50k: 2.8134
-      P&R50k: 62.856/49.400
+      Precision50k: 62.856
+      Recall50k: 49.4
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-ffhq-config-f-official_20210327_171224-bce9310c.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_lsun-car_384x512_b4x8.py
@@ -30,7 +31,8 @@ Models:
     Metrics:
       Comment: official weight
       FID50k: 5.4316
-      P&R50k: 65.986/48.190
+      Precision50k: 65.986
+      Recall50k: 48.19
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-car-config-f-official_20210327_172340-8cfe053c.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_lsun-horse_256_b4x8_800k.py
@@ -43,7 +45,8 @@ Models:
     Metrics:
       Comment: official weight
       FID50k: '-'
-      P&R50k: '-'
+      Precision50k: '-'
+      Recall50k: '-'
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-horse-config-f-official_20210327_173203-ef3e69ca.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_lsun-church_256_b4x8_800k.py
@@ -56,7 +59,8 @@ Models:
     Metrics:
       Comment: official weight
       FID50k: '-'
-      P&R50k: '-'
+      Precision50k: '-'
+      Recall50k: '-'
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_lsun-cat_256_b4x8_800k.py
@@ -69,7 +73,8 @@ Models:
     Metrics:
       Comment: official weight
       FID50k: '-'
-      P&R50k: '-'
+      Precision50k: '-'
+      Recall50k: '-'
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-cat-config-f-official_20210327_172444-15bc485b.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py
@@ -82,7 +87,8 @@ Models:
     Metrics:
       Comment: our training
       FID50k: 3.992
-      P&R50k: 69.012/40.417
+      Precision50k: 69.012
+      Recall50k: 40.417
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_ffhq_256_b4x8_20210407_160709-7890ae1f.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py
@@ -95,7 +101,8 @@ Models:
     Metrics:
       Comment: our training
       FID50k: 2.8185
-      P&R50k: 68.236/49.583
+      Precision50k: 68.236
+      Recall50k: 49.583
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_ffhq_1024_b4x8_20210407_150045-618c9024.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_lsun-car_384x512_b4x8.py
@@ -108,7 +115,8 @@ Models:
     Metrics:
       Comment: our training
       FID50k: 2.4116
-      P&R50k: 66.760/50.576
+      Precision50k: 66.76
+      Recall50k: 50.576
     Task: Unconditional GANs
   Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_lsun-car_384x512_b4x8_1800k_20210424_160929-fc9072ca.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py

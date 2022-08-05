@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
+from mmengine.utils import TORCH_VERSION, digit_version
 
 from mmgen.models.architectures.stylegan import StyleGANv2Generator
 from mmgen.models.losses import GeneratorPathRegularizer
@@ -35,6 +36,9 @@ class TestPathRegularizer:
         with pytest.raises(AssertionError):
             _ = pl(1., 2, outputs_dict=output_dict)
 
+    @pytest.mark.skipif(
+        digit_version(TORCH_VERSION) <= digit_version('1.6.0'),
+        reason='version limitation')
     @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
     def test_path_regularizer_cuda(self):
         gen = self.gen.cuda()

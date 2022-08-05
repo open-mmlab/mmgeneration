@@ -4,7 +4,8 @@ _base_ = [
 ]
 
 model = dict(
-    type='StaticUnconditionalGAN',
+    type='GGAN',
+    data_preprocessor=dict(type='GANDataPreprocessor'),
     generator=dict(type='LSGANGenerator', output_scale=64),
     discriminator=dict(type='LSGANDiscriminator', input_scale=64))
 
@@ -32,7 +33,7 @@ custom_hooks = [
         type='GenVisualizationHook',
         interval=5000,
         fixed_input=True,
-        sample_kwargs_list=dict(type='GAN', name='fake_img'))
+        vis_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
 
 train_cfg = dict(max_iters=160000)

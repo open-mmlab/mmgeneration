@@ -65,18 +65,9 @@ class GenEvaluator(Evaluator):
         """
         if self.is_ready:
             return
-        # get the output image color order.
-        data_preprocessor = module.data_preprocessor
-        bgr_to_rgb = getattr(data_preprocessor, 'bgr_to_rgb', False)
-        rgb_to_bgr = getattr(data_preprocessor, 'rgb_to_bgr', False)
-        assert not (rgb_to_bgr and bgr_to_rgb), (
-            f'\'{bgr_to_rgb}\' and \'{rgb_to_bgr}\' cannot be True at the '
-            'same time.')
-        color_order = 'rgb' if bgr_to_rgb else 'bgr'
 
         # prepare metrics
         for metric in self.metrics:
-            metric.set_color_order(color_order)
             metric.prepare(module, dataloader)
         self.is_ready = True
 

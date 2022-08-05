@@ -43,7 +43,7 @@ Models:
       IS: 129.07
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_b32x8_best_is_iter_1328000_20211111_122911-28c688bc.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan_128x128_cvt_BigGAN-PyTorch_rgb.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan_128x128_cvt_BigGAN-PyTorch_rgb.py
   In Collection: BigGAN
   Metadata:
     Training Data: Others
@@ -55,7 +55,7 @@ Models:
       IS: 96.728
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan_imagenet1k_128x128_cvt_BigGAN-PyTorch_rgb_20210730_125223-3e353fef.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan-deep_128x128_cvt_hugging-face_rgb.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan-deep_128x128_cvt_hugging-face_rgb.py
   In Collection: BigGAN
   Metadata:
     Training Data: Others
@@ -67,7 +67,7 @@ Models:
       IS: 107.161
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan-deep_imagenet1k_128x128_cvt_hugging-face_rgb_20210728_111659-099e96f9.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan-deep_256x256_cvt_hugging-face_rgb.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan-deep_256x256_cvt_hugging-face_rgb.py
   In Collection: BigGAN
   Metadata:
     Training Data: Others
@@ -79,7 +79,7 @@ Models:
       IS: 135.107
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/biggan/biggan-deep_imagenet1k_256x256_cvt_hugging-face_rgb_20210728_111735-28651569.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/biggan/biggan-deep_512x512_cvt_hugging-face_rgb.py
+- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan/biggan-deep_512x512_cvt_hugging-face_rgb.py
   In Collection: BigGAN
   Metadata:
     Training Data: Others

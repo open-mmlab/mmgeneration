@@ -2,11 +2,15 @@ import glob
 import os.path as osp
 import shutil
 from argparse import ArgumentParser
+from importlib.machinery import SourceFileLoader
 
 from mmengine import Config
 
 
-def update_ceph_config(filename, args, dry_run=False):
+def update_ceph_config(filename,
+                       args,
+                       dry_run=False,
+                       data_root_mapping=dict()):
     if filename.startswith(osp.join('configs_ceph', '_base_')):
         # Skip base configs
         return None
@@ -62,6 +66,7 @@ def update_ceph_config(filename, args, dry_run=False):
                         # add '/' at the end
                         if not data_root.endswith('/'):
                             data_root = data_root + '/'
+                        data_root = data_root_mapping.get(data_root, data_root)
                         dataset['data_root'] = data_root
 
             elif 'data_roots' in dataset:
@@ -79,6 +84,8 @@ def update_ceph_config(filename, args, dry_run=False):
                             # add '/' at the end
                             if not data_root.endswith('/'):
                                 data_root = data_root + '/'
+                            data_root = data_root_mapping.get(
+                                data_root, data_root)
                             data_roots[k] = data_root
                 dataset['data_roots'] = data_roots
 
@@ -99,6 +106,8 @@ def update_ceph_config(filename, args, dry_run=False):
             if vis_cfg['type'] == 'GenVisBackend':
                 if ceph_path is not None:
                     vis_cfg['ceph_path'] = ceph_path
+                    if args.not_delete_local:
+                        vis_cfg['delete_local_image'] = False
 
         # add pavi config
         if args.add_pavi:
@@ -117,6 +126,38 @@ def update_ceph_config(filename, args, dry_run=False):
                 pavi_cfg = dict(
                     type='PaviGenVisBackend', exp_name=name, project=project)
                 config['vis_backends'].append(pavi_cfg)
+
+        # add wandb config
+        if args.add_wandb:
+            _, project, name = filename.split('/')
+            name = name[:-2]
+            # check if wandb config is inheritance from _base_
+            find_inherit = False
+            for vis_cfg in config['vis_backends']:
+                if vis_cfg['type'] == 'WandbGenVisBackend':
+                    vis_cfg['name'] = name  # name of config
+                    vis_cfg['project'] = project  # name of model
+                    find_inherit = True
+                    break
+
+            if not find_inherit:
+                pavi_cfg = dict(
+                    type='WandbGenVisBackend',
+                    init_kwargs=dict(name=name, project=project))
+                config['vis_backends'].append(pavi_cfg)
+
+        # add tensorboard config
+        if args.add_tensorboard:
+            find_inherit = False
+            for vis_cfg in config['vis_backends']:
+                if vis_cfg['type'] == 'TensorboardGenVisBackend':
+                    find_inherit = True
+                    break
+
+            if not find_inherit:
+                tensorboard_cfg = dict(type='TensorboardGenVisBackend')
+                config['vis_backends'].append(tensorboard_cfg)
+
         config['visualizer']['vis_backends'] = config['vis_backends']
 
         # 3. change logger hook and checkpoint hook
@@ -158,8 +199,29 @@ if __name__ == '__main__':
         '--test-file', type=str, default=None, help='Dry-run on a test file.')
     parser.add_argument(
         '--add-pavi', action='store_true', help='Add pavi config or not.')
+    parser.add_argument(
+        '--add-wandb', action='store_true', help='Add wandb config or not.')
+    parser.add_argument(
+        '--add-tensorboard',
+        action='store_true',
+        help='Add Tensorboard config or not.')
+    parser.add_argument(
+        '--not-delete-local',
+        action='store_true',
+        help='Do not delete local image')
+    parser.add_argument(
+        '--data-remapping',
+        type=str,
+        default='',
+        help='Path of dataroot remapping file which contain a dict'
+        ' of root mapping named ``ROOT_MAP``.')
 
     args = parser.parse_args()
+
+    ROOT_MAP = dict()
+    if len(args.data_remapping) > 0:
+        ROOT_MAP = SourceFileLoader('ROOT_MAP',
+                                    args.data_remapping).load_module().ROOT_MAP
 
     if args.test_file is None:
 
@@ -169,7 +231,10 @@ if __name__ == '__main__':
         print('Updating ceph configuration ...')
         files = glob.glob(
             osp.join('configs_ceph', '**', '*.py'), recursive=True)
-        res = [update_ceph_config(f, args) for f in files]
+        res = [
+            update_ceph_config(f, args, data_root_mapping=ROOT_MAP)
+            for f in files
+        ]
 
         count_skip = res.count(None)
         count_done = res.count(True)
@@ -183,4 +248,5 @@ if __name__ == '__main__':
             print(fn)
 
     else:
-        update_ceph_config(args.test_file, args, dry_run=True)
+        update_ceph_config(
+            args.test_file, args, dry_run=True, data_root_mapping=ROOT_MAP)

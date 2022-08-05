@@ -45,7 +45,7 @@ custom_hooks = [
         type='GenVisualizationHook',
         interval=5000,
         fixed_input=True,
-        sample_kwargs_list=dict(type='GAN', name='fake_img')),
+        vis_kwargs_list=dict(type='GAN', name='fake_img')),
     dict(type='PGGANFetchDataHook')
 ]
 

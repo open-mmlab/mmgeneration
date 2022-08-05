@@ -10,7 +10,8 @@ import numpy as np
 import torch
 from mmengine.config import Config
 from mmengine.fileio import dump
-from mmengine.visualization import BaseVisBackend
+from mmengine.visualization import (BaseVisBackend, TensorboardVisBackend,
+                                    WandbVisBackend)
 from mmengine.visualization.vis_backend import force_init_env
 
 from mmgen.registry import VISBACKENDS
@@ -55,7 +56,7 @@ class GenVisBackend(BaseVisBackend):
                  config_save_file: str = 'config.py',
                  scalar_save_file: str = 'scalars.json',
                  ceph_path: Optional[str] = None,
-                 delete_local: bool = True):
+                 delete_local_image: bool = True):
         assert config_save_file.split('.')[-1] == 'py'
         assert scalar_save_file.split('.')[-1] == 'json'
         super().__init__(save_dir)
@@ -65,12 +66,11 @@ class GenVisBackend(BaseVisBackend):
 
         self._ceph_path = ceph_path
         self._file_client = None
-        self._delete_local = delete_local
+        self._delete_local_image = delete_local_image
 
     def _init_env(self):
         """Init save dir."""
-        if not os.path.exists(self._save_dir):
-            os.makedirs(self._save_dir, exist_ok=True)
+        os.makedirs(self._save_dir, exist_ok=True)
         self._img_save_dir = osp.join(
             self._save_dir,  # type: ignore
             self._img_save_dir)
@@ -142,7 +142,9 @@ class GenVisBackend(BaseVisBackend):
             raise ValueError(
                 'Only support visualize image with dimension of 3 or 4. But '
                 f'receive input with shape \'{image.shape}\'.')
-        self._upload(osp.join(self._img_save_dir, save_file_name))
+        self._upload(
+            osp.join(self._img_save_dir, save_file_name),
+            self._delete_local_image)
 
     @force_init_env
     def add_scalar(self,
@@ -182,7 +184,13 @@ class GenVisBackend(BaseVisBackend):
                 Default to None.
         """
         assert isinstance(scalar_dict, dict)
-        scalar_dict.setdefault('step', step)
+        scalar_dict_new = dict()
+        for k, v in scalar_dict.items():
+            if isinstance(v, torch.Tensor):
+                scalar_dict_new[k] = v.item()
+            else:
+                scalar_dict_new[k] = v
+        scalar_dict_new.setdefault('step', step)
 
         if file_path is not None:
             assert file_path.split('.')[-1] == 'json'
@@ -192,8 +200,8 @@ class GenVisBackend(BaseVisBackend):
             assert new_save_file_path != self._scalar_save_file, \
                 '``file_path`` and ``scalar_save_file`` have the ' \
                 'same name, please set ``file_path`` to another value'
-            self._dump(scalar_dict, new_save_file_path, 'json')
-        self._dump(scalar_dict, self._scalar_save_file, 'json')
+            self._dump(scalar_dict_new, new_save_file_path, 'json')
+        self._dump(scalar_dict_new, self._scalar_save_file, 'json')
         self._upload(self._scalar_save_file)
 
     def _dump(self, value_dict: dict, file_path: str,
@@ -209,7 +217,7 @@ class GenVisBackend(BaseVisBackend):
             dump(value_dict, f, file_format=file_format)
             f.write('\n')
 
-    def _upload(self, path: str) -> None:
+    def _upload(self, path: str, delete_local=False) -> None:
         """Upload file at path to remote.
 
         Args:
@@ -219,8 +227,44 @@ class GenVisBackend(BaseVisBackend):
             return
         with open(path, 'rb') as file:
             self._file_client.put(file, path)
-        if self._delete_local:
+        if delete_local:
             os.remove(path)
+
+
+@VISBACKENDS.register_module()
+class TensorboardGenVisBackend(TensorboardVisBackend):
+
+    @force_init_env
+    def add_image(self, name: str, image: np.array, step: int = 0, **kwargs):
+        """Record the image to Tensorboard. Additional support upload gif
+        files.
+
+        Args:
+            name (str): The image identifier.
+            image (np.ndarray): The image to be saved. The format
+                should be RGB.
+            step (int): Useless parameter. Wandb does not
+                need this parameter. Default to 0.
+        """
+
+        if image.ndim == 4:
+            n_skip = kwargs.get('n_skip', 1)
+            fps = kwargs.get('fps', 60)
+
+            frames_list = []
+            for frame in image[::n_skip]:
+                frames_list.append(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+            if not (image.shape[0] % n_skip == 0):
+                frames_list.append(image[-1])
+
+            frames_np = np.transpose(
+                np.stack(frames_list, axis=0), (0, 3, 1, 2))
+            frames_tensor = torch.from_numpy(frames_np)[None, ...]
+            self._tensorboard.add_video(
+                name, frames_tensor, global_step=step, fps=fps)
+        else:
+            # write normal image
+            self._tensorboard.add_image(name, image, step, dataformats='HWC')
 
 
 @VISBACKENDS.register_module()
@@ -322,3 +366,44 @@ class PaviGenVisBackend(BaseVisBackend):
         assert isinstance(scalar_dict, dict)
         for name, value in scalar_dict.items():
             self.add_scalar(name, value, step)
+
+
+@VISBACKENDS.register_module()
+class WandbGenVisBackend(WandbVisBackend):
+    """Wandb visualization backend for MMGeneration."""
+
+    @force_init_env
+    def add_image(self, name: str, image: np.array, step: int = 0, **kwargs):
+        """Record the image to wandb. Additional support upload gif files.
+
+        Args:
+            name (str): The image identifier.
+            image (np.ndarray): The image to be saved. The format
+                should be RGB.
+            step (int): Useless parameter. Wandb does not
+                need this parameter. Default to 0.
+        """
+        try:
+            import wandb
+        except ImportError:
+            raise ImportError(
+                'Please run "pip install wandb" to install wandb')
+
+        if image.ndim == 4:
+            n_skip = kwargs.get('n_skip', 1)
+            fps = kwargs.get('fps', 60)
+
+            frames_list = []
+            for frame in image[::n_skip]:
+                frames_list.append(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+            if not (image.shape[0] % n_skip == 0):
+                frames_list.append(image[-1])
+
+            frames_np = np.transpose(
+                np.stack(frames_list, axis=0), (0, 3, 1, 2))
+            self._wandb.log(
+                {name: wandb.Video(frames_np, fps=fps, format='gif')},
+                commit=self._commit)
+        else:
+            # write normal image
+            self._wandb.log({name: wandb.Image(image)}, commit=self._commit)

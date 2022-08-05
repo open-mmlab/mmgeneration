@@ -90,6 +90,17 @@ test_dataloader = dict(
         pipeline=test_pipeline,
         testdir='val'))
 
+custom_hooks = [
+    dict(
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        vis_kwargs_list=[
+            dict(type='Translation', name='trans'),
+            dict(type='TranslationVal', name='trans_val')
+        ])
+]
+
 # optimizer
 optim_wrapper = dict(
     generators=dict(

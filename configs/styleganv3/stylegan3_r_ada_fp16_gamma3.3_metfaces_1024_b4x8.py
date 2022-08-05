@@ -93,7 +93,7 @@ custom_hooks = [
         type='GenVisualizationHook',
         interval=5000,
         fixed_input=True,
-        sample_kwargs_list=dict(type='GAN', name='fake_img'))
+        vis_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
 
 # METRICS
@@ -105,6 +105,12 @@ metrics = [
         inception_style='StyleGAN',
         sample_model='ema')
 ]
+# NOTE: config for save multi best checkpoints
+# default_hooks = dict(
+#     checkpoint=dict(
+#         save_best=['FID-Full-50k/fid', 'IS-50k/is'],
+#         rule=['less', 'greater']))
+default_hooks = dict(checkpoint=dict(save_best='FID-Full-50k/fid'))
 
 val_evaluator = dict(metrics=metrics)
 test_evaluator = dict(metrics=metrics)
