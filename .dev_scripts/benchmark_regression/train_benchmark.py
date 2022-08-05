@@ -96,6 +96,10 @@ def parse_args():
         '--amp', action='store_true', help='whether use amp training')
     parser.add_argument(
         '--cpu', action='store_true', help='whether use cpu training')
+    parser.add_argument(
+        '--resume',
+        action='store_true',
+        help='whether resume from latest checkpoint')
     parser.add_argument('--port', type=int, default=29666, help='dist port')
     parser.add_argument(
         '--use-ceph-config',
@@ -213,10 +217,15 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
                   f'export MASTER_PORT={port}\n'
                   f'{runner} -u {script_name} {config} '
                   f'--work-dir={work_dir} '
-                  f'--launcher={launcher}\n')
+                  f'--launcher={launcher}')
 
     if args.amp:
         job_script += ' --amp'
+
+    if args.resume:
+        job_script += ' --resume'
+
+    job_script += '\n'
 
     with open(work_dir / 'job.sh', 'w') as f:
         f.write(job_script)
