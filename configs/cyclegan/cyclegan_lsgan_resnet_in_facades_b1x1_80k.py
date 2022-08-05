@@ -32,7 +32,7 @@ train_pipeline = [
         auto_remap=True,
         share_random_params=True,
         transforms=dict(
-            type='Resize', scale=(286, 286), interpolation='bicubic'),
+            type='Resize', scale=(256, 256), interpolation='bicubic'),
     ),
     dict(
         type='Crop',
@@ -64,7 +64,7 @@ test_pipeline = [
         auto_remap=True,
         share_random_params=True,
         transforms=dict(
-            type='Resize', scale=(286, 286), interpolation='bicubic'),
+            type='Resize', scale=(256, 256), interpolation='bicubic'),
     ),
     dict(
         type='PackGenInputs',
@@ -112,6 +112,17 @@ param_scheduler = dict(
     end_factor=0,
     begin=40000,
     end=80000)
+
+custom_hooks = [
+    dict(
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        vis_kwargs_list=[
+            dict(type='Translation', name='trans'),
+            dict(type='TranslationVal', name='trans_val')
+        ])
+]
 
 total_iters = 80000
 

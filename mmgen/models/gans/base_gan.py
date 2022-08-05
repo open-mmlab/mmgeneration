@@ -264,7 +264,7 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
 
             # Append input condition (noise and sample_kwargs) to
             # batch_sample_list
-            gen_sample.noise = noise
+            gen_sample.noise = noise[idx]
             gen_sample.sample_kwargs = deepcopy(sample_kwargs)
 
             batch_sample_list.append(gen_sample)
@@ -362,6 +362,16 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
                     self.ema_start * self.discriminator_steps *
                     disc_accu_iters):
                 self.generator_ema.update_parameters(
+                    self.generator.module
+                    if is_model_wrapper(self.generator) else self.generator)
+                # if not update buffer, copy buffer from orig model
+                if not self.generator_ema.update_buffers:
+                    self.generator_ema.sync_buffers(
+                        self.generator.module if is_model_wrapper(
+                            self.generator) else self.generator)
+            elif self.with_ema_gen:
+                # before ema, copy weights from orig
+                self.generator_ema.sync_parameters(
                     self.generator.module
                     if is_model_wrapper(self.generator) else self.generator)
 
@@ -609,7 +619,7 @@ class BaseConditionalGAN(BaseGAN):
 
             # Append input condition (noise and sample_kwargs) to
             # batch_sample_list
-            gen_sample.noise = noise
+            gen_sample.noise = noise[idx]
             gen_sample.sample_kwargs = deepcopy(sample_kwargs)
             batch_sample_list.append(gen_sample)
         return batch_sample_list

@@ -4,7 +4,7 @@ train_pipeline = [
     dict(type='LoadImageFromFile', key='img'),
     dict(
         type='Resize',
-        scale=(128, 128),
+        scale=(256, 256),
         interpolation='lanczos',
         backend='pillow'),
     dict(type='Flip', keys=['img'], direction='horizontal'),

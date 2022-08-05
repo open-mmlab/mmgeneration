@@ -10,8 +10,10 @@ import numpy as np
 import pytest
 import torch
 import torch.nn as nn
+from mmengine import BaseDataElement
 from mmengine.logging import MMLogger
 from mmengine.runner import Runner
+from mmengine.utils import TORCH_VERSION, digit_version
 from torch.utils.data.dataloader import DataLoader
 
 from mmgen.core import (FrechetInceptionDistance, GenDataSample,
@@ -27,6 +29,28 @@ from mmgen.models import (LSGAN, DCGANGenerator, GANDataPreprocessor, Pix2Pix,
                           StyleGAN3, StyleGANv2Generator, StyleGANv3Generator)
 
 logger = MMLogger(name='mmgen')
+
+
+def process_fn(data_batch, predictions):
+
+    # data_batch is loaded from normal dataloader
+    if isinstance(data_batch, list):
+        _data_batch = []
+        for data in data_batch:
+            if isinstance(data['data_sample'], BaseDataElement):
+                _data_batch.append(
+                    dict(
+                        inputs=data['inputs'],
+                        data_sample=data['data_sample'].to_dict()))
+            else:
+                _data_batch.append(data)
+    else:
+        _data_batch = data_batch
+
+    _predictions = []
+    for pred in predictions:
+        _predictions.append(pred.to_dict())
+    return _data_batch, _predictions
 
 
 def construct_inception_pkl(inception_path):
@@ -105,7 +129,6 @@ class TestBaseMetric(TestCase):
     def test_init(self):
         toy_metric = ToyMetric(fake_nums=10, real_nums=10)
         self.assertEquals(toy_metric.SAMPLER_MODE, 'normal')
-        self.assertEquals(toy_metric._color_order, 'bgr')
 
         model = MagicMock()
         dataset = MagicMock()
@@ -194,7 +217,7 @@ class TestFID(TestCase):
                 inception_pkl=self.inception_pkl)
         gen_images = torch.randn(4, 3, 2, 2)
         gen_samples = [
-            GenDataSample(fake_img=PixelData(data=gen_images[i])).to_dict()
+            GenDataSample(fake=PixelData(data=gen_images[i])).to_dict()
             for i in range(4)
         ]
         fid.process(None, gen_samples)
@@ -203,13 +226,13 @@ class TestFID(TestCase):
         fid.fake_results.clear()
         gen_sample = [
             GenDataSample(
-                ema=GenDataSample(fake=PixelData(
+                orig=GenDataSample(fake=PixelData(
                     data=torch.randn(3, 2, 2)))).to_dict()
         ]
         fid.process(None, gen_sample)
         gen_sample = [
             GenDataSample(
-                ema=GenDataSample(
+                orig=GenDataSample(
                     fake_img=PixelData(data=torch.randn(3, 2, 2)))).to_dict()
         ]
         fid.process(None, gen_sample)
@@ -223,7 +246,6 @@ class TestFID(TestCase):
                 fake_key='fake',
                 inception_style='PyTorch',
                 inception_pkl=self.inception_pkl)
-        fid.set_color_order('rgb')
         module = MagicMock()
         module.data_preprocessor = MagicMock()
         module.data_preprocessor.device = 'cpu'
@@ -321,7 +343,6 @@ class TestIS(TestCase):
                           self.mock_inception_stylegan):
             IS = InceptionScore(
                 fake_nums=2, fake_key='fake', sample_model='orig')
-        IS.set_color_order('rgb')
         gen_samples = [
             GenDataSample(fake_img=PixelData(
                 data=torch.randn(3, 2, 2))).to_dict() for _ in range(4)
@@ -493,6 +514,9 @@ class TestSWD(TestCase):
         ]
 
 
+@pytest.mark.skipif(
+    digit_version(TORCH_VERSION) <= digit_version('1.6.0'),
+    reason='version limitation')
 class TestEquivariance:
 
     @classmethod
@@ -527,7 +551,8 @@ class TestEquivariance:
         eq.prepare(self.module, self.dataloader)
         for data_batch in sampler:
             predictions = self.module.test_step(data_batch)
-            eq.process(data_batch, predictions)
+            _data_batch, _predictions = process_fn(data_batch, predictions)
+            eq.process(_data_batch, _predictions)
         eq_res = eq.compute_metrics(eq.fake_results)
         isinstance(eq_res['eqt_int'], float) and isinstance(
             eq_res['eqt_frac'], float) and isinstance(eq_res['eqr'], float)
@@ -543,7 +568,8 @@ class TestEquivariance:
         eq.prepare(self.module, self.dataloader)
         for data_batch in sampler:
             predictions = self.module.test_step(data_batch)
-            eq.process(data_batch, predictions)
+            _data_batch, _predictions = process_fn(data_batch, predictions)
+            eq.process(_data_batch, _predictions)
         eq_res = eq.compute_metrics(eq.fake_results)
         isinstance(eq_res['eqt_int'], float) and isinstance(
             eq_res['eqt_frac'], float) and isinstance(eq_res['eqr'], float)
@@ -585,7 +611,8 @@ class TestPPL:
         ppl.prepare(self.module, self.dataloader)
         for data_batch in sampler:
             predictions = self.module.test_step(data_batch)
-            ppl.process(data_batch, predictions)
+            _data_batch, _predictions = process_fn(data_batch, predictions)
+            ppl.process(_data_batch, _predictions)
         ppl_res = ppl.compute_metrics(ppl.fake_results)
         assert ppl_res['ppl_score'] >= 0
         ppl = PerceptualPathLength(
@@ -598,7 +625,8 @@ class TestPPL:
         ppl.prepare(self.module, self.dataloader)
         for data_batch in sampler:
             predictions = self.module.test_step(data_batch)
-            ppl.process(data_batch, predictions)
+            _data_batch, _predictions = process_fn(data_batch, predictions)
+            ppl.process(_data_batch, _predictions)
         ppl_res = ppl.compute_metrics(ppl.fake_results)
         assert ppl_res['ppl_score'] >= 0
 
@@ -613,7 +641,8 @@ class TestPPL:
         ppl.prepare(self.module, self.dataloader)
         for data_batch in sampler:
             predictions = self.module.test_step(data_batch)
-            ppl.process(data_batch, predictions)
+            _data_batch, _predictions = process_fn(data_batch, predictions)
+            ppl.process(_data_batch, _predictions)
         ppl_res = ppl.compute_metrics(ppl.fake_results)
         assert ppl_res['ppl_score'] >= 0
         ppl = PerceptualPathLength(
@@ -626,7 +655,8 @@ class TestPPL:
         ppl.prepare(self.module, self.dataloader)
         for data_batch in sampler:
             predictions = self.module.test_step(data_batch)
-            ppl.process(data_batch, predictions)
+            _data_batch, _predictions = process_fn(data_batch, predictions)
+            ppl.process(_data_batch, _predictions)
         ppl_res = ppl.compute_metrics(ppl.fake_results)
         assert ppl_res['ppl_score'] >= 0
 
@@ -707,14 +737,15 @@ class TestTransFID:
                 prefix='FID-Full',
                 fake_nums=2,
                 real_key='img_shoe',
-                fake_key='target',
+                fake_key='fake_shoe',
                 inception_style='PyTorch')
         self.module.cuda()
         sampler = fid.get_metric_sampler(self.module, self.dataloader, [fid])
         fid.prepare(self.module, self.dataloader)
         for data_batch in sampler:
             predictions = self.module.test_step(data_batch)
-        fid.process(data_batch, predictions)
+            _data_batch, _predictions = process_fn(data_batch, predictions)
+            fid.process(_data_batch, _predictions)
         fid_res = fid.compute_metrics(fid.fake_results)
         assert fid_res['fid'] >= 0 and fid_res['mean'] >= 0 and fid_res[
             'cov'] >= 0
@@ -726,13 +757,14 @@ class TestTransFID:
                 prefix='FID-Full',
                 fake_nums=2,
                 real_key='img_shoe',
-                fake_key='target',
+                fake_key='fake_shoe',
                 inception_style='PyTorch')
         sampler = fid.get_metric_sampler(self.module, self.dataloader, [fid])
         fid.prepare(self.module, self.dataloader)
         for data_batch in sampler:
             predictions = self.module.test_step(data_batch)
-        fid.process(data_batch, predictions)
+            _data_batch, _predictions = process_fn(data_batch, predictions)
+            fid.process(_data_batch, _predictions)
         fid_res = fid.compute_metrics(fid.fake_results)
         assert fid_res['fid'] >= 0 and fid_res['mean'] >= 0 and fid_res[
             'cov'] >= 0
@@ -814,14 +846,15 @@ class TestTransIS:
                 prefix='IS-Full',
                 fake_nums=2,
                 inception_style='PyTorch',
-                fake_key='target',
+                fake_key='fake_shoe',
                 sample_model='orig')
         self.module.cuda()
         sampler = IS.get_metric_sampler(self.module, self.dataloader, [IS])
         IS.prepare(self.module, self.dataloader)
         for data_batch in sampler:
             predictions = self.module.test_step(data_batch)
-        IS.process(data_batch, predictions)
+            _data_batch, _predictions = process_fn(data_batch, predictions)
+            IS.process(_data_batch, _predictions)
         IS_res = IS.compute_metrics(IS.fake_results)
         assert 'is' in IS_res and 'is_std' in IS_res
 
@@ -832,12 +865,13 @@ class TestTransIS:
                 prefix='IS-Full',
                 fake_nums=2,
                 inception_style='PyTorch',
-                fake_key='target',
+                fake_key='fake_shoe',
                 sample_model='orig')
         sampler = IS.get_metric_sampler(self.module, self.dataloader, [IS])
         IS.prepare(self.module, self.dataloader)
         for data_batch in sampler:
             predictions = self.module.test_step(data_batch)
-        IS.process(data_batch, predictions)
+            _data_batch, _predictions = process_fn(data_batch, predictions)
+            IS.process(_data_batch, _predictions)
         IS_res = IS.compute_metrics(IS.fake_results)
         assert 'is' in IS_res and 'is_std' in IS_res

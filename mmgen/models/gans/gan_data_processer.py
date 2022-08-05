@@ -43,7 +43,7 @@ class GANDataPreprocessor(ImgDataPreprocessor):
             Defaults to False.
     """
     _NON_IMAGE_KEYS = ['noise']
-    _NON_CONCENTATE_KEYS = ['num_batches', 'mode']
+    _NON_CONCENTATE_KEYS = ['num_batches', 'mode', 'sample_kwargs', 'eq_cfg']
 
     def __init__(self,
                  mean: Sequence[Union[float, int]] = (127.5, 127.5, 127.5),

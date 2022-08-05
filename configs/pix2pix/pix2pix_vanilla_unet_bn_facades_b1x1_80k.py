@@ -90,6 +90,18 @@ optim_wrapper = dict(
     discriminators=dict(
         type='OptimWrapper',
         optimizer=dict(type='Adam', lr=2e-4, betas=(0.5, 0.999))))
+
+custom_hooks = [
+    dict(
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        vis_kwargs_list=[
+            dict(type='Translation', name='trans'),
+            dict(type='TranslationVal', name='trans_val')
+        ])
+]
+
 fake_nums = 106
 metrics = [
     dict(

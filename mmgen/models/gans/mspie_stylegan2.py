@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from copy import deepcopy
 from typing import Dict, Union
 
 import numpy as np
@@ -8,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmengine import MessageHub
 from mmengine.logging import MMLogger
+from mmengine.model import is_model_wrapper
 from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 
@@ -35,7 +37,7 @@ class MSPIEStyleGAN2(StyleGAN2):
 
     def __init__(self, *args, train_settings=dict(), **kwargs):
         super().__init__(*args, **kwargs)
-        self.train_settings = train_settings
+        self.train_settings = deepcopy(train_settings)
         # set the number of upsampling blocks. This value will be used to
         # calculate the current result size according to the size of the input
         # feature map, e.g., positional encoding map
@@ -102,8 +104,22 @@ class MSPIEStyleGAN2(StyleGAN2):
             set_requires_grad(self.discriminator, True)
 
             # only do ema after generator update
-            if self.with_ema_gen:
-                self.generator_ema.update_parameters(self.generator)
+            if self.with_ema_gen and (curr_iter + 1) >= (
+                    self.ema_start * self.discriminator_steps *
+                    disc_accu_iters):
+                self.generator_ema.update_parameters(
+                    self.generator.module
+                    if is_model_wrapper(self.generator) else self.generator)
+                # if not update buffer, copy buffer from orig model
+                if not self.generator_ema.update_buffers:
+                    self.generator_ema.sync_buffers(
+                        self.generator.module if is_model_wrapper(
+                            self.generator) else self.generator)
+            elif self.with_ema_gen:
+                # before ema, copy weights from orig
+                self.generator_ema.sync_parameters(
+                    self.generator.module
+                    if is_model_wrapper(self.generator) else self.generator)
 
             log_vars.update(log_vars_gen)
 

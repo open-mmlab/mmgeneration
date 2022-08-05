@@ -27,7 +27,7 @@ custom_hooks = [
         type='GenVisualizationHook',
         interval=10000,
         fixed_input=True,
-        sample_kwargs_list=dict(type='GAN', name='fake_img'))
+        vis_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
 
 model = dict(type='DCGAN')

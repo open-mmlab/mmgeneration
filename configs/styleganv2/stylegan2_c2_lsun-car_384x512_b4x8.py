@@ -57,7 +57,7 @@ custom_hooks = [
         type='GenVisualizationHook',
         interval=5000,
         fixed_input=True,
-        sample_kwargs_list=dict(type='GAN', name='fake_img'))
+        vis_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
 
 # METRICS
@@ -71,6 +71,12 @@ metrics = [
     dict(type='PrecisionAndRecall', fake_nums=50000, prefix='PR-50K'),
     dict(type='PerceptualPathLength', fake_nums=50000, prefix='ppl-w')
 ]
+# NOTE: config for save multi best checkpoints
+# default_hooks = dict(
+#     checkpoint=dict(
+#         save_best=['FID-Full-50k/fid', 'IS-50k/is'],
+#         rule=['less', 'greater']))
+default_hooks = dict(checkpoint=dict(save_best='FID-Full-50k/fid'))
 
 val_evaluator = dict(metrics=metrics)
 test_evaluator = dict(metrics=metrics)

@@ -80,8 +80,6 @@ class GenMetric(BaseMetric):
         self.real_results: List[Any] = []
         self.fake_results: List[Any] = []
 
-        self._color_order = 'bgr'
-
     @property
     def real_nums_per_device(self):
         """Number of real images need for current device."""
@@ -91,14 +89,6 @@ class GenMetric(BaseMetric):
     def fake_nums_per_device(self):
         """Number of fake images need for current device."""
         return math.ceil(self.fake_nums / get_world_size())
-
-    def set_color_order(self, color_order: str) -> None:
-        """Set color order for the input image.
-
-        Args:
-            color_order (str): The color order of input image.
-        """
-        self._color_order = color_order
 
     def _collect_target_results(self, target: str) -> Optional[list]:
         """Collected results in distributed environments.
@@ -126,7 +116,7 @@ class GenMetric(BaseMetric):
             # apply all_gather for tensor results
             results = torch.cat(results, dim=0)
             results = torch.cat(all_gather(results), dim=0)[:size]
-            results = torch.tensor_split(results, size)
+            results = torch.split(results, 1)
         else:
             # apply collect_results (all_gather_object) for non-tensor results
             results = collect_results(results, size, self.collect_device)
@@ -332,6 +322,8 @@ class SlicedWassersteinDistance(GenMetric):
         real_pyramid = laplacian_pyramid(real_imgs, self.n_pyramids - 1,
                                          self.gaussian_k)
         # lod: layer_of_descriptors
+        if self.real_results == []:
+            self.real_results = [[] for res in self.resolutions]
         for lod, level in enumerate(real_pyramid):
             desc = get_descriptors_for_minibatch(level, self.nhood_size,
                                                  self.nhoods_per_image)
@@ -342,6 +334,8 @@ class SlicedWassersteinDistance(GenMetric):
         fake_pyramid = laplacian_pyramid(fake_imgs, self.n_pyramids - 1,
                                          self.gaussian_k)
         # lod: layer_of_descriptors
+        if self.fake_results == []:
+            self.fake_results = [[] for res in self.resolutions]
         for lod, level in enumerate(fake_pyramid):
             desc = get_descriptors_for_minibatch(level, self.nhood_size,
                                                  self.nhoods_per_image)
@@ -364,9 +358,10 @@ class SlicedWassersteinDistance(GenMetric):
         ], ('Only support to collect \'fake\' or \'real\' results.')
         results = getattr(self, f'{target}_results')
         results_collected = []
+        world_size = get_world_size()
         for result in results:
             # save the original tensor size
-            results_size_list = [res.shape[0] for res in result]
+            results_size_list = [res.shape[0] for res in result] * world_size
             result_collected = torch.cat(result, dim=0)
             result_collected = torch.cat(all_gather(result_collected), dim=0)
             # split to tuple
@@ -640,9 +635,8 @@ class FrechetInceptionDistance(GenerativeMetric):
             Tensor: Image feature extracted from inception.
         """
 
-        if self._color_order == 'bgr':
-            image = image[:, [2, 1, 0]]
-
+        # image must passed with 'bgr'
+        image = image[:, [2, 1, 0]]
         image = image.to(self.device)
         if self.inception_style == 'StyleGAN':
             image = (image * 127.5 + 128).clamp(0, 255).to(torch.uint8)
@@ -681,7 +675,7 @@ class FrechetInceptionDistance(GenerativeMetric):
         fake_imgs = torch.stack(fake_imgs, dim=0)
 
         feat = self.forward_inception(fake_imgs)
-        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
+        feat_list = list(torch.split(feat, 1))
         self.fake_results += feat_list
 
     @staticmethod
@@ -868,8 +862,8 @@ class InceptionScore(GenerativeMetric):
             Tensor: Image tensor after resize and channel conversion
                 (if need.)
         """
-        if self._color_order == 'bgr':
-            image = image[:, [2, 1, 0]]
+        # image must passed in 'bgr'
+        image = image[:, [2, 1, 0]]
         if not self.resize:
             return image
         if self.use_pillow_resize:
@@ -923,7 +917,7 @@ class InceptionScore(GenerativeMetric):
             feat = F.softmax(self.inception(fake_imgs), dim=1)
 
         # NOTE: feat is shape like (bz, 1000), convert to a list
-        self.fake_results += list(torch.tensor_split(feat, feat.shape[0]))
+        self.fake_results += list(torch.split(feat, 1))
 
     def compute_metrics(self, fake_results: list) -> dict:
         """Compute the results of Inception Score metric.
@@ -1029,6 +1023,38 @@ class MultiScaleStructureSimilarity(GenerativeMetric):
         scores = ms_ssim(half1, half2, reduce_mean=False)
         self.fake_results += [torch.Tensor([s]) for s in scores.tolist()]
 
+    def _collect_target_results(self, target: str) -> Optional[list]:
+        """Collected results for MS-SSIM metric. Size of `self.fake_results` in
+        MS-SSIM does not relay on `self.fake_nums` but `self.num_pairs`.
+
+        Args:
+            target (str): Target results to collect.
+
+        Returns:
+            Optional[list]: The collected results.
+        """
+        assert target in 'fake', 'Only support to collect \'fake\' results.'
+        results = getattr(self, f'{target}_results')
+        size = self.num_pairs
+        size = len(results) * get_world_size() if size == -1 else size
+
+        if len(results) == 0:
+            warnings.warn(
+                f'{self.__class__.__name__} got empty `self.{target}_results`.'
+                ' Please ensure that the processed results are properly added '
+                f'into `self.{target}_results` in `process` method.')
+
+        # apply all_gather for tensor results
+        results = torch.cat(results, dim=0)
+        results = torch.cat(all_gather(results), dim=0)[:size]
+        results = torch.split(results, 1)
+
+        # on non-main process, results should be `None`
+        if is_main_process() and len(results) != size:
+            raise ValueError(f'Length of results is \'{len(results)}\', not '
+                             f'equals to target size \'{size}\'.')
+        return results
+
     def compute_metrics(self, results_fake: List):
         """Computed the result of MS-SSIM.
 
@@ -1113,7 +1139,6 @@ class PrecisionAndRecall(GenerativeMetric):
         self.auto_save = auto_save
         self.row_batch_size = row_batch_size
         self.col_batch_size = col_batch_size
-        self._color_order = 'bgr'
 
     def _load_vgg(self, vgg16_script: Optional[str]) -> Tuple[nn.Module, bool]:
         """Load VGG network from the given path.
@@ -1146,8 +1171,8 @@ class PrecisionAndRecall(GenerativeMetric):
         Returns:
             torch.Tensor: Vgg16 features of input images.
         """
-        if self._color_order == 'bgr':
-            images = images[:, [2, 1, 0], ...]
+        # image must passed in 'bgr'
+        images = images[:, [2, 1, 0], ...]
         if self.use_tero_scirpt:
             images = (images * 127.5 + 128).clamp(0, 255).to(torch.uint8)
             feature = self.vgg16(images, return_features=True)
@@ -1170,7 +1195,6 @@ class PrecisionAndRecall(GenerativeMetric):
         real_features = self.results_real
 
         self._result_dict = {}
-        rank, ws = get_dist_info()
 
         for name, manifold, probes in [
             ('precision', real_features, gen_features),
@@ -1181,26 +1205,20 @@ class PrecisionAndRecall(GenerativeMetric):
                 distance = compute_pr_distances(
                     row_features=manifold_batch,
                     col_features=manifold,
-                    num_gpus=ws,
-                    rank=rank,
                     col_batch_size=self.col_batch_size)
                 kth.append(
-                    distance.to(torch.float32).kthvalue(self.k + 1).values.
-                    to(torch.float16) if rank == 0 else None)
-            kth = torch.cat(kth) if rank == 0 else None
+                    distance.to(torch.float32).kthvalue(self.k + 1).values.to(
+                        torch.float16))
+            kth = torch.cat(kth)
             pred = []
             for probes_batch in probes.split(self.row_batch_size):
                 distance = compute_pr_distances(
                     row_features=probes_batch,
                     col_features=manifold,
-                    num_gpus=ws,
-                    rank=rank,
                     col_batch_size=self.col_batch_size)
-                pred.append((distance <= kth).any(
-                    dim=1) if rank == 0 else None)
+                pred.append((distance <= kth).any(dim=1))
             self._result_dict[name] = float(
-                torch.cat(pred).to(torch.float32).mean() if rank ==
-                0 else 'nan')
+                torch.cat(pred).to(torch.float32).mean())
 
         precision = self._result_dict['precision']
         recall = self._result_dict['recall']
@@ -1233,7 +1251,7 @@ class PrecisionAndRecall(GenerativeMetric):
             fake_imgs.append(fake_img_)
         fake_imgs = torch.stack(fake_imgs, dim=0)
         feat = self.extract_features(fake_imgs)
-        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
+        feat_list = list(torch.split(feat, 1))
         self.fake_results += feat_list
 
     @torch.no_grad()
@@ -1477,7 +1495,7 @@ class TransFID(FrechetInceptionDistance):
             fake_imgs.append(fake_img_)
         fake_imgs = torch.stack(fake_imgs, dim=0)
         feat = self.forward_inception(fake_imgs)
-        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
+        feat_list = list(torch.split(feat, 1))
         self.fake_results += feat_list
 
 
@@ -1590,7 +1608,7 @@ class TransIS(InceptionScore):
             feat = F.softmax(self.inception(fake_imgs), dim=1)
 
         # NOTE: feat is shape like (bz, 1000), convert to a list
-        self.fake_results += list(torch.tensor_split(feat, feat.shape[0]))
+        self.fake_results += list(torch.split(feat, 1))
 
     def get_metric_sampler(self, model: nn.Module, dataloader: DataLoader,
                            metrics: List['GenMetric']) -> DataLoader:
@@ -1682,7 +1700,7 @@ class PerceptualPathLength(GenerativeMetric):
             fake_imgs.append(fake_img_)
         fake_imgs = torch.stack(fake_imgs, dim=0)
         feat = self._compute_distance(fake_imgs)
-        feat_list = list(torch.tensor_split(feat, feat.shape[0]))
+        feat_list = list(torch.split(feat, 1))
         self.fake_results += feat_list
 
     @torch.no_grad()
