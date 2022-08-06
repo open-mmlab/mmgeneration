@@ -114,7 +114,7 @@ class GenVisualizationHook(Hook):
                  n_row: Optional[int] = 8,
                  message_hub_vis_kwargs: Optional[Tuple[str, dict, List[str],
                                                         List[Dict]]] = None,
-                 save_at_test: bool = True,
+                 save_at_test: bool = False,
                  test_vis_keys: Optional[Union[str, List[str]]] = None,
                  show: bool = False,
                  wait_time: float = 0):
@@ -205,10 +205,11 @@ class GenVisualizationHook(Hook):
 
             for key in target_keys:
                 name = key.replace('.', '_')
+                name = f'test_{name}'
                 self._visualizer.add_datasample(
                     name=name,
                     gen_samples=[sample],
-                    batch_idx=curr_idx,
+                    step=curr_idx,
                     target_keys=key,
                     n_row=1,
                     color_order=output_color_order,
