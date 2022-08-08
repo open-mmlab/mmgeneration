@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import pytest
 import torch
 from mmengine import MessageHub
 
@@ -75,10 +74,6 @@ class TestSinGAN:
             elif i in [4, 5]:
                 assert singan.curr_stage == 2
                 assert img.shape[-2:] == (32, 32)
-
-        # test val step
-        with pytest.raises(NotImplementedError):
-            singan.val_step(None)
 
 
 class TestPESinGAN:

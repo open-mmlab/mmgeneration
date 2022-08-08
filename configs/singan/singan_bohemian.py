@@ -6,6 +6,21 @@ _base_ = ['./singan_fish.py']
 test_pkl_data = None
 model = dict(test_pkl_data=test_pkl_data)
 
+# HOOKS
+custom_hooks = [
+    dict(
+        type='PickleDataHook',
+        output_dir='pickle',
+        interval=-1,
+        after_run=True,
+        data_name_list=['noise_weights', 'fixed_noises', 'curr_stage']),
+    dict(
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        vis_kwargs_list=dict(type='SinGAN', name='bohemian'))
+]
+
 # DATA
 min_size = 25
 max_size = 500

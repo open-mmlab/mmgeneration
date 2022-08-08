@@ -559,19 +559,6 @@ class SinGAN(BaseGAN):
 
         return log_vars
 
-    def val_step(self, data: ValTestStepInputs) -> None:
-        """Gets the generated image of given data. We do not support
-        `:meth:val_step` in SinGAN because we do not adopt any metric to
-        evaluate it.
-
-        Args:
-            data (ValTestStepInputs): Data sampled from metric specific
-                sampler. More detials in `Metrics` and `Evaluator`.
-        """
-        raise NotImplementedError(
-            'We do not support \'val_step\' for SinGAN model. If you want to '
-            'generte images, please use \'tools/utils/singan_inference.py\'.')
-
     def test_step(self, data: ValTestStepInputs) -> ForwardOutputs:
         """Gets the generated image of given data in test progress. Before
         generate images, we call `:meth:self.load_test_pkl` to load the fixed

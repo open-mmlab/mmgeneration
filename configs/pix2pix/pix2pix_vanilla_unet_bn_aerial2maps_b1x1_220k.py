@@ -68,11 +68,7 @@ test_pipeline = [
     dict(
         type='PackGenInputs',
         keys=[f'img_{domain_a}', f'img_{domain_b}', 'pair'],
-        meta_keys=[
-            'pair_path', 'sample_idx', 'pair_ori_shape',
-            f'img_{domain_a}_path', f'img_{domain_b}_path',
-            f'img_{domain_a}_ori_shape', f'img_{domain_b}_ori_shape'
-        ])
+        meta_keys=[f'img_{domain_a}_path', f'img_{domain_b}_path'])
 ]
 dataroot = 'data/pix2pix/maps'
 train_dataloader = dict(

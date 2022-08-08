@@ -92,6 +92,7 @@ class GenVisualizationHook(Hook):
 
     VIS_KWARGS_MAPPING = dict(
         GAN=dict(type='Noise', vis_kwargs={}),
+        SinGAN=dict(type='Arguments', forward_kwargs=dict(mode='rand')),
         Translation=dict(type='Data', vis_kwargs={}),
         TranslationVal=dict(type='ValData', vis_kwargs={}),
         TranslationTest=dict(type='TestData', vis_kwargs={}),
