@@ -48,7 +48,12 @@ custom_hooks = [
         output_dir='pickle',
         interval=-1,
         after_run=True,
-        data_name_list=['noise_weights', 'fixed_noises', 'curr_stage'])
+        data_name_list=['noise_weights', 'fixed_noises', 'curr_stage']),
+    dict(
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        vis_kwargs_list=dict(type='SinGAN', name='fish'))
 ]
 
 # NOTE: SinGAN do not support val_loop and test_loop, please use

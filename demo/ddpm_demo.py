@@ -125,6 +125,7 @@ def main():
     results = sample_ddpm_model(model, args.num_samples, args.num_batches,
                                 args.sample_model, args.same_noise,
                                 **args.sample_cfg)
+    results = torch.stack(results, dim=0)
 
     # save images
     mmcv.mkdir_or_exist(os.path.dirname(args.save_path))
