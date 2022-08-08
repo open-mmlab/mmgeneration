@@ -17,13 +17,13 @@ def digit_version(version_str):
 
 
 mmcv_minimum_version = '2.0.0rc0'
-mmcv_maximum_version = '2.1.0'
+mmcv_maximum_version = '2.0.0'
 mmcv_version = digit_version(mmcv.__version__)
 
 
 assert (mmcv_version >= digit_version(mmcv_minimum_version)
         and mmcv_version <= digit_version(mmcv_maximum_version)), \
     f'MMCV=={mmcv.__version__} is used but incompatible. ' \
-    f'Please install mmcv>={mmcv_minimum_version}, <={mmcv_maximum_version}.'
+    f'Please install mmcv>={mmcv_minimum_version}, <{mmcv_maximum_version}.'
 
 __all__ = ['__version__', 'version_info', 'parse_version_info']
