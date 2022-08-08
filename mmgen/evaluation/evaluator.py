@@ -8,7 +8,7 @@ from mmengine.model import BaseModel
 from torch.utils.data.dataloader import DataLoader
 
 from mmgen.registry import EVALUATOR
-from mmgen.typing import ForwardOutputs, ValTestStepInputs
+from mmgen.utils.typing import ForwardOutputs, ValTestStepInputs
 
 
 @EVALUATOR.register_module()

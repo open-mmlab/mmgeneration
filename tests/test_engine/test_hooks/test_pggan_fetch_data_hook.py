@@ -7,7 +7,7 @@ from mmengine.data import DefaultSampler, InfiniteSampler, pseudo_collate
 from mmengine.runner import IterBasedTrainLoop
 from torch.utils.data.dataloader import DataLoader
 
-from mmgen.core import PGGANFetchDataHook
+from mmgen.engine import PGGANFetchDataHook
 from mmgen.registry import DATASETS, MODELS
 from mmgen.utils import register_all_modules
 

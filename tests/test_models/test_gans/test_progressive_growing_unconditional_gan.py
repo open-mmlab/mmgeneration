@@ -6,7 +6,7 @@ import pytest
 import torch
 from mmengine import MessageHub
 
-from mmgen.core import PGGANOptimWrapperConstructor
+from mmgen.engine import PGGANOptimWrapperConstructor
 from mmgen.models.gans import ProgressiveGrowingGAN
 from mmgen.utils import register_all_modules
 

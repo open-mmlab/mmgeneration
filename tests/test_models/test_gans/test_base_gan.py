@@ -9,9 +9,9 @@ from mmengine.optim import OptimWrapper, OptimWrapperDict
 from mmengine.testing import assert_allclose
 from torch.optim import SGD
 
-from mmgen.core.data_structures.gen_data_sample import GenDataSample
 from mmgen.models import BaseGAN, GANDataPreprocessor
 from mmgen.models.builder import build_module
+from mmgen.structures import GenDataSample
 
 generator = dict(type='DCGANGenerator', output_scale=8, base_channels=8)
 discriminator = dict(

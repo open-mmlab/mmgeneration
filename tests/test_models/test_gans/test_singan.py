@@ -3,7 +3,7 @@ import pytest
 import torch
 from mmengine import MessageHub
 
-from mmgen.core import SinGANOptimWrapperConstructor
+from mmgen.engine import SinGANOptimWrapperConstructor
 from mmgen.models.gans.singan import PESinGAN, SinGAN
 from mmgen.utils import register_all_modules
 

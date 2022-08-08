@@ -7,7 +7,8 @@ from mmengine.testing import assert_allclose
 from mmengine.visualization import Visualizer
 from torch.utils.data.dataset import Dataset
 
-from mmgen.core import GenDataSample, GenVisualizationHook, PixelData
+from mmgen.engine import GenVisualizationHook
+from mmgen.structures import GenDataSample, PixelData
 from mmgen.utils import register_all_modules
 
 register_all_modules()

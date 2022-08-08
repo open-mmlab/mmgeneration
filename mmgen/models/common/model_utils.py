@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from mmgen.typing import ForwardInputs
+from mmgen.utils.typing import ForwardInputs
 
 
 def set_requires_grad(nets, requires_grad=False):

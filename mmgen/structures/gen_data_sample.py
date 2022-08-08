@@ -78,7 +78,7 @@ class GenDataSample(BaseDataElement):
 
     Examples:
         >>> import torch
-        >>> from mmgen.core import GenDataSample
+        >>> from mmgen.structures import GenDataSample
         >>>
         >>> img_meta = dict(img_shape=(960, 720), num_classes=5)
         >>> data_sample = GenDataSample(metainfo=img_meta)

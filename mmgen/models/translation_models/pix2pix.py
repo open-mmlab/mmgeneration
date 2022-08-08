@@ -3,10 +3,9 @@ import torch
 import torch.nn.functional as F
 from mmengine import MessageHub
 
-from mmgen.core.data_structures.gen_data_sample import GenDataSample
-from mmgen.core.data_structures.pixel_data import PixelData
 from mmgen.registry import MODELS
-from mmgen.typing import ForwardOutputs, ValTestStepInputs
+from mmgen.structures import GenDataSample, PixelData
+from mmgen.utils.typing import ForwardOutputs, ValTestStepInputs
 from ..common import set_requires_grad
 from .static_translation_gan import StaticTranslationGAN
 

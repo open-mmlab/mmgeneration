@@ -10,9 +10,9 @@ from mmengine.dist import master_only
 from torch import Tensor
 from torchvision.utils import make_grid
 
-from mmgen.core import GenDataSample, PixelData
 from mmgen.registry import VISUALIZERS
-from mmgen.typing import SampleList
+from mmgen.structures import GenDataSample, PixelData
+from mmgen.utils.typing import SampleList
 
 mean_std_type = Optional[Sequence[Union[float, int]]]
 

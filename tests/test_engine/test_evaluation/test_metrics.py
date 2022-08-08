@@ -16,17 +16,16 @@ from mmengine.runner import Runner
 from mmengine.utils import TORCH_VERSION, digit_version
 from torch.utils.data.dataloader import DataLoader
 
-from mmgen.core import (FrechetInceptionDistance, GenDataSample,
-                        InceptionScore, MultiScaleStructureSimilarity,
-                        PixelData, PrecisionAndRecall,
-                        SlicedWassersteinDistance)
-from mmgen.core.evaluation.metrics import (Equivariance, GenMetric,
-                                           PerceptualPathLength, TransFID,
-                                           TransIS)
 from mmgen.datasets import (PackGenInputs, PairedImageDataset,
                             UnconditionalImageDataset)
+from mmgen.evaluation import (FrechetInceptionDistance, InceptionScore,
+                              MultiScaleStructureSimilarity,
+                              PrecisionAndRecall, SlicedWassersteinDistance)
+from mmgen.evaluation.metrics import (Equivariance, GenMetric,
+                                      PerceptualPathLength, TransFID, TransIS)
 from mmgen.models import (LSGAN, DCGANGenerator, GANDataPreprocessor, Pix2Pix,
                           StyleGAN3, StyleGANv2Generator, StyleGANv3Generator)
+from mmgen.structures import GenDataSample, PixelData
 
 logger = MMLogger(name='mmgen')
 

@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 
 from mmengine.registry import METRICS
 
-from mmgen.core import GenEvaluator
-from mmgen.core.evaluation.metrics import GenerativeMetric, GenMetric
+from mmgen.evaluation import GenEvaluator
+from mmgen.evaluation.metrics import GenerativeMetric, GenMetric
 
 
 @METRICS.register_module()

@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 from mmcv.utils import TORCH_VERSION
 
-from mmgen.core.runners.fp16_utils import (auto_fp16, cast_tensor_type,
-                                           nan_to_num)
+from mmgen.engine.runners.fp16_utils import (auto_fp16, cast_tensor_type,
+                                             nan_to_num)
 
 
 def test_nan_to_num():

@@ -8,7 +8,7 @@ from mmengine.registry import LOOPS
 from mmengine.runner import TestLoop, ValLoop
 from torch.utils.data import DataLoader
 
-from mmgen.typing import ValTestStepInputs
+from mmgen.utils.typing import ValTestStepInputs
 
 
 @LOOPS.register_module()

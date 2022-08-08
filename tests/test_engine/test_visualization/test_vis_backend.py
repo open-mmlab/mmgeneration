@@ -8,8 +8,8 @@ import numpy as np
 import torch
 from mmengine import Config
 
-from mmgen.core import (GenVisBackend, PaviGenVisBackend,
-                        TensorboardGenVisBackend, WandbGenVisBackend)
+from mmgen.visualization import (GenVisBackend, PaviGenVisBackend,
+                                 TensorboardGenVisBackend, WandbGenVisBackend)
 
 
 class TestGenVisBackend(TestCase):

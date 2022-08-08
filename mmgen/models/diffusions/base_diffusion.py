@@ -13,10 +13,10 @@ from mmengine.model import BaseModel, is_model_wrapper
 from mmengine.optim import OptimWrapperDict
 from torch import Tensor
 
-from mmgen.core import GenDataSample, PixelData
 from mmgen.registry import MODELS, MODULES
-from mmgen.typing import (ForwardInputs, NoiseVar, SampleList, TrainStepInputs,
-                          ValTestStepInputs)
+from mmgen.structures import GenDataSample, PixelData
+from mmgen.utils.typing import (ForwardInputs, NoiseVar, SampleList,
+                                TrainStepInputs, ValTestStepInputs)
 from ..architectures.common import get_module_device
 from ..common import get_valid_num_batches, noise_sample_fn
 from .utils import cosine_beta_schedule, linear_beta_schedule, var_to_tensor

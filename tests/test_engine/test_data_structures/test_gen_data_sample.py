@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from mmengine.data import LabelData
 
-from mmgen.core import GenDataSample
+from mmgen.structures import GenDataSample
 
 
 class TestGenDataSample(TestCase):

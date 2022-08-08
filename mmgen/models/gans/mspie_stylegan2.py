@@ -14,7 +14,7 @@ from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 
 from mmgen.registry import MODELS
-from mmgen.typing import TrainStepInputs
+from mmgen.utils.typing import TrainStepInputs
 from ..common import gather_log_vars, set_requires_grad
 from ..gans.stylegan2 import StyleGAN2
 

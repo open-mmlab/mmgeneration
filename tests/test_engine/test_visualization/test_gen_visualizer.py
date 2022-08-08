@@ -4,8 +4,9 @@ from unittest import TestCase
 
 import torch
 
-from mmgen.core import GenDataSample, GenVisualizer, PixelData
+from mmgen.structures import GenDataSample, PixelData
 from mmgen.utils import register_all_modules
+from mmgen.visualization import GenVisualizer
 
 register_all_modules()
 

@@ -5,8 +5,8 @@ from unittest.mock import MagicMock
 
 from mmengine.model import MMSeparateDistributedDataParallel
 
-from mmgen.core import (PGGANOptimWrapperConstructor,
-                        SinGANOptimWrapperConstructor)
+from mmgen.engine import (PGGANOptimWrapperConstructor,
+                          SinGANOptimWrapperConstructor)
 from mmgen.registry import MODELS
 from mmgen.utils import register_all_modules
 

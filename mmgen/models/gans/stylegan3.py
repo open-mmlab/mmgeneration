@@ -2,10 +2,10 @@
 import numpy as np
 import torch
 
-from mmgen.core import GenDataSample
 from mmgen.models.architectures.common import get_module_device
 from mmgen.registry import MODELS
-from mmgen.typing import ForwardOutputs, ValTestStepInputs
+from mmgen.structures import GenDataSample
+from mmgen.utils.typing import ForwardOutputs, ValTestStepInputs
 from ..architectures.stylegan.utils import (apply_fractional_pseudo_rotation,
                                             apply_fractional_rotation,
                                             apply_fractional_translation,

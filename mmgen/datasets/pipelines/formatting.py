@@ -5,8 +5,8 @@ import numpy as np
 from mmcv.transforms import BaseTransform, to_tensor
 from mmengine import is_list_of
 
-from mmgen.core.data_structures import GenDataSample
 from mmgen.registry import TRANSFORMS
+from mmgen.structures import GenDataSample
 
 
 @TRANSFORMS.register_module()

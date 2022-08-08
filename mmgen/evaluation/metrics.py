@@ -27,7 +27,7 @@ from torchvision import models as torchvision_models
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.architectures.lpips import PerceptualLoss
 from mmgen.registry import METRICS
-from mmgen.typing import ForwardInputs, ForwardOutputs, ValTestStepInputs
+from mmgen.utils.typing import ForwardInputs, ForwardOutputs, ValTestStepInputs
 from .inception_utils import (disable_gpu_fuser_on_pt19, load_inception,
                               prepare_inception_feat, prepare_vgg_feat)
 from .metric_utils import (compute_pr_distances, finalize_descriptors,

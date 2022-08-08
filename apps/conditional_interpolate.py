@@ -13,7 +13,7 @@ from torchvision.utils import save_image
 sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
 
 from mmgen.apis import set_random_seed # isort:skip  # noqa
-from mmgen.core.evaluation import slerp # isort:skip  # noqa
+from mmgen.engine.evaluation import slerp # isort:skip  # noqa
 from mmgen.models import build_model # isort:skip  # noqa
 from mmgen.models.architectures import BigGANDeepGenerator, BigGANGenerator # isort:skip  # noqa
 from mmgen.models.architectures.common import get_module_device # isort:skip  # noqa

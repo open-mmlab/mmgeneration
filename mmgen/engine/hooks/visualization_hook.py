@@ -14,9 +14,9 @@ from mmengine.runner import Runner
 from mmengine.utils import is_list_of
 from mmengine.visualization import Visualizer
 
-from mmgen.core import GenDataSample, PixelData
-from mmgen.core.sampler import get_sampler
 from mmgen.registry import HOOKS
+from mmgen.structures import GenDataSample, PixelData
+from mmgen.visualization.sampler import get_sampler
 
 DATA_BATCH = Sequence[dict]
 
