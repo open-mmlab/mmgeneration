@@ -14,8 +14,8 @@ from mmengine.model import is_model_wrapper
 from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 
-from mmgen.structures import GenDataSample, PixelData
 from mmgen.registry import MODELS
+from mmgen.structures import GenDataSample, PixelData
 from mmgen.utils.typing import ForwardInputs, TrainStepInputs
 from ..common import gather_log_vars, get_valid_num_batches, set_requires_grad
 from .base_gan import BaseGAN

@@ -7,8 +7,8 @@ from mmcls.structures import ClsDataSample
 from mmengine.data import LabelData
 from mmengine.testing import assert_allclose
 
-from mmgen.structures import GenDataSample
 from mmgen.models import BaseConditionalGAN, GANDataPreprocessor
+from mmgen.structures import GenDataSample
 
 generator = dict(
     type='SAGANGenerator',

@@ -5,10 +5,10 @@ import numpy as np
 import pytest
 import torch
 
+from mmgen.datasets import UnconditionalImageDataset, build_dataloader
 from mmgen.engine.evaluation.metric_utils import extract_inception_features
 from mmgen.engine.evaluation.metrics import (FID, IS, MS_SSIM, PPL, PR, SWD,
                                              GaussianKLD)
-from mmgen.datasets import UnconditionalImageDataset, build_dataloader
 from mmgen.models import build_model
 from mmgen.models.architectures import InceptionV3
 
