@@ -18,7 +18,9 @@ def register_all_modules(init_default_scope: bool = True) -> None:
     """  # noqa
     import mmgen.datasets  # noqa: F401,F403
     import mmgen.engine  # noqa: F401,F403
+    import mmgen.evaluation  # noqa: F401,F403
     import mmgen.models  # noqa: F401,F403
+    import mmgen.visualization  # noqa: F401,F403
 
     if init_default_scope:
         never_created = DefaultScope.get_current_instance() is None \

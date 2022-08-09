@@ -46,12 +46,10 @@ metrics = [
         inception_pkl=inception_pkl,
         sample_model='orig')
 ]
-# NOTE: config for save multi best checkpoints
-# default_hooks = dict(
-#     checkpoint=dict(
-#         save_best=['FID-Full-50k/fid', 'IS-50k/is'],
-#         rule=['less', 'greater']))
-default_hooks = dict(checkpoint=dict(save_best='FID-Full-50k/fid'))
+# save multi best checkpoints
+default_hooks = dict(
+    checkpoint=dict(
+        save_best=['FID-Full-50k/fid', 'IS-50k/is'], rule=['less', 'greater']))
 
 val_dataloader = test_dataloader = dict(batch_size=64)
 val_evaluator = test_evaluator = dict(metrics=metrics)
