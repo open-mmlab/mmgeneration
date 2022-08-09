@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 
-from mmgen.core import build_optimizers
+from mmgen.engine import build_optimizers
 
 
 class ExampleModel(nn.Module):

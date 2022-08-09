@@ -13,7 +13,7 @@ from mmcv.ops.fused_bias_leakyrelu import (FusedBiasLeakyReLU,
 from mmcv.ops.upfirdn2d import upfirdn2d
 from mmcv.runner.dist_utils import get_dist_info
 
-from mmgen.core.runners.fp16_utils import auto_fp16
+from mmgen.engine.runners.fp16_utils import auto_fp16
 from mmgen.models.architectures.pggan import (EqualizedLRConvModule,
                                               EqualizedLRLinearModule,
                                               equalized_lr)

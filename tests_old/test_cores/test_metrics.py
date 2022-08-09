@@ -5,15 +5,15 @@ import numpy as np
 import pytest
 import torch
 
-from mmgen.core.evaluation.metric_utils import extract_inception_features
-from mmgen.core.evaluation.metrics import (FID, IS, MS_SSIM, PPL, PR, SWD,
-                                           GaussianKLD)
 from mmgen.datasets import UnconditionalImageDataset, build_dataloader
+from mmgen.engine.evaluation.metric_utils import extract_inception_features
+from mmgen.engine.evaluation.metrics import (FID, IS, MS_SSIM, PPL, PR, SWD,
+                                             GaussianKLD)
 from mmgen.models import build_model
 from mmgen.models.architectures import InceptionV3
 
 # def test_inception_download():
-#     from mmgen.core.evaluation.metrics import load_inception
+#     from mmgen.engine.evaluation.metrics import load_inception
 #     from mmgen.utils import MMGEN_CACHE_DIR
 
 #     args_FID_pytorch = dict(type='pytorch', normalize_input=False)

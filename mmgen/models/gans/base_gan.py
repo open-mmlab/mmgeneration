@@ -10,10 +10,10 @@ from mmengine.model import BaseModel, is_model_wrapper
 from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 
-from mmgen.core import GenDataSample, PixelData
 from mmgen.registry import MODELS, MODULES
-from mmgen.typing import (ForwardInputs, LabelVar, NoiseVar, SampleList,
-                          TrainStepInputs, ValTestStepInputs)
+from mmgen.structures import GenDataSample, PixelData
+from mmgen.utils.typing import (ForwardInputs, LabelVar, NoiseVar, SampleList,
+                                TrainStepInputs, ValTestStepInputs)
 from ..common import (gather_log_vars, get_valid_noise_size,
                       get_valid_num_batches, label_sample_fn, noise_sample_fn,
                       set_requires_grad)

@@ -7,7 +7,7 @@ from mmengine.model import ImgDataPreprocessor, stack_batch
 from torch import Tensor
 
 from mmgen.registry import MODELS
-from mmgen.typing import PreprocessInputs, PreprocessOutputs
+from mmgen.utils.typing import PreprocessInputs, PreprocessOutputs
 
 CollectOutputTyping = Tuple[Union[Tensor, Dict[str, Union[Tensor, str, int]]],
                             list]

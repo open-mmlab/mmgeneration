@@ -13,7 +13,7 @@ from mmcv import Config, print_log
 # yapf: disable
 sys.path.append(osp.abspath(osp.join(__file__, '../../..')))  # isort:skip  # noqa
 
-from mmgen.core.evaluation.metric_utils import extract_inception_features  # isort:skip  # noqa
+from mmgen.engine.evaluation.metric_utils import extract_inception_features  # isort:skip  # noqa
 from mmgen.datasets import (UnconditionalImageDataset, build_dataloader,  # isort:skip  # noqa
                             build_dataset)  # isort:skip  # noqa
 from mmgen.models.architectures import InceptionV3  # isort:skip  # noqa

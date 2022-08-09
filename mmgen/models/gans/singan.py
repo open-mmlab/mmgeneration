@@ -13,11 +13,12 @@ from mmengine.model import is_model_wrapper
 from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 
-from mmgen.core import GenDataSample, PixelData
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.gans.base_gan import BaseGAN
 from mmgen.registry import MODELS
-from mmgen.typing import ForwardOutputs, TrainStepInputs, ValTestStepInputs
+from mmgen.structures import GenDataSample, PixelData
+from mmgen.utils.typing import (ForwardOutputs, TrainStepInputs,
+                                ValTestStepInputs)
 from ..common import gather_log_vars, set_requires_grad
 
 ModelType = Union[Dict, nn.Module]

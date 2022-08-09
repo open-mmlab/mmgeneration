@@ -13,7 +13,7 @@ from mmengine.logging import MMLogger
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../../..')))  # isort:skip  # noqa
 
-from mmgen.core import *  # isort:skip  # noqa: F401,F403,E402
+from mmgen.engine import *  # isort:skip  # noqa: F401,F403,E402
 from mmgen.datasets import *  # isort:skip  # noqa: F401,F403,E402
 from mmgen.models import *  # isort:skip  # noqa: F401,F403,E402
 

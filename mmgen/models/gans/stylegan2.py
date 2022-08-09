@@ -11,7 +11,7 @@ from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 
 from mmgen.registry import MODELS, MODULES
-from mmgen.typing import TrainStepInputs
+from mmgen.utils.typing import TrainStepInputs
 from ..common import gather_log_vars, set_requires_grad
 from ..losses import gen_path_regularizer, r1_gradient_penalty_loss
 from .base_gan import BaseGAN

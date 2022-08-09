@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from torch.nn.parallel import DataParallel
 
-from mmgen.core.hooks import ExponentialMovingAverageHook
+from mmgen.engine.hooks import ExponentialMovingAverageHook
 
 
 class SimpleModule(nn.Module):

@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 
-from mmgen.core import VisualizationHook
+from mmgen.engine import VisualizationHook
 from mmgen.utils import get_root_logger
 
 
