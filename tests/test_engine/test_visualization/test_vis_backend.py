@@ -16,7 +16,7 @@ from mmgen.visualization import (GenVisBackend, PaviGenVisBackend,
 class TestGenVisBackend(TestCase):
 
     def test_vis_backend(self):
-        message_hub = MessageHub.get_instance('test-vis-backend')
+        message_hub = MessageHub.get_instance('mmgen')
         config = Config(dict(work_dir='./mmgen/test/vis_backend_test/'))
         message_hub.update_info('cfg', config.pretty_text)
 
