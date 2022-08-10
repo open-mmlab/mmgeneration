@@ -1,12 +1,13 @@
 import os.path as osp
 import shutil
 import sys
+import time
 from unittest import TestCase
 from unittest.mock import MagicMock
 
 import numpy as np
 import torch
-from mmengine import Config
+from mmengine import Config, MessageHub
 
 from mmgen.visualization import (GenVisBackend, PaviGenVisBackend,
                                  TensorboardGenVisBackend, WandbGenVisBackend)
@@ -15,11 +16,21 @@ from mmgen.visualization import (GenVisBackend, PaviGenVisBackend,
 class TestGenVisBackend(TestCase):
 
     def test_vis_backend(self):
+        message_hub = MessageHub.get_instance('test-vis-backend')
+        config = Config(dict(work_dir='./mmgen/test/vis_backend_test/'))
+        message_hub.update_info('cfg', config.pretty_text)
+
         data_root = 'tmp_dir'
         sys.modules['petrel_client'] = MagicMock()
         vis_backend = GenVisBackend(save_dir='tmp_dir', ceph_path='s3://xxx')
 
         self.assertEqual(vis_backend.experiment, vis_backend)
+        # test path mapping
+        src_path = osp.abspath(
+            './mmgen/test/vis_backend_test/test_vis_data/test.png')
+        tar_path = 's3://xxx/vis_backend_test/test_vis_data/test.png'
+        self.assertEqual(
+            vis_backend._file_client.client._map_path(src_path), tar_path)
 
         # test with `delete_local` is True
         vis_backend.add_config(Config(dict(name='test')))
@@ -121,10 +132,14 @@ class TestPaviBackend(TestCase):
 class TestWandbBackend(TestCase):
 
     def test_wandb(self):
-        sys.modules['wandb'] = MagicMock()
+        timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime(time.time()))
+
+        wandb_mock = MagicMock()
+        sys.modules['wandb'] = wandb_mock
 
         vis_backend = WandbGenVisBackend(
-            save_dir='tmp_dir', init_kwargs=dict(project='test_backend'))
+            save_dir=f'parent_dir/exp_name/{timestamp}/vis_data',
+            init_kwargs=dict(project='test_backend'))
         # test save gif image
         rgb_np = np.random.rand(11, 4, 4, 3).astype(np.uint8)
         vis_backend.add_image('test_gif', rgb_np, n_skip=2)
@@ -133,3 +148,12 @@ class TestWandbBackend(TestCase):
         # test save rgb image
         rgb_np = np.random.rand(4, 4, 3).astype(np.uint8)
         vis_backend.add_image('test_rgb', rgb_np)
+
+        # test wandb backend with name
+        wandb_mock.reset_mock()
+        vis_backend = WandbGenVisBackend(
+            save_dir=f'parent_dir/exp_name/{timestamp}/vis_data',
+            init_kwargs=dict(project='test_backend', name='test_wandb'))
+        vis_backend._init_env()
+        _, called_kwargs = wandb_mock.init.call_args
+        self.assertEqual(called_kwargs['name'], f'test_wandb_{timestamp}')
