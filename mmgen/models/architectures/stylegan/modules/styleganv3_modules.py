@@ -3,6 +3,7 @@ import numpy as np
 import scipy
 import torch
 import torch.nn as nn
+from mmengine import autocast
 
 from mmgen.ops import bias_act, conv2d_gradfix, filtered_lrelu
 from mmgen.registry import MODULES
@@ -495,28 +496,29 @@ class SynthesisLayer(nn.Module):
         # Execute modulated conv2d.
         dtype = torch.float16 if (self.use_fp16 and not force_fp32 and
                                   x.device.type == 'cuda') else torch.float32
-        x = modulated_conv2d(
-            x=x.to(dtype),
-            w=self.weight,
-            s=styles,
-            padding=self.conv_kernel - 1,
-            demodulate=(not self.is_torgb),
-            input_gain=input_gain)
+        with autocast(enabled=not force_fp32):
+            x = modulated_conv2d(
+                x=x.to(dtype),
+                w=self.weight,
+                s=styles,
+                padding=self.conv_kernel - 1,
+                demodulate=(not self.is_torgb),
+                input_gain=input_gain)
 
-        # Execute bias, filtered leaky ReLU, and clamping.
-        gain = 1 if self.is_torgb else np.sqrt(2)
-        slope = 1 if self.is_torgb else 0.2
-        x = filtered_lrelu.filtered_lrelu(
-            x=x,
-            fu=self.up_filter,
-            fd=self.down_filter,
-            b=self.bias.to(x.dtype),
-            up=self.up_factor,
-            down=self.down_factor,
-            padding=self.padding,
-            gain=gain,
-            slope=slope,
-            clamp=self.conv_clamp)
+            # Execute bias, filtered leaky ReLU, and clamping.
+            gain = 1 if self.is_torgb else np.sqrt(2)
+            slope = 1 if self.is_torgb else 0.2
+            x = filtered_lrelu.filtered_lrelu(
+                x=x,
+                fu=self.up_filter,
+                fd=self.down_filter,
+                b=self.bias.to(x.dtype),
+                up=self.up_factor,
+                down=self.down_factor,
+                padding=self.padding,
+                gain=gain,
+                slope=slope,
+                clamp=self.conv_clamp)
 
         # Ensure correct shape and dtype.
         assert x.dtype == dtype

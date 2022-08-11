@@ -252,8 +252,8 @@ class StyleGAN2(BaseGAN):
         disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
 
         with disc_optimizer_wrapper.optim_context(self.discriminator):
-            log_vars = self.train_discriminator(
-                **data, optimizer_wrapper=disc_optimizer_wrapper)
+            log_vars = self.train_discriminator(inputs_dict, data_sample,
+                                                disc_optimizer_wrapper)
 
         # add 1 to `curr_iter` because iter is updated in train loop.
         # Whether to update the generator. We update generator with
@@ -272,7 +272,7 @@ class StyleGAN2(BaseGAN):
             for _ in range(self.generator_steps * gen_accu_iters):
                 with gen_optimizer_wrapper.optim_context(self.generator):
                     log_vars_gen = self.train_generator(
-                        **data, optimizer_wrapper=gen_optimizer_wrapper)
+                        inputs_dict, data_sample, gen_optimizer_wrapper)
 
                 log_vars_gen_list.append(log_vars_gen)
             log_vars_gen = gather_log_vars(log_vars_gen_list)
