@@ -8,6 +8,7 @@ import imageio
 import mmcv
 import numpy as np
 import torch
+from mmengine import MessageHub
 from mmengine.config import Config
 from mmengine.fileio import dump
 from mmengine.visualization import (BaseVisBackend, TensorboardVisBackend,
@@ -82,8 +83,22 @@ class GenVisBackend(BaseVisBackend):
             self._scalar_save_file)
 
         if self._ceph_path is not None:
-            file_client_args = dict(
-                path_mapping={self._save_dir: self._ceph_path})
+            # work_dir: A/B/.../C/D
+            # ceph_path: s3://a/b
+            # local_files:  A/B/.../C/D/TIME_STAMP/vis_data/
+            # remote files: s3://a/b/D/TIME_STAMP/vis_data/
+            message_hub = MessageHub.get_current_instance()
+            cfg_str = message_hub.get_info('cfg')
+            full_work_dir = osp.abspath(
+                Config.fromstring(cfg_str, '.py')['work_dir'])
+
+            if full_work_dir.endswith('/'):
+                full_work_dir = full_work_dir[:-1]
+            src_path = '/'.join(full_work_dir.split('/')[:-1])
+            tar_path = self._ceph_path[:-1] if \
+                self._ceph_path.endswith('/') else self._ceph_path
+
+            file_client_args = dict(path_mapping={src_path: tar_path})
             self._file_client = mmcv.FileClient(
                 backend='petrel', **file_client_args)
 
@@ -371,6 +386,28 @@ class PaviGenVisBackend(BaseVisBackend):
 @VISBACKENDS.register_module()
 class WandbGenVisBackend(WandbVisBackend):
     """Wandb visualization backend for MMGeneration."""
+
+    def _init_env(self):
+        """Setup env for wandb."""
+        if not os.path.exists(self._save_dir):
+            os.makedirs(self._save_dir, exist_ok=True)  # type: ignore
+        if self._init_kwargs is None:
+            self._init_kwargs = {'dir': self._save_dir}
+        else:
+            self._init_kwargs.setdefault('dir', self._save_dir)
+        try:
+            import wandb
+        except ImportError:
+            raise ImportError(
+                'Please run "pip install wandb" to install wandb')
+
+        # add timestamp at the end of name
+        timestamp = self._save_dir.split('/')[-2]
+        orig_name = self._init_kwargs.get('name', None)
+        if orig_name:
+            self._init_kwargs['name'] = f'{orig_name}_{timestamp}'
+        wandb.init(**self._init_kwargs)
+        self._wandb = wandb
 
     @force_init_env
     def add_image(self, name: str, image: np.array, step: int = 0, **kwargs):

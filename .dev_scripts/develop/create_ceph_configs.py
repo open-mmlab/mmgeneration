@@ -102,6 +102,7 @@ def update_ceph_config(filename,
             config[prefix]['dataset'] = dataset
 
         # 2. change visualizer
+        _, project, name = filename.split('.')[0].split('/')
         for vis_cfg in config['vis_backends']:
             if vis_cfg['type'] == 'GenVisBackend':
                 if ceph_path is not None:
@@ -111,8 +112,6 @@ def update_ceph_config(filename,
 
         # add pavi config
         if args.add_pavi:
-            _, project, name = filename.split('/')
-            name = name[:-2]
             # check if pavi config is inheritance from _base_
             find_inherit = False
             for vis_cfg in config['vis_backends']:
@@ -129,8 +128,6 @@ def update_ceph_config(filename,
 
         # add wandb config
         if args.add_wandb:
-            _, project, name = filename.split('/')
-            name = name[:-2]
             # check if wandb config is inheritance from _base_
             find_inherit = False
             for vis_cfg in config['vis_backends']:
