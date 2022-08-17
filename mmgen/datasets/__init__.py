@@ -2,7 +2,7 @@
 from .dataset_wrappers import RepeatDataset
 from .grow_scale_image_dataset import GrowScaleImgDataset
 from .paired_image_dataset import PairedImageDataset
-from .pipelines import (FixedCrop, Flip, LoadImageFromFile, PackGenInputs,
+from .transforms import (FixedCrop, Flip, LoadImageFromFile, PackGenInputs,
                         Resize)
 from .quick_test_dataset import QuickTestImageDataset
 from .samplers import DistributedSampler

@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from mmgen.datasets.pipelines import PackGenInputs
+from mmgen.datasets.transforms import PackGenInputs
 
 
 class TestPackGenInputs(TestCase):

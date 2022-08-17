@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import torch
 
-from mmgen.datasets.pipelines import (CenterCropLongEdge, Flip, NumpyPad,
+from mmgen.datasets.transforms import (CenterCropLongEdge, Flip, NumpyPad,
                                       RandomCropLongEdge, Resize)
 
 

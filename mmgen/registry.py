@@ -31,6 +31,14 @@ from mmengine.registry import \
     WEIGHT_INITIALIZERS as MMENGINE_WEIGHT_INITIALIZERS
 from mmengine.registry import Registry
 
+__all__ = [
+    'RUNNERS', 'RUNNER_CONSTRUCTORS', 'LOOPS', 'HOOKS', 'DATASETS',
+    'DATA_SAMPLERS', 'TRANSFORMS', 'MODELS', 'MODEL_WRAPPERS',
+    'WEIGHT_INITIALIZERS', 'BATCH_AUGMENTS', 'OPTIMIZERS', 'OPTIM_WRAPPERS',
+    'OPTIM_WRAPPER_CONSTRUCTORS', 'PARAM_SCHEDULERS', 'METRICS', 'TASK_UTILS',
+    'VISUALIZERS', 'VISBACKENDS', 'EVALUATORS', 'LOG_PROCESSORS'
+]
+
 # Registries For Runner and the related
 # manage all kinds of runners like `EpochBasedRunner` and `IterBasedRunner`
 RUNNERS = Registry('runner', parent=MMENGINE_RUNNERS)
@@ -85,9 +93,6 @@ TASK_UTILS = Registry('task util', parent=MMENGINE_TASK_UTILS)
 VISUALIZERS = Registry('visualizer', parent=MMENGINE_VISUALIZERS)
 # manage visualizer backend
 VISBACKENDS = Registry('vis_backend', parent=MMENGINE_VISBACKENDS)
-
-# manage evaluator
-EVALUATOR = Registry('evaluator', parent=MMENGINE_EVALUATOR)
 
 # manage all kinds log processors
 LOG_PROCESSORS = Registry('log processor', parent=MMENGINE_LOG_PROCESSORS)
