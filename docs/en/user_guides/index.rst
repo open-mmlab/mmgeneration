@@ -36,5 +36,5 @@
 
 .. toctree::
    :maxdepth: 1
-   
+
    6_useful_tools.md
