@@ -496,7 +496,8 @@ class SynthesisLayer(nn.Module):
         # Execute modulated conv2d.
         dtype = torch.float16 if (self.use_fp16 and not force_fp32 and
                                   x.device.type == 'cuda') else torch.float32
-        with autocast(enabled=not force_fp32):
+        print(self.use_fp16, dtype)
+        with autocast(enabled=dtype == torch.float16):
             x = modulated_conv2d(
                 x=x.to(dtype),
                 w=self.weight,
@@ -521,7 +522,11 @@ class SynthesisLayer(nn.Module):
                 clamp=self.conv_clamp)
 
         # Ensure correct shape and dtype.
-        assert x.dtype == dtype
+        try:
+            assert x.dtype == dtype
+        except Exception:
+            import ipdb
+            ipdb.set_trace()
         return x
 
     @staticmethod
