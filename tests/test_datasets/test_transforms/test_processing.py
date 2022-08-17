@@ -5,9 +5,8 @@ import numpy as np
 import pytest
 import torch
 
-from mmgen.datasets.pipelines import (CenterCropLongEdge, Flip, NumpyPad,
-                                      RandomCropLongEdge, RandomImgNoise,
-                                      Resize)
+from mmgen.datasets.transforms import (CenterCropLongEdge, Flip, NumpyPad,
+                                       RandomCropLongEdge, Resize)
 
 
 class TestAugmentations(object):
@@ -141,110 +140,18 @@ class TestAugmentations(object):
         np.testing.assert_almost_equal(results['lq'][0], results['lq'][1])
 
     def test_resize(self):
-        with pytest.raises(AssertionError):
-            Resize([], scale=0.5)
-        with pytest.raises(AssertionError):
-            Resize(['gt_img'], size_factor=32, scale=0.5)
-        with pytest.raises(AssertionError):
-            Resize(['gt_img'], size_factor=32, keep_ratio=True)
-        with pytest.raises(AssertionError):
-            Resize(['gt_img'], max_size=32, size_factor=None)
-        with pytest.raises(ValueError):
-            Resize(['gt_img'], scale=-0.5)
-        with pytest.raises(TypeError):
-            Resize(['gt_img'], (0.4, 0.2))
-        with pytest.raises(TypeError):
-            Resize(['gt_img'], dict(test=None))
-
-        target_keys = ['alpha']
-
-        alpha = np.random.rand(240, 320).astype(np.float32)
-        results = dict(alpha=alpha)
-        resize = Resize(keys=['alpha'], size_factor=32, max_size=None)
+        # test grayscale resize
+        img = np.random.rand(16, 16).astype(np.float32)
+        results = dict(img=img)
+        resize = Resize(scale_factor=4.)
         resize_results = resize(results)
-        assert self.check_keys_contain(resize_results.keys(), target_keys)
-        assert resize_results['alpha'].shape == (224, 320, 1)
-        resize = Resize(keys=['alpha'], size_factor=32, max_size=320)
+        assert resize_results['img'].shape == (64, 64, 1)
+
+        img = np.random.rand(16, 16).astype(np.float32)
+        results = dict(img=img)
+        resize = Resize(scale=(8, 32))
         resize_results = resize(results)
-        assert self.check_keys_contain(resize_results.keys(), target_keys)
-        assert resize_results['alpha'].shape == (224, 320, 1)
-
-        resize = Resize(keys=['alpha'], size_factor=32, max_size=200)
-        resize_results = resize(results)
-        assert self.check_keys_contain(resize_results.keys(), target_keys)
-        assert resize_results['alpha'].shape == (192, 192, 1)
-
-        resize = Resize(['gt_img'], (-1, 200))
-        results = dict(gt_img=self.results['gt'].copy())
-        resize_results = resize(results)
-        assert resize.scale == (np.inf, 200)
-        assert resize_results['gt_img'].shape == (400, 200, 3)
-
-        resize = Resize(['gt_img'], (-1, 200))
-        results = dict(gt_img=self.results['gt'].copy().transpose(1, 0, 2))
-        resize_results = resize(results)
-        assert resize.scale == (np.inf, 200)
-        assert resize_results['gt_img'].shape == (200, 400, 3)
-
-        results = dict(gt_img=self.results['img'].copy())
-        resize_keep_ratio = Resize(['gt_img'], scale=0.5, keep_ratio=True)
-        results = resize_keep_ratio(results)
-        assert results['gt_img'].shape[:2] == (128, 128)
-        assert results['scale_factor'] == 0.5
-
-        results = dict(gt_img=self.results['img'].copy())
-        resize_keep_ratio = Resize(['gt_img'],
-                                   scale=(128, 128),
-                                   keep_ratio=False)
-        results = resize_keep_ratio(results)
-        assert results['gt_img'].shape[:2] == (128, 128)
-
-        # test input with shape (256, 256)
-        results = dict(gt_img=self.results['img'][..., 0].copy())
-        resize = Resize(['gt_img'], scale=(128, 128), keep_ratio=False)
-        results = resize(results)
-        assert results['gt_img'].shape == (128, 128, 1)
-
-        name_ = str(resize_keep_ratio)
-        assert name_ == resize_keep_ratio.__class__.__name__ + (
-            f"(keys={['gt_img']}, scale=(128, 128), "
-            f'keep_ratio={False}, size_factor=None, '
-            'max_size=None,interpolation=bilinear)')
-
-
-def test_random_img_noise():
-    img = np.random.randn(256, 128, 3).astype(np.float32)
-    results = dict(img=copy.deepcopy(img))
-    noise_uniform = RandomImgNoise(['img'], 1, 2, distribution='uniform')
-    results = noise_uniform(results)
-    assert (results['img'] - img <= 2).all()
-    assert (results['img'] - img >= 1).all()
-
-    repr_str = noise_uniform.__class__.__name__
-    repr_str += (f'(keys={noise_uniform.keys}, '
-                 f'lower_bound={noise_uniform.lower_bound}, '
-                 f'upper_bound={noise_uniform.upper_bound})')
-
-    assert str(noise_uniform) == repr_str
-
-    img = np.random.randn(256, 128, 3).astype(np.float32)
-    results = dict(img=copy.deepcopy(img))
-    noise_normal = RandomImgNoise(['img'], distribution='normal')
-    results = noise_normal(results)
-    assert (results['img'] - img <= 1 / 128.).all()
-    assert (results['img'] - img >= 0).all()
-
-    repr_str = noise_normal.__class__.__name__
-    repr_str += (f'(keys={noise_normal.keys}, '
-                 f'lower_bound={noise_normal.lower_bound}, '
-                 f'upper_bound={noise_normal.upper_bound})')
-
-    assert str(noise_normal) == repr_str
-
-    with pytest.raises(AssertionError):
-        RandomImgNoise([])
-    with pytest.raises(KeyError):
-        RandomImgNoise(['img'], distribution='test')
+        assert resize_results['img'].shape == (32, 8, 1)
 
 
 def test_random_long_edge_crop():
@@ -274,12 +181,11 @@ def test_center_long_edge_crop():
 def test_numpy_pad():
     results = dict(img=np.zeros((5, 5, 1)))
 
-    pad = NumpyPad(['img'], ((2, 2), (0, 0), (0, 0)))
+    pad = NumpyPad(((2, 2), (0, 0), (0, 0)))
     results = pad(results)
     assert results['img'].shape == (9, 5, 1)
 
     repr_str = pad.__class__.__name__
-    repr_str += (
-        f'(keys={pad.keys}, padding={pad.padding}, kwargs={pad.kwargs})')
+    repr_str += (f'(padding={pad.padding}, kwargs={pad.kwargs})')
 
     assert str(pad) == repr_str

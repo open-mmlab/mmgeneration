@@ -7,11 +7,11 @@ from mmengine.evaluator import BaseMetric, Evaluator
 from mmengine.model import BaseModel
 from torch.utils.data.dataloader import DataLoader
 
-from mmgen.registry import EVALUATOR
+from mmgen.registry import EVALUATORS
 from mmgen.utils.typing import ForwardOutputs, ValTestStepInputs
 
 
-@EVALUATOR.register_module()
+@EVALUATORS.register_module()
 class GenEvaluator(Evaluator):
     """Evaluator for generative models. Unlike high-level vision tasks, metrics
     for generative models have various input types. For example, Inception
