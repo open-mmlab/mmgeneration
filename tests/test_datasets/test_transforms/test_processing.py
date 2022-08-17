@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from mmgen.datasets.transforms import (CenterCropLongEdge, Flip, NumpyPad,
-                                      RandomCropLongEdge, Resize)
+                                       RandomCropLongEdge, Resize)
 
 
 class TestAugmentations(object):
