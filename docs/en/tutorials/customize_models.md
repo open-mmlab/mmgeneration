@@ -80,10 +80,10 @@ If you have already import some modules in a `__init__.py` file, the code still 
 
 ### Modify config file to use new model
 
-As discussed in the [tutorial for our config system](https://github.com/open-mmlab/mmgeneration/blob/master/docs/en/tutorials/config.md), users are recommended to create a new config file based on existing standard configs. Here, we show how to modify the [StyleGAN2 model](https://github.com/open-mmlab/mmgeneration/blob/master/configs/styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py) with our new generator:
+As discussed in the [tutorial for our config system](https://github.com/open-mmlab/mmgeneration/blob/master/docs/en/tutorials/config.md), users are recommended to create a new config file based on existing standard configs. Here, we show how to modify the [StyleGAN2 model](https://github.com/open-mmlab/mmgeneration/blob/master/configs/styleganv2/stylegan2_c2_8xb4-800kiters_ffhq-256x256.py) with our new generator:
 
 ```python
-_base_ = ['configs/styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py']
+_base_ = ['configs/styleganv2/stylegan2_c2_8xb4-800kiters_ffhq-256x256.py']
 
 model = dict(generator=dict(type='NewGenerator'))
 ```
@@ -91,7 +91,7 @@ model = dict(generator=dict(type='NewGenerator'))
 Defining the new config file in this way will help us to modify the generator to our new architecture while keeping other configuration unchanged. However, if you do not want to inherit other arguments defined in the `_base_` config file, you can apply the `_delete_` keyword in this way:
 
 ```python
-_base_ = ['configs/styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py']
+_base_ = ['configs/styleganv2/stylegan2_c2_8xb4-800kiters_ffhq-256x256.py']
 
 model = dict(generator=dict(_delete_=True, type='NewGenerator'))
 ```

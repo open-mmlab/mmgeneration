@@ -147,7 +147,7 @@ PYTHONPATH="$(dirname $0)/..":$PYTHONPATH
 ```python
 from mmgen.apis import init_model， sample_unconditional_model
 
-config_file = 'configs/styleganv2/stylegan2_c2_lsun-church_256_b4x8_800k.py'
+config_file = 'configs/styleganv2/stylegan2_c2_8xb4-800kiters_lsun-church-256x256.py'
 # you can download this checkpoint in advance and use a local file path.
 checkpoint_file = 'https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth'
 device = 'cuda:0'
