@@ -8,7 +8,7 @@ model_wrapper_cfg = dict(find_unused_parameters=True)
 
 # TRAIN
 train_cfg = dict(max_iters=280000)
-data_roots = {'128': './data/celeba-cropped/images_aligned_png'}
+data_roots = {'128': './data/celeba-cropped/cropped_images_aligned_png'}
 train_dataloader = dict(batch_size=64, dataset=dict(data_roots=data_roots))
 
 optim_wrapper = dict(

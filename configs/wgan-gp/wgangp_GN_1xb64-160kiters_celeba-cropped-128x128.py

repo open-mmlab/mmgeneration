@@ -5,7 +5,7 @@ _base_ = [
 
 # `batch_size` and `data_root` need to be set.
 batch_size = 64
-data_root = './data/celeba-cropped/images_aligned_png/'
+data_root = './data/celeba-cropped/cropped_images_aligned_png/'
 train_dataloader = dict(
     batch_size=batch_size, dataset=dict(data_root=data_root))
 
