@@ -22,7 +22,7 @@ param_scheduler = dict(
     begin=40000,
     end=80000)
 
-dataroot = './data/unpaired_facades'
+dataroot = './data/cyclegan'
 train_pipeline = [
     dict(
         type='LoadImageFromFile',
