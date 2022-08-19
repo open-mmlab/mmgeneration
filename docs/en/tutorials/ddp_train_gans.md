@@ -85,4 +85,4 @@ runner = dict(
     pass_training_status=True)
 ```
 
-In [`dcgan config file`](https://github.com/open-mmlab/mmgeneration/tree/master/configs/dcgan/dcgan_celeba-cropped_64_b128x1_300k.py), we have already provided an example for using `DDPWrapper` in MMGeneration.
+In [`dcgan config file`](https://github.com/open-mmlab/mmgeneration/tree/master/configs/dcgan/dcgan_1xb128-300kiters_celeba-cropped-64.py), we have already provided an example for using `DDPWrapper` in MMGeneration.

@@ -19,7 +19,7 @@ import mmcv
 from mmgen.apis import init_model, sample_unconditional_model
 
 # Specify the path to model config and checkpoint file
-config_file = 'configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py'
+config_file = 'configs/styleganv2/stylegan2_c2_8xb4_ffhq-1024x1024.py'
 # you can download this checkpoint in advance and use a local file path.
 checkpoint_file = 'https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_ffhq_1024_b4x8_20210407_150045-618c9024.pth'
 
@@ -51,7 +51,7 @@ import mmcv
 from mmgen.apis import init_model, sample_conditional_model
 
 # Specify the path to model config and checkpoint file
-config_file = 'configs/sagan/sagan_128_woReLUinplace_noaug_bigGAN_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8.py'
+config_file = 'configs/sagan/sagan_woReLUinplace-Glr1e-4_Dlr4e-4_noaug-ndisc1-8xb32-bigGAN-sch_imagenet1k-128x128.py'
 # you can download this checkpoint in advance and use a local file path.
 checkpoint_file = 'https://download.openmmlab.com/mmgen/sagan/sagan_128_woReLUinplace_noaug_bigGAN_imagenet1k_b32x8_Glr1e-4_Dlr-4e-4_ndisc1_20210818_210232-3f5686af.pth'
 
@@ -97,7 +97,7 @@ import mmcv
 from mmgen.apis import init_model, sample_img2img_model
 
 # Specify the path to model config and checkpoint file
-config_file = 'configs/pix2pix/pix2pix_vanilla_unet_bn_wo_jitter_flip_edges2shoes_b1x4_190k.py'
+config_file = 'configs/pix2pix/pix2pix_vanilla-unet-bn_wo-jitter-flip-4xb1-190kiters_edges2shoes.py'
 # you can download this checkpoint in advance and use a local file path.
 checkpoint_file = 'https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_wo_jitter_flip_1x4_186840_edges2shoes_convert-bgr_20210902_170902-0c828552.pth'
 # Specify the path to image you want to translate
@@ -197,7 +197,7 @@ Note that the name of `work_dirs` has already been put into our `.gitignore` fil
 
 ```shell
 sh tools/slurm_train.sh openmmlab-platform stylegan2-1024 \
-    configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py \
+    configs/styleganv2/stylegan2_c2_8xb4_ffhq-1024x1024.py \
     work_dirs/experiments/stylegan2_c2_ffhq_1024_b4x8
 ```
 
@@ -246,7 +246,7 @@ We do not recommend users to use CPU for training because it is too slow. We sup
 Currently, we have supported **6 evaluation metrics**, i.e., MS-SSIM, SWD, IS, FID, Precision&Recall, and PPL. For unconditional GANs, we have provided unified evaluation scripts in [tools/evaluation.py](https://github.com/open-mmlab/mmgeneration/tree/master/tools/evaluation.py). Additionally, [configs/_base_/default_metrics.py](https://github.com/open-mmlab/mmgeneration/tree/master/configs/_base_/default_metrics.py) also offers the commonly used configurations to users. If users want to evaluate their models with some metrics, you can add the `metrics` into your config file like this:
 
 ```python
-# at the end of the configs/styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py
+# at the end of the configs/styleganv2/stylegan2_c2_8xb4-800kiters_ffhq-256x256.py
 metrics = dict(
     fid50k=dict(
         type='FID',
@@ -378,7 +378,7 @@ Inception score is an objective metric for evaluating the quality of generated i
 If you want to evaluate models with `IS` metrics, you can add the `metrics` into your config file like this:
 
 ```python
-# at the end of the configs/pix2pix/pix2pix_vanilla_unet_bn_facades_b1x1_80k.py
+# at the end of the configs/pix2pix/pix2pix_vanilla-unet-bn_1xb1-80kiters_facades.py
 metrics = dict(
     IS=dict(type='IS', num_images=106, image_shape=(3, 256, 256)))
 ```
@@ -387,7 +387,7 @@ You can run the command below to calculate IS.
 
 ```shell
 python tools/utils/translation_eval.py --t photo \
-./configs/pix2pix/pix2pix_vanilla_unet_bn_facades_b1x1_80k.py \
+./configs/pix2pix/pix2pix_vanilla-unet-bn_1xb1-80kiters_facades.py \
 https://download.openmmlab.com/mmgen/pix2pix/refactor/pix2pix_vanilla_unet_bn_1x1_80k_facades_20210902_170442-c0958d50.pth \
 --eval IS
 ```
@@ -435,7 +435,7 @@ You can find the complete implementation in `metrics.py`, which refers to https:
 If you want to evaluate models with `PPL` metrics, you can add the `metrics` into your config file like this:
 
 ```python
-# at the end of the configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py
+# at the end of the configs/styleganv2/stylegan2_c2_8xb4_ffhq-1024x1024.py
 metrics = dict(
     ppl_wend=dict(type='PPL', space='W', sampling='end', num_images=50000, image_shape=(3, 1024, 1024)))
 ```
@@ -443,7 +443,7 @@ metrics = dict(
 You can run the command below to calculate PPL.
 
 ```shell
-python tools/evaluation.py ./configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py \
+python tools/evaluation.py ./configs/styleganv2/stylegan2_c2_8xb4_ffhq-1024x1024.py \
     https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_ffhq_1024_b4x8_20210407_150045-618c9024.pth \
     --batch-size 2 --online --eval ppl_wend
 ```
@@ -455,14 +455,14 @@ You can see the complete implementation in `metrics.py`, which refers to https:/
 If you want to evaluate models with `SWD` metrics, you can add the `metrics` into your config file like this:
 
 ```python
-# at the end of the configs/pggan/pggan_celeba-cropped_128_g8_12Mimgs.py
+# at the end of the configs/pggan/pggan_8xb4-12Mimgs_celeba-cropped-128x128.py
 metrics = dict(swd16k=dict(type='SWD', num_images=16384, image_shape=(3, 128, 128)))
 ```
 
 You can run the command below to calculate SWD.
 
 ```shell
-python tools/evaluation.py ./configs/pggan/pggan_celeba-cropped_128_g8_12Mimgs.py \
+python tools/evaluation.py ./configs/pggan/pggan_8xb4-12Mimgs_celeba-cropped-128x128.py \
     https://download.openmmlab.com/mmgen/pggan/pggan_celeba-cropped_128_g8_20210408_181931-85a2e72c.pth \
     --batch-size 64 --online --eval swd16k
 ```
@@ -473,14 +473,14 @@ Multi-scale structural similarity is used to measure the similarity of two image
 If you want to evaluate models with `MS-SSIM` metrics, you can add the `metrics` into your config file like this:
 
 ```python
-# at the end of the configs/pggan/pggan_celeba-cropped_128_g8_12Mimgs.py
+# at the end of the configs/pggan/pggan_8xb4-12Mimgs_celeba-cropped-128x128.py
 metrics = dict(ms_ssim10k=dict(type='MS_SSIM', num_images=10000))
 ```
 
 You can run the command below to calculate MS-SSIM.
 
 ```shell
-python tools/evaluation.py ./configs/pggan/pggan_celeba-cropped_128_g8_12Mimgs.py \
+python tools/evaluation.py ./configs/pggan/pggan_8xb4-12Mimgs_celeba-cropped-128x128.py \
     https://download.openmmlab.com/mmgen/pggan/pggan_celeba-cropped_128_g8_20210408_181931-85a2e72c.pth \
     --batch-size 64 --online --eval ms_ssim10k
 ```

@@ -80,7 +80,7 @@ Taking the lighting attribute as an example, we adopt the following command on o
 
 ```shell
 python apps/modified_sefa.py \
-    --config configs/positional_encoding_in_gans/mspie-stylegan2_c2_config-f_ffhq_256-512_b3x8_1100k.py \
+    --config configs/positional_encoding_in_gans/mspie-stylegan2-config-f_c2_8xb3-1100kiters_ffhq-256-512.py \
     --ckpt https://download.openmmlab.com/mmgen/pe_in_gans/mspie-stylegan2_c2_config-f_ffhq_256-512_b3x8_1100k_20210406_144927-4f4d5391.pth \
     -i 15 -d 8. --degree-step 0.5 -l 8 9 --sample-path ./work_dirs/sefa-exp/ \
     --sample-cfg chosen_scale=4 randomize_noise=False
