@@ -179,13 +179,19 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
         else:
             n_gpus = int(parse_res.group().split('x')[-1])
 
+    launcher = 'none' if args.local else 'slurm'
+    runner = 'python' if args.local else 'srun python'
+
     # deal cpu train
     ntasks_per_node = min(n_gpus, 8)
     ntasks = n_gpus
+    cpu_info = ''
     if args.cpu:
         n_gpus = 0
         ntasks_per_node = 1
         ntasks = 1
+        launcher = 'none'
+        cpu_info = 'export CUDA_VISIBLE_DEVICES=-1'
 
     job_name = f'{args.job_name}_{fname}'
     work_dir = Path(args.work_dir) / fname
@@ -202,9 +208,6 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
     else:
         quota_cfg = ''
 
-    launcher = 'none' if args.local else 'slurm'
-    runner = 'python' if args.local else 'srun python'
-
     job_script = (f'#!/bin/bash\n'
                   f'#SBATCH --output {work_dir}/job.%j.out\n'
                   f'#SBATCH --partition={args.partition}\n'
@@ -213,8 +216,9 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
                   f'{mail_cfg}{quota_cfg}'
                   f'#SBATCH --ntasks-per-node={ntasks_per_node}\n'
                   f'#SBATCH --ntasks={ntasks}\n'
-                  f'#SBATCH --cpus-per-task=5\n\n'
+                  f'#SBATCH --cpus-per-task=16\n\n'
                   f'export MASTER_PORT={port}\n'
+                  f'{cpu_info}\n'
                   f'{runner} -u {script_name} {config} '
                   f'--work-dir={work_dir} '
                   f'--launcher={launcher}')
@@ -284,6 +288,10 @@ def train(args):
             continue
 
         model_name = model_info.name
+
+        if train_list is not None and model_info.name not in train_list:
+            continue
+
         if 'cvt' in model_name:
             print(f'Skip converted config: {model_name} ({model_info.config})')
             continue
