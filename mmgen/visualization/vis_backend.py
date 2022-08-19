@@ -5,7 +5,7 @@ from typing import Optional, Union
 
 import cv2
 import imageio
-import mmcv
+import mmengine
 import numpy as np
 import torch
 from mmengine import MessageHub
@@ -99,7 +99,7 @@ class GenVisBackend(BaseVisBackend):
                 self._ceph_path.endswith('/') else self._ceph_path
 
             file_client_args = dict(path_mapping={src_path: tar_path})
-            self._file_client = mmcv.FileClient(
+            self._file_client = mmengine.FileClient(
                 backend='petrel', **file_client_args)
 
     @property  # type: ignore

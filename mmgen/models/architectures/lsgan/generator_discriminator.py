@@ -3,9 +3,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
-from mmcv.cnn.bricks import build_activation_layer
 
-from mmgen.registry import MODULES
+from mmgen.registry import MODELS, MODULES
 from ..common import get_module_device
 
 
@@ -70,8 +69,8 @@ class LSGANGenerator(nn.Module):
             nn.Linear(noise_size, input_scale * input_scale * base_channels))
         self.noise2feat_tail = nn.Sequential(nn.BatchNorm2d(base_channels))
         if default_act_cfg is not None:
-            self.noise2feat_tail.add_module(
-                'act', build_activation_layer(default_act_cfg))
+            self.noise2feat_tail.add_module('act',
+                                            MODELS.build(default_act_cfg))
 
         # the number of times for upsampling
         self.num_upsamples = int(np.log2(output_scale // input_scale)) - 2
@@ -276,7 +275,7 @@ class LSGANDiscriminator(nn.Module):
             nn.Linear(output_scale * output_scale * curr_channels,
                       out_channels))
         if self.with_out_activation:
-            self.out_activation = build_activation_layer(out_act_cfg)
+            self.out_activation = MODELS.build(out_act_cfg)
 
     def forward(self, x):
         """Forward function.

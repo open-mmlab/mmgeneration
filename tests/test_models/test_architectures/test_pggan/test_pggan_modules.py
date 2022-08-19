@@ -9,6 +9,9 @@ from mmgen.models import (EqualizedLR, EqualizedLRConvDownModule,
                           EqualizedLRConvModule, EqualizedLRConvUpModule,
                           EqualizedLRLinearModule, MiniBatchStddevLayer,
                           PGGANNoiseTo2DFeat, PixelNorm, equalized_lr)
+from mmgen.utils import register_all_modules
+
+register_all_modules()
 
 
 class TestEqualizedLR:

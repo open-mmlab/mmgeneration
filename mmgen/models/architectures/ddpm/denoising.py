@@ -3,10 +3,10 @@ from copy import deepcopy
 
 import torch
 import torch.nn as nn
-from mmcv.cnn import constant_init
 from mmcv.cnn.bricks.conv_module import ConvModule
 from mmcv.runner import load_checkpoint
 from mmengine.logging import MMLogger
+from mmengine.model.utils import constant_init
 
 from mmgen.models.builder import MODULES, build_module
 from .modules import EmbedSequential, TimeEmbedding

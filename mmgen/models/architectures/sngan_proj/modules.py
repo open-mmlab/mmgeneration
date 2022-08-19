@@ -3,14 +3,14 @@ from copy import deepcopy
 
 import numpy as np
 import torch.nn as nn
-from mmcv.cnn import (build_activation_layer, build_norm_layer,
-                      build_upsample_layer, constant_init, xavier_init)
+from mmcv.cnn import build_norm_layer
+from mmengine.model.utils import constant_init, xavier_init
 from torch.nn.init import xavier_uniform_
 from torch.nn.utils import spectral_norm
 
 from mmgen.models.architectures.biggan.biggan_snmodule import SNEmbedding
 from mmgen.models.architectures.biggan.modules import SNConvModule
-from mmgen.registry import MODULES
+from mmgen.registry import MODELS, MODULES
 from mmgen.utils import check_dist_init
 
 
@@ -89,12 +89,12 @@ class SNGANGenResBlock(nn.Module):
         self.with_upsample = upsample
         self.init_type = init_cfg.get('type', None)
 
-        self.activate = build_activation_layer(act_cfg)
+        self.activate = MODELS.build(act_cfg)
         hidden_channels = out_channels if hidden_channels is None \
             else hidden_channels
 
         if self.with_upsample:
-            self.upsample = build_upsample_layer(upsample_cfg)
+            self.upsample = MODELS.build(upsample_cfg)
 
         self.conv_cfg = deepcopy(self._default_conv_cfg)
         if conv_cfg is not None:
@@ -257,7 +257,7 @@ class SNGANDiscResBlock(nn.Module):
         if conv_cfg is not None:
             self.conv_cfg.update(conv_cfg)
 
-        self.activate = build_activation_layer(act_cfg)
+        self.activate = MODELS.build(act_cfg)
 
         sn_cfg = dict(eps=sn_eps, sn_style=sn_style)
         self.conv_1 = SNConvModule(
@@ -394,7 +394,7 @@ class SNGANDiscHeadResBlock(nn.Module):
         if conv_cfg is not None:
             self.conv_cfg.update(conv_cfg)
 
-        self.activate = build_activation_layer(act_cfg)
+        self.activate = MODELS.build(act_cfg)
 
         sn_cfg = dict(eps=sn_eps, sn_style=sn_style)
         self.conv_1 = SNConvModule(

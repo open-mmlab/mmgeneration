@@ -1,8 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Optional
 
-from mmcv import FileClient
-from mmengine import list_from_file
+from mmengine import FileClient, list_from_file
 from mmengine.dataset import BaseDataset
 
 from mmgen.registry import DATASETS

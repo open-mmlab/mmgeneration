@@ -5,14 +5,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn.bricks import (NORM_LAYERS, PLUGIN_LAYERS, ConvModule,
-                             build_activation_layer, build_norm_layer,
-                             build_upsample_layer)
-from mmcv.cnn.utils import normal_init
+from mmcv.cnn.bricks import ConvModule, build_norm_layer
+from mmengine.model.utils import normal_init
 from torch.nn.init import _calculate_correct_fan
 
 from mmgen.models.common import AllGatherLayer
-from mmgen.registry import MODULES
+from mmgen.registry import MODELS, MODULES
 
 
 class EqualizedLR:
@@ -164,7 +162,7 @@ def pixel_norm(x, eps=1e-6):
 
 
 @MODULES.register_module()
-@NORM_LAYERS.register_module()
+@MODELS.register_module()
 class PixelNorm(nn.Module):
     """Pixel Normalization.
 
@@ -193,7 +191,7 @@ class PixelNorm(nn.Module):
         return pixel_norm(x, self.eps)
 
 
-@PLUGIN_LAYERS.register_module()
+@MODELS.register_module()
 class EqualizedLRConvModule(ConvModule):
     r"""Equalized LR ConvModule.
 
@@ -223,7 +221,7 @@ class EqualizedLRConvModule(ConvModule):
         normal_init(self.conv)
 
 
-@PLUGIN_LAYERS.register_module()
+@MODELS.register_module()
 class EqualizedLRConvUpModule(EqualizedLRConvModule):
     r"""Equalized LR (Upsample + Conv) Module.
 
@@ -254,7 +252,7 @@ class EqualizedLRConvUpModule(EqualizedLRConvModule):
                 self.conv.register_forward_pre_hook(
                     EqualizedLRConvUpModule.fused_nn_hook)
             else:
-                self.upsample_layer = build_upsample_layer(upsample)
+                self.upsample_layer = MODELS.build(upsample)
 
     def forward(self, x, **kwargs):
         """Forward function.
@@ -280,7 +278,7 @@ class EqualizedLRConvUpModule(EqualizedLRConvModule):
         module.weight = weight
 
 
-@PLUGIN_LAYERS.register_module()
+@MODELS.register_module()
 class EqualizedLRConvDownModule(EqualizedLRConvModule):
     r"""Equalized LR (Conv + Downsample)  Module.
 
@@ -343,7 +341,7 @@ class EqualizedLRConvDownModule(EqualizedLRConvModule):
         module.weight = weight
 
 
-@PLUGIN_LAYERS.register_module()
+@MODELS.register_module()
 class EqualizedLRLinearModule(nn.Linear):
     r"""Equalized LR LinearModule.
 
@@ -408,7 +406,7 @@ class PGGANNoiseTo2DFeat(nn.Module):
             bias=False)
 
         if self.with_activation:
-            self.activation = build_activation_layer(act_cfg)
+            self.activation = MODELS.build(act_cfg)
 
         # add bias for reshaped 2D feature.
         self.register_parameter(
@@ -479,10 +477,10 @@ class PGGANDecisionHead(nn.Module):
 
         # setup activation layers
         if self.with_activation:
-            self.activation = build_activation_layer(act_cfg)
+            self.activation = MODELS.build(act_cfg)
 
         if self.with_out_activation:
-            self.out_activation = build_activation_layer(out_act)
+            self.out_activation = MODELS.build(out_act)
 
     def forward(self, x):
         """Forward function.
@@ -508,7 +506,7 @@ class PGGANDecisionHead(nn.Module):
 
 
 @MODULES.register_module()
-@PLUGIN_LAYERS.register_module()
+@MODELS.register_module()
 class MiniBatchStddevLayer(nn.Module):
     """Minibatch standard deviation.
 

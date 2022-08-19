@@ -5,9 +5,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
-from mmcv.cnn.bricks.upsample import build_upsample_layer
 
-from mmgen.registry import MODULES
+from mmgen.registry import MODELS, MODULES
 from ..common import get_module_device
 from .modules import ConvLNModule, WGANDecisionHead, WGANNoiseTo2DFeat
 
@@ -78,8 +77,7 @@ class WGANGPGenerator(nn.Module):
 
         log2scale = int(np.log2(self.out_scale))
         for i in range(3, log2scale + 1):
-            self.conv_blocks.append(
-                build_upsample_layer(self._default_upsample_cfg))
+            self.conv_blocks.append(MODELS.build(self._default_upsample_cfg))
             self.conv_blocks.append(
                 ConvModule(self._default_channels_per_scale[str(2**(i - 1))],
                            self._default_channels_per_scale[str(2**i)],

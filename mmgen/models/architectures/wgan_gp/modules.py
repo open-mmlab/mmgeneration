@@ -3,10 +3,10 @@ from copy import deepcopy
 
 import torch
 import torch.nn as nn
-from mmcv.cnn import (PLUGIN_LAYERS, ConvModule, build_activation_layer,
-                      build_norm_layer, constant_init)
+from mmcv.cnn import ConvModule, build_norm_layer
+from mmengine.model.utils import constant_init
 
-from mmgen.registry import MODULES
+from mmgen.registry import MODELS, MODULES
 
 
 @MODULES.register_module()
@@ -46,7 +46,7 @@ class WGANNoiseTo2DFeat(nn.Module):
         self.linear = nn.Linear(noise_size, out_channels * 16, bias=False)
 
         if self.with_activation:
-            self.activation = build_activation_layer(act_cfg)
+            self.activation = MODELS.build(act_cfg)
 
         # add bias for reshaped 2D feature.
         self.register_parameter(
@@ -134,7 +134,7 @@ class WGANDecisionHead(nn.Module):
             self.mid_channels, self.out_channels, bias=bias)
 
         if self.with_out_activation:
-            self.out_activation = build_activation_layer(out_act)
+            self.out_activation = MODELS.build(out_act)
 
         self._init_weight()
 
@@ -160,7 +160,7 @@ class WGANDecisionHead(nn.Module):
         nn.init.constant_(self.linear.bias, 0.)
 
 
-@PLUGIN_LAYERS.register_module()
+@MODELS.register_module()
 class ConvLNModule(ConvModule):
     r"""ConvModule with Layer Normalization.
 

@@ -6,9 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn.bricks.upsample import build_upsample_layer
 
-from mmgen.registry import MODULES
+from mmgen.registry import MODELS, MODULES
 from ..common import get_module_device
 from .modules import (EqualizedLRConvDownModule, EqualizedLRConvModule,
                       EqualizedLRConvUpModule, MiniBatchStddevLayer,
@@ -116,7 +115,7 @@ class PGGANGenerator(nn.Module):
             self.conv_blocks.extend(self._get_upconv_block(in_ch, s))
 
         # build upsample layer for residual path
-        self.upsample_layer = build_upsample_layer(self.upsample_cfg)
+        self.upsample_layer = MODELS.build(self.upsample_cfg)
 
     def _get_torgb_layer(self, in_channels):
         return EqualizedLRConvModule(

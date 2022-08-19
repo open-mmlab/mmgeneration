@@ -4,17 +4,17 @@ from copy import deepcopy
 import numpy as np
 import torch
 import torch.nn as nn
-from mmcv.cnn import (ConvModule, build_activation_layer, constant_init,
-                      xavier_init)
+from mmcv.cnn import ConvModule
 from mmcv.runner import load_checkpoint
 from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
 from mmengine import is_list_of
 from mmengine.logging import MMLogger
+from mmengine.model.utils import constant_init, xavier_init
 from torch.nn.init import xavier_uniform_
 from torch.nn.utils import spectral_norm
 
 from mmgen.models.builder import build_module
-from mmgen.registry import MODULES
+from mmgen.registry import MODELS, MODULES
 from mmgen.utils import check_dist_init
 from ..common import get_module_device
 
@@ -234,7 +234,7 @@ class SNGANGenerator(nn.Module):
             act_cfg=act_cfg,
             order=('norm', 'act', 'conv'),
             with_spectral_norm=with_spectral_norm)
-        self.final_act = build_activation_layer(dict(type='Tanh'))
+        self.final_act = MODELS.build(dict(type='Tanh'))
 
         self.init_weights(pretrained)
 
@@ -652,7 +652,7 @@ class ProjDiscriminator(nn.Module):
             if with_spectral_norm:
                 self.proj_y = spectral_norm(self.proj_y)
 
-        self.activate = build_activation_layer(act_cfg)
+        self.activate = MODELS.build(act_cfg)
         self.init_weights(pretrained)
 
     def forward(self, x, label=None):
