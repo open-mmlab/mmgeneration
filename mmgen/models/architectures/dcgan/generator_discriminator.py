@@ -2,10 +2,11 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from mmcv.cnn import ConvModule, normal_init
+from mmcv.cnn import ConvModule
 from mmcv.runner import load_checkpoint
 from mmcv.utils.parrots_wrapper import _BatchNorm
 from mmengine.logging import MMLogger
+from mmengine.model.utils import normal_init
 
 from mmgen.models.builder import MODULES
 from ..common import get_module_device

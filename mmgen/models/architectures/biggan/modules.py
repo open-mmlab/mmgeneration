@@ -6,12 +6,11 @@ import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule
-from mmcv.cnn.bricks import build_activation_layer, build_upsample_layer
 from torch.nn import Parameter
 from torch.nn.modules.batchnorm import SyncBatchNorm
 from torch.nn.utils import spectral_norm
 
-from mmgen.registry import MODULES
+from mmgen.registry import MODELS, MODULES
 from .biggan_snmodule import SNConv2d, SNLinear
 
 
@@ -102,11 +101,11 @@ class BigGANGenResBlock(nn.Module):
                  input_is_label=False,
                  auto_sync_bn=True):
         super().__init__()
-        self.activation = build_activation_layer(act_cfg)
+        self.activation = MODELS.build(act_cfg)
         self.upsample_cfg = deepcopy(upsample_cfg)
         self.with_upsample = upsample_cfg is not None
         if self.with_upsample:
-            self.upsample_layer = build_upsample_layer(self.upsample_cfg)
+            self.upsample_layer = MODELS.build(self.upsample_cfg)
         self.learnable_sc = in_channels != out_channels or self.with_upsample
         if self.learnable_sc:
             self.shortcut = SNConvModule(
@@ -414,7 +413,7 @@ class BigGANDiscResBlock(nn.Module):
                  with_spectral_norm=True,
                  is_head_block=False):
         super().__init__()
-        self.activation = build_activation_layer(act_cfg)
+        self.activation = MODELS.build(act_cfg)
         self.with_downsample = with_downsample
         self.is_head_block = is_head_block
         if self.with_downsample:
@@ -544,11 +543,11 @@ class BigGANDeepGenResBlock(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.hidden_channels = self.in_channels // channel_ratio
-        self.activation = build_activation_layer(act_cfg)
+        self.activation = MODELS.build(act_cfg)
         self.upsample_cfg = deepcopy(upsample_cfg)
         self.with_upsample = upsample_cfg is not None
         if self.with_upsample:
-            self.upsample_layer = build_upsample_layer(self.upsample_cfg)
+            self.upsample_layer = MODELS.build(self.upsample_cfg)
         # Here in_channels of BigGANGenResBlock equal to num_features of
         # BigGANConditionBN
         self.bn1 = BigGANConditionBN(
@@ -706,7 +705,7 @@ class BigGANDeepDiscResBlock(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.hidden_channels = self.out_channels // channel_ratio
-        self.activation = build_activation_layer(act_cfg)
+        self.activation = MODELS.build(act_cfg)
         self.with_downsample = with_downsample
 
         if self.with_downsample:

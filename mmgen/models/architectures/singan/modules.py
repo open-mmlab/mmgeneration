@@ -1,9 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
-from mmcv.cnn import ConvModule, constant_init, normal_init
+from mmcv.cnn import ConvModule
 from mmcv.runner import load_checkpoint
 from mmcv.utils.parrots_wrapper import _BatchNorm
 from mmengine.logging import MMLogger
+from mmengine.model.utils import constant_init, normal_init
 
 
 class GeneratorBlock(nn.Module):

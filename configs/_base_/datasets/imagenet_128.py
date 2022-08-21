@@ -1,6 +1,6 @@
 # dataset settings
 custom_imports = dict(
-    imports=['mmcls.datasets.pipelines'], allow_failed_imports=False)
+    imports=['mmcls.datasets.transforms'], allow_failed_imports=False)
 dataset_type = 'mmcls.ImageNet'
 
 # different from mmcls, we adopt the setting used in BigGAN.

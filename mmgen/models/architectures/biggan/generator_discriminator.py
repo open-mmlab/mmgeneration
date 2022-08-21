@@ -4,14 +4,13 @@ from copy import deepcopy
 import mmcv
 import torch
 import torch.nn as nn
-from mmcv.cnn import normal_init, xavier_init
-from mmcv.cnn.bricks import build_activation_layer
 from mmcv.runner import load_checkpoint
 from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
 from mmengine.logging import MMLogger
+from mmengine.model.utils import normal_init, xavier_init
 from torch.nn.utils import spectral_norm
 
-from mmgen.models.builder import MODULES, build_module
+from mmgen.models.builder import MODELS, MODULES, build_module
 from ..common import get_module_device
 from .biggan_snmodule import SNEmbedding, SNLinear
 from .modules import SelfAttentionBlock, SNConvModule
@@ -561,7 +560,7 @@ class BigGANDiscriminator(nn.Module):
                         sn_eps=sn_eps,
                         sn_style=sn_style))
 
-        self.activate = build_activation_layer(act_cfg)
+        self.activate = MODELS.build(act_cfg)
 
         self.decision = nn.Linear(self.arch['out_channels'][-1], out_channels)
         if with_spectral_norm:

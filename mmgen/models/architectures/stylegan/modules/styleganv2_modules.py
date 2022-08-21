@@ -7,7 +7,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn.bricks.activation import build_activation_layer
 from mmcv.ops.fused_bias_leakyrelu import (FusedBiasLeakyReLU,
                                            fused_bias_leakyrelu)
 from mmcv.ops.upfirdn2d import upfirdn2d
@@ -19,6 +18,7 @@ from mmgen.models.architectures.pggan import (EqualizedLRConvModule,
                                               equalized_lr)
 from mmgen.models.common import AllGatherLayer
 from mmgen.ops import conv2d, conv_transpose2d
+from mmgen.registry import MODELS
 
 
 class _FusedBiasLeakyReLU(FusedBiasLeakyReLU):
@@ -87,7 +87,7 @@ class EqualLinearActModule(nn.Module):
                 self.activate = partial(fused_bias_leakyrelu, **act_cfg)
             else:
                 self.act_type = 'normal'
-                self.activate = build_activation_layer(act_cfg)
+                self.activate = MODELS.build(act_cfg)
         else:
             self.act_type = None
 

@@ -7,13 +7,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import ACTIVATION_LAYERS
-from mmcv.cnn.bricks import build_activation_layer, build_norm_layer
-from mmcv.cnn.utils import constant_init
+from mmcv.cnn.bricks import build_norm_layer
+from mmengine.model.utils import constant_init
 from mmengine.utils import TORCH_VERSION, digit_version
 
 from mmgen.models.builder import build_module
-from mmgen.registry import MODULES
+from mmgen.registry import MODELS, MODULES
 
 
 class EmbedSequential(nn.Sequential):
@@ -33,7 +32,7 @@ class EmbedSequential(nn.Sequential):
         return x
 
 
-@ACTIVATION_LAYERS.register_module()
+@MODELS.register_module()
 class SiLU(nn.Module):
     r"""Applies the Sigmoid Linear Unit (SiLU) function, element-wise.
     The SiLU function is also known as the swish function.
@@ -144,8 +143,7 @@ class TimeEmbedding(nn.Module):
                  act_cfg=dict(type='SiLU', inplace=False)):
         super().__init__()
         self.blocks = nn.Sequential(
-            nn.Linear(in_channels, embedding_channels),
-            build_activation_layer(act_cfg),
+            nn.Linear(in_channels, embedding_channels), MODELS.build(act_cfg),
             nn.Linear(embedding_channels, embedding_channels))
 
         # add `dim` to embedding config
@@ -237,7 +235,7 @@ class DenoisingResBlock(nn.Module):
         _, norm_1 = build_norm_layer(_norm_cfg, in_channels)
         conv_1 = [
             norm_1,
-            build_activation_layer(act_cfg),
+            MODELS.build(act_cfg),
             nn.Conv2d(in_channels, out_channels, 3, padding=1)
         ]
         self.conv_1 = nn.Sequential(*conv_1)
@@ -252,7 +250,7 @@ class DenoisingResBlock(nn.Module):
             default_args=norm_with_embedding_cfg)
 
         conv_2 = [
-            build_activation_layer(act_cfg),
+            MODELS.build(act_cfg),
             nn.Dropout(dropout),
             nn.Conv2d(out_channels, out_channels, 3, padding=1)
         ]
@@ -333,7 +331,7 @@ class NormWithEmbedding(nn.Module):
 
         embedding_output = in_channels * 2 if use_scale_shift else in_channels
         self.embedding_layer = nn.Sequential(
-            build_activation_layer(act_cfg),
+            MODELS.build(act_cfg),
             nn.Linear(embedding_channels, embedding_output))
 
     def forward(self, x, y):
