@@ -217,7 +217,7 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
                   f'#SBATCH --output {work_dir}/job.%j.out\n'
                   f'#SBATCH --partition={args.partition}\n'
                   f'#SBATCH --job-name {job_name}\n'
-                  f'#SBATCH --gres=gpu:{n_gpus}\n'
+                  f'#SBATCH --gres=gpu:{ntasks_per_node}\n'
                   f'{mail_cfg}{quota_cfg}'
                   f'#SBATCH --ntasks-per-node={ntasks_per_node}\n'
                   f'#SBATCH --ntasks={ntasks}\n'
