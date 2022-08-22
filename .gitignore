@@ -112,6 +112,7 @@ data/
 *.pkl.json
 *.log.json
 work_dirs/
+work_dir
 *.DS_Store
 mmgen/.mim
 !tests/data
