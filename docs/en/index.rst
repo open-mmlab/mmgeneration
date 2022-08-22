@@ -43,6 +43,7 @@ Welcome to MMGeneration's documentation!
    :maxdepth: 1
    :caption: Notes
 
+<<<<<<< HEAD
    notes/contribution_guide.md
    notes/projects.md
    notes/changelog.md
