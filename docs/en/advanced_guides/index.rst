@@ -4,7 +4,7 @@ Basic Concepts
 
 .. toctree::
    :maxdepth: 1
-   
+
    data_flow.md
    structures.md
    models.md
@@ -24,4 +24,3 @@ Component Customization
    add_transforms.md
    add_metrics.md
    customize_runtime.md
-   
