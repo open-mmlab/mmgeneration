@@ -1,6 +1,6 @@
 Welcome to MMGeneration's documentation!
 =======================================
-   
+
 
 .. toctree::
    :maxdepth: 1
@@ -18,13 +18,13 @@ Welcome to MMGeneration's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Advanced Guides
-   
+
    advanced_guides/index.rst
 
 .. toctree::
    :maxdepth: 1
    :caption: Migration
-   
+
    migration.md
 
 .. toctree::
@@ -42,7 +42,7 @@ Welcome to MMGeneration's documentation!
 .. toctree::
    :maxdepth: 1
    :caption: Notes
-   
+
    notes/contribution_guide.md
    notes/projects.md
    notes/changelog.md
