@@ -2,8 +2,8 @@
 
 ## Installation
 
-<! -- 与 MMGen 0.xx 一致-->
+\<! -- 与 MMGen 0.xx 一致-->
 
 ## Quick Run
 
-<! -- 跑起来 image demo -->
+\<! -- 跑起来 image demo -->
