@@ -119,6 +119,11 @@ def parse_args():
         action='store_true',
         help='run at local instead of cluster.')
     parser.add_argument(
+        '--cpus-per-task',
+        type=int,
+        default=16,
+        help='Number of cpus for each training process.')
+    parser.add_argument(
         '--mail', type=str, help='Mail address to watch train status.')
     parser.add_argument(
         '--mail-type',
@@ -185,13 +190,13 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
     # deal cpu train
     ntasks_per_node = min(n_gpus, 8)
     ntasks = n_gpus
-    cpu_info = ''
+    cuda_limitation = ''
     if args.cpu:
         n_gpus = 0
         ntasks_per_node = 1
         ntasks = 1
         launcher = 'none'
-        cpu_info = 'export CUDA_VISIBLE_DEVICES=-1'
+        cuda_limitation = 'export CUDA_VISIBLE_DEVICES=-1'
 
     job_name = f'{args.job_name}_{fname}'
     work_dir = Path(args.work_dir) / fname
@@ -216,9 +221,9 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
                   f'{mail_cfg}{quota_cfg}'
                   f'#SBATCH --ntasks-per-node={ntasks_per_node}\n'
                   f'#SBATCH --ntasks={ntasks}\n'
-                  f'#SBATCH --cpus-per-task=16\n\n'
+                  f'#SBATCH --cpus-per-task={args.cpus_per_task}\n\n'
                   f'export MASTER_PORT={port}\n'
-                  f'{cpu_info}\n'
+                  f'{cuda_limitation}\n'
                   f'{runner} -u {script_name} {config} '
                   f'--work-dir={work_dir} '
                   f'--launcher={launcher}')
@@ -294,9 +299,6 @@ def train(args):
 
         if 'cvt' in model_name:
             print(f'Skip converted config: {model_name} ({model_info.config})')
-            continue
-
-        if train_list is not None and model_info.name not in train_list:
             continue
 
         script_path = create_train_job_batch(commands, model_info, args, port,

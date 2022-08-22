@@ -11,7 +11,7 @@ model = dict(
 
 # define dataset
 batch_size = 128
-data_root = 'data/lsun/image/bedroom_train'
+data_root = 'data/lsun/images/bedroom_train'
 train_dataloader = dict(
     batch_size=batch_size, dataset=dict(data_root=data_root))
 
