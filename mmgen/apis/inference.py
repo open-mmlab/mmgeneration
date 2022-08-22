@@ -2,6 +2,7 @@
 import mmcv
 import torch
 from mmcv.runner import load_checkpoint
+from mmcv.runner import set_random_seed as set_random_seed_mmcv
 from mmengine import is_list_of
 from mmengine.config import Config
 from mmengine.dataset import Compose
@@ -11,6 +12,24 @@ from mmgen.registry import MODELS
 from mmgen.utils import register_all_modules
 
 register_all_modules()
+
+
+def set_random_seed(seed, deterministic=False, use_rank_shift=True):
+    """Set random seed.
+
+    In this function, we just modify the default behavior of the similar
+    function defined in MMCV.
+    Args:
+        seed (int): Seed to be used.
+        deterministic (bool): Whether to set the deterministic option for
+            CUDNN backend, i.e., set `torch.backends.cudnn.deterministic`
+            to True and `torch.backends.cudnn.benchmark` to False.
+            Default: False.
+        rank_shift (bool): Whether to add rank number to the random seed to
+            have different random seed in different threads. Default: True.
+    """
+    set_random_seed_mmcv(
+        seed, deterministic=deterministic, use_rank_shift=use_rank_shift)
 
 
 def init_model(config, checkpoint=None, device='cuda:0', cfg_options=None):
