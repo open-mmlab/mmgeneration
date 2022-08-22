@@ -1,10 +1,8 @@
-
 # Model Zoo Statistics
 
-* Number of papers: 16
-* Number of checkpoints: 100
+- Number of papers: 16
 
-	* [BigGAN](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan) (7 ckpts)
+- Number of checkpoints: 100
 
 
 	* [CycleGAN: Unpaired Image-to-Image Translation Using Cycle-Consistent Adversarial Networks](https://github.com/open-mmlab/mmgeneration/blob/master/configs/cyclegan) (6 ckpts)
@@ -28,15 +26,13 @@
 	* [Pix2Pix](https://github.com/open-mmlab/mmgeneration/blob/master/configs/pix2pix) (4 ckpts)
 
 
-- Number of checkpoints: 91
+	* [Positional Encoding in GANs](https://github.com/open-mmlab/mmgeneration/blob/master/configs/positional_encoding_in_gans) (21 ckpts)
 
-  - [Large Scale GAN Training for High Fidelity Natural Image Synthesis](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan) (7 ckpts)
 
-  - [CycleGAN: Unpaired Image-to-Image Translation Using Cycle-Consistent Adversarial Networks](https://github.com/open-mmlab/mmgeneration/blob/master/configs/cyclegan) (6 ckpts)
+	* [SAGAN](https://github.com/open-mmlab/mmgeneration/blob/master/configs/sagan) (9 ckpts)
 
-  - [Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks](https://github.com/open-mmlab/mmgeneration/blob/master/configs/dcgan) (3 ckpts)
 
-  - [Geometric GAN](https://github.com/open-mmlab/mmgeneration/blob/master/configs/ggan) (3 ckpts)
+	* [SinGAN](https://github.com/open-mmlab/mmgeneration/blob/master/configs/singan) (3 ckpts)
 
 
 	* [SNGAN](https://github.com/open-mmlab/mmgeneration/blob/master/configs/sngan_proj) (10 ckpts)
@@ -51,6 +47,5 @@
 	* [StyleGANv3](https://github.com/open-mmlab/mmgeneration/blob/master/configs/styleganv3) (9 ckpts)
 
 
-	* [WGAN-GP](https://github.com/open-mmlab/mmgeneration/blob/master/configs/wgan-gp) (2 ckpts)
+  - [StyleGANv3](https://github.com/open-mmlab/mmgeneration/blob/master/configs/styleganv3) (9 ckpts)
 
-  - [Improved Training of Wasserstein GANs](https://github.com/open-mmlab/mmgeneration/blob/master/configs/wgan-gp) (2 ckpts)
