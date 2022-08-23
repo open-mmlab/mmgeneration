@@ -1,0 +1,22 @@
+Collections:
+- Metadata:
+    Architecture:
+    - ADA
+  Name: ADA
+  Paper:
+  - https://arxiv.org/pdf/2006.06676.pdf
+  README: configs/ada/README.md
+Models:
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv3/stylegan3_t_ada_fp16_gamma6.6_metfaces_1024_b4x8.py
+  In Collection: ADA
+  Metadata:
+    Training Data: Others
+  Name: stylegan3_t_ada_fp16_gamma6.6_metfaces_1024_b4x8
+  Results:
+  - Dataset: Others
+    Metrics:
+      FID50k: 15.09
+      Iter: 130000.0
+      Log: '[log]'
+    Task: Tricks for GANs
+  Weights: https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_ada_fp16_gamma6.6_metfaces_1024_b4x8_best_fid_iter_130000_20220401_115101-f2ef498e.pth
