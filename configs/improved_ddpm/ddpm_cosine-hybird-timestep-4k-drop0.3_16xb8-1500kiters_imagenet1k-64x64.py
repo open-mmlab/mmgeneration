@@ -1,4 +1,4 @@
-_base_ = ['./ddpm_cosine_hybird_timestep-4k_imagenet1k_64x64_b8x16_1500k.py']
+_base_ = ['./ddpm_cosine-hybird-timestep-4k_16xb8-1500kiters_imagenet1k-64x64.py']
 
 # MODEL
 # set dropout prob as 0.3

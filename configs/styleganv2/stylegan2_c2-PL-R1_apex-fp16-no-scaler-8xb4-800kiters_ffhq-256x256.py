@@ -1,6 +1,6 @@
 """Config for the `config-f` setting in StyleGAN2."""
 
-_base_ = ['./stylegan2_c2_ffhq_256_b4x8_800k.py']
+_base_ = ['./stylegan2_c2_8xb4-800kiters_ffhq-256x256.py']
 
 model = dict(loss_config=dict(r1_use_apex_amp=False, g_reg_use_apex_amp=False))
 

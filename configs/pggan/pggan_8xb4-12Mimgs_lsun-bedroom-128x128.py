@@ -1,4 +1,4 @@
-_base_ = ['./pggan_celeba-cropped_128_g8_12Mimgs.py']
+_base_ = ['./pggan_8xb4-12Mimgs_celeba-cropped-128x128.py']
 
 # Overwrite data configs
 data_roots = {'128': './data/lsun/images/bedroom_train'}
