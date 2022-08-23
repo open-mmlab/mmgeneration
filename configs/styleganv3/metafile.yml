@@ -11,7 +11,7 @@ Models:
   In Collection: StyleGANv3
   Metadata:
     Training Data: FFHQ
-  Name: stylegan3-t_gamma32.8_noaug-fp16-8xb4_ffhq-1024x1024
+  Name: stylegan3-t_gamma32.8_8xb4-fp16-noaug_ffhq-1024x1024
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -24,7 +24,7 @@ Models:
   In Collection: StyleGANv3
   Metadata:
     Training Data: Others
-  Name: stylegan3-t_ada-gamma6.6_fp16-8xb4_metfaces-1024x1024
+  Name: stylegan3-t_ada-gamma6.6_8xb4-fp16_metfaces-1024x1024
   Results:
   - Dataset: Others
     Metrics:
@@ -37,7 +37,7 @@ Models:
   In Collection: StyleGANv3
   Metadata:
     Training Data: FFHQ
-  Name: stylegan3-t_gamma2.0_noaug-fp16-8xb4_ffhq-256x256
+  Name: stylegan3-t_gamma2.0_8xb4-fp16-noaug_ffhq-256x256
   Results:
   - Dataset: FFHQ
     Metrics:

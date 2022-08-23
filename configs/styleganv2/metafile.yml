@@ -135,7 +135,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_c2-PL_fp16-partial-GD-no-scaler-8xb4-800kiters_ffhq-256x256
+  Name: stylegan2_c2-PL_8xb4-fp16-partial-GD-no-scaler-800kiters_ffhq-256x256
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -147,7 +147,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_c2-PL-R1_fp16-globalG-partialD-no-scaler-8xb4-800kiters_ffhq-256x256
+  Name: stylegan2_c2-PL-R1_8xb4-fp16-globalG-partialD-no-scaler-800kiters_ffhq-256x256
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -159,7 +159,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_c2-PL-R1_apex-fp16-no-scaler-8xb4-800kiters_ffhq-256x256
+  Name: stylegan2_c2-PL-R1_8xb4-apex-fp16-no-scaler-800kiters_ffhq-256x256
   Results:
   - Dataset: FFHQ
     Metrics:
