@@ -12,6 +12,7 @@ opencv-python!=4.5.5.62,!=4.5.5.64
 # It seems to be fixed in https://github.com/opencv/opencv/pull/21382opencv-python
 prettytable
 -e git+https://github.com/open-mmlab/pytorch_sphinx_theme.git#egg=pytorch_sphinx_theme
+recommonmark
 scipy
 sphinx==4.0.2
 sphinx-copybutton
