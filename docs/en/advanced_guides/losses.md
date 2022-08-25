@@ -5,9 +5,10 @@ One is using default loss configuration, which has fixed loss components, and of
 The other is customized losses, in which users can define loss modules and combine loss modules as they like.
 
 ## Default losses
+
 For convenient usage, you can directly use default loss calculation process we set for concrete algorithms like lsgan, biggan, styleganv2 etc.
-Take ``stylegan2`` as example, we use R1 gradient penalty and generator path length regularization as configurable losses, and users can adjust
-related arguments like ``r1_loss_weight`` and ``g_reg_weight``.
+Take `stylegan2` as example, we use R1 gradient penalty and generator path length regularization as configurable losses, and users can adjust
+related arguments like `r1_loss_weight` and `g_reg_weight`.
 
 ```python
 # stylegan2_base.py
