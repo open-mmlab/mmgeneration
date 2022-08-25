@@ -4,7 +4,7 @@ from copy import deepcopy
 import numpy as np
 import torch.nn as nn
 from mmcv.cnn import build_norm_layer
-from mmengine.model.utils import constant_init, xavier_init
+from mmengine.model import constant_init, xavier_init
 from torch.nn.init import xavier_uniform_
 from torch.nn.utils import spectral_norm
 

@@ -6,7 +6,7 @@ from typing import Sequence, Union
 import mmengine
 import numpy as np
 import torch
-from mmengine.data import BaseDataElement, LabelData
+from mmengine.structures import BaseDataElement, LabelData
 
 from .pixel_data import PixelData
 

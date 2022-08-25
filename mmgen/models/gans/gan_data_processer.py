@@ -4,8 +4,8 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 import torch.nn.functional as F
-from mmengine import BaseDataElement
 from mmengine.model import ImgDataPreprocessor
+from mmengine.structures import BaseDataElement
 from mmengine.utils import is_list_of
 from torch import Tensor
 

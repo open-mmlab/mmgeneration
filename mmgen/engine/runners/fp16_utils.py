@@ -6,7 +6,7 @@ from inspect import getfullargspec
 import numpy as np
 import torch
 import torch.nn as nn
-from mmengine.utils import TORCH_VERSION
+from mmengine.utils.dl_utils import TORCH_VERSION
 
 try:
     # If PyTorch version >= 1.6.0, torch.cuda.amp.autocast would be imported

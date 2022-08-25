@@ -9,7 +9,7 @@ import mmcv
 import torch
 import torchvision
 from mmengine.utils import get_git_hash
-from mmengine.utils.parrots_wrapper import get_build_config
+from mmengine.utils.dl_utils.parrots_wrapper import get_build_config
 
 import mmgen
 
@@ -24,7 +24,7 @@ def collect_env():
     env_info['CUDA available'] = cuda_available
 
     if cuda_available:
-        from mmengine.utils.parrots_wrapper import _get_cuda_home
+        from mmengine.utils.dl_utils.parrots_wrapper import _get_cuda_home
         CUDA_HOME = _get_cuda_home()
 
         env_info['CUDA_HOME'] = CUDA_HOME

@@ -5,7 +5,7 @@ import mmengine
 import torch
 import torch.nn as nn
 from mmengine.logging import MMLogger
-from mmengine.model.utils import normal_init, xavier_init
+from mmengine.model import normal_init, xavier_init
 from mmengine.runner import load_checkpoint
 from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 from torch.nn.utils import spectral_norm

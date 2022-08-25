@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmengine import is_list_of, print_log
-from mmengine.data import pseudo_collate
+from mmengine.dataset import pseudo_collate
 from mmengine.dist import (all_gather, broadcast_object_list, collect_results,
                            get_dist_info, get_world_size, is_main_process)
 from mmengine.evaluator import BaseMetric

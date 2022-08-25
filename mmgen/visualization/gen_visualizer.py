@@ -5,8 +5,8 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
-from mmengine import Visualizer
 from mmengine.dist import master_only
+from mmengine.visualization import Visualizer
 from torch import Tensor
 from torchvision.utils import make_grid
 

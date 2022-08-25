@@ -7,7 +7,7 @@ import torch.nn as nn
 from mmcv.cnn import ConvModule
 from mmengine import is_list_of
 from mmengine.logging import MMLogger
-from mmengine.model.utils import constant_init, xavier_init
+from mmengine.model import constant_init, xavier_init
 from mmengine.runner import load_checkpoint
 from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 from torch.nn.init import xavier_uniform_

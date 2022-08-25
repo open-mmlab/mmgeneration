@@ -2,7 +2,7 @@
 from copy import deepcopy
 from typing import Optional
 
-from mmengine.data import pseudo_collate
+from mmengine.dataset import pseudo_collate
 from mmengine.runner import Runner
 from torch.utils.data.dataloader import DataLoader
 

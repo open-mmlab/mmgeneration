@@ -2,9 +2,9 @@
 import time
 from typing import Optional, Sequence, Union
 
-from mmengine.data import BaseDataElement
 from mmengine.hooks import IterTimerHook
 from mmengine.registry import HOOKS
+from mmengine.structures import BaseDataElement
 
 DATA_BATCH = Optional[Sequence[dict]]
 

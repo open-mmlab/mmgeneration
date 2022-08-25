@@ -2,7 +2,8 @@
 from typing import Optional, Sequence
 
 import torch
-from mmengine.data import DefaultSampler, InfiniteSampler, pseudo_collate
+# from mmengine.data import DefaultSampler, InfiniteSampler, pseudo_collate
+from mmengine.dataset import DefaultSampler, InfiniteSampler, pseudo_collate
 from mmengine.hooks import Hook
 from mmengine.model import is_model_wrapper
 from mmengine.runner import IterBasedTrainLoop

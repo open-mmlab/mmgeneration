@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import torch
 from mmcls.structures import ClsDataSample
-from mmengine.data import LabelData
+from mmengine.structures import LabelData
 from mmengine.testing import assert_allclose
 
 from mmgen.models import BaseConditionalGAN, GANDataPreprocessor

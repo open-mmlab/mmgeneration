@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from mmcv.cnn.bricks.conv_module import ConvModule
 from mmengine.logging import MMLogger
-from mmengine.model.utils import constant_init
+from mmengine.model import constant_init
 from mmengine.runner import load_checkpoint
 
 from mmgen.models.builder import MODULES, build_module

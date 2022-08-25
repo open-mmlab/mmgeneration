@@ -10,10 +10,10 @@ import numpy as np
 import pytest
 import torch
 import torch.nn as nn
-# from mmengine import BaseDataElement
 from mmengine.logging import MMLogger
 from mmengine.runner import Runner
-from mmengine.utils import TORCH_VERSION, digit_version
+from mmengine.utils.dl_utils import TORCH_VERSION
+from mmengine.utils.version_utils import digit_version
 from torch.utils.data.dataloader import DataLoader
 
 from mmgen.datasets import (PackGenInputs, PairedImageDataset,
@@ -26,7 +26,9 @@ from mmgen.evaluation.metrics import (Equivariance, GenMetric,
 from mmgen.models import (LSGAN, DCGANGenerator, GANDataPreprocessor, Pix2Pix,
                           StyleGAN3, StyleGANv2Generator, StyleGANv3Generator)
 from mmgen.structures import GenDataSample, PixelData
+from mmgen.utils import register_all_modules
 
+register_all_modules()
 logger = MMLogger(name='test-evaluation')
 
 

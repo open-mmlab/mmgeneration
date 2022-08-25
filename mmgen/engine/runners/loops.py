@@ -2,10 +2,9 @@
 from typing import Dict, List, Sequence, Union
 
 import torch
-from mmengine import Runner
 from mmengine.evaluator import BaseMetric, Evaluator
 from mmengine.registry import LOOPS
-from mmengine.runner import TestLoop, ValLoop
+from mmengine.runner import Runner, TestLoop, ValLoop
 from torch.utils.data import DataLoader
 
 

@@ -13,8 +13,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from mmengine import is_filepath, print_log
-from mmengine.data import pseudo_collate
-from mmengine.dataset import BaseDataset, Compose
+from mmengine.dataset import BaseDataset, Compose, pseudo_collate
 from mmengine.dist import (all_gather, get_dist_info, get_world_size,
                            is_main_process)
 from mmengine.evaluator import BaseMetric

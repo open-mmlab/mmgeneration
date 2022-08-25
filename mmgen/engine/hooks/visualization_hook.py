@@ -7,10 +7,10 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 from mmengine import MessageHub
-from mmengine.data import BaseDataElement
 from mmengine.dist import master_only
 from mmengine.hooks import Hook
 from mmengine.runner import Runner
+from mmengine.structures import BaseDataElement
 from mmengine.utils import is_list_of
 from mmengine.visualization import Visualizer
 

@@ -7,7 +7,8 @@ import mmengine
 import torch
 import torch.distributed as dist
 import torch.nn as nn
-from mmengine.utils import TORCH_VERSION, digit_version
+from mmengine.utils.dl_utils import TORCH_VERSION
+from mmengine.utils.version_utils import digit_version
 
 from mmgen.registry import MODULES
 from .pixelwise_loss import (DiscretizedGaussianLogLikelihoodLoss,

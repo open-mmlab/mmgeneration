@@ -4,7 +4,7 @@ from copy import deepcopy
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, build_norm_layer
-from mmengine.model.utils import constant_init
+from mmengine.model import constant_init
 
 from mmgen.registry import MODELS, MODULES
 
