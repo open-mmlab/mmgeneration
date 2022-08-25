@@ -3,8 +3,8 @@ import argparse
 import os
 import sys
 
-import mmcv
-from mmcv import DictAction
+import mmengine
+from mmengine import DictAction
 from torchvision import utils
 
 # yapf: disable
@@ -84,12 +84,12 @@ def main():
     if args.label is None and not args.sample_all_classes:
         label = None
         num_samples, nrow = args.samples_per_classes, args.nrow
-        mmcv.print_log(
+        mmengine.print_log(
             '`label` is not passed, code would randomly sample '
             f'`samples-per-classes` (={num_samples}) images.', 'mmgen')
     else:
         if args.sample_all_classes:
-            mmcv.print_log(
+            mmengine.print_log(
                 '`sample_all_classes` is set as True, `num-samples`, `label`, '
                 'and `nrows` would be ignored.', 'mmgen')
 
@@ -114,7 +114,7 @@ def main():
         num_samples = len(label)
         nrow = args.samples_per_classes
 
-        mmcv.print_log(
+        mmengine.print_log(
             'Set `nrows` as number of samples for each class '
             f'(={args.samples_per_classes}).', 'mmgen')
 
@@ -124,7 +124,7 @@ def main():
     results = (results[:, [2, 1, 0]] + 1.) / 2.
 
     # save images
-    mmcv.mkdir_or_exist(os.path.dirname(args.save_path))
+    mmengine.mkdir_or_exist(os.path.dirname(args.save_path))
     utils.save_image(results, args.save_path, nrow=nrow, padding=args.padding)
 
 

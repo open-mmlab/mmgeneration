@@ -75,13 +75,13 @@ class TestDCGAN(TestCase):
             discriminator=OptimWrapper(
                 disc_optim, accumulative_counts=accu_iter))
         # prepare inputs
-        img = torch.randn(3, 16, 16)
+        img = torch.randn(1, 3, 16, 16)
         data = dict(inputs=dict(img=img))
 
         # simulate train_loop here
         for idx in range(n_disc * accu_iter):
             message_hub.update_info('iter', idx)
-            log = gan.train_step([data], optim_wrapper_dict)
+            log = gan.train_step(data, optim_wrapper_dict)
             if (idx + 1) == n_disc * accu_iter:
                 # should update at after (n_disc * accu_iter)
                 self.assertEqual(

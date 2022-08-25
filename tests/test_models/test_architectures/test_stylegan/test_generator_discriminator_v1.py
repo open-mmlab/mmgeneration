@@ -6,6 +6,9 @@ import torch
 
 from mmgen.models.architectures.stylegan import (StyleGAN1Discriminator,
                                                  StyleGANv1Generator)
+from mmgen.utils import register_all_modules
+
+register_all_modules()
 
 
 class TestStyleGAN1Generator:

@@ -1,10 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from copy import deepcopy
 
-import mmcv
+import mmengine
 import torch
 import torch.nn as nn
-from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
+from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.builder import build_module
@@ -83,7 +83,7 @@ class StyleGANv3Generator(nn.Module):
         state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
                                                   map_location)
         self.load_state_dict(state_dict, strict=strict)
-        mmcv.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
+        mmengine.print_log(f'Load pretrained model from {ckpt_path}')
 
     def forward(self,
                 noise,

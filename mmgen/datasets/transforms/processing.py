@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
+import mmengine
 import numpy as np
 from mmcls.registry import TRANSFORMS as CLS_TRANSFORMS
 from mmcv.transforms import BaseTransform
@@ -227,7 +228,8 @@ class Crop(BaseTransform):
     """
 
     def __init__(self, keys, crop_size, random_crop=True):
-        if not mmcv.is_tuple_of(crop_size, int):
+        # if not mmcv.is_tuple_of(crop_size, int):
+        if not mmengine.is_tuple_of(crop_size, int):
             raise TypeError(
                 'Elements of crop_size must be int and crop_size must be'
                 f' tuple, but got {type(crop_size[0])} in {type(crop_size)}')
@@ -305,11 +307,11 @@ class FixedCrop(BaseTransform):
     """
 
     def __init__(self, crop_size, crop_pos=None):
-        if not mmcv.is_tuple_of(crop_size, int):
+        if not mmengine.is_tuple_of(crop_size, int):
             raise TypeError(
                 'Elements of crop_size must be int and crop_size must be'
                 f' tuple, but got {type(crop_size[0])} in {type(crop_size)}')
-        if not mmcv.is_tuple_of(crop_pos, int) and (crop_pos is not None):
+        if not mmengine.is_tuple_of(crop_pos, int) and (crop_pos is not None):
             raise TypeError(
                 'Elements of crop_pos must be int and crop_pos must be'
                 f' tuple or None, but got {type(crop_pos[0])} in '

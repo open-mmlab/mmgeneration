@@ -2,7 +2,8 @@
 import numpy as np
 import torch
 import torch.distributed as dist
-from mmcv.runner import get_dist_info
+# from mmcv.runner import get_dist_info
+from mmengine.dist import get_dist_info
 
 
 def check_dist_init():

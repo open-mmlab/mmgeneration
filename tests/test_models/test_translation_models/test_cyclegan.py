@@ -1,13 +1,50 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+import sys
 
 import torch
-from mmcv.runner import obj_from_dict
+# from mmcv.runner import obj_from_dict
 from mmengine import MessageHub
 from mmengine.optim import OptimWrapper, OptimWrapperDict
 
 from mmgen.models import (CycleGAN, GANDataPreprocessor, PatchDiscriminator,
                           ResnetGenerator)
+
+
+def obj_from_dict(info: dict, parent=None, default_args=None):
+    """Initialize an object from dict.
+
+    The dict must contain the key "type", which indicates the object type, it
+    can be either a string or type, such as "list" or ``list``. Remaining
+    fields are treated as the arguments for constructing the object.
+
+    Args:
+        info (dict): Object types and arguments.
+        parent (:class:`module`): Module which may containing expected object
+            classes.
+        default_args (dict, optional): Default arguments for initializing the
+            object.
+
+    Returns:
+        any type: Object built from the dict.
+    """
+    assert isinstance(info, dict) and 'type' in info
+    assert isinstance(default_args, dict) or default_args is None
+    args = info.copy()
+    obj_type = args.pop('type')
+    # if mmcv.is_str(obj_type):
+    if isinstance(obj_type, str):
+        if parent is not None:
+            obj_type = getattr(parent, obj_type)
+        else:
+            obj_type = sys.modules[obj_type]
+    elif not isinstance(obj_type, type):
+        raise TypeError('type must be a str or valid type, but '
+                        f'got {type(obj_type)}')
+    if default_args is not None:
+        for name, value in default_args.items():
+            args.setdefault(name, value)
+    return obj_type(**args)
 
 
 def test_cyclegan():
@@ -95,9 +132,9 @@ def test_cyclegan():
     # test train_step
     message_hub = MessageHub.get_instance('mmgen')
     message_hub.update_info('iter', 0)
-    inputs = torch.rand(3, 64, 64)
-    targets = torch.rand(3, 64, 64)
-    data_batch = [dict(inputs={'img_mask': inputs, 'img_photo': targets})]
+    inputs = torch.rand(1, 3, 64, 64)
+    targets = torch.rand(1, 3, 64, 64)
+    data_batch = dict(inputs={'img_mask': inputs, 'img_photo': targets})
     log_vars = synthesizer.train_step(data_batch, optimizer)
     assert isinstance(log_vars, dict)
     for v in [
@@ -171,14 +208,13 @@ def test_cyclegan():
         assert outputs['target'].size() == (1, 3, 64, 64)
 
         # train_step
-        inputs = torch.rand(3, 64, 64).cuda()
-        targets = torch.rand(3, 64, 64).cuda()
-        data_batch_cuda = [
-            dict(inputs={
-                'img_mask': inputs,
-                'img_photo': targets
-            })
-        ]
+        inputs = torch.rand(1, 3, 64, 64).cuda()
+        targets = torch.rand(1, 3, 64, 64).cuda()
+        data_batch_cuda = dict(inputs={
+            'img_mask': inputs,
+            'img_photo': targets
+        })
+
         log_vars = synthesizer.train_step(data_batch_cuda, optimizer)
         assert isinstance(log_vars, dict)
         for v in [
@@ -203,9 +239,9 @@ def test_cyclegan():
                     params=getattr(synthesizer,
                                    'discriminators').parameters()))))
 
-    inputs = torch.rand(3, 64, 64)
-    targets = torch.rand(3, 64, 64)
-    data_batch = [dict(inputs={'img_mask': inputs, 'img_photo': targets})]
+    inputs = torch.rand(1, 3, 64, 64)
+    targets = torch.rand(1, 3, 64, 64)
+    data_batch = dict(inputs={'img_mask': inputs, 'img_photo': targets})
     # iter 0, 1
     for i in range(2):
         message_hub.update_info('iter', i)
@@ -241,7 +277,7 @@ def test_cyclegan():
     # test GAN image buffer size = 0
     inputs = torch.rand(1, 3, 64, 64)
     targets = torch.rand(1, 3, 64, 64)
-    data_batch = {'img_mask': inputs, 'img_photo': targets}
+    data_batch = dict(inputs={'img_mask': inputs, 'img_photo': targets})
     train_settings = dict(buffer_size=0)
     synthesizer = CycleGAN(
         **model_cfg, **train_settings, data_preprocessor=GANDataPreprocessor())

@@ -1,8 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
 from mmcv.cnn import ConvModule, build_conv_layer
-from mmcv.runner import load_checkpoint
 from mmengine.logging import MMLogger
+from mmengine.runner import load_checkpoint
 
 from mmgen.models.builder import MODULES
 from .modules import UnetSkipConnectionBlock, generation_init_weights
@@ -116,7 +116,7 @@ class UnetGenerator(nn.Module):
                 model and checkpoint. Default: True.
         """
         if isinstance(pretrained, str):
-            logger = MMLogger.get_instance(name='mmgen')
+            logger = MMLogger.get_current_instance()
             load_checkpoint(self, pretrained, strict=strict, logger=logger)
         elif pretrained is None:
             generation_init_weights(
@@ -242,7 +242,7 @@ class PatchDiscriminator(nn.Module):
                 None, pretrained weights will not be loaded. Default: None.
         """
         if isinstance(pretrained, str):
-            logger = MMLogger.get_instance(name='mmgen')
+            logger = MMLogger.get_current_instance()
             load_checkpoint(self, pretrained, strict=False, logger=logger)
         elif pretrained is None:
             generation_init_weights(

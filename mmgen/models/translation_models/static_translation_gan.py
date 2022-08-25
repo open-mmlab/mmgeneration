@@ -60,6 +60,7 @@ class StaticTranslationGAN(BaseTranslationModel, BaseModel):
             pretrained (str, optional): Path for pretrained weights. If given
                 None, pretrained weights will not be loaded. Default: None.
         """
+        return
         for domain in self._reachable_domains:
             self.generators[domain].init_weights(pretrained=pretrained)
             self.discriminators[domain].init_weights(pretrained=pretrained)

@@ -16,7 +16,7 @@ from torch import Tensor
 
 from mmgen.registry import MODELS
 from mmgen.structures import GenDataSample, PixelData
-from mmgen.utils.typing import ForwardInputs, TrainStepInputs
+from mmgen.utils.typing import ForwardInputs
 from ..common import gather_log_vars, get_valid_num_batches, set_requires_grad
 from .base_gan import BaseGAN
 
@@ -112,20 +112,20 @@ class ProgressiveGrowingGAN(BaseGAN):
             torch.tensor(self.scales[-1][0], dtype=torch.int32))
 
     def forward(self,
-                batch_inputs: ForwardInputs,
+                inputs: ForwardInputs,
                 data_samples: Optional[list] = None,
                 mode: Optional[str] = None):
         """Sample images from noises by using the generator."""
-        if isinstance(batch_inputs, Tensor):
-            noise = batch_inputs
+        if isinstance(inputs, Tensor):
+            noise = inputs
             curr_scale = transition_weight = None
         else:
-            noise = batch_inputs.get('noise', None)
-            num_batches = get_valid_num_batches(batch_inputs)
+            noise = inputs.get('noise', None)
+            num_batches = get_valid_num_batches(inputs)
             noise = self.noise_fn(noise, num_batches=num_batches)
 
-            curr_scale = batch_inputs.get('curr_scale', None)
-            transition_weight = batch_inputs.get('transition_weight', None)
+            curr_scale = inputs.get('curr_scale', None)
+            transition_weight = inputs.get('transition_weight', None)
         num_batches = noise.shape[0]
 
         # use `self.curr_scale` if curr_scale is None
@@ -141,7 +141,7 @@ class ProgressiveGrowingGAN(BaseGAN):
         if transition_weight is None:
             transition_weight = self._curr_transition_weight.item()
 
-        sample_model = self._get_valid_model(batch_inputs)
+        sample_model = self._get_valid_model(inputs)
 
         if sample_model in ['ema', 'ema/orig']:
             _model = self.generator_ema
@@ -179,14 +179,12 @@ class ProgressiveGrowingGAN(BaseGAN):
             # Append input condition (noise and sample_kwargs) to
             # batch_sample_list
             gen_sample.noise = noise
-            # gen_sample.sample_kwargs = deepcopy(sample_kwargs)
-
             batch_sample_list.append(gen_sample)
 
         return batch_sample_list
 
     def train_discriminator(
-            self, inputs: TrainInput, data_samples: List[GenDataSample],
+            self, inputs: Tensor, data_samples: List[GenDataSample],
             optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
         real_imgs = inputs
         num_batches = real_imgs.shape[0]
@@ -273,7 +271,7 @@ class ProgressiveGrowingGAN(BaseGAN):
         parsed_loss, log_vars = self.parse_losses(losses_dict)
         return parsed_loss, log_vars
 
-    def train_generator(self, inputs: TrainInput,
+    def train_generator(self, inputs: Tensor,
                         data_samples: List[GenDataSample],
                         optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
         real_imgs = inputs
@@ -315,8 +313,7 @@ class ProgressiveGrowingGAN(BaseGAN):
         loss, log_vars = self.parse_losses(losses_dict)
         return loss, log_vars
 
-    def train_step(self, data: TrainStepInputs,
-                   optim_wrapper: OptimWrapperDict):
+    def train_step(self, data: dict, optim_wrapper: OptimWrapperDict):
         """Train step function.
 
         This function implements the standard training iteration for
@@ -356,7 +353,8 @@ class ProgressiveGrowingGAN(BaseGAN):
             self.prev_stage = self.curr_stage
             self._actual_nkimgs.append(self.shown_nkimg.item())
 
-        inputs, data_sample = self.data_preprocessor(data, True)
+        data = self.data_preprocessor(data, True)
+        inputs, data_sample = data['inputs'], data['data_samples']
         if isinstance(inputs, dict):
             real_imgs = inputs['img']
         else:  # tensor

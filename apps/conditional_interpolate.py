@@ -3,10 +3,11 @@ import os
 import sys
 
 import mmcv
+import mmengine
 import torch
 import torch.nn as nn
 from mmcv import Config, DictAction
-from mmcv.runner import load_checkpoint
+from mmengine.runner import load_checkpoint
 from torchvision.utils import save_image
 
 from mmgen.registry import MODELS
@@ -239,9 +240,9 @@ def main():
         generator = model.generator
     if isinstance(generator, ExponentialMovingAverage):
         generator = generator.module
-    mmcv.print_log(f'Sampling model: {args.sample_model}', 'mmgen')
-    mmcv.print_log(f'Show mode: {args.show_mode}', 'mmgen')
-    mmcv.print_log(f'Samples path: {args.samples_path}', 'mmgen')
+    mmengine.print_log(f'Sampling model: {args.sample_model}', 'mmgen')
+    mmengine.print_log(f'Show mode: {args.show_mode}', 'mmgen')
+    mmengine.print_log(f'Samples path: {args.samples_path}', 'mmgen')
 
     generator.eval()
 

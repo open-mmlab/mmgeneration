@@ -5,7 +5,7 @@ import warnings
 from abc import ABCMeta
 from collections import defaultdict
 from copy import deepcopy
-from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Any, Iterator, List, Optional, Sequence, Tuple
 
 import numpy as np
 import torch
@@ -27,7 +27,6 @@ from torchvision import models as torchvision_models
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.architectures.lpips import PerceptualLoss
 from mmgen.registry import METRICS
-from mmgen.utils.typing import ForwardInputs, ForwardOutputs, ValTestStepInputs
 from .inception_utils import (disable_gpu_fuser_on_pt19, load_inception,
                               prepare_inception_feat, prepare_vgg_feat)
 from .metric_utils import (compute_pr_distances, finalize_descriptors,
@@ -277,34 +276,25 @@ class SlicedWassersteinDistance(GenMetric):
 
         self._num_processed = 0
 
-    def process(self, data_batch: Sequence[dict],
-                predictions: Sequence[dict]) -> None:
+    def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions. The processed
         results should be stored in ``self.fake_results`` and
         ``self.real_results``, which will be used to compute the metrics when
         all batches have been processed.
 
         Args:
-            data_batch (Sequence[dict]): A batch of data from the dataloader.
-            predictions (Sequence[dict]): A batch of outputs from the model.
+            data_batch (dict): A batch of data from the dataloader.
+            data_samples (Sequence[dict]): A batch of outputs from the model.
         """
         if self._num_processed >= self.fake_nums_per_device:
             return
 
-        # parse real images
-        real_img_list = []
-        for data in data_batch:
-            real_img = data['inputs']
-            if isinstance(real_img, dict):
-                real_img = real_img[self.real_key]
-            real_img_list.append(real_img.to(self.data_preprocessor.device))
-        real_imgs = self.data_preprocessor._preprocess_image_tensor(
-            real_img_list)
-
-        # parse fake images
-        fake_imgs = []
-        for pred in predictions:
-            fake_img_ = pred
+        real_imgs, fake_imgs = [], []
+        for data in data_samples:
+            # parse real images
+            real_imgs.append(data['gt_img']['data'])
+            # parse fake images
+            fake_img_ = data
             # get ema/orig results
             if self.sample_model in fake_img_:
                 fake_img_ = fake_img_[self.sample_model]
@@ -315,6 +305,7 @@ class SlicedWassersteinDistance(GenMetric):
                 # get img tensor
                 fake_img_ = fake_img_['fake_img']['data']
             fake_imgs.append(fake_img_)
+        real_imgs = torch.stack(real_imgs, dim=0)
         fake_imgs = torch.stack(fake_imgs, dim=0)
 
         # real images
@@ -341,7 +332,7 @@ class SlicedWassersteinDistance(GenMetric):
                                                  self.nhoods_per_image)
             self.fake_results[lod].append(desc.cpu())
 
-        self._num_processed += real_img.shape[0]
+        self._num_processed += real_imgs.shape[0]
 
     def _collect_target_results(self, target: str) -> Optional[list]:
         """Collect function for SWD metric. This function support collect
@@ -473,13 +464,14 @@ class GenerativeMetric(GenMetric, metaclass=ABCMeta):
             def __len__(self) -> int:
                 return math.ceil(self.max_length / self.batch_size)
 
-            def __next__(self) -> ForwardInputs:
+            def __next__(self) -> dict:
                 if self.idx > self.max_length:
                     raise StopIteration
                 self.idx += batch_size
                 return dict(
-                    sample_model=self.sample_model,
-                    num_batches=self.batch_size)
+                    inputs=dict(
+                        sample_model=self.sample_model,
+                        num_batches=self.batch_size))
 
         return dummy_iterator(
             batch_size=batch_size,
@@ -646,21 +638,20 @@ class FrechetInceptionDistance(GenerativeMetric):
             feat = self.inception(image)[0].view(image.shape[0], -1)
         return feat
 
-    def process(self, data_batch: Sequence[dict],
-                predictions: Sequence[dict]) -> None:
+    def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions. The processed
         results should be stored in ``self.fake_results``, which will be used
         to compute the metrics when all batches have been processed.
 
         Args:
-            data_batch (Sequence[dict]): A batch of data from the dataloader.
-            predictions (Sequence[dict]): A batch of outputs from the model.
+            data_batch (dict): A batch of data from the dataloader.
+            data_samples (Sequence[dict]): A batch of outputs from the model.
         """
         if len(self.fake_results) >= self.fake_nums_per_device:
             return
 
         fake_imgs = []
-        for pred in predictions:
+        for pred in data_samples:
             fake_img_ = pred
             # get ema/orig results
             if self.sample_model in fake_img_:
@@ -880,21 +871,20 @@ class InceptionScore(GenerativeMetric):
             return F.interpolate(
                 image, size=(299, 299), mode=self.resize_method)
 
-    def process(self, data_batch: Sequence[dict],
-                predictions: Sequence[dict]) -> None:
+    def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions. The processed
         results should be stored in ``self.fake_results``, which will be used
         to compute the metrics when all batches have been processed.
 
         Args:
-            data_batch (Sequence[dict]): A batch of data from the dataloader.
-            predictions (Sequence[dict]): A batch of outputs from the model.
+            data_batch (dict): A batch of data from the dataloader.
+            data_samples (Sequence[dict]): A batch of outputs from the model.
         """
         if len(self.fake_results) >= self.fake_nums_per_device:
             return
 
         fake_imgs = []
-        for pred in predictions:
+        for pred in data_samples:
             fake_img_ = pred
             # get ema/orig results
             if self.sample_model in fake_img_:
@@ -985,20 +975,19 @@ class MultiScaleStructureSimilarity(GenerativeMetric):
         assert fake_nums % 2 == 0
         self.num_pairs = fake_nums // 2
 
-    def process(self, data_batch: Optional[Sequence[dict]],
-                predictions: Union[Sequence[dict], Tensor]) -> None:
+    def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Feed data to the metric.
 
         Args:
-            data_batch (Tensor): Real images from dataloader. Do not be used
+            data_batch (dict): Real images from dataloader. Do not be used
                 in this metric.
-            predictions (Union[Sequence[dict], Tensor]): Generated images.
+            data_samples (Sequence[dict]): Generated images.
         """
         if len(self.fake_results) >= (self.fake_nums_per_device // 2):
             return
 
         fake_imgs = []
-        for pred in predictions:
+        for pred in data_samples:
             fake_img_ = pred
             # get ema/orig results
             if self.sample_model in fake_img_:
@@ -1226,18 +1215,17 @@ class PrecisionAndRecall(GenerativeMetric):
         return self._result_dict
 
     @torch.no_grad()
-    def process(self, data_batch: Sequence[dict],
-                predictions: Sequence[dict]) -> None:
+    def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions. The processed
         results should be stored in ``self.fake_results``, which will be used
         to compute the metrics when all batches have been processed.
 
         Args:
-            data_batch (Sequence[dict]): A batch of data from the dataloader.
-            predictions (Sequence[dict]): A batch of outputs from the model.
+            data_batch (dict): A batch of data from the dataloader.
+            data_samples (Sequence[dict]): A batch of outputs from the model.
         """
         fake_imgs = []
-        for pred in predictions:
+        for pred in data_samples:
             fake_img_ = pred
             # get ema/orig results
             if self.sample_model in fake_img_:
@@ -1311,19 +1299,18 @@ class Equivariance(GenerativeMetric):
         self.fake_results = defaultdict(list)
 
     @torch.no_grad()
-    def process(self, data_batch: Sequence[dict],
-                predictions: Sequence[dict]) -> None:
+    def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions. The processed
         results should be stored in ``self.fake_results``, which will be used
         to compute the metrics when all batches have been processed.
 
         Args:
-            data_batch (Sequence[dict]): A batch of data from the dataloader.
-            predictions (Sequence[dict]): A batch of outputs from the model.
+            data_batch (dict): A batch of data from the dataloader.
+            data_samples (Sequence[dict]): A batch of outputs from the model.
         """
         cfg_key_list = ['compute_eqt_int', 'compute_eqt_frac', 'compute_eqr']
         sample_key_list = ['eqt_int', 'eqt_frac', 'eqr']
-        for pred in predictions:
+        for pred in data_samples:
             for cfg_key, sample_key in zip(cfg_key_list, sample_key_list):
                 if self._eq_cfg[cfg_key]:
                     assert sample_key in pred
@@ -1425,7 +1412,7 @@ class eq_iterator:
     def __len__(self) -> int:
         return self.max_length // self.batch_size
 
-    def __next__(self) -> ForwardInputs:
+    def __next__(self) -> dict:
         if self.idx >= self.max_length:
             raise StopIteration
         self.idx += self.batch_size
@@ -1434,7 +1421,7 @@ class eq_iterator:
             eq_cfg=self.eq_cfg,
             sample_kwargs=self.sample_kwargs)
         # StyleGAN3 forward will receive eq config from mode
-        return dict(mode=mode, num_batches=self.batch_size)
+        return dict(inputs=dict(mode=mode, num_batches=self.batch_size))
 
 
 @METRICS.register_module()
@@ -1471,18 +1458,17 @@ class TransFID(FrechetInceptionDistance):
         """
         return dataloader
 
-    def process(self, data_batch: ValTestStepInputs,
-                predictions: ForwardOutputs) -> None:
+    def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions. The processed
         results should be stored in ``self.fake_results``, which will be used
         to compute the metrics when all batches have been processed.
 
         Args:
-            data_batch (Sequence[dict]): A batch of data from the dataloader.
-            predictions (Sequence[dict]): A batch of outputs from the model.
+            data_batch (dict): A batch of data from the dataloader.
+            data_samples (Sequence[dict]): A batch of outputs from the model.
         """
         fake_imgs = []
-        for pred in predictions:
+        for pred in data_samples:
             fake_img_ = pred
             # get ema/orig results
             if self.sample_model in fake_img_:
@@ -1572,21 +1558,20 @@ class TransIS(InceptionScore):
                          fake_key, sample_model, collect_device, prefix)
         self.SAMPLER_MODE = 'normal'
 
-    def process(self, data_batch: Optional[Sequence[dict]],
-                predictions: Union[Sequence[dict], Tensor]) -> None:
+    def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions. The processed
         results should be stored in ``self.fake_results``, which will be used
         to compute the metrics when all batches have been processed.
 
         Args:
-            data_batch (Sequence[dict]): A batch of data from the dataloader.
+            data_batch (dict): A batch of data from the dataloader.
             predictions (Sequence[dict]): A batch of outputs from the model.
         """
         if len(self.fake_results) >= self.fake_nums_per_device:
             return
 
         fake_imgs = []
-        for pred in predictions:
+        for pred in data_samples:
             fake_img_ = pred
             # get ema/orig results
             if self.sample_model in fake_img_:
@@ -1675,18 +1660,17 @@ class PerceptualPathLength(GenerativeMetric):
         self.latent_dim = latent_dim
 
     @torch.no_grad()
-    def process(self, data_batch: ValTestStepInputs,
-                predictions: ForwardOutputs) -> None:
+    def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions. The processed
         results should be stored in ``self.fake_results``, which will be used
         to compute the metrics when all batches have been processed.
 
         Args:
-            data_batch (Sequence[dict]): A batch of data from the dataloader.
-            predictions (Sequence[dict]): A batch of outputs from the model.
+            data_batch (dict): A batch of data from the dataloader.
+            data_samples (Sequence[dict]): A batch of outputs from the model.
         """
         fake_imgs = []
-        for pred in predictions:
+        for pred in data_samples:
             fake_img_ = pred
             # get ema/orig results
             if self.sample_model in fake_img_:
@@ -1847,8 +1831,10 @@ class PerceptualPathLength(GenerativeMetric):
 
                 self.idx += 1
                 return dict(
-                    noise=latent_e,
-                    sample_kwargs=dict(input_is_latent=(self.space == 'W')))
+                    inputs=dict(
+                        noise=latent_e,
+                        sample_kwargs=dict(
+                            input_is_latent=(self.space == 'W'))))
 
         ppl_sampler = PPLSampler(
             model.generator_ema

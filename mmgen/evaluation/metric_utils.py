@@ -5,7 +5,7 @@ import mmcv
 import numpy as np
 import torch
 import torch.nn.functional as F
-from mmcv.parallel import is_module_wrapper
+from mmengine.model import is_model_wrapper
 from scipy import signal
 
 from mmgen.models.architectures.common import get_module_device
@@ -52,7 +52,7 @@ def extract_inception_features(dataloader,
         pbar.update()
 
         # the inception network is not wrapped with module wrapper.
-        if not is_module_wrapper(inception):
+        if not is_model_wrapper(inception):
             # put the img to the module device
             img = img.to(get_module_device(inception))
 

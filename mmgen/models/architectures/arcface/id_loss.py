@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import mmcv
+import mmengine
 import torch
 from torch import nn
 
@@ -14,7 +14,7 @@ class IDLossModel(nn.Module):
 
     def __init__(self, ir_se50_weights=None, device='cuda'):
         super(IDLossModel, self).__init__()
-        mmcv.print_log('Loading ResNet ArcFace', 'mmgen')
+        mmengine.print_log('Loading ResNet ArcFace', 'current')
         self.facenet = Backbone(
             input_size=112, num_layers=50, drop_ratio=0.6, mode='ir_se')
         if ir_se50_weights is None:

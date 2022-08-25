@@ -9,12 +9,12 @@ import os
 import sys
 from collections import OrderedDict
 
-import mmcv
+import mmengine
 import numpy as np
 import torch
 import torch.nn.functional as F
-from mmcv import Config
-from mmcv.runner import load_checkpoint
+from mmengine import Config
+from mmengine.runner import load_checkpoint
 from PIL import Image
 from torch import optim
 from torchvision import transforms
@@ -167,7 +167,7 @@ def main():
         generator = model.generator
     if isinstance(generator, ExponentialMovingAverage):
         generator = generator.module
-    mmcv.print_log(f'Sampling model: {args.sample_model}', 'mmgen')
+    mmengine.print_log(f'Sampling model: {args.sample_model}', 'mmgen')
 
     generator.eval()
     device = 'cpu'
@@ -265,7 +265,7 @@ def main():
     results = results[:, [2, 1, 0], ...]
     results = results.clamp_(0, 1)
 
-    mmcv.mkdir_or_exist(args.results_path)
+    mmengine.mkdir_or_exist(args.results_path)
     # save projection results
     result_file = OrderedDict()
     for i, input_name in enumerate(args.files):

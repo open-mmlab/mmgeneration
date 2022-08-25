@@ -6,9 +6,9 @@ import sys
 import mmcv
 import torch
 from mmcv import Config
-from mmcv.runner import load_checkpoint, set_random_seed
 from mmengine import print_log
 from mmengine.logging import MMLogger
+from mmengine.runner import load_checkpoint, set_random_seed
 
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../../..')))  # isort:skip  # noqa

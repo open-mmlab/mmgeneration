@@ -2,7 +2,7 @@
 import random
 from copy import deepcopy
 
-import mmcv
+import mmengine
 import numpy as np
 import torch
 import torch.nn as nn
@@ -194,16 +194,14 @@ class MSStyleGANv2Generator(nn.Module):
     def train(self, mode=True):
         if mode:
             if self.default_style_mode != self._default_style_mode:
-                mmcv.print_log(
-                    f'Switch to train style mode: {self._default_style_mode}',
-                    'mmgen')
+                mmengine.print_log(
+                    f'Switch to train style mode: {self._default_style_mode}')
             self.default_style_mode = self._default_style_mode
 
         else:
             if self.default_style_mode != self.eval_style_mode:
-                mmcv.print_log(
-                    f'Switch to evaluation style mode: {self.eval_style_mode}',
-                    'mmgen')
+                mmengine.print_log(
+                    f'Switch to evaluation style mode: {self.eval_style_mode}')
             self.default_style_mode = self.eval_style_mode
 
         return super(MSStyleGANv2Generator, self).train(mode)
@@ -314,7 +312,7 @@ class MSStyleGANv2Generator(nn.Module):
         if isinstance(styles, torch.Tensor):
             assert styles.shape[1] == self.style_channels
             styles = [styles]
-        elif mmcv.is_seq_of(styles, torch.Tensor):
+        elif mmengine.is_seq_of(styles, torch.Tensor):
             for t in styles:
                 assert t.shape[-1] == self.style_channels
         # receive a noise generator and sample noise.

@@ -1,23 +1,29 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import math
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
+import torch.nn.functional as F
 from mmengine import BaseDataElement
-from mmengine.model import ImgDataPreprocessor, stack_batch
+from mmengine.model import ImgDataPreprocessor
+from mmengine.utils import is_list_of
 from torch import Tensor
 
 from mmgen.registry import MODELS
-from mmgen.utils.typing import PreprocessInputs, PreprocessOutputs
+from mmgen.utils.typing import PreprocessOutputs
 
 CollectOutputTyping = Tuple[Union[Tensor, Dict[str, Union[Tensor, str, int]]],
                             list]
+CastData = Union[tuple, dict, BaseDataElement, torch.Tensor, list]
 
 
 @MODELS.register_module()
 class GANDataPreprocessor(ImgDataPreprocessor):
-    """Image pre-processor for GAN models. This class provide normalization and
-    bgr to rgb conversion for image tensor inputs. Besides to process tensor
-    input, this class support dict as input.
+    """Image pre-processor for generative models. This class provide
+    normalization and bgr to rgb conversion for image tensor inputs. The input
+    of this classes should be dict which keys are `inputs` and `data_samples`.
+
+    Besides to process tensor `inputs`, this class support dict as `inputs`.
 
     - If the value is `Tensor` and the corresponding key is not contained in
     :attr:`_NON_IMAGE_KEYS`, it will be processed as image tensor.
@@ -152,33 +158,86 @@ class GANDataPreprocessor(ImgDataPreprocessor):
         ]
         return batch_inputs, batch_data_samples
 
-    def _preprocess_image_tensor(self, inputs: List[Tensor]) -> Tensor:
+    def cast_data(self, data: CastData) -> CastData:
+        if isinstance(data, str):
+            return data
+        return super().cast_data(data)
+
+    def _preprocess_image_tensor(self, inputs: Tensor) -> Tensor:
         """Process image tensor.
 
         Args:
-            inputs (List[Tensor]): List of image tensor to process.
+            inputs (Tensor): List of image tensor to process.
 
         Returns:
             Tensor: Processed and stacked image tensor.
         """
-        # bgr to rgb if need
-        if self.channel_conversion and inputs[0].size(0) == 3:
-            inputs = [_input[[2, 1, 0], ...] for _input in inputs]
-        # Normalization.
-        inputs = [(_input - self.mean) / self.std for _input in inputs]
-        # Pad and stack Tensor.
-        batch_inputs = stack_batch(inputs, self.pad_size_divisor,
-                                   self.pad_value)
+        assert inputs.dim() == 4, (
+            'The input of `_preprocess_image_tensor` should be a NCHW '
+            'tensor or a list of tensor, but got a tensor with shape: '
+            f'{inputs.shape}')
+        if self._channel_conversion:
+            inputs = inputs[:, [2, 1, 0], ...]
+        # Convert to float after channel conversion to ensure
+        # efficiency
+        inputs = inputs.float()
+        if self._enable_normalize:
+            inputs = (inputs - self.mean) / self.std
+        h, w = inputs.shape[2:]
+        target_h = math.ceil(h / self.pad_size_divisor) * self.pad_size_divisor
+        target_w = math.ceil(w / self.pad_size_divisor) * self.pad_size_divisor
+        pad_h = target_h - h
+        pad_w = target_w - w
+        batch_inputs = F.pad(inputs, (0, pad_w, 0, pad_h), 'constant',
+                             self.pad_value)
+
         return batch_inputs
 
-    def forward(self,
-                data: PreprocessInputs,
-                training: bool = False) -> PreprocessOutputs:
+    def process_dict_inputs(self, batch_inputs: dict):
+        """_summary_
+
+        Args:
+            batch_inputs (dict): _description_
+
+        Raises:
+            TypeError: _description_
+
+        Returns:
+            _type_: _description_
+        """
+        for k, inputs in batch_inputs.items():
+            # handle concentrate for values in list
+            if isinstance(inputs, list):
+                if k in self._NON_CONCENTATE_KEYS:
+                    # use the first value
+                    assert all([
+                        inputs[0] == inp for inp in inputs
+                    ]), (f'NON_CONCENTATE_KEY \'{k}\' should be consistency '
+                         'among the data list.')
+                    batch_inputs[k] = inputs[0]
+                else:
+                    assert all([
+                        isinstance(inp, torch.Tensor) for inp in inputs
+                    ]), ('Only support stack list of Tensor in inputs dict. '
+                         f'But \'{k}\' is list of \'{type(inputs[0])}\'.')
+                    inputs = torch.stack(inputs, dim=0)
+
+                    if k not in self._NON_IMAGE_KEYS:
+                        # process as image
+                        inputs = self._preprocess_image_tensor(inputs)
+
+                    batch_inputs[k] = inputs
+            elif isinstance(inputs, Tensor) and k not in self._NON_IMAGE_KEYS:
+                batch_inputs[k] = self._preprocess_image_tensor(inputs)
+
+        return batch_inputs
+
+    def forward(self, data: dict, training: bool = False) -> PreprocessOutputs:
         """Performs normalization、padding and bgr2rgb conversion based on
         ``BaseDataPreprocessor``.
 
         Args:
-            data (PreprocessInputs): Input data to process.
+            data (dict): Input data to process.
             training (bool): Whether to enable training time augmentation.
                 This is ignored for :class:`GANDataPreprocessor`. Defaults to
                 False.
@@ -186,21 +245,19 @@ class GANDataPreprocessor(ImgDataPreprocessor):
             PreprocessOutputs: Data in the same format as the model input.
         """
 
-        if isinstance(data, dict):
-            return data, []
+        data = self.cast_data(data)
+        _batch_inputs = data['inputs']
+        # if isinstance(_batch_inputs, dict) and 'img' in _batch_inputs:
+        #     import ipdb
+        #     ipdb.set_trace()
+        if (isinstance(_batch_inputs, torch.Tensor)
+                or is_list_of(_batch_inputs, torch.Tensor)):
+            return super().forward(data, training)
+        elif isinstance(_batch_inputs, dict):
+            _batch_inputs = self.process_dict_inputs(_batch_inputs)
+        else:
+            raise ValueError('')
 
-        inputs, batch_data_samples = self.collate_data(data)
-
-        if isinstance(inputs, list):
-            batch_inputs = self._preprocess_image_tensor(inputs)
-        else:  # inputs is `dict`
-            batch_inputs = dict()
-            for k, _input in inputs.items():
-                if k in self._NON_IMAGE_KEYS:
-                    batch_inputs[k] = torch.stack(_input, dim=0)
-                elif k in self._NON_CONCENTATE_KEYS:
-                    batch_inputs[k] = _input
-                else:
-                    batch_inputs[k] = self._preprocess_image_tensor(_input)
-
-        return batch_inputs, batch_data_samples
+        data['inputs'] = _batch_inputs
+        data.setdefault('data_samples', None)
+        return data

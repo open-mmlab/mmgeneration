@@ -1,11 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import random
 
-import mmcv
+import mmengine
 import numpy as np
 import torch
 import torch.nn as nn
-from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
+from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 
 from mmgen.engine.runners.fp16_utils import auto_fp16
 from mmgen.models.architectures import PixelNorm
@@ -220,21 +220,19 @@ class StyleGANv2Generator(nn.Module):
         state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
                                                   map_location)
         self.load_state_dict(state_dict, strict=strict)
-        mmcv.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
+        mmengine.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
 
     def train(self, mode=True):
         if mode:
             if self.default_style_mode != self._default_style_mode:
-                mmcv.print_log(
-                    f'Switch to train style mode: {self._default_style_mode}',
-                    'mmgen')
+                mmengine.print_log(
+                    f'Switch to train style mode: {self._default_style_mode}')
             self.default_style_mode = self._default_style_mode
 
         else:
             if self.default_style_mode != self.eval_style_mode:
-                mmcv.print_log(
-                    f'Switch to evaluation style mode: {self.eval_style_mode}',
-                    'mmgen')
+                mmengine.print_log(
+                    f'Switch to evaluation style mode: {self.eval_style_mode}')
             self.default_style_mode = self.eval_style_mode
 
         return super(StyleGANv2Generator, self).train(mode)
@@ -337,7 +335,7 @@ class StyleGANv2Generator(nn.Module):
         if isinstance(styles, torch.Tensor):
             assert styles.shape[1] == self.style_channels
             styles = [styles]
-        elif mmcv.is_seq_of(styles, torch.Tensor):
+        elif mmengine.is_seq_of(styles, torch.Tensor):
             for t in styles:
                 assert t.shape[-1] == self.style_channels
         # receive a noise generator and sample noise.
@@ -593,7 +591,7 @@ class StyleGAN2Discriminator(nn.Module):
         state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
                                                   map_location)
         self.load_state_dict(state_dict, strict=strict)
-        mmcv.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
+        mmengine.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
 
     @auto_fp16()
     def forward(self, x):

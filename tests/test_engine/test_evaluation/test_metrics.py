@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 import torch
 import torch.nn as nn
-from mmengine import BaseDataElement
+# from mmengine import BaseDataElement
 from mmengine.logging import MMLogger
 from mmengine.runner import Runner
 from mmengine.utils import TORCH_VERSION, digit_version
@@ -27,29 +27,15 @@ from mmgen.models import (LSGAN, DCGANGenerator, GANDataPreprocessor, Pix2Pix,
                           StyleGAN3, StyleGANv2Generator, StyleGANv3Generator)
 from mmgen.structures import GenDataSample, PixelData
 
-logger = MMLogger(name='mmgen')
+logger = MMLogger(name='test-evaluation')
 
 
 def process_fn(data_batch, predictions):
 
-    # data_batch is loaded from normal dataloader
-    if isinstance(data_batch, list):
-        _data_batch = []
-        for data in data_batch:
-            if isinstance(data['data_sample'], BaseDataElement):
-                _data_batch.append(
-                    dict(
-                        inputs=data['inputs'],
-                        data_sample=data['data_sample'].to_dict()))
-            else:
-                _data_batch.append(data)
-    else:
-        _data_batch = data_batch
-
     _predictions = []
     for pred in predictions:
         _predictions.append(pred.to_dict())
-    return _data_batch, _predictions
+    return data_batch, _predictions
 
 
 def construct_inception_pkl(inception_path):
@@ -401,9 +387,9 @@ class TestPR:
         sampler = pr.get_metric_sampler(self.module, self.dataloader, [pr])
         pr.prepare(self.module, self.dataloader)
         for data_batch in sampler:
-            predictions = self.module.test_step(data_batch)
-            predictions = [pred.to_dict() for pred in predictions]
-            pr.process(data_batch, predictions)
+            data_samples = self.module.test_step(data_batch)
+            data_samples = [pred.to_dict() for pred in data_samples]
+            pr.process(data_batch, data_samples)
         pr_score = pr.evaluate()
         print(pr_score)
         assert pr_score['precision'] >= 0 and pr_score['recall'] >= 0
@@ -485,8 +471,9 @@ class TestSWD(TestCase):
         ]
         fake_samples = [
             GenDataSample(
-                fake_img=PixelData(data=torch.rand(3, 32, 32) * 2 -
-                                   1)).to_dict() for _ in range(100)
+                fake_img=PixelData(data=torch.rand(3, 32, 32) * 2 - 1),
+                gt_img=PixelData(data=torch.rand(3, 32, 32) * 2 -
+                                 1)).to_dict() for _ in range(100)
         ]
 
         swd.process(real_samples, fake_samples)
@@ -503,14 +490,6 @@ class TestSWD(TestCase):
             sample_model='orig',
             image_shape=(3, 32, 32))
         swd.prepare(model, None)
-
-        real_samples = [dict(inputs=torch.rand(3, 32, 32)) for _ in range(2)]
-        fake_samples = [
-            GenDataSample(
-                orig=GenDataSample(
-                    fake_img=PixelData(data=torch.rand(3, 32, 32)))).to_dict()
-            for _ in range(2)
-        ]
 
 
 @pytest.mark.skipif(

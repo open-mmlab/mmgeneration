@@ -4,9 +4,9 @@ from copy import deepcopy
 import torch
 import torch.nn as nn
 from mmcv.cnn.bricks.conv_module import ConvModule
-from mmcv.runner import load_checkpoint
 from mmengine.logging import MMLogger
 from mmengine.model.utils import constant_init
+from mmengine.runner import load_checkpoint
 
 from mmgen.models.builder import MODULES, build_module
 from .modules import EmbedSequential, TimeEmbedding
@@ -402,7 +402,7 @@ class DenoisingUnet(nn.Module):
                 None, pretrained weights will not be loaded. Defaults to None.
         """
         if isinstance(pretrained, str):
-            logger = MMLogger.get_instance(name='mmgen')
+            logger = MMLogger.get_current_instance()
             load_checkpoint(self, pretrained, strict=False, logger=logger)
         elif pretrained is None:
             # As Improved-DDPM, we apply zero-initialization to

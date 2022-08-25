@@ -2,7 +2,7 @@
 from copy import deepcopy
 from functools import partial
 
-import mmcv
+import mmengine
 import numpy as np
 import torch
 import torch.nn as nn
@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from mmcv.ops.fused_bias_leakyrelu import (FusedBiasLeakyReLU,
                                            fused_bias_leakyrelu)
 from mmcv.ops.upfirdn2d import upfirdn2d
-from mmcv.runner.dist_utils import get_dist_info
+from mmengine.dist import get_dist_info
 
 from mmgen.engine.runners.fp16_utils import auto_fp16
 from mmgen.models.architectures.pggan import (EqualizedLRConvModule,
@@ -449,7 +449,7 @@ class ConstantInput(nn.Module):
         super().__init__()
         if isinstance(size, int):
             size = [size, size]
-        elif mmcv.is_seq_of(size, int):
+        elif mmengine.is_seq_of(size, int):
             assert len(
                 size
             ) == 2, f'The length of size should be 2 but got {len(size)}'
@@ -1114,7 +1114,7 @@ class ModMBStddevLayer(nn.Module):
         if self.sync_std:
             assert torch.distributed.is_initialized(
             ), 'Only in distributed training can the sync_std be activated.'
-            mmcv.print_log('Adopt synced minibatch stddev layer', 'mmgen')
+            mmengine.print_log('Adopt synced minibatch stddev layer', 'mmgen')
 
     def forward(self, x):
         """Forward function.

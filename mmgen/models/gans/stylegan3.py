@@ -5,7 +5,7 @@ import torch
 from mmgen.models.architectures.common import get_module_device
 from mmgen.registry import MODELS
 from mmgen.structures import GenDataSample
-from mmgen.utils.typing import ForwardOutputs, ValTestStepInputs
+from mmgen.utils.typing import ForwardOutputs
 from ..architectures.stylegan.utils import (apply_fractional_pseudo_rotation,
                                             apply_fractional_rotation,
                                             apply_fractional_translation,
@@ -28,17 +28,18 @@ class StyleGAN3(StyleGAN2):
     :class:~`mmgen.models.architectures.stylegan.generator_discriminator_v2.StyleGAN2Discriminator`  # noqa
     """
 
-    def test_step(self, data: ValTestStepInputs) -> ForwardOutputs:
+    def test_step(self, data: dict) -> ForwardOutputs:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
-            data (ValTestStepInputs): Data sampled from metric specific
+            data (dict): Data sampled from metric specific
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
             ForwardOutputs: Generated image or image dict.
         """
-        inputs_dict, data_sample = self.data_preprocessor(data)
+        data = self.data_preprocessor(data)
+        inputs_dict, data_samples = data['inputs'], data['data_samples']
         # hard code to compute equivarience
         if 'mode' in inputs_dict and 'eq_cfg' in inputs_dict['mode']:
             batch_size = get_valid_num_batches(inputs_dict)
@@ -48,20 +49,21 @@ class StyleGAN3(StyleGAN2):
                 eq_cfg=inputs_dict['mode']['eq_cfg'],
                 sample_kwargs=inputs_dict['mode']['sample_kwargs'])
         else:
-            outputs = self(inputs_dict, data_sample)
+            outputs = self(inputs_dict, data_samples)
         return outputs
 
-    def val_step(self, data: ValTestStepInputs) -> ForwardOutputs:
+    def val_step(self, data: dict) -> ForwardOutputs:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
-            data (ValTestStepInputs): Data sampled from metric specific
+            data (dict): Data sampled from metric specific
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
             ForwardOutputs: Generated image or image dict.
         """
-        inputs_dict, data_sample = self.data_preprocessor(data)
+        data = self.data_preprocessor(data)
+        inputs_dict, data_samples = data['inputs'], data['data_samples']
         # hard code to compute equivarience
         if 'mode' in inputs_dict and 'eq_cfg' in inputs_dict['mode']:
             batch_size = get_valid_num_batches(inputs_dict)
@@ -71,7 +73,7 @@ class StyleGAN3(StyleGAN2):
                 eq_cfg=inputs_dict['mode']['eq_cfg'],
                 sample_kwargs=inputs_dict['mode']['sample_kwargs'])
         else:
-            outputs = self(inputs_dict, data_sample)
+            outputs = self(inputs_dict, data_samples)
         return outputs
 
     def sample_equivarience_pairs(self,

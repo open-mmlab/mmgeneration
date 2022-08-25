@@ -1,13 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from copy import deepcopy
 
-import mmcv
+import mmengine
 import torch
 import torch.nn as nn
-from mmcv.runner import load_checkpoint
-from mmcv.runner.checkpoint import _load_checkpoint_with_prefix
 from mmengine.logging import MMLogger
 from mmengine.model.utils import normal_init, xavier_init
+from mmengine.runner import load_checkpoint
+from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 from torch.nn.utils import spectral_norm
 
 from mmgen.models.builder import MODELS, MODULES, build_module
@@ -418,7 +418,7 @@ class BigGANGenerator(nn.Module):
                 ortho | N02 | xavier. Defaults to 'ortho'.
         """
         if isinstance(pretrained, str):
-            logger = MMLogger.get_instance(name='mmgen')
+            logger = MMLogger.get_current_instance()
             load_checkpoint(self, pretrained, strict=False, logger=logger)
         elif isinstance(pretrained, dict):
             ckpt_path = pretrained.get('ckpt_path', None)
@@ -429,7 +429,7 @@ class BigGANGenerator(nn.Module):
             state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
                                                       map_location)
             self.load_state_dict(state_dict, strict=strict)
-            mmcv.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
+            mmengine.print_log(f'Load pretrained model from {ckpt_path}')
         elif pretrained is None:
             for m in self.modules():
                 if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
@@ -676,7 +676,7 @@ class BigGANDiscriminator(nn.Module):
         """
 
         if isinstance(pretrained, str):
-            logger = MMLogger.get_instance(name='mmgen')
+            logger = MMLogger.get_current_instance()
             load_checkpoint(self, pretrained, strict=False, logger=logger)
         elif isinstance(pretrained, dict):
             ckpt_path = pretrained.get('ckpt_path', None)
@@ -687,7 +687,7 @@ class BigGANDiscriminator(nn.Module):
             state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
                                                       map_location)
             self.load_state_dict(state_dict, strict=strict)
-            mmcv.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
+            mmengine.print_log(f'Load pretrained model from {ckpt_path}')
         elif pretrained is None:
             for m in self.modules():
                 if isinstance(m, (nn.Conv2d, nn.Linear, nn.Embedding)):
