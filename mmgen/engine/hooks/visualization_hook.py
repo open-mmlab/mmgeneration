@@ -18,8 +18,6 @@ from mmgen.registry import HOOKS
 from mmgen.structures import GenDataSample, PixelData
 from mmgen.visualization.sampler import get_sampler
 
-DATA_BATCH = [dict]
-
 
 @HOOKS.register_module()
 class GenVisualizationHook(Hook):
@@ -221,14 +219,14 @@ class GenVisualizationHook(Hook):
     def after_train_iter(self,
                          runner: Runner,
                          batch_idx: int,
-                         data_batch: DATA_BATCH = None,
+                         data_batch: dict = None,
                          outputs: Optional[dict] = None) -> None:
         """Visualize samples after train iteration.
 
         Args:
             runner (Runner): The runner of the training process.
             batch_idx (int): The index of the current batch in the train loop.
-            data_batch (Sequence[dict], optional): Data from dataloader.
+            data_batch (dict): Data from dataloader.
                 Defaults to None.
             outputs (dict, optional): Outputs from model. Defaults to None.
         """
@@ -246,7 +244,7 @@ class GenVisualizationHook(Hook):
         Args:
             runner (Runner): The runner conatians model to visualize.
             batch_idx (int): The index of the current batch in loop.
-            data_batch (Sequence[dict], optional): Data from dataloader.
+            data_batch (dict): Data from dataloader.
                 Defaults to None.
             outputs (dict, optional): Outputs from model. Defaults to None.
         """

@@ -108,9 +108,6 @@ class GenEvaluator(Evaluator):
 
         return metrics_sampler_list
 
-    # def process(self, data_batch: Optional[Any],
-    #             predictions: Sequence[GenDataSample],
-    #             metrics: Sequence[BaseMetric]) -> None:
     def process(self, data_samples: Sequence[GenDataSample],
                 data_batch: Optional[Any],
                 metrics: Sequence[BaseMetric]) -> None:
@@ -125,20 +122,6 @@ class GenEvaluator(Evaluator):
             metrics (Optional[Sequence[BaseMetric]]): Metrics to evaluate.
         """
 
-        # data_batch is loaded from normal dataloader
-        # if isinstance(data_batch, list):
-        #     _data_batch = []
-        #     for data in data_batch:
-        #         if isinstance(data['data_sample'], BaseDataElement):
-        #             _data_batch.append(
-        #                 dict(
-        #                     inputs=data['inputs'],
-        #                     data_sample=data['data_sample'].to_dict()))
-        #         else:
-        #             _data_batch.append(data)
-        # else:
-        #     _data_batch = data_batch
-
         _data_samples = []
         for data_sample in data_samples:
             if isinstance(data_sample, GenDataSample):
@@ -148,7 +131,6 @@ class GenEvaluator(Evaluator):
 
         # feed to the specifics metrics
         for metric in metrics:
-            # metric.process(_data_batch, _data_samples)
             metric.process(data_batch, _data_samples)
 
     def evaluate(self) -> dict:
