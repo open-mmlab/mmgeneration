@@ -9,7 +9,8 @@ from mmengine.model import constant_init
 from mmengine.runner import load_checkpoint
 
 from mmgen.models.builder import MODULES, build_module
-from .modules import EmbedSequential, TimeEmbedding
+from .modules import (DenoisingResBlock, EmbedSequential, TimeEmbedding,
+                      convert_module_to_f16, convert_module_to_f32)
 
 
 @MODULES.register_module()
@@ -139,12 +140,14 @@ class DenoisingUnet(nn.Module):
                  dropout=0,
                  embedding_channels=-1,
                  num_classes=0,
+                 use_fp16=False,
                  channels_cfg=None,
                  output_cfg=dict(mean='eps', var='learned_range'),
                  norm_cfg=dict(type='GN', num_groups=32),
                  act_cfg=dict(type='SiLU', inplace=False),
                  shortcut_kernel_size=1,
                  use_scale_shift_norm=False,
+                 resblock_updown=False,
                  num_heads=4,
                  time_embedding_mode='sin',
                  time_embedding_cfg=None,
@@ -162,6 +165,7 @@ class DenoisingUnet(nn.Module):
         self.num_classes = num_classes
         self.num_timesteps = num_timesteps
         self.use_rescale_timesteps = use_rescale_timesteps
+        self.dtype = torch.float16 if use_fp16 else torch.float32
 
         self.output_cfg = deepcopy(output_cfg)
         self.mean_mode = self.output_cfg.get('mean', 'eps')
@@ -267,8 +271,16 @@ class DenoisingUnet(nn.Module):
             if level != len(self.channel_factor_list) - 1:
                 self.in_blocks.append(
                     EmbedSequential(
-                        build_module(self.downsample_cfg,
-                                     {'in_channels': in_channels_})))
+                        DenoisingResBlock(
+                            out_channels_,
+                            embedding_channels,
+                            use_scale_shift_norm,
+                            dropout,
+                            norm_cfg=norm_cfg,
+                            out_channels=out_channels_,
+                            down=True) if resblock_updown else build_module(
+                                self.downsample_cfg,
+                                {'in_channels': in_channels_})))
                 self.in_channels_list.append(in_channels_)
                 scale *= 2
 
@@ -300,8 +312,16 @@ class DenoisingUnet(nn.Module):
                 if (level != len(self.channel_factor_list) - 1
                         and idx == resblocks_per_downsample):
                     layers.append(
-                        build_module(self.upsample_cfg,
-                                     {'in_channels': in_channels_}))
+                        DenoisingResBlock(
+                            out_channels_,
+                            embedding_channels,
+                            use_scale_shift_norm,
+                            dropout,
+                            norm_cfg=norm_cfg,
+                            out_channels=out_channels_,
+                            down=True) if resblock_updown else build_module(
+                                self.
+                                upsample_cfg, {'in_channels': in_channels_}))
                     scale //= 2
                 self.out_blocks.append(EmbedSequential(*layers))
 
@@ -343,6 +363,7 @@ class DenoisingUnet(nn.Module):
             embedding = self.label_embedding(label) + embedding
 
         h, hs = x_t, []
+        h = h.type(self.dtype)
         # forward downsample blocks
         for block in self.in_blocks:
             h = block(h, embedding)
@@ -354,6 +375,7 @@ class DenoisingUnet(nn.Module):
         # forward upsample blocks
         for block in self.out_blocks:
             h = block(torch.cat([h, hs.pop()], dim=1), embedding)
+        h = h.type(x_t.dtype)
         outputs = self.out(h)
 
         output_dict = dict()
@@ -420,3 +442,15 @@ class DenoisingUnet(nn.Module):
         else:
             raise TypeError('pretrained must be a str or None but'
                             f' got {type(pretrained)} instead.')
+
+    def convert_to_fp16(self):
+        """Convert the precision of the model to float16."""
+        self.in_blocks.apply(convert_module_to_f16)
+        self.mid_blocks.apply(convert_module_to_f16)
+        self.out_blocks.apply(convert_module_to_f16)
+
+    def convert_to_fp32(self):
+        """Convert the precision of the model to float32."""
+        self.in_blocks.apply(convert_module_to_f32)
+        self.mid_blocks.apply(convert_module_to_f32)
+        self.out_blocks.apply(convert_module_to_f32)

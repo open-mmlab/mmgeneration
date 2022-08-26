@@ -33,6 +33,33 @@ class EmbedSequential(nn.Sequential):
         return x
 
 
+@MODELS.register_module('GN32')
+class GroupNorm32(nn.GroupNorm):
+
+    def __init__(self, num_channels, num_groups=32, **kwargs):
+        super().__init__(num_groups, num_channels, **kwargs)
+
+    def forward(self, x):
+        return super().forward(x.float()).type(x.dtype)
+
+
+def convert_module_to_f16(layer):
+    """Convert primitive modules to float16."""
+    if isinstance(layer, (nn.Conv1d, nn.Conv2d, nn.Conv3d)):
+        layer.weight.data = layer.weight.data.half()
+        if layer.bias is not None:
+            layer.bias.data = layer.bias.data.half()
+
+
+def convert_module_to_f32(layer):
+    """Convert primitive modules to float32, undoing
+    convert_module_to_f16()."""
+    if isinstance(layer, (nn.Conv1d, nn.Conv2d, nn.Conv3d)):
+        layer.weight.data = layer.weight.data.float()
+        if layer.bias is not None:
+            layer.bias.data = layer.bias.data.float()
+
+
 @MODELS.register_module()
 class SiLU(nn.Module):
     r"""Applies the Sigmoid Linear Unit (SiLU) function, element-wise.
@@ -228,7 +255,9 @@ class DenoisingResBlock(nn.Module):
                  out_channels=None,
                  norm_cfg=dict(type='GN', num_groups=32),
                  act_cfg=dict(type='SiLU', inplace=False),
-                 shortcut_kernel_size=1):
+                 shortcut_kernel_size=1,
+                 up=False,
+                 down=False):
         super().__init__()
         out_channels = in_channels if out_channels is None else out_channels
 
@@ -272,6 +301,18 @@ class DenoisingResBlock(nn.Module):
                 out_channels,
                 shortcut_kernel_size,
                 padding=shortcut_padding)
+
+        self.updown = up or down
+
+        if up:
+            self.h_upd = DenoisingUpsample(in_channels, False)
+            self.x_upd = DenoisingUpsample(in_channels, False)
+        elif down:
+            self.h_upd = DenoisingDownsample(in_channels, False)
+            self.x_upd = DenoisingDownsample(in_channels, False)
+        else:
+            self.h_upd = self.x_upd = nn.Identity()
+
         self.init_weights()
 
     def forward_shortcut(self, x):
@@ -289,6 +330,15 @@ class DenoisingResBlock(nn.Module):
         Returns:
             torch.Tensor : Output feature map tensor.
         """
+        if self.updown:
+            in_rest, in_conv = self.conv_1[:-1], self.conv_1[-1]
+            h = in_rest(x)
+            h = self.h_upd(h)
+            x = self.x_upd(x)
+            h = in_conv(h)
+        else:
+            h = self.conv_1(x)
+
         shortcut = self.forward_shortcut(x)
         x = self.conv_1(x)
         x = self.norm_with_embedding(x, y)
@@ -346,7 +396,8 @@ class NormWithEmbedding(nn.Module):
         Returns:
             torch.Tensor : Output feature map tensor.
         """
-        embedding = self.embedding_layer(y)[:, :, None, None]
+        embedding = self.embedding_layer(y).type(x.dtype)
+        embedding = embedding[:, :, None, None]
         if self.use_scale_shift:
             scale, shift = torch.chunk(embedding, 2, dim=1)
             x = self.norm(x)
@@ -373,7 +424,7 @@ class DenoisingDownsample(nn.Module):
         if with_conv:
             self.downsample = nn.Conv2d(in_channels, in_channels, 3, 2, 1)
         else:
-            self.downsample = nn.AvgPool2d(stride=2)
+            self.downsample = nn.AvgPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
         """Forward function for downsampling operation.
@@ -401,8 +452,8 @@ class DenoisingUpsample(nn.Module):
 
     def __init__(self, in_channels, with_conv=True):
         super().__init__()
+        self.with_conv = with_conv
         if with_conv:
-            self.with_conv = True
             self.conv = nn.Conv2d(in_channels, in_channels, 3, 1, 1)
 
     def forward(self, x):
