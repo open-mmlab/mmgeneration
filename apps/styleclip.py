@@ -122,8 +122,7 @@ def main():
 
     # if given proj_latent
     if args.proj_latent is not None:
-        mmengine.print_log(f'Load projected latent: {args.proj_latent}',
-                           'mmgen')
+        mmengine.print_log(f'Load projected latent: {args.proj_latent}')
         proj_file = torch.load(args.proj_latent)
         proj_n = len(proj_file)
         assert proj_n == 1
