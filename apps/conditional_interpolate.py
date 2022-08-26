@@ -240,9 +240,9 @@ def main():
         generator = model.generator
     if isinstance(generator, ExponentialMovingAverage):
         generator = generator.module
-    mmengine.print_log(f'Sampling model: {args.sample_model}', 'mmgen')
-    mmengine.print_log(f'Show mode: {args.show_mode}', 'mmgen')
-    mmengine.print_log(f'Samples path: {args.samples_path}', 'mmgen')
+    mmengine.print_log(f'Sampling model: {args.sample_model}')
+    mmengine.print_log(f'Show mode: {args.show_mode}')
+    mmengine.print_log(f'Samples path: {args.samples_path}')
 
     generator.eval()
 

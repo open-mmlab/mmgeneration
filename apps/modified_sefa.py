@@ -120,7 +120,7 @@ if __name__ == '__main__':
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
 
-    mmengine.print_log('Building models and loading checkpoints', 'mmgen')
+    mmengine.print_log('Building models and loading checkpoints')
     # build model
     model = MODELS.build(cfg.model)
 
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     generator = generator.to(device)
     generator.eval()
 
-    mmengine.print_log('Calculating or loading eigen vectors', 'mmgen')
+    mmengine.print_log('Calculating or loading eigen vectors')
     # load/calculate eigen vector for current weights
     if args.eigen_vector is None:
         eigen_vector = calc_eigens(args, generator.state_dict())
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     if args.sample_cfg is None:
         args.sample_cfg = dict()
 
-    mmengine.print_log('Sampling images with modified SeFa', 'mmgen')
+    mmengine.print_log('Sampling images with modified SeFa')
     sample = generator([latent], input_is_latent=True, **args.sample_cfg)
 
     # the first line is the original samples
@@ -209,4 +209,4 @@ if __name__ == '__main__':
         normalize=True,
         range=(-1, 1))
 
-    mmengine.print_log(f'Save images to {filename}', 'mmgen')
+    mmengine.print_log(f'Save images to {filename}')

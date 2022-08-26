@@ -167,7 +167,7 @@ def main():
         generator = model.generator
     if isinstance(generator, ExponentialMovingAverage):
         generator = generator.module
-    mmengine.print_log(f'Sampling model: {args.sample_model}', 'mmgen')
+    mmengine.print_log(f'Sampling model: {args.sample_model}')
 
     generator.eval()
     device = 'cpu'

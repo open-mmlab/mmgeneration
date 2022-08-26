@@ -79,7 +79,7 @@ def main():
     model.eval()
 
     # load ckpt
-    print_log(f'Loading ckpt from {args.checkpoint}', 'mmgen')
+    print_log(f'Loading ckpt from {args.checkpoint}')
     _ = load_checkpoint(model, args.checkpoint, map_location='cpu')
 
     # add dp wrapper

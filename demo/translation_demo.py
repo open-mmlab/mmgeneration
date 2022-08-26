@@ -3,8 +3,8 @@ import argparse
 import os
 import sys
 
-import mmcv
-from mmcv import DictAction
+import mmengine
+from mmengine import DictAction
 from torchvision import utils
 
 # yapf: disable
@@ -52,7 +52,7 @@ def main():
     results = (results[:, [2, 1, 0]] + 1.) / 2.
 
     # save images
-    mmcv.mkdir_or_exist(os.path.dirname(args.save_path))
+    mmengine.mkdir_or_exist(os.path.dirname(args.save_path))
     utils.save_image(results, args.save_path)
 
 

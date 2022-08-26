@@ -220,7 +220,7 @@ class StyleGANv2Generator(nn.Module):
         state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
                                                   map_location)
         self.load_state_dict(state_dict, strict=strict)
-        mmengine.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
+        mmengine.print_log(f'Load pretrained model from {ckpt_path}')
 
     def train(self, mode=True):
         if mode:
@@ -591,7 +591,7 @@ class StyleGAN2Discriminator(nn.Module):
         state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
                                                   map_location)
         self.load_state_dict(state_dict, strict=strict)
-        mmengine.print_log(f'Load pretrained model from {ckpt_path}', 'mmgen')
+        mmengine.print_log(f'Load pretrained model from {ckpt_path}')
 
     @auto_fp16()
     def forward(self, x):

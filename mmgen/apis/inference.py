@@ -229,7 +229,8 @@ def sample_img2img_model(model, image_path, target_domain=None, **kwargs):
 
     data = [test_pipeline(data)]
 
-    inputs_dict, data_sample = model.data_preprocessor(data, False)
+    data = model.data_preprocessor(data, False)
+    inputs_dict = data['inputs']
 
     source_image = inputs_dict[f'img_{source_domain}']
 
@@ -280,9 +281,8 @@ def sample_ddpm_model(model,
     res_list = []
     # inference
     for idx, batches in enumerate(batches_list):
-        mmengine.print_log(
-            f'Start to sample batch [{idx+1} / '
-            f'{len(batches_list)}]', 'mmgen')
+        mmengine.print_log(f'Start to sample batch [{idx+1} / '
+                           f'{len(batches_list)}]')
         noise_batch_ = noise_batch[None, ...].expand(batches, -1, -1, -1) \
             if same_noise else None
 
