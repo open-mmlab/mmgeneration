@@ -5,8 +5,8 @@ import mmengine
 import numpy as np
 import torch
 import torch.nn as nn
-from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 from mmengine import autocast
+from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 
 from mmgen.models.architectures import PixelNorm
 from mmgen.models.architectures.common import get_module_device

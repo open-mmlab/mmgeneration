@@ -247,12 +247,13 @@ class StyleGAN2(BaseGAN):
         message_hub = MessageHub.get_current_instance()
         curr_iter = message_hub.get_info('iter')
         data = self.data_preprocessor(data, True)
+        inputs_dict, data_samples = data['inputs'], data['data_samples']
 
         disc_optimizer_wrapper: OptimWrapper = optim_wrapper['discriminator']
         disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
 
         with disc_optimizer_wrapper.optim_context(self.discriminator):
-            log_vars = self.train_discriminator(inputs_dict, data_sample,
+            log_vars = self.train_discriminator(inputs_dict, data_samples,
                                                 disc_optimizer_wrapper)
 
         # add 1 to `curr_iter` because iter is updated in train loop.
@@ -272,7 +273,7 @@ class StyleGAN2(BaseGAN):
             for _ in range(self.generator_steps * gen_accu_iters):
                 with gen_optimizer_wrapper.optim_context(self.generator):
                     log_vars_gen = self.train_generator(
-                        inputs_dict, data_sample, gen_optimizer_wrapper)
+                        inputs_dict, data_samples, gen_optimizer_wrapper)
 
                 log_vars_gen_list.append(log_vars_gen)
             log_vars_gen = gather_log_vars(log_vars_gen_list)

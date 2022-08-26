@@ -10,8 +10,8 @@ import torch.nn.functional as F
 from mmcv.ops.fused_bias_leakyrelu import (FusedBiasLeakyReLU,
                                            fused_bias_leakyrelu)
 from mmcv.ops.upfirdn2d import upfirdn2d
-from mmengine.dist import get_dist_info
 from mmengine import autocast
+from mmengine.dist import get_dist_info
 
 from mmgen.models.architectures.pggan import (EqualizedLRConvModule,
                                               EqualizedLRLinearModule,
