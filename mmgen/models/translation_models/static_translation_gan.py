@@ -2,7 +2,8 @@
 from copy import deepcopy
 
 import torch.nn as nn
-from mmengine.model import BaseModel, MMDistributedDataParallel
+from mmengine.model import (BaseModel, MMDistributedDataParallel,
+                            is_model_wrapper)
 
 from mmgen.registry import MODELS
 from ..builder import build_module
@@ -60,10 +61,19 @@ class StaticTranslationGAN(BaseTranslationModel, BaseModel):
             pretrained (str, optional): Path for pretrained weights. If given
                 None, pretrained weights will not be loaded. Default: None.
         """
-        return
         for domain in self._reachable_domains:
-            self.generators[domain].init_weights(pretrained=pretrained)
-            self.discriminators[domain].init_weights(pretrained=pretrained)
+            if is_model_wrapper(self.generators):
+                self.generators.module[domain].init_weights(
+                    pretrained=pretrained)
+            else:
+                self.generators[domain].init_weights(pretrained=pretrained)
+            if self.discriminators is not None:
+                if is_model_wrapper(self.discriminators):
+                    self.discriminators.module[domain].init_weights(
+                        pretrained=pretrained)
+                else:
+                    self.discriminators[domain].init_weights(
+                        pretrained=pretrained)
 
     def get_module(self, module):
         """Get `nn.ModuleDict` to fit the `MMDistributedDataParallel`
