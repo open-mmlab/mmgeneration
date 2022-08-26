@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -9,6 +9,7 @@ from mmengine.optim import OptimWrapper
 from torch import Tensor
 
 from mmgen.registry import MODELS
+from mmgen.structures import GenDataSample
 from .base_gan import BaseConditionalGAN
 
 ModelType = Union[Dict, nn.Module]
@@ -109,12 +110,12 @@ class SAGAN(BaseConditionalGAN):
         return loss, log_var
 
     def train_discriminator(
-            self, inputs, data_samples,
+            self, inputs: dict, data_samples: List[GenDataSample],
             optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
         """Train discriminator.
 
         Args:
-            inputs (TrainInput): Inputs from dataloader.
+            inputs (dict): Inputs from dataloader.
             data_samples (List[GenDataSample]): Data samples from dataloader.
             optim_wrapper (OptimWrapper): OptimWrapper instance used to update
                 model parameters.
@@ -142,7 +143,7 @@ class SAGAN(BaseConditionalGAN):
         optimizer_wrapper.update_params(parsed_losses)
         return log_vars
 
-    def train_generator(self, inputs, data_samples,
+    def train_generator(self, inputs: dict, data_samples: List[GenDataSample],
                         optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
         """Train generator.
 

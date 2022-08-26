@@ -8,10 +8,10 @@ except Exception:
     raise ModuleNotFoundError(
         'To use styleclip, openai clip need to be installed first')
 
-import mmcv
+import mmengine
 import torch
 import torchvision
-from mmcv import Config, DictAction
+from mmengine import Config, DictAction
 from torch import optim
 from tqdm import tqdm
 
@@ -68,9 +68,9 @@ def parse_args():
         '--proj-latent',
         type=str,
         default=None,
-        help='Projection image files produced by stylegan_projector.py. If this \
-        argument is given, then the projected latent will be used as the init\
-        latent.')
+        help='Projection image files produced by stylegan_projector.py. If \
+        this argument is given, then the projected latent will be used as the \
+        init latent.')
     parser.add_argument(
         '--truncation',
         type=float,
@@ -122,7 +122,7 @@ def main():
 
     # if given proj_latent
     if args.proj_latent is not None:
-        mmcv.print_log(f'Load projected latent: {args.proj_latent}', 'mmgen')
+        mmengine.print_log(f'Load projected latent: {args.proj_latent}')
         proj_file = torch.load(args.proj_latent)
         proj_n = len(proj_file)
         assert proj_n == 1
@@ -156,7 +156,7 @@ def main():
     optimizer = optim.Adam([latent], lr=args.lr)
 
     pbar = tqdm(range(args.step))
-    mmcv.print_log(f'Description: {args.description}')
+    mmengine.print_log(f'Description: {args.description}')
     for i in pbar:
         t = i / args.step
         lr = get_lr(t, args.lr)

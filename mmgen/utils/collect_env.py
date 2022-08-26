@@ -8,7 +8,8 @@ import cv2
 import mmcv
 import torch
 import torchvision
-from mmcv.utils import get_build_config, get_git_hash
+from mmengine.utils import get_git_hash
+from mmengine.utils.dl_utils.parrots_wrapper import get_build_config
 
 import mmgen
 
@@ -23,11 +24,8 @@ def collect_env():
     env_info['CUDA available'] = cuda_available
 
     if cuda_available:
-        if mmcv.__version__ < '1.3.11':
-            from mmcv.utils.parrots_wrapper import CUDA_HOME
-        else:
-            from mmcv.utils.parrots_wrapper import _get_cuda_home
-            CUDA_HOME = _get_cuda_home()
+        from mmengine.utils.dl_utils.parrots_wrapper import _get_cuda_home
+        CUDA_HOME = _get_cuda_home()
 
         env_info['CUDA_HOME'] = CUDA_HOME
 

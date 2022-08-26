@@ -2,10 +2,11 @@
 import torch
 import torch.nn.functional as F
 from mmengine import MessageHub
+from mmengine.optim import OptimWrapperDict
 
 from mmgen.registry import MODELS
 from mmgen.structures import GenDataSample, PixelData
-from mmgen.utils.typing import ForwardOutputs, ValTestStepInputs
+from mmgen.utils.typing import ForwardOutputs
 from ..common import GANImageBuffer, set_requires_grad
 from .static_translation_gan import StaticTranslationGAN
 
@@ -137,7 +138,7 @@ class CycleGAN(StaticTranslationGAN):
                 return item
         return None
 
-    def train_step(self, data, optim_wrapper):
+    def train_step(self, data: dict, optim_wrapper: OptimWrapperDict):
         """Training step function.
 
         Args:
@@ -157,8 +158,8 @@ class CycleGAN(StaticTranslationGAN):
         """
         message_hub = MessageHub.get_current_instance()
         curr_iter = message_hub.get_info('iter')
-        inputs_dict, data_sample = self.data_preprocessor(data, True)
-
+        data = self.data_preprocessor(data, True)
+        inputs_dict = data['inputs']
         # forward generators
         outputs = dict()
         for target_domain in self._reachable_domains:
@@ -198,17 +199,19 @@ class CycleGAN(StaticTranslationGAN):
 
         return log_vars
 
-    def test_step(self, data: ValTestStepInputs) -> ForwardOutputs:
+    def test_step(self, data: dict) -> ForwardOutputs:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
-            data (ValTestStepInputs): Data sampled from metric specific
+            data (dict): Data sampled from metric specific
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
             ForwardOutputs: Generated image or image dict.
         """
-        inputs_dict, data_sample = self.data_preprocessor(data)
+        data = self.data_preprocessor(data)
+        inputs_dict, data_samples = data['inputs'], data['data_samples']
+
         outputs = {}
         for src_domain in self._reachable_domains:
             # Identity reconstruction for generators
@@ -222,8 +225,8 @@ class CycleGAN(StaticTranslationGAN):
         num_batches = next(iter(outputs.values())).shape[0]
         for idx in range(num_batches):
             gen_sample = GenDataSample()
-            if data_sample:
-                gen_sample.update(data_sample[idx])
+            if data_samples:
+                gen_sample.update(data_samples[idx])
 
             for src_domain in self._reachable_domains:
                 target_domain = self.get_other_domains(src_domain)[0]
@@ -235,17 +238,19 @@ class CycleGAN(StaticTranslationGAN):
             batch_sample_list.append(gen_sample)
         return batch_sample_list
 
-    def val_step(self, data: ValTestStepInputs) -> ForwardOutputs:
+    def val_step(self, data: dict) -> ForwardOutputs:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
-            data (ValTestStepInputs): Data sampled from metric specific
+            data (dict): Data sampled from metric specific
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
             ForwardOutputs: Generated image or image dict.
         """
-        inputs_dict, data_sample = self.data_preprocessor(data)
+        data = self.data_preprocessor(data)
+        inputs_dict, data_samples = data['inputs'], data['data_samples']
+
         outputs = {}
         for src_domain in self._reachable_domains:
             # Identity reconstruction for generators
@@ -259,8 +264,8 @@ class CycleGAN(StaticTranslationGAN):
         num_batches = next(iter(outputs.values())).shape[0]
         for idx in range(num_batches):
             gen_sample = GenDataSample()
-            if data_sample:
-                gen_sample.update(data_sample[idx])
+            if data_samples:
+                gen_sample.update(data_samples[idx])
 
             for src_domain in self._reachable_domains:
                 target_domain = self.get_other_domains(src_domain)[0]

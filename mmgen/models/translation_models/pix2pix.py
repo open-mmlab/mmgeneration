@@ -98,7 +98,8 @@ class Pix2Pix(StaticTranslationGAN):
         """
         message_hub = MessageHub.get_current_instance()
         curr_iter = message_hub.get_info('iter')
-        inputs_dict, data_sample = self.data_preprocessor(data, True)
+        data = self.data_preprocessor(data, True)
+        inputs_dict = data['inputs']
 
         disc_optimizer_wrapper = optim_wrapper['discriminators']
         disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
@@ -150,7 +151,8 @@ class Pix2Pix(StaticTranslationGAN):
         Returns:
             ForwardOutputs: Generated image or image dict.
         """
-        inputs_dict, data_sample = self.data_preprocessor(data)
+        data = self.data_preprocessor(data)
+        inputs_dict, data_samples = data['inputs'], data['data_samples']
         target_domain = self._reachable_domains[0]
         source_domain = self.get_other_domains(target_domain)[0]
         outputs = self.forward_test(
@@ -160,8 +162,8 @@ class Pix2Pix(StaticTranslationGAN):
         num_batches = next(iter(outputs.values())).shape[0]
         for idx in range(num_batches):
             gen_sample = GenDataSample()
-            if data_sample:
-                gen_sample.update(data_sample[idx])
+            if data_samples:
+                gen_sample.update(data_samples[idx])
             setattr(gen_sample, f'gt_{target_domain}',
                     PixelData(data=inputs_dict[f'img_{target_domain}'][idx]))
             setattr(gen_sample, f'fake_{target_domain}',
@@ -181,7 +183,8 @@ class Pix2Pix(StaticTranslationGAN):
         Returns:
             ForwardOutputs: Generated image or image dict.
         """
-        inputs_dict, data_sample = self.data_preprocessor(data)
+        data = self.data_preprocessor(data)
+        inputs_dict, data_samples = data['inputs'], data['data_samples']
         target_domain = self._reachable_domains[0]
         source_domain = self.get_other_domains(target_domain)[0]
         outputs = self.forward_test(
@@ -191,8 +194,8 @@ class Pix2Pix(StaticTranslationGAN):
         num_batches = next(iter(outputs.values())).shape[0]
         for idx in range(num_batches):
             gen_sample = GenDataSample()
-            if data_sample:
-                gen_sample.update(data_sample[idx])
+            if data_samples:
+                gen_sample.update(data_samples[idx])
             setattr(gen_sample, f'gt_{target_domain}',
                     PixelData(data=inputs_dict[f'img_{target_domain}'][idx]))
             setattr(gen_sample, f'fake_{target_domain}',

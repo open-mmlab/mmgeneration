@@ -5,9 +5,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.runner import load_state_dict
-from mmcv.utils import print_log
+from mmengine import print_log
 from mmengine.logging import MMLogger
+# from mmcv.runner import load_state_dict
+from mmengine.runner import load_state_dict
 
 from mmgen.models.builder import MODULES
 from .modules import DiscriminatorBlock, GeneratorBlock
@@ -165,6 +166,7 @@ class SinGANMultiScaleGenerator(nn.Module):
         return g_res
 
     def check_and_load_prev_weight(self, curr_scale):
+        logger = MMLogger.get_current_instance()
         if curr_scale == 0:
             return
         prev_ch = self.blocks[curr_scale - 1].base_channels
@@ -176,10 +178,10 @@ class SinGANMultiScaleGenerator(nn.Module):
             load_state_dict(
                 self.blocks[curr_scale],
                 self.blocks[curr_scale - 1].state_dict(),
-                logger=MMLogger.get_instance(name='mmgen'))
-            print_log('Successfully load pretrianed model from last scale.')
+                logger=MMLogger.get_current_instance())
+            logger.info('Successfully load pretrianed model from last scale.')
         else:
-            print_log(
+            logger.info(
                 'Cannot load pretrained model from last scale since'
                 f' prev_ch({prev_ch}) != curr_ch({curr_ch})'
                 f' or prev_in_ch({prev_in_ch}) != curr_in_ch({curr_in_ch})')

@@ -4,10 +4,10 @@ import os
 import os.path as osp
 import sys
 
-import mmcv
+import mmengine
 import numpy as np
 import torch
-from mmcv import DictAction
+from mmengine import DictAction
 from torchvision import utils
 
 # yapf: disable
@@ -128,7 +128,7 @@ def main():
     results = torch.stack(results, dim=0)
 
     # save images
-    mmcv.mkdir_or_exist(os.path.dirname(args.save_path))
+    mmengine.mkdir_or_exist(os.path.dirname(args.save_path))
     if suffix == '.gif':
         # concentrate all output of each timestep
         results_timestep_list = []

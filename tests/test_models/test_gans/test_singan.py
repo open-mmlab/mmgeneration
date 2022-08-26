@@ -30,12 +30,13 @@ class TestSinGAN:
         cls.lr_scheduler_args = dict(milestones=[1600], gamma=0.1)
 
         cls.data_batch = dict(
-            real_scale0=torch.randn(1, 3, 25, 25),
-            real_scale1=torch.randn(1, 3, 30, 30),
-            real_scale2=torch.randn(1, 3, 32, 32),
-        )
-        cls.data_batch['input_sample'] = torch.zeros_like(
-            cls.data_batch['real_scale0'])
+            inputs=dict(
+                real_scale0=torch.randn(1, 3, 25, 25),
+                real_scale1=torch.randn(1, 3, 30, 30),
+                real_scale2=torch.randn(1, 3, 32, 32),
+            ))
+        cls.data_batch['inputs']['input_sample'] = torch.zeros_like(
+            cls.data_batch['inputs']['real_scale0'])
 
         cls.optim_wrapper_cfg = dict(
             generator=dict(
@@ -102,12 +103,13 @@ class TestPESinGAN:
         cls.lr_scheduler_args = dict(milestones=[1600], gamma=0.1)
 
         cls.data_batch = dict(
-            real_scale0=torch.randn(1, 3, 25, 25),
-            real_scale1=torch.randn(1, 3, 30, 30),
-            real_scale2=torch.randn(1, 3, 32, 32),
-        )
-        cls.data_batch['input_sample'] = torch.zeros_like(
-            cls.data_batch['real_scale0'])
+            inputs=dict(
+                real_scale0=torch.randn(1, 3, 25, 25),
+                real_scale1=torch.randn(1, 3, 30, 30),
+                real_scale2=torch.randn(1, 3, 32, 32),
+            ))
+        cls.data_batch['inputs']['input_sample'] = torch.zeros_like(
+            cls.data_batch['inputs']['real_scale0'])
 
         cls.optim_wrapper_cfg = dict(
             generator=dict(

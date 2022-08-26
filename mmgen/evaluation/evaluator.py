@@ -1,14 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from collections import defaultdict
-from typing import Iterator, List, Sequence, Tuple, Union
+from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
 
-from mmengine.data import BaseDataElement
 from mmengine.evaluator import BaseMetric, Evaluator
 from mmengine.model import BaseModel
 from torch.utils.data.dataloader import DataLoader
 
 from mmgen.registry import EVALUATORS
-from mmgen.utils.typing import ForwardOutputs, ValTestStepInputs
+from mmgen.structures import GenDataSample
 
 
 @EVALUATORS.register_module()
@@ -109,41 +108,30 @@ class GenEvaluator(Evaluator):
 
         return metrics_sampler_list
 
-    def process(self, data_batch: ValTestStepInputs,
-                predictions: ForwardOutputs,
+    def process(self, data_samples: Sequence[GenDataSample],
+                data_batch: Optional[Any],
                 metrics: Sequence[BaseMetric]) -> None:
         """Pass `data_batch` from dataloader and `predictions` (generated
         results) to corresponding `metrics`.
 
         Args:
-            data_batch (ValTestStepInputs): A batch of data from the
+            data_samples (Sequence[GenDataSample]): A batch of generated
+                results from model.
+            data_batch (Optional[Any]): A batch of data from the
                 metrics specific sampler or the dataloader.
-            predictions (ForwardOutputs): A batch of generated results from
-                model.
             metrics (Optional[Sequence[BaseMetric]]): Metrics to evaluate.
         """
 
-        # data_batch is loaded from normal dataloader
-        if isinstance(data_batch, list):
-            _data_batch = []
-            for data in data_batch:
-                if isinstance(data['data_sample'], BaseDataElement):
-                    _data_batch.append(
-                        dict(
-                            inputs=data['inputs'],
-                            data_sample=data['data_sample'].to_dict()))
-                else:
-                    _data_batch.append(data)
-        else:
-            _data_batch = data_batch
-
-        _predictions = []
-        for pred in predictions:
-            _predictions.append(pred.to_dict())
+        _data_samples = []
+        for data_sample in data_samples:
+            if isinstance(data_sample, GenDataSample):
+                _data_samples.append(data_sample.to_dict())
+            else:
+                _data_samples.append(data_sample)
 
         # feed to the specifics metrics
         for metric in metrics:
-            metric.process(_data_batch, _predictions)
+            metric.process(data_batch, _data_samples)
 
     def evaluate(self) -> dict:
         """Invoke ``evaluate`` method of each metric and collect the metrics

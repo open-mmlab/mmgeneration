@@ -12,14 +12,12 @@ from torch import Tensor
 
 from mmgen.registry import MODELS, MODULES
 from mmgen.structures import GenDataSample, PixelData
-from mmgen.utils.typing import (ForwardInputs, LabelVar, NoiseVar, SampleList,
-                                TrainStepInputs, ValTestStepInputs)
+from mmgen.utils.typing import ForwardInputs, LabelVar, NoiseVar, SampleList
 from ..common import (gather_log_vars, get_valid_noise_size,
                       get_valid_num_batches, label_sample_fn, noise_sample_fn,
                       set_requires_grad)
 
 ModelType = Union[Dict, nn.Module]
-TrainInput = Union[dict, Tensor]
 
 
 class BaseGAN(BaseModel, metaclass=ABCMeta):
@@ -201,7 +199,7 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
         return sample_model
 
     def forward(self,
-                batch_inputs: ForwardInputs,
+                inputs: ForwardInputs,
                 data_samples: Optional[list] = None,
                 mode: Optional[str] = None) -> SampleList:
         """Sample images with the given inputs. If forward mode is 'ema' or
@@ -220,17 +218,17 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
         Returns:
             SampleList: A list of ``GenDataSample`` contain generated results.
         """
-        if isinstance(batch_inputs, Tensor):
-            noise = batch_inputs
+        if isinstance(inputs, Tensor):
+            noise = inputs
             sample_kwargs = {}
         else:
-            noise = batch_inputs.get('noise', None)
-            num_batches = get_valid_num_batches(batch_inputs)
+            noise = inputs.get('noise', None)
+            num_batches = get_valid_num_batches(inputs)
             noise = self.noise_fn(noise, num_batches=num_batches)
-            sample_kwargs = batch_inputs.get('sample_kwargs', dict())
+            sample_kwargs = inputs.get('sample_kwargs', dict())
         num_batches = noise.shape[0]
 
-        sample_model = self._get_valid_model(batch_inputs)
+        sample_model = self._get_valid_model(inputs)
         if sample_model in ['ema', 'ema/orig']:
             generator = self.generator_ema
         else:  # sample model is 'orig'
@@ -250,6 +248,8 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
             gen_sample = GenDataSample()
             if data_samples:
                 gen_sample.update(data_samples[idx])
+            if isinstance(inputs, dict) and 'img' in inputs:
+                gen_sample.gt_img = PixelData(data=inputs['img'][idx])
             if isinstance(outputs, dict):
                 gen_sample.ema = GenDataSample(
                     fake_img=PixelData(data=outputs['ema'][idx]),
@@ -271,7 +271,7 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
 
         return batch_sample_list
 
-    def val_step(self, data: ValTestStepInputs) -> SampleList:
+    def val_step(self, data: dict) -> SampleList:
         """Gets the generated image of given data.
 
         Calls ``self.data_preprocessor(data)`` and
@@ -279,31 +279,31 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
         generated results which will be passed to evaluator.
 
         Args:
-            data (ValTestStepInputs): Data sampled from metric specific
+            data (dict): Data sampled from metric specific
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
             ForwardOutputs: Generated image or image dict.
         """
-        inputs_dict, data_sample = self.data_preprocessor(data)
-        outputs = self(inputs_dict, data_sample)
+        data = self.data_preprocessor(data)
+        outputs = self(**data)
         return outputs
 
-    def test_step(self, data: ValTestStepInputs) -> SampleList:
+    def test_step(self, data: dict) -> SampleList:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
-            data (ValTestStepInputs): Data sampled from metric specific
+            data (dict): Data sampled from metric specific
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
             ForwardOutputs: Generated image or image dict.
         """
-        inputs_dict, data_sample = self.data_preprocessor(data)
-        outputs = self(inputs_dict, data_sample)
+        data = self.data_preprocessor(data)
+        outputs = self(**data)
         return outputs
 
-    def train_step(self, data: TrainStepInputs,
+    def train_step(self, data: dict,
                    optim_wrapper: OptimWrapperDict) -> Dict[str, Tensor]:
         """Train GAN model. In the training of GAN models, generator and
         discriminator are updated alternatively. In MMGeneration's design,
@@ -314,7 +314,7 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
         in :meth:`should_gen_update`.
 
         Args:
-            data (List[dict]): Data sampled from dataloader.
+            data (dict): Data sampled from dataloader.
             optim_wrapper (OptimWrapperDict): OptimWrapperDict instance
                 contains OptimWrapper of generator and discriminator.
 
@@ -323,14 +323,15 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
         """
         message_hub = MessageHub.get_current_instance()
         curr_iter = message_hub.get_info('iter')
-        inputs_dict, data_sample = self.data_preprocessor(data, True)
+        # inputs_dict, data_sample = self.data_preprocessor(data, True)
+        data = self.data_preprocessor(data, True)
 
         disc_optimizer_wrapper: OptimWrapper = optim_wrapper['discriminator']
         disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
 
         with disc_optimizer_wrapper.optim_context(self.discriminator):
-            log_vars = self.train_discriminator(inputs_dict, data_sample,
-                                                disc_optimizer_wrapper)
+            log_vars = self.train_discriminator(
+                **data, optimizer_wrapper=disc_optimizer_wrapper)
 
         # add 1 to `curr_iter` because iter is updated in train loop.
         # Whether to update the generator. We update generator with
@@ -349,7 +350,7 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
             for _ in range(self.generator_steps * gen_accu_iters):
                 with gen_optimizer_wrapper.optim_context(self.generator):
                     log_vars_gen = self.train_generator(
-                        inputs_dict, data_sample, gen_optimizer_wrapper)
+                        **data, optimizer_wrapper=gen_optimizer_wrapper)
 
                 log_vars_gen_list.append(log_vars_gen)
             log_vars_gen = gather_log_vars(log_vars_gen_list)
@@ -380,14 +381,13 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
         return log_vars
 
     @abstractmethod
-    def train_generator(self, inputs: TrainInput,
-                        data_samples: List[GenDataSample],
+    def train_generator(self, inputs: dict, data_samples: List[GenDataSample],
                         optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
         """Training function for discriminator. All GANs should implement this
         function by themselves.
 
         Args:
-            inputs (TrainInput): Inputs from dataloader.
+            inputs (dict): Inputs from dataloader.
             data_samples (List[GenDataSample]): Data samples from dataloader.
             optim_wrapper (OptimWrapper): OptimWrapper instance used to update
                 model parameters.
@@ -398,13 +398,13 @@ class BaseGAN(BaseModel, metaclass=ABCMeta):
 
     @abstractmethod
     def train_discriminator(
-            self, inputs: TrainInput, data_samples: List[GenDataSample],
+            self, inputs: dict, data_samples: List[GenDataSample],
             optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
         """Training function for discriminator. All GANs should implement this
         function by themselves.
 
         Args:
-            inputs (TrainInput): Inputs from dataloader.
+            inputs (dict): Inputs from dataloader.
             data_samples (List[GenDataSample]): Data samples from dataloader.
             optim_wrapper (OptimWrapper): OptimWrapper instance used to update
                 model parameters.
@@ -549,7 +549,7 @@ class BaseConditionalGAN(BaseGAN):
         return num_classes
 
     def forward(self,
-                batch_inputs: ForwardInputs,
+                inputs: ForwardInputs,
                 data_samples: Optional[list] = None,
                 mode: Optional[str] = None) -> SampleList:
         """Sample images with the given inputs. If forward mode is 'ema' or
@@ -558,7 +558,7 @@ class BaseConditionalGAN(BaseGAN):
         generator and EMA generator will both be returned in a dict.
 
         Args:
-            batch_inputs (ForwardInputs): Dict containing the necessary
+            inputs (ForwardInputs): Dict containing the necessary
                 information (e.g. noise, num_batches, mode) to generate image.
             data_samples (Optional[list]): Data samples collated by
                 :attr:`data_preprocessor`. Defaults to None.
@@ -568,22 +568,22 @@ class BaseConditionalGAN(BaseGAN):
         Returns:
             ForwardOutputs: Generated images or image dict.
         """
-        if isinstance(batch_inputs, Tensor):
-            noise = batch_inputs
+        if isinstance(inputs, Tensor):
+            noise = inputs
             sample_kwargs = {}
         else:
-            noise = batch_inputs.get('noise', None)
-            num_batches = get_valid_num_batches(batch_inputs)
+            noise = inputs.get('noise', None)
+            num_batches = get_valid_num_batches(inputs)
             noise = self.noise_fn(noise, num_batches=num_batches)
-            sample_kwargs = batch_inputs.get('sample_kwargs', dict())
+            sample_kwargs = inputs.get('sample_kwargs', dict())
         num_batches = noise.shape[0]
 
         labels = self.data_sample_to_label(data_samples)
         if labels is None:
-            num_batches = get_valid_num_batches(batch_inputs)
+            num_batches = get_valid_num_batches(inputs)
             labels = self.label_fn(num_batches=num_batches)
 
-        sample_model = self._get_valid_model(batch_inputs)
+        sample_model = self._get_valid_model(inputs)
         if sample_model in ['ema', 'ema/orig']:
             generator = self.generator_ema
         else:  # sample model is `orig`

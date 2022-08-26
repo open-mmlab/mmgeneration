@@ -66,7 +66,7 @@ class PackGenInputs(BaseTransform):
         for key in self.meta_keys:
             img_meta[key] = results[key]
         data_sample.set_metainfo(img_meta)
-        packed_results['data_sample'] = data_sample
+        packed_results['data_samples'] = data_sample
 
         return packed_results
 

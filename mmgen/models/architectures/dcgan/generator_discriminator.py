@@ -3,10 +3,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
-from mmcv.runner import load_checkpoint
-from mmcv.utils.parrots_wrapper import _BatchNorm
 from mmengine.logging import MMLogger
-from mmengine.model.utils import normal_init
+from mmengine.model import normal_init
+from mmengine.runner import load_checkpoint
+from mmengine.utils.dl_utils.parrots_wrapper import _BatchNorm
 
 from mmgen.models.builder import MODULES
 from ..common import get_module_device
@@ -177,7 +177,7 @@ class DCGANGenerator(nn.Module):
                 None, pretrained weights will not be loaded. Defaults to None.
         """
         if isinstance(pretrained, str):
-            logger = MMLogger.get_instance(name='mmgen')
+            logger = MMLogger.get_current_instance()
             load_checkpoint(self, pretrained, strict=False, logger=logger)
         elif pretrained is None:
             for m in self.modules():
@@ -303,7 +303,7 @@ class DCGANDiscriminator(nn.Module):
                 None, pretrained weights will not be loaded. Defaults to None.
         """
         if isinstance(pretrained, str):
-            logger = MMLogger.get_instance(name='mmgen')
+            logger = MMLogger.get_current_instance()
             load_checkpoint(self, pretrained, strict=False, logger=logger)
         elif pretrained is None:
             for m in self.modules():

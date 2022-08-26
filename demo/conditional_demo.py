@@ -3,8 +3,8 @@ import argparse
 import os
 import sys
 
-import mmcv
-from mmcv import DictAction
+import mmengine
+from mmengine import DictAction
 from torchvision import utils
 
 # yapf: disable
@@ -84,14 +84,13 @@ def main():
     if args.label is None and not args.sample_all_classes:
         label = None
         num_samples, nrow = args.samples_per_classes, args.nrow
-        mmcv.print_log(
-            '`label` is not passed, code would randomly sample '
-            f'`samples-per-classes` (={num_samples}) images.', 'mmgen')
+        mmengine.print_log('`label` is not passed, code would randomly sample '
+                           f'`samples-per-classes` (={num_samples}) images.')
     else:
         if args.sample_all_classes:
-            mmcv.print_log(
+            mmengine.print_log(
                 '`sample_all_classes` is set as True, `num-samples`, `label`, '
-                'and `nrows` would be ignored.', 'mmgen')
+                'and `nrows` would be ignored.')
 
             # get num_classes
             if hasattr(model, 'num_classes') and model.num_classes is not None:
@@ -99,7 +98,7 @@ def main():
             else:
                 raise AttributeError(
                     'Cannot get attribute `num_classes` from '
-                    f'{type(model)}. Please check your config.', 'mmgen')
+                    f'{type(model)}. Please check your config.')
             # build label list
             meta_labels = [idx for idx in range(num_classes)]
         else:
@@ -114,9 +113,8 @@ def main():
         num_samples = len(label)
         nrow = args.samples_per_classes
 
-        mmcv.print_log(
-            'Set `nrows` as number of samples for each class '
-            f'(={args.samples_per_classes}).', 'mmgen')
+        mmengine.print_log('Set `nrows` as number of samples for each class '
+                           f'(={args.samples_per_classes}).')
 
     results = sample_conditional_model(model, num_samples, args.num_batches,
                                        args.sample_model, label,
@@ -124,7 +122,7 @@ def main():
     results = (results[:, [2, 1, 0]] + 1.) / 2.
 
     # save images
-    mmcv.mkdir_or_exist(os.path.dirname(args.save_path))
+    mmengine.mkdir_or_exist(os.path.dirname(args.save_path))
     utils.save_image(results, args.save_path, nrow=nrow, padding=args.padding)
 
 

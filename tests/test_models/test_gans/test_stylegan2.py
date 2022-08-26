@@ -56,9 +56,9 @@ class TestStyleGAN2(TestCase):
                 optimizer_d, accumulative_counts=accu_iter))
 
         # prepare inputs
-        img = torch.randn(3, 32, 32)
+        img = torch.randn(1, 3, 32, 32)
         data = dict(inputs=dict(img=img))
 
         # simulate train_loop here
         message_hub.update_info('iter', 0)
-        _ = stylegan2.train_step([data], optim_wrapper_dict)
+        _ = stylegan2.train_step(data, optim_wrapper_dict)

@@ -5,6 +5,9 @@ import pytest
 import torch
 
 from mmgen.models import DenoisingUnet, build_module
+from mmgen.utils import register_all_modules
+
+register_all_modules()
 
 
 class TestDDPM:

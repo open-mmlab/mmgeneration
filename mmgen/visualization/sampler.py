@@ -2,7 +2,7 @@
 from copy import deepcopy
 from typing import Optional
 
-from mmengine.data import pseudo_collate
+from mmengine.dataset import pseudo_collate
 from mmengine.runner import Runner
 from torch.utils.data.dataloader import DataLoader
 
@@ -57,7 +57,8 @@ class ArgumentsSampler:
         if self.idx >= self.max_times:
             raise StopIteration
         self.idx += 1
-        return deepcopy(self.forward_kwargs)
+        # return deepcopy(self.forward_kwargs)
+        return dict(inputs=deepcopy(self.forward_kwargs))
 
 
 class NoiseSampler:
@@ -90,7 +91,8 @@ class NoiseSampler:
         noise = self.module.noise_fn(num_batches=self.num_batches)
         sample_kwargs = deepcopy(self.sample_kwargs)
         sample_kwargs['noise'] = noise
-        return sample_kwargs
+        # return sample_kwargs
+        return dict(inputs=sample_kwargs)
 
 
 class DataSampler:

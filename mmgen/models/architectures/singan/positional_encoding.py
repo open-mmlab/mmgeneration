@@ -7,7 +7,7 @@ More details can be found in: https://arxiv.org/pdf/2012.05217.pdf
 """
 from functools import partial
 
-import mmcv
+import mmengine
 import numpy as np
 import torch
 import torch.nn as nn
@@ -132,7 +132,7 @@ class SinGANMSGeneratorPE(SinGANMultiScaleGenerator):
             self.noise_padding_layer = nn.ReflectionPad2d(self.pad_head)
             self.img_padding_layer = nn.ReflectionPad2d(self.pad_head)
             self.mask_padding_layer = nn.ReflectionPad2d(self.pad_head)
-            mmcv.print_log('Using Reflection padding', 'mmgen')
+            mmengine.print_log('Using Reflection padding', 'current')
         else:
             raise NotImplementedError(
                 f'Padding mode {padding_mode} is not supported')

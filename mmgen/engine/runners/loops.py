@@ -2,13 +2,10 @@
 from typing import Dict, List, Sequence, Union
 
 import torch
-from mmengine import Runner
 from mmengine.evaluator import BaseMetric, Evaluator
 from mmengine.registry import LOOPS
-from mmengine.runner import TestLoop, ValLoop
+from mmengine.runner import Runner, TestLoop, ValLoop
 from torch.utils.data import DataLoader
-
-from mmgen.utils.typing import ValTestStepInputs
 
 
 @LOOPS.register_module()
@@ -73,22 +70,20 @@ class GenValLoop(ValLoop):
         self.runner.call_hook('after_val')
 
     @torch.no_grad()
-    def run_iter(self, idx, data_batch: Sequence[dict],
-                 metrics: Sequence[BaseMetric]):
+    def run_iter(self, idx, data_batch: dict, metrics: Sequence[BaseMetric]):
         """Iterate one mini-batch and feed the output to corresponding
         `metrics`.
 
         Args:
             idx (int): Current idx for the input data.
-            data_batch (Sequence[dict]): Batch of data from dataloader.
+            data_batch (dict): Batch of data from dataloader.
             metrics (Sequence[BaseMetric]): Specific metrics to evaluate.
         """
         self.runner.call_hook(
             'before_val_iter', batch_idx=idx, data_batch=data_batch)
         # outputs should be sequence of BaseDataElement
         outputs = self.runner.model.val_step(data_batch)
-
-        self.evaluator.process(data_batch, outputs, metrics)
+        self.evaluator.process(outputs, data_batch, metrics)
         self.runner.call_hook(
             'after_val_iter',
             batch_idx=idx,
@@ -157,22 +152,20 @@ class GenTestLoop(TestLoop):
         self.runner.call_hook('after_test')
 
     @torch.no_grad()
-    def run_iter(self, idx, data_batch: ValTestStepInputs,
-                 metrics: Sequence[BaseMetric]):
+    def run_iter(self, idx, data_batch: dict, metrics: Sequence[BaseMetric]):
         """Iterate one mini-batch and feed the output to corresponding
         `metrics`.
 
         Args:
             idx (int): Current idx for the input data.
-            data_batch (Sequence[dict]): Batch of data from dataloader.
+            data_batch (dict): Batch of data from dataloader.
             metrics (Sequence[BaseMetric]): Specific metrics to evaluate.
         """
         self.runner.call_hook(
             'before_test_iter', batch_idx=idx, data_batch=data_batch)
 
         outputs = self.runner.model.test_step(data_batch)
-
-        self.evaluator.process(data_batch, outputs, metrics)
+        self.evaluator.process(outputs, data_batch, metrics)
         self.runner.call_hook(
             'after_test_iter',
             batch_idx=idx,

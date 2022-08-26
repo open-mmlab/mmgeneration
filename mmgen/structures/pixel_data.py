@@ -1,12 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Union
 
-import mmengine
 import numpy as np
 import torch
+from mmengine.structures import PixelData as MMPixelData
 
 
-class PixelData(mmengine.PixelData):
+class PixelData(MMPixelData):
     """Data structure for pixel-level annnotations or predictions.
 
     Different from parent class:
@@ -76,4 +76,4 @@ class PixelData(mmengine.PixelData):
             ], f'The dim of value must be 2, 3 or 4, but got {value.ndim}'
 
             # call BaseDataElement.__setattr__
-            super(mmengine.PixelData, self).__setattr__(name, value)
+            super(MMPixelData, self).__setattr__(name, value)

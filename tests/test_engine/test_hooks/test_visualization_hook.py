@@ -49,6 +49,8 @@ class TestGenVisualizationHook(TestCase):
         model = MODELS.build(gan_model_cfg)
         runner = MagicMock()
         runner.model = model
+        runner.train_dataloader = MagicMock()
+        runner.train_dataloader.batch_size = 10
 
         hook = GenVisualizationHook(
             interval=10, vis_kwargs_list=dict(type='GAN'), n_samples=9)
@@ -69,9 +71,10 @@ class TestGenVisualizationHook(TestCase):
         self.assertEqual(len(gen_batches), 9)
         noise_in_gen_batches = torch.stack(
             [gen_batches[idx].noise for idx in range(9)], 0)
-        noise_in_buffer = torch.cat(
-            [buffer['noise'] for buffer in hook.inputs_buffer['GAN']],
-            dim=0)[:9]
+        noise_in_buffer = torch.cat([
+            buffer['inputs']['noise'] for buffer in hook.inputs_buffer['GAN']
+        ],
+                                    dim=0)[:9]
         self.assertTrue((noise_in_gen_batches == noise_in_buffer).all())
 
         hook.vis_sample(runner, 1, data_batch, None)
@@ -214,6 +217,8 @@ class TestGenVisualizationHook(TestCase):
         model = MODELS.build(ddpm_cfg)
         runner = MagicMock()
         runner.model = model
+        runner.train_dataloader = MagicMock()
+        runner.train_dataloader.batch_size = 10
 
         hook = GenVisualizationHook(
             interval=10,
@@ -287,6 +292,8 @@ class TestGenVisualizationHook(TestCase):
         model = MODELS.build(gan_model_cfg)
         runner = MagicMock()
         runner.model = model
+        runner.train_dataloader = MagicMock()
+        runner.train_dataloader.batch_size = 10
 
         hook = GenVisualizationHook(
             interval=2, vis_kwargs_list=dict(type='GAN'), n_samples=9)

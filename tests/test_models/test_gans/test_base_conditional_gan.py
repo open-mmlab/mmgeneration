@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import torch
 from mmcls.structures import ClsDataSample
-from mmengine.data import LabelData
+from mmengine.structures import LabelData
 from mmengine.testing import assert_allclose
 
 from mmgen.models import BaseConditionalGAN, GANDataPreprocessor
@@ -49,7 +49,7 @@ class TestBaseGAN(TestCase):
         gan.eval()
 
         # no mode
-        inputs = dict(num_batches=3)
+        inputs = dict(inputs=dict(num_batches=3))
         outputs_val = gan.val_step(inputs)
         outputs_test = gan.test_step(inputs)
         self.assertEqual(len(outputs_val), 3)
@@ -59,7 +59,7 @@ class TestBaseGAN(TestCase):
             self.assertEqual(out_test.fake_img.data.shape, (3, 32, 32))
 
         # set mode
-        inputs = dict(num_batches=4, sample_model='orig')
+        inputs = dict(inputs=dict(num_batches=4, sample_model='orig'))
         outputs_val = gan.val_step(inputs)
         outputs_test = gan.test_step(inputs)
         self.assertEqual(len(outputs_val), 4)
@@ -70,19 +70,19 @@ class TestBaseGAN(TestCase):
             self.assertEqual(out_val.fake_img.data.shape, (3, 32, 32))
             self.assertEqual(out_test.fake_img.data.shape, (3, 32, 32))
 
-        inputs = dict(num_batches=4, sample_model='orig/ema')
+        inputs = dict(inputs=dict(num_batches=4, sample_model='orig/ema'))
         self.assertRaises(AssertionError, gan.val_step, inputs)
 
-        inputs = dict(num_batches=4, sample_model='ema')
+        inputs = dict(inputs=dict(num_batches=4, sample_model='ema'))
         self.assertRaises(AssertionError, gan.val_step, inputs)
 
         # set noise and label input
         gt_label = torch.randint(0, 10, (1, ))
         inputs = dict(
             inputs=dict(noise=torch.randn(10)),
-            data_sample=GenDataSample(gt_label=LabelData(label=gt_label)))
-        outputs_val = gan.val_step([inputs])
-        outputs_test = gan.test_step([inputs])
+            data_samples=[GenDataSample(gt_label=LabelData(label=gt_label))])
+        outputs_val = gan.val_step(inputs)
+        outputs_test = gan.test_step(inputs)
         self.assertEqual(len(outputs_val), 1)
         self.assertEqual(len(outputs_val), 1)
         for idx in range(1):
@@ -126,12 +126,14 @@ class TestBaseGAN(TestCase):
             data_preprocessor=GANDataPreprocessor(),
             ema_config=dict(interval=1))
         gan.eval()
+        # inputs = dict(inputs=dict(num_batches=3))
         inputs = dict(num_batches=3)
         outputs = gan(inputs)
         self.assertEqual(len(outputs), 3)
         for out in outputs:
             self.assertEqual(out.fake_img.data.shape, (3, 32, 32))
 
+        # inputs = dict(inputs=dict(num_batches=3, sample_model='ema/orig'))
         inputs = dict(num_batches=3, sample_model='ema/orig')
         outputs = gan(inputs)
         self.assertEqual(len(outputs), 3)
@@ -142,6 +144,7 @@ class TestBaseGAN(TestCase):
                              orig_img.fake_img.data.shape)
             self.assertTrue(out.sample_model, 'ema/orig')
 
+        # inputs = dict(inputs=dict(noise=torch.randn(4, 10)))
         inputs = dict(noise=torch.randn(4, 10))
         outputs = gan(inputs)
         self.assertEqual(len(outputs), 4)
@@ -149,6 +152,7 @@ class TestBaseGAN(TestCase):
             self.assertEqual(out.fake_img.data.shape, (3, 32, 32))
 
         # test data sample input
+        # inputs = dict(inputs=dict(noise=torch.randn(3, 10)))
         inputs = dict(noise=torch.randn(3, 10))
         label = [torch.randint(0, 10, (1, )) for _ in range(3)]
         data_sample = [ClsDataSample() for _ in range(3)]

@@ -4,8 +4,8 @@ import datetime
 from typing import Tuple
 
 import torch
-from mmengine.logging import LogProcessor
 from mmengine.registry import LOG_PROCESSORS
+from mmengine.runner import LogProcessor
 
 
 @LOG_PROCESSORS.register_module()  # type: ignore

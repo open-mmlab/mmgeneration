@@ -3,11 +3,12 @@ from abc import abstractmethod
 from copy import deepcopy
 from functools import partial
 
-import mmcv
+import mmengine
 import torch
 import torch.distributed as dist
 import torch.nn as nn
-from mmengine.utils import TORCH_VERSION, digit_version
+from mmengine.utils.dl_utils import TORCH_VERSION
+from mmengine.utils.version_utils import digit_version
 
 from mmgen.registry import MODULES
 from .pixelwise_loss import (DiscretizedGaussianLogLikelihoodLoss,
@@ -156,7 +157,7 @@ class DDPMLoss(nn.Module):
         if log_cfgs_ is not None:
             if not isinstance(log_cfgs_, list):
                 log_cfgs_ = [log_cfgs_]
-            assert mmcv.is_list_of(log_cfgs_, dict)
+            assert mmengine.is_list_of(log_cfgs_, dict)
             for log_cfg_ in log_cfgs_:
                 log_type = log_cfg_.pop('type')
                 log_collect_fn = f'{log_type}_log_collect'
@@ -186,10 +187,10 @@ class DDPMLoss(nn.Module):
                             'attribute is must be \'torch.Tensor\' for '
                             '\'timestep_weight\' rescale_mode.')
 
-                mmcv.print_log(
+                mmengine.print_log(
                     'Apply \'timestep_weight\' rescale_mode for '
                     f'{self._loss_name}. Please make sure the passed weight '
-                    'can be updated by external functions.', 'mmgen')
+                    'can be updated by external functions.')
 
                 rescale_cfg = dict(weight=weight)
             self.rescale_fn = partial(

@@ -96,14 +96,14 @@ class TestBaseGAN(TestCase):
             discriminator=OptimWrapper(
                 disc_optim, accumulative_counts=accu_iter))
         # prepare inputs
-        inputs = torch.randn(3, 4, 4)
+        inputs = torch.randn(1, 3, 4, 4)
         data = dict(inputs=inputs)
 
         # simulate train_loop here
         disc_update_times = 0
         for idx in range(n_disc * accu_iter):
             message_hub.update_info('iter', idx)
-            log = gan.train_step([data], optim_wrapper_dict)
+            log = gan.train_step(data, optim_wrapper_dict)
             if (idx + 1) == n_disc * accu_iter:
                 # should update at after (n_disc * accu_iter)
                 self.assertEqual(ToyGAN.train_generator.call_count, accu_iter)
@@ -153,7 +153,7 @@ class TestBaseGAN(TestCase):
             discriminator=OptimWrapper(
                 disc_optim, accumulative_counts=accu_iter))
         # prepare inputs
-        inputs = torch.randn(3, 4, 4)
+        inputs = torch.randn(1, 3, 4, 4)
         data = dict(inputs=inputs)
 
         # simulate train_loop here
@@ -162,7 +162,7 @@ class TestBaseGAN(TestCase):
         disc_update_times = 0
         for idx in range(n_disc * accu_iter * ema_interval):
             message_hub.update_info('iter', idx)
-            gan.train_step([data], optim_wrapper_dict)
+            gan.train_step(data, optim_wrapper_dict)
             if (idx + 1) % (n_disc * accu_iter) == 0:
                 ema_times += 1
                 gen_update_times += accu_iter * n_gen
@@ -182,7 +182,7 @@ class TestBaseGAN(TestCase):
             data_preprocessor=GANDataPreprocessor())
 
         # no mode
-        inputs = dict(num_batches=3)
+        inputs = dict(inputs=dict(num_batches=3))
         outputs_val = gan.val_step(inputs)
         outputs_test = gan.test_step(inputs)
         self.assertEqual(len(outputs_val), 3)
@@ -192,7 +192,7 @@ class TestBaseGAN(TestCase):
             self.assertEqual(outputs_test[idx].fake_img.data.shape, (3, 8, 8))
 
         # set mode
-        inputs = dict(num_batches=4, sample_model='orig')
+        inputs = dict(inputs=dict(num_batches=4, sample_model='orig'))
         outputs_val = gan.val_step(inputs)
         outputs_test = gan.test_step(inputs)
         self.assertEqual(len(outputs_val), 4)
@@ -203,14 +203,14 @@ class TestBaseGAN(TestCase):
             self.assertEqual(outputs_val[idx].fake_img.data.shape, (3, 8, 8))
             self.assertEqual(outputs_test[idx].fake_img.data.shape, (3, 8, 8))
 
-        inputs = dict(num_batches=4, sample_model='orig/ema')
+        inputs = dict(inputs=dict(num_batches=4, sample_model='orig/ema'))
         self.assertRaises(AssertionError, gan.val_step, inputs)
 
-        inputs = dict(num_batches=4, sample_model='ema')
+        inputs = dict(inputs=dict(num_batches=4, sample_model='ema'))
         self.assertRaises(AssertionError, gan.val_step, inputs)
 
         # set noise input
-        inputs = dict(noise=torch.randn(4, 10))
+        inputs = dict(inputs=dict(noise=torch.randn(4, 10)))
         outputs_val = gan.val_step(inputs)
         outputs_test = gan.test_step(inputs)
         self.assertEqual(len(outputs_val), 4)

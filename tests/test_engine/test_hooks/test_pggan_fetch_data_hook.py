@@ -3,7 +3,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock
 
 import torch
-from mmengine.data import DefaultSampler, InfiniteSampler, pseudo_collate
+from mmengine.dataset import DefaultSampler, InfiniteSampler, pseudo_collate
 from mmengine.runner import IterBasedTrainLoop
 from torch.utils.data.dataloader import DataLoader
 

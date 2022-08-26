@@ -14,10 +14,11 @@ import os
 import sys
 
 import mmcv
+import mmengine
 import numpy as np
 import torch
 from mmcv import DictAction
-from mmcv.runner import load_checkpoint
+from mmengine.runner import load_checkpoint
 from torchvision import utils
 
 from mmgen.registry import MODELS
@@ -119,7 +120,7 @@ if __name__ == '__main__':
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
 
-    mmcv.print_log('Building models and loading checkpoints', 'mmgen')
+    mmengine.print_log('Building models and loading checkpoints')
     # build model
     model = MODELS.build(cfg.model)
 
@@ -137,7 +138,7 @@ if __name__ == '__main__':
     generator = generator.to(device)
     generator.eval()
 
-    mmcv.print_log('Calculating or loading eigen vectors', 'mmgen')
+    mmengine.print_log('Calculating or loading eigen vectors')
     # load/calculate eigen vector for current weights
     if args.eigen_vector is None:
         eigen_vector = calc_eigens(args, generator.state_dict())
@@ -163,7 +164,7 @@ if __name__ == '__main__':
     if args.sample_cfg is None:
         args.sample_cfg = dict()
 
-    mmcv.print_log('Sampling images with modified SeFa', 'mmgen')
+    mmengine.print_log('Sampling images with modified SeFa')
     sample = generator([latent], input_is_latent=True, **args.sample_cfg)
 
     # the first line is the original samples
@@ -208,4 +209,4 @@ if __name__ == '__main__':
         normalize=True,
         range=(-1, 1))
 
-    mmcv.print_log(f'Save images to {filename}', 'mmgen')
+    mmengine.print_log(f'Save images to {filename}')

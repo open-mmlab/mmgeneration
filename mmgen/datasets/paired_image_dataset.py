@@ -2,7 +2,7 @@
 import os.path as osp
 from pathlib import Path
 
-from mmcv import scandir
+from mmengine import scandir
 from mmengine.dataset import BaseDataset
 
 from mmgen.registry import DATASETS

@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from copy import deepcopy
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 import numpy as np
 import torch
@@ -14,7 +14,7 @@ from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 
 from mmgen.registry import MODELS
-from mmgen.utils.typing import TrainStepInputs
+from mmgen.structures import GenDataSample
 from ..common import gather_log_vars, set_requires_grad
 from ..gans.stylegan2 import StyleGAN2
 
@@ -49,7 +49,7 @@ class MSPIEStyleGAN2(StyleGAN2):
         self.multi_scale_probability = self.train_settings.get(
             'multi_scale_probability')
 
-    def train_step(self, data: TrainStepInputs,
+    def train_step(self, data: dict,
                    optim_wrapper: OptimWrapperDict) -> Dict[str, Tensor]:
         """Train GAN model. In the training of GAN models, generator and
         discriminator are updated alternatively. In MMGeneration's design,
@@ -60,7 +60,7 @@ class MSPIEStyleGAN2(StyleGAN2):
         in :meth:`should_gen_update`.
 
         Args:
-            data (List[dict]): Data sampled from dataloader.
+            data (dict): Data sampled from dataloader.
             optim_wrapper (OptimWrapperDict): OptimWrapperDict instance
                 contains OptimWrapper of generator and discriminator.
 
@@ -69,14 +69,14 @@ class MSPIEStyleGAN2(StyleGAN2):
         """
         message_hub = MessageHub.get_current_instance()
         curr_iter = message_hub.get_info('iter')
-        inputs_dict, data_sample = self.data_preprocessor(data, True)
+        data = self.data_preprocessor(data, True)
 
         disc_optimizer_wrapper: OptimWrapper = optim_wrapper['discriminator']
         disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
 
         with disc_optimizer_wrapper.optim_context(self.discriminator):
-            log_vars = self.train_discriminator(inputs_dict, data_sample,
-                                                disc_optimizer_wrapper)
+            log_vars = self.train_discriminator(
+                **data, optimizer_wrapper=disc_optimizer_wrapper)
 
         # add 1 to `curr_iter` because iter is updated in train loop.
         # Whether to update the generator. We update generator with
@@ -95,7 +95,7 @@ class MSPIEStyleGAN2(StyleGAN2):
             for _ in range(self.generator_steps * gen_accu_iters):
                 with gen_optimizer_wrapper.optim_context(self.generator):
                     log_vars_gen = self.train_generator(
-                        inputs_dict, data_sample, gen_optimizer_wrapper)
+                        **data, optimizer_wrapper=gen_optimizer_wrapper)
 
                 log_vars_gen_list.append(log_vars_gen)
             log_vars_gen = gather_log_vars(log_vars_gen_list)
@@ -125,7 +125,7 @@ class MSPIEStyleGAN2(StyleGAN2):
 
         return log_vars
 
-    def train_generator(self, inputs, data_sample,
+    def train_generator(self, inputs: dict, data_samples: List[GenDataSample],
                         optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
         """Train generator.
 
@@ -153,7 +153,7 @@ class MSPIEStyleGAN2(StyleGAN2):
         return log_vars
 
     def train_discriminator(
-            self, inputs, data_sample,
+            self, inputs: dict, data_samples: List[GenDataSample],
             optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
         """Train discriminator.
 
@@ -177,7 +177,7 @@ class MSPIEStyleGAN2(StyleGAN2):
             chosen_scale = int(chosen_scale.item())
 
         else:
-            logger = MMLogger.get_instance(name='mmgen')
+            logger = MMLogger.get_current_instance()
             logger.info(
                 'Distributed training has not been initialized. Degrade to '
                 'the standard stylegan2')

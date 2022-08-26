@@ -4,7 +4,8 @@ from collections import defaultdict
 from copy import deepcopy
 from typing import Dict, List, Optional, Union
 
-import mmcv
+import mmengine
+# import mmcv
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,8 +16,7 @@ from torch import Tensor
 
 from mmgen.registry import MODELS, MODULES
 from mmgen.structures import GenDataSample, PixelData
-from mmgen.utils.typing import (ForwardInputs, NoiseVar, SampleList,
-                                TrainStepInputs, ValTestStepInputs)
+from mmgen.utils.typing import ForwardInputs, NoiseVar, SampleList
 from ..architectures.common import get_module_device
 from ..common import get_valid_num_batches, noise_sample_fn
 from .utils import cosine_beta_schedule, linear_beta_schedule, var_to_tensor
@@ -244,26 +244,29 @@ class BasicGaussianDiffusion(BaseModel):
                 f'\'{self.__class__.__name__}\' do not have EMA model.')
         return sample_model
 
-    def forward(self, batch_inputs, mode: Optional[str] = None):
+    def forward(self,
+                inputs: ForwardInputs,
+                data_samples: Optional[list] = None,
+                mode: Optional[str] = None):
 
         # parse batch inputs
-        if isinstance(batch_inputs, Tensor):
-            noise = batch_inputs
+        if isinstance(inputs, Tensor):
+            noise = inputs
             forward_mode = 'sample'
             sample_kwargs = {}
         else:
-            noise = batch_inputs.get('noise', None)
-            num_batches = get_valid_num_batches(batch_inputs)
+            noise = inputs.get('noise', None)
+            num_batches = get_valid_num_batches(inputs)
             noise = self.noise_fn(noise=noise, num_batches=num_batches)
-            forward_mode = batch_inputs.get('forward_mode', 'sampling')
-            sample_kwargs = batch_inputs.get('sample_kwargs', dict())
+            forward_mode = inputs.get('forward_mode', 'sampling')
+            sample_kwargs = inputs.get('sample_kwargs', dict())
         assert forward_mode in [
             'sampling', 'recon'
         ], ('Only support \'sampling\' and \'recon\' for \'forward_mode\'. '
             f'But receive \'{forward_mode}\'.')
 
         # get sample model
-        sample_model = self._get_valid_model(batch_inputs)
+        sample_model = self._get_valid_model(inputs)
 
         # forward_method = self.ddpm_sampling if forward_mode == 'sampling' \
         #     else self.reconstruction_step
@@ -340,7 +343,7 @@ class BasicGaussianDiffusion(BaseModel):
         batched_timesteps = torch.arange(self.num_timesteps - 1, -1,
                                          -1).long().to(device)
         if show_pbar:
-            pbar = mmcv.ProgressBar(self.num_timesteps)
+            pbar = mmengine.ProgressBar(self.num_timesteps)
         for t in batched_timesteps:
             batched_t = t.expand(x_t.shape[0])
             step_noise = timesteps_noise[t, ...] \
@@ -370,7 +373,7 @@ class BasicGaussianDiffusion(BaseModel):
         # return tensor
         return denoising_results
 
-    def val_step(self, data: ValTestStepInputs) -> SampleList:
+    def val_step(self, data: dict) -> SampleList:
         """Gets the generated image of given data.
 
         Calls ``self.data_preprocessor(data)`` and
@@ -378,28 +381,30 @@ class BasicGaussianDiffusion(BaseModel):
         generated results which will be passed to evaluator.
 
         Args:
-            data (ValTestStepInputs): Data sampled from metric specific
+            data (dict): Data sampled from metric specific
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
             SampleList: Generated image or image dict.
         """
-        inputs_dict, data_sample = self.data_preprocessor(data)
-        outputs = self(inputs_dict, data_sample)
+        data = self.data_preprocessor(data)
+        # outputs = self(inputs_dict, data_sample)
+        outputs = self(**data)
         return outputs
 
-    def test_step(self, data: ValTestStepInputs) -> SampleList:
+    def test_step(self, data: dict) -> SampleList:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
-            data (ValTestStepInputs): Data sampled from metric specific
+            data (dict): Data sampled from metric specific
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
             SampleList: Generated image or image dict.
         """
-        inputs_dict, data_sample = self.data_preprocessor(data)
-        outputs = self(inputs_dict, data_sample)
+        data = self.data_preprocessor(data)
+        # outputs = self(inputs_dict, data_sample)
+        outputs = self(**data)
         return outputs
 
     def denoising_loss(self, outputs_dict):
@@ -417,13 +422,14 @@ class BasicGaussianDiffusion(BaseModel):
                 log_vars.update(loss_fn.log_vars)
         return loss, log_vars
 
-    def train_step(self, data: TrainStepInputs,
-                   optim_wrapper: OptimWrapperDict):
+    def train_step(self, data: dict, optim_wrapper: OptimWrapperDict):
 
         message_hub = MessageHub.get_current_instance()
         curr_iter = message_hub.get_info('iter')
 
-        real_imgs, data_samples = self.data_preprocessor(data)
+        # real_imgs, data_samples = self.data_preprocessor(data)
+        data = self.data_preprocessor(data)
+        real_imgs = data['inputs']
         denoising_dict_ = self.reconstruction_step(
             self.denoising,
             real_imgs,

@@ -1,11 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import mmcv
+import mmengine
 import torch
-from mmcv.runner import load_checkpoint
-from mmcv.runner import set_random_seed as set_random_seed_mmcv
 from mmengine import is_list_of
 from mmengine.config import Config
 from mmengine.dataset import Compose
+from mmengine.runner import load_checkpoint
 
 from mmgen.models import BaseTranslationModel
 from mmgen.registry import MODELS
@@ -28,8 +27,10 @@ def set_random_seed(seed, deterministic=False, use_rank_shift=True):
         rank_shift (bool): Whether to add rank number to the random seed to
             have different random seed in different threads. Default: True.
     """
-    set_random_seed_mmcv(
-        seed, deterministic=deterministic, use_rank_shift=use_rank_shift)
+    # TODO: refactor this  when refactor dir
+    # set_random_seed_mmcv(
+    #     seed, deterministic=deterministic, use_rank_shift=use_rank_shift)
+    return
 
 
 def init_model(config, checkpoint=None, device='cuda:0', cfg_options=None):
@@ -228,7 +229,8 @@ def sample_img2img_model(model, image_path, target_domain=None, **kwargs):
 
     data = [test_pipeline(data)]
 
-    inputs_dict, data_sample = model.data_preprocessor(data, False)
+    data = model.data_preprocessor(data, False)
+    inputs_dict = data['inputs']
 
     source_image = inputs_dict[f'img_{source_domain}']
 
@@ -279,9 +281,8 @@ def sample_ddpm_model(model,
     res_list = []
     # inference
     for idx, batches in enumerate(batches_list):
-        mmcv.print_log(
-            f'Start to sample batch [{idx+1} / '
-            f'{len(batches_list)}]', 'mmgen')
+        mmengine.print_log(f'Start to sample batch [{idx+1} / '
+                           f'{len(batches_list)}]')
         noise_batch_ = noise_batch[None, ...].expand(batches, -1, -1, -1) \
             if same_noise else None
 

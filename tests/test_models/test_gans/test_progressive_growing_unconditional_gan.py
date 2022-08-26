@@ -52,11 +52,7 @@ class TestPGGAN(TestCase):
         constructor = PGGANOptimWrapperConstructor(self.optim_wrapper_cfg)
         optim_wrapper_dict = constructor(pggan)
 
-        data_batch = [
-            dict(inputs=torch.randn(3, 16, 16)),
-            dict(inputs=torch.randn(3, 16, 16)),
-            dict(inputs=torch.randn(3, 16, 16))
-        ]
+        data_batch = dict(inputs=torch.randn(3, 3, 16, 16))
 
         for iter_num in range(6):
             pggan.train_step(data_batch, optim_wrapper_dict)
@@ -114,7 +110,7 @@ class TestPGGAN(TestCase):
 
         # test train_step with error
         with pytest.raises(RuntimeError):
-            data_batch = [dict(inputs=torch.randn(3, 3, 4, 32))]
+            data_batch = dict(inputs=torch.randn(3, 3, 4, 32))
             _ = pggan.train_step(data_batch, optim_wrapper_dict)
 
         # test train_step without ema
@@ -124,11 +120,7 @@ class TestPGGAN(TestCase):
             data_preprocessor=self.data_preprocessor,
             nkimgs_per_scale=self.nkimgs_per_scale)
         optim_wrapper_dict = constructor(pggan)
-        data_batch = [
-            dict(inputs=torch.randn(3, 16, 16)),
-            dict(inputs=torch.randn(3, 16, 16)),
-            dict(inputs=torch.randn(3, 16, 16))
-        ]
+        data_batch = dict(inputs=torch.randn(3, 3, 16, 16))
         pggan.train_step(data_batch, optim_wrapper_dict)
 
         # test train_step with disc_step != 1
@@ -156,15 +148,10 @@ class TestPGGAN(TestCase):
         constructor = PGGANOptimWrapperConstructor(self.optim_wrapper_cfg)
         optim_wrapper_dict = constructor(pggan)
 
-        data_batch = [
-            dict(inputs=torch.randn(3, 16, 16)),
-            dict(inputs=torch.randn(3, 16, 16)),
-            dict(inputs=torch.randn(3, 16, 16))
-        ]
+        data_batch = dict(inputs=torch.randn(3, 3, 16, 16))
 
         for iter_num in range(6):
             pggan.train_step(data_batch, optim_wrapper_dict)
-            # print(iter_num, pggan._next_scale_int)
             if iter_num in [0, 1]:
                 assert pggan.curr_scale[0] == 4
             elif iter_num in [2, 3]:

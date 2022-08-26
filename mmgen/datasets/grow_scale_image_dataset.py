@@ -1,7 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Optional, Union
 
-from mmengine import BaseDataset, FileClient, print_log
+from mmengine import FileClient, print_log
+from mmengine.dataset import BaseDataset
 
 from mmgen.registry import DATASETS
 from .utils import infer_io_backend

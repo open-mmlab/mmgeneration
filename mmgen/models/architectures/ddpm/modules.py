@@ -2,14 +2,15 @@
 from copy import deepcopy
 from functools import partial
 
-import mmcv
+import mmengine
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn.bricks import build_norm_layer
-from mmengine.model.utils import constant_init
-from mmengine.utils import TORCH_VERSION, digit_version
+from mmengine.model import constant_init
+from mmengine.utils.dl_utils import TORCH_VERSION
+from mmengine.utils.version_utils import digit_version
 
 from mmgen.models.builder import build_module
 from mmgen.registry import MODELS, MODULES
@@ -44,8 +45,9 @@ class SiLU(nn.Module):
     def __init__(self, inplace=False):
         super().__init__()
         if digit_version(TORCH_VERSION) <= digit_version('1.6.0') and inplace:
-            mmcv.print_log('Inplace version of \'SiLU\' is not supported for '
-                           f'torch < 1.6.0, found \'{torch.version}\'.')
+            mmengine.print_log(
+                'Inplace version of \'SiLU\' is not supported for '
+                f'torch < 1.6.0, found \'{torch.version}\'.')
         self.inplace = inplace
 
     def forward(self, x):

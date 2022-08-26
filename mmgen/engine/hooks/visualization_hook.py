@@ -7,18 +7,16 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 from mmengine import MessageHub
-from mmengine.data import BaseDataElement
 from mmengine.dist import master_only
 from mmengine.hooks import Hook
 from mmengine.runner import Runner
+from mmengine.structures import BaseDataElement
 from mmengine.utils import is_list_of
 from mmengine.visualization import Visualizer
 
 from mmgen.registry import HOOKS
 from mmgen.structures import GenDataSample, PixelData
 from mmgen.visualization.sampler import get_sampler
-
-DATA_BATCH = Sequence[dict]
 
 
 @HOOKS.register_module()
@@ -91,11 +89,11 @@ class GenVisualizationHook(Hook):
     priority = 'NORMAL'
 
     VIS_KWARGS_MAPPING = dict(
-        GAN=dict(type='Noise', vis_kwargs={}),
+        GAN=dict(type='Noise'),
         SinGAN=dict(type='Arguments', forward_kwargs=dict(mode='rand')),
-        Translation=dict(type='Data', vis_kwargs={}),
-        TranslationVal=dict(type='ValData', vis_kwargs={}),
-        TranslationTest=dict(type='TestData', vis_kwargs={}),
+        Translation=dict(type='Data'),
+        TranslationVal=dict(type='ValData'),
+        TranslationTest=dict(type='TestData'),
         DDPMDenoising=dict(
             type='Arguments',
             name='ddpm_sample',
@@ -148,8 +146,8 @@ class GenVisualizationHook(Hook):
         self.message_vis_kwargs = message_hub_vis_kwargs
 
     @master_only
-    def after_val_iter(self, runner: Runner, batch_idx: int,
-                       data_batch: Sequence[dict], outputs) -> None:
+    def after_val_iter(self, runner: Runner, batch_idx: int, data_batch: dict,
+                       outputs) -> None:
         """:class:`GenVisualizationHook` do not support visualize during
         validation.
 
@@ -163,13 +161,14 @@ class GenVisualizationHook(Hook):
         return
 
     @master_only
-    def after_test_iter(self, runner: Runner, batch_idx, data_batch, outputs):
+    def after_test_iter(self, runner: Runner, batch_idx, data_batch: dict,
+                        outputs):
         """Visualize samples after test iteraiton.
 
         Args:
             runner (Runner): The runner of the training process.
             batch_idx (int): The index of the current batch in the test loop.
-            data_batch (Sequence[dict], optional): Data from dataloader.
+            data_batch (dict, optional): Data from dataloader.
                 Defaults to None.
             outputs: outputs of the generation model Defaults to None.
         """
@@ -220,14 +219,14 @@ class GenVisualizationHook(Hook):
     def after_train_iter(self,
                          runner: Runner,
                          batch_idx: int,
-                         data_batch: DATA_BATCH = None,
+                         data_batch: dict = None,
                          outputs: Optional[dict] = None) -> None:
         """Visualize samples after train iteration.
 
         Args:
             runner (Runner): The runner of the training process.
             batch_idx (int): The index of the current batch in the train loop.
-            data_batch (Sequence[dict], optional): Data from dataloader.
+            data_batch (dict): Data from dataloader.
                 Defaults to None.
             outputs (dict, optional): Outputs from model. Defaults to None.
         """
@@ -238,21 +237,19 @@ class GenVisualizationHook(Hook):
     def vis_sample(self,
                    runner: Runner,
                    batch_idx: int,
-                   data_batch: DATA_BATCH,
+                   data_batch: dict,
                    outputs: Optional[dict] = None) -> None:
         """Visualize samples.
 
         Args:
             runner (Runner): The runner conatians model to visualize.
             batch_idx (int): The index of the current batch in loop.
-            data_batch (Sequence[dict], optional): Data from dataloader.
+            data_batch (dict): Data from dataloader.
                 Defaults to None.
             outputs (dict, optional): Outputs from model. Defaults to None.
         """
-        if isinstance(data_batch, dict):
-            num_batches = data_batch['num_batches']
-        else:
-            num_batches = len(data_batch)
+        # this function will only called in training process
+        num_batches = runner.train_dataloader.batch_size
 
         module = runner.model
         module.eval()

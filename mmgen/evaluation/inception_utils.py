@@ -13,8 +13,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from mmengine import is_filepath, print_log
-from mmengine.data import pseudo_collate
-from mmengine.dataset import BaseDataset, Compose
+from mmengine.dataset import BaseDataset, Compose, pseudo_collate
 from mmengine.dist import (all_gather, get_dist_info, get_world_size,
                            is_main_process)
 from mmengine.evaluator import BaseMetric
@@ -389,13 +388,13 @@ def prepare_inception_feat(dataloader: DataLoader,
                 visible=True)
 
     for data in inception_dataloader:
-        inputs, _ = data_preprocessor(data)
+        # inputs, _ = data_preprocessor(data)
+        data = data_preprocessor(data)
 
-        if isinstance(inputs, dict):
+        img = data['inputs']
+        if isinstance(img, dict):
             real_key = 'img' if metric.real_key is None else metric.real_key
-            img = inputs[real_key]
-        else:
-            img = inputs
+            img = img[real_key]
 
         # make sure the input image is in [-1, 1]
         if mean is None and std is None:
@@ -540,13 +539,12 @@ def prepare_vgg_feat(dataloader: DataLoader,
             visible=True)
 
     for data in dataloader:
-        inputs, _ = data_preprocessor(data)
+        data = data_preprocessor(data)
+        img = data['inputs']
 
-        if isinstance(inputs, dict):
+        if isinstance(img, dict):
             real_key = 'img' if metric.real_key is None else metric.real_key
-            img = inputs[real_key]
-        else:
-            img = inputs
+            img = img[real_key]
 
         # make sure the input image is in [-1, 1]
         if mean is None and std is None:

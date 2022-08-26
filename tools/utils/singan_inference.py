@@ -6,9 +6,9 @@ import sys
 import mmcv
 import torch
 from mmcv import Config
-from mmcv.runner import load_checkpoint, set_random_seed
 from mmengine import print_log
 from mmengine.logging import MMLogger
+from mmengine.runner import load_checkpoint, set_random_seed
 
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../../..')))  # isort:skip  # noqa
@@ -79,7 +79,7 @@ def main():
     model.eval()
 
     # load ckpt
-    print_log(f'Loading ckpt from {args.checkpoint}', 'mmgen')
+    print_log(f'Loading ckpt from {args.checkpoint}')
     _ = load_checkpoint(model, args.checkpoint, map_location='cpu')
 
     # add dp wrapper

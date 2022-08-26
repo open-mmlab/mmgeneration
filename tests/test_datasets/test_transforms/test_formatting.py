@@ -15,7 +15,7 @@ class TestPackGenInputs(TestCase):
         packer = PackGenInputs(meta_keys=[])
         results = packer.transform(results)
         assert results['inputs']['img'].shape == (3, 16, 16)
-        assert results['data_sample'].metainfo_keys() == []
+        assert results['data_samples'].metainfo_keys() == []
 
         # test with meta_keys
         img = np.random.rand(16, 16, 3).astype(np.float32)
@@ -23,7 +23,7 @@ class TestPackGenInputs(TestCase):
         packer = PackGenInputs(meta_keys=['img_shape', 'num_classes'])
         results = packer.transform(results)
         assert results['inputs']['img'].shape == (3, 16, 16)
-        assert set(results['data_sample'].metainfo_keys()) == set(
+        assert set(results['data_samples'].metainfo_keys()) == set(
             ['num_classes', 'img_shape'])
-        assert results['data_sample'].img_shape == (16, 16)
-        assert results['data_sample'].num_classes == 1000
+        assert results['data_samples'].img_shape == (16, 16)
+        assert results['data_samples'].num_classes == 1000
