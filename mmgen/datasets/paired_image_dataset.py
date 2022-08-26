@@ -1,11 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
-from pathlib import Path
+from typing import Optional
 
-from mmengine import scandir
+from mmengine import FileClient
 from mmengine.dataset import BaseDataset
 
 from mmgen.registry import DATASETS
+from .utils import infer_io_backend
 
 IMG_EXTENSIONS = ('.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm',
                   '.PPM', '.bmp', '.BMP', '.tif', '.TIF', '.tiff', '.TIFF')
@@ -29,9 +30,19 @@ class PairedImageDataset(BaseDataset):
             Default: 'test'.
     """
 
-    def __init__(self, data_root, pipeline, test_mode=False, testdir='test'):
+    def __init__(self,
+                 data_root,
+                 pipeline,
+                 io_backend: Optional[str] = None,
+                 test_mode=False,
+                 testdir='test'):
         phase = testdir if test_mode else 'train'
         self.data_root = osp.join(str(data_root), phase)
+
+        if io_backend is None:
+            io_backend = infer_io_backend(data_root)
+        self.file_client = FileClient(backend=io_backend)
+
         super().__init__(
             data_root=self.data_root, pipeline=pipeline, test_mode=test_mode)
         # self.data_infos = self.load_annotations()
@@ -49,8 +60,7 @@ class PairedImageDataset(BaseDataset):
 
         return data_infos
 
-    @staticmethod
-    def scan_folder(path):
+    def scan_folder(self, path):
         """Obtain image path list (including sub-folders) from a given folder.
 
         Args:
@@ -59,14 +69,8 @@ class PairedImageDataset(BaseDataset):
         Returns:
             list[str]: Image list obtained from the given folder.
         """
-
-        if isinstance(path, (str, Path)):
-            path = str(path)
-        else:
-            raise TypeError("'path' must be a str or a Path object, "
-                            f'but received {type(path)}.')
-
-        images = scandir(path, suffix=IMG_EXTENSIONS, recursive=True)
-        images = [osp.join(path, v) for v in images]
+        imgs_list = self.file_client.list_dir_or_file(
+            path, list_dir=False, suffix=IMG_EXTENSIONS, recursive=True)
+        images = [self.file_client.join_path(path, img) for img in imgs_list]
         assert images, f'{path} has no valid image file.'
         return images

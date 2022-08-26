@@ -1,12 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
-from pathlib import Path
+from typing import Optional
 
 import numpy as np
-from mmengine import scandir
+from mmengine import FileClient
 from mmengine.dataset import BaseDataset
 
 from mmgen.registry import DATASETS
+from .utils import infer_io_backend
 
 IMG_EXTENSIONS = ('.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm',
                   '.PPM', '.bmp', '.BMP', '.tif', '.TIF', '.tiff', '.TIFF')
@@ -26,6 +27,9 @@ class UnpairedImageDataset(BaseDataset):
         dataroot (str | :obj:`Path`): Path to the folder root of unpaired
             images.
         pipeline (List[dict | callable]): A sequence of data transformations.
+        io_backend (str, optional): The storage backend type. Options are
+            "disk", "ceph", "memcached", "lmdb", "http" and "petrel".
+            Default: None.
         test_mode (bool): Store `True` when building test dataset.
             Default: `False`.
         domain_a (str, optional): Domain of images in trainA / testA.
@@ -37,12 +41,18 @@ class UnpairedImageDataset(BaseDataset):
     def __init__(self,
                  data_root,
                  pipeline,
+                 io_backend: Optional[str] = None,
                  test_mode=False,
                  domain_a=None,
                  domain_b=None):
         phase = 'test' if test_mode else 'train'
         self.dataroot_a = osp.join(str(data_root), phase + 'A')
         self.dataroot_b = osp.join(str(data_root), phase + 'B')
+
+        if io_backend is None:
+            io_backend = infer_io_backend(data_root)
+        self.file_client = FileClient(backend=io_backend)
+
         super().__init__(
             data_root=data_root,
             pipeline=pipeline,
@@ -113,8 +123,7 @@ class UnpairedImageDataset(BaseDataset):
     def __len__(self):
         return max(self.len_a, self.len_b)
 
-    @staticmethod
-    def scan_folder(path):
+    def scan_folder(self, path):
         """Obtain image path list (including sub-folders) from a given folder.
 
         Args:
@@ -123,15 +132,9 @@ class UnpairedImageDataset(BaseDataset):
         Returns:
             list[str]: Image list obtained from the given folder.
         """
-
-        if isinstance(path, (str, Path)):
-            path = str(path)
-        else:
-            raise TypeError("'path' must be a str or a Path object, "
-                            f'but received {type(path)}.')
-
-        images = scandir(path, suffix=IMG_EXTENSIONS, recursive=True)
-        images = [osp.join(path, v) for v in images]
+        imgs_list = self.file_client.list_dir_or_file(
+            path, list_dir=False, suffix=IMG_EXTENSIONS, recursive=True)
+        images = [self.file_client.join_path(path, img) for img in imgs_list]
         assert images, f'{path} has no valid image file.'
         return images
 

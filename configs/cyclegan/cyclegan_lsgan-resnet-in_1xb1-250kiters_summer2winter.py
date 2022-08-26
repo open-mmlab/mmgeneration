@@ -14,16 +14,8 @@ model = dict(
     related_domains=[domain_a, domain_b])
 dataroot = './data/cyclegan/summer2winter_yosemite'
 train_pipeline = [
-    dict(
-        type='LoadImageFromFile',
-        io_backend='disk',
-        key=f'img_{domain_a}',
-        flag='color'),
-    dict(
-        type='LoadImageFromFile',
-        io_backend='disk',
-        key=f'img_{domain_b}',
-        flag='color'),
+    dict(type='LoadImageFromFile', key=f'img_{domain_a}', flag='color'),
+    dict(type='LoadImageFromFile', key=f'img_{domain_b}', flag='color'),
     dict(
         type='TransformBroadcaster',
         mapping={'img': [f'img_{domain_a}', f'img_{domain_b}']},
@@ -46,16 +38,8 @@ train_pipeline = [
 ]
 
 test_pipeline = [
-    dict(
-        type='LoadImageFromFile',
-        io_backend='disk',
-        key=f'img_{domain_a}',
-        flag='color'),
-    dict(
-        type='LoadImageFromFile',
-        io_backend='disk',
-        key=f'img_{domain_b}',
-        flag='color'),
+    dict(type='LoadImageFromFile', key=f'img_{domain_a}', flag='color'),
+    dict(type='LoadImageFromFile', key=f'img_{domain_b}', flag='color'),
     dict(
         type='TransformBroadcaster',
         mapping={'img': [f'img_{domain_a}', f'img_{domain_b}']},

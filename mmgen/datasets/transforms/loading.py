@@ -100,7 +100,8 @@ class LoadPairedImageFromFile(LoadImageFromFile):
     "ori_img_{domain_b}".
 
     Args:
-        io_backend (str): io backend where images are store. Default: 'disk'.
+        io_backend (str, optional): io backend where images are store. Defaults
+            to None.
         key (str): Keys in results to find corresponding path. Default: 'gt'.
         domain_a (str, optional): One of the paired image domain.
             Defaults to None.
@@ -115,7 +116,7 @@ class LoadPairedImageFromFile(LoadImageFromFile):
     """
 
     def __init__(self,
-                 io_backend='disk',
+                 io_backend: Optional[str] = None,
                  key='pair',
                  domain_a=None,
                  domain_b=None,
@@ -147,9 +148,11 @@ class LoadPairedImageFromFile(LoadImageFromFile):
         Returns:
             dict: A dict containing the processed data and information.
         """
-        if self.file_client is None:
-            self.file_client = FileClient(self.io_backend, **self.kwargs)
         filepath = str(results[f'{self.key}_path'])
+        if self.file_client is None:
+            if self.io_backend is None:
+                self.io_backend = infer_io_backend(filepath)
+            self.file_client = FileClient(self.io_backend, **self.kwargs)
         img_bytes = self.file_client.get(filepath)
         img = mmcv.imfrombytes(img_bytes, flag=self.flag)  # HWC, BGR
         if img.ndim == 2:
