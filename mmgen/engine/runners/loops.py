@@ -165,8 +165,6 @@ class GenTestLoop(TestLoop):
             'before_test_iter', batch_idx=idx, data_batch=data_batch)
 
         outputs = self.runner.model.test_step(data_batch)
-
-        # self.evaluator.process(data_batch, outputs, metrics)
         self.evaluator.process(outputs, data_batch, metrics)
         self.runner.call_hook(
             'after_test_iter',

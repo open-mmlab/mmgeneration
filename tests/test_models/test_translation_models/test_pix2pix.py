@@ -188,23 +188,23 @@ def test_pix2pix():
                                    'discriminators').parameters()))))
 
     # iter 0, 1
-    # for i in range(2):
-    #     message_hub.update_info('iter', i)
-    #     log_vars = synthesizer.train_step(data_batch, optimizer)
-    #     assert isinstance(log_vars, dict)
-    #     assert log_vars.get('loss_gan_g') is None
-    #     for v in ['loss_gan_d_fake', 'loss_gan_d_real']:
-    #         assert isinstance(log_vars[v].item(), float)
+    for i in range(2):
+        message_hub.update_info('iter', i)
+        log_vars = synthesizer.train_step(data_batch, optimizer)
+        assert isinstance(log_vars, dict)
+        assert log_vars.get('loss_gan_g') is None
+        for v in ['loss_gan_d_fake', 'loss_gan_d_real']:
+            assert isinstance(log_vars[v].item(), float)
 
-    # # iter 2, 3, 4, 5
-    # for i in range(2, 6):
-    #     message_hub.update_info('iter', i)
-    #     log_vars = synthesizer.train_step(data_batch, optimizer)
-    #     assert isinstance(log_vars, dict)
-    #     log_check_list = ['loss_gan_d_fake', 'loss_gan_d_real', 'loss_gan_g']
-    #     if (i + 1) % 2 == 1:
-    #         assert log_vars.get('loss_gan_g') is None
-    #         log_check_list.remove('loss_gan_g')
+    # iter 2, 3, 4, 5
+    for i in range(2, 6):
+        message_hub.update_info('iter', i)
+        log_vars = synthesizer.train_step(data_batch, optimizer)
+        assert isinstance(log_vars, dict)
+        log_check_list = ['loss_gan_d_fake', 'loss_gan_d_real', 'loss_gan_g']
+        if (i + 1) % 2 == 1:
+            assert log_vars.get('loss_gan_g') is None
+            log_check_list.remove('loss_gan_g')
 
-    #     for v in log_check_list:
-    #         assert isinstance(log_vars[v].item(), float)
+        for v in log_check_list:
+            assert isinstance(log_vars[v].item(), float)
