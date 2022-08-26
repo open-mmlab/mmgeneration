@@ -24,16 +24,8 @@ param_scheduler = dict(
 
 dataroot = './data/cyclegan/facades'
 train_pipeline = [
-    dict(
-        type='LoadImageFromFile',
-        # io_backend='disk',
-        key=f'img_{domain_a}',
-        flag='color'),
-    dict(
-        type='LoadImageFromFile',
-        # io_backend='disk',
-        key=f'img_{domain_b}',
-        flag='color'),
+    dict(type='LoadImageFromFile', key=f'img_{domain_a}', flag='color'),
+    dict(type='LoadImageFromFile', key=f'img_{domain_b}', flag='color'),
     dict(
         type='TransformBroadcaster',
         mapping={'img': [f'img_{domain_a}', f'img_{domain_b}']},
