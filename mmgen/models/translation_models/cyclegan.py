@@ -159,43 +159,47 @@ class CycleGAN(StaticTranslationGAN):
         message_hub = MessageHub.get_current_instance()
         curr_iter = message_hub.get_info('iter')
         data = self.data_preprocessor(data, True)
-        inputs_dict = data['inputs']
-        # forward generators
-        outputs = dict()
-        for target_domain in self._reachable_domains:
-            # fetch data by domain
-            source_domain = self.get_other_domains(target_domain)[0]
-            img = inputs_dict[f'img_{source_domain}']
-            # translation process
-            results = self(img, test_mode=False, target_domain=target_domain)
-            outputs[f'real_{source_domain}'] = results['source']
-            outputs[f'fake_{target_domain}'] = results['target']
-            # cycle process
-            results = self(
-                results['target'],
-                test_mode=False,
-                target_domain=source_domain)
-            outputs[f'cycle_{source_domain}'] = results['target']
-
-        log_vars = dict()
-
-        # discriminators
-        set_requires_grad(self.discriminators, True)
         disc_optimizer_wrapper = optim_wrapper['discriminators']
-        disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
-        loss_d, log_vars_d = self._get_disc_loss(outputs)
-        disc_optimizer_wrapper.update_params(loss_d)
-        log_vars.update(log_vars_d)
+
+        inputs_dict = data['inputs']
+        outputs, log_vars = dict(), dict()
+
+        # forward generators
+        with disc_optimizer_wrapper.optim_context(self.discriminators):
+            for target_domain in self._reachable_domains:
+                # fetch data by domain
+                source_domain = self.get_other_domains(target_domain)[0]
+                img = inputs_dict[f'img_{source_domain}']
+                # translation process
+                results = self(
+                    img, test_mode=False, target_domain=target_domain)
+                outputs[f'real_{source_domain}'] = results['source']
+                outputs[f'fake_{target_domain}'] = results['target']
+                # cycle process
+                results = self(
+                    results['target'],
+                    test_mode=False,
+                    target_domain=source_domain)
+                outputs[f'cycle_{source_domain}'] = results['target']
+
+            # update discriminators
+            disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
+            loss_d, log_vars_d = self._get_disc_loss(outputs)
+            disc_optimizer_wrapper.update_params(loss_d)
+            log_vars.update(log_vars_d)
 
         # generators, no updates to discriminator parameters.
         if ((curr_iter + 1) % (self.discriminator_steps * disc_accu_iters) == 0
                 and curr_iter >= self.disc_init_steps):
             set_requires_grad(self.discriminators, False)
-            # optimize
+            # update generator
             gen_optimizer_wrapper = optim_wrapper['generators']
-            loss_g, log_vars_g = self._get_gen_loss(outputs)
-            gen_optimizer_wrapper.update_params(loss_g)
-            log_vars.update(log_vars_g)
+            with gen_optimizer_wrapper.optim_context(self.generators):
+                loss_g, log_vars_g = self._get_gen_loss(outputs)
+                gen_optimizer_wrapper.update_params(loss_g)
+                log_vars.update(log_vars_g)
+
+            set_requires_grad(self.discriminators, True)
 
         return log_vars
 
