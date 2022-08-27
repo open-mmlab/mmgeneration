@@ -252,9 +252,16 @@ class StyleGAN2(BaseGAN):
         disc_optimizer_wrapper: OptimWrapper = optim_wrapper['discriminator']
         disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
 
-        with disc_optimizer_wrapper.optim_context(self.discriminator):
-            log_vars = self.train_discriminator(inputs_dict, data_samples,
-                                                disc_optimizer_wrapper)
+        # NOTE: Do not use context manager of optim_wrapper. Because
+        # in mixed-precision training, StyleGAN2 only enable fp16 in
+        # specified blocks (refers to `:attr:enable_fp16` in
+        # :class:~`StyleGANv2Generator` and :class:~`StyleGAN2Discriminator`
+        # for more details), but in :func:~`AmpOptimWrapper.optim_context`,
+        # fp16 is applied to all modules. This may slow down gradient
+        # accumulation because `no_sycn` in
+        # :func:~`OptimWrapper.optim_context` will not be called any more.
+        log_vars = self.train_discriminator(inputs_dict, data_samples,
+                                            disc_optimizer_wrapper)
 
         # add 1 to `curr_iter` because iter is updated in train loop.
         # Whether to update the generator. We update generator with
@@ -271,9 +278,8 @@ class StyleGAN2(BaseGAN):
             gen_optimizer_wrapper.initialize_count_status(
                 self.generator, 0, self.generator_steps * gen_accu_iters)
             for _ in range(self.generator_steps * gen_accu_iters):
-                with gen_optimizer_wrapper.optim_context(self.generator):
-                    log_vars_gen = self.train_generator(
-                        inputs_dict, data_samples, gen_optimizer_wrapper)
+                log_vars_gen = self.train_generator(inputs_dict, data_samples,
+                                                    gen_optimizer_wrapper)
 
                 log_vars_gen_list.append(log_vars_gen)
             log_vars_gen = gather_log_vars(log_vars_gen_list)

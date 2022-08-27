@@ -3,7 +3,7 @@ import numpy as np
 import scipy
 import torch
 import torch.nn as nn
-from mmengine import autocast
+from mmengine.runner.amp import autocast
 
 from mmgen.ops import bias_act, conv2d_gradfix, filtered_lrelu
 from mmgen.registry import MODULES
@@ -496,7 +496,6 @@ class SynthesisLayer(nn.Module):
         # Execute modulated conv2d.
         dtype = torch.float16 if (self.use_fp16 and not force_fp32 and
                                   x.device.type == 'cuda') else torch.float32
-        print(self.use_fp16, dtype)
         with autocast(enabled=dtype == torch.float16):
             x = modulated_conv2d(
                 x=x.to(dtype),
