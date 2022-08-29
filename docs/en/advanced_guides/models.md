@@ -1,6 +1,6 @@
 # Models
 
-We basically categorize our supported models into 3 main streams according to tasks:
+We basically categorize our supported models into 4 main streams according to tasks:
 
 - Unconditional GANs:
   - Static architectures: DCGAN, StyleGANv2
@@ -97,4 +97,4 @@ _base_ = ['configs/styleganv2/stylegan2_c2_ffhq_256_b4x8_800k.py']
 model = dict(generator=dict(_delete_=True, type='NewGenerator'))
 ```
 
-In `MMCV`, we will automatically discard all of the data for `generator` coming from the `_base_` config file. That is, your generator is just built by `dict(generator=dict(type='NewGenerator))`.
+In `MMEngine`, we will automatically discard all of the data for `generator` coming from the `_base_` config file. That is, your generator is just built by `dict(generator=dict(type='NewGenerator))`.
