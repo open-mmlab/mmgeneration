@@ -47,7 +47,7 @@ model_wrapper_cfg = dict(
 <table class="docutils">
 <thead>
   <tr>
-    <th> Dynamic Model in 0,x Version </th>
+    <th> Dynamic Model in 0.x Version </th>
     <th> Dynamic Model in 1.x Version </th>
 <tbody>
 <tr>
@@ -93,7 +93,7 @@ Compared to PyTorch's `Optimizer`, `OptimizerWrapper` supports the following fea
 - Provide a context manager named `OptimizerWrapper.optim_context` to warp the forward process. `optim_context` can automatically call `torch.no_sync` according to current number of updating iteration. In AMP (auto mixed precision) training, `autocast` is called in `optim_context` as well.
 
 For GAN models, generator and discriminator use different optimizer and training schedule.
-To ensure that the GAN model's function signature of `train_step` is consistent with other models, we use `OptimWrapperDict`, which is inherited from from `OptimizerWrapper`, to wrap the optimizer of the generator and discriminator.
+To ensure that the GAN model's function signature of `train_step` is consistent with other models, we use `OptimWrapperDict`, inherited from `OptimizerWrapper`, to wrap the optimizer of the generator and discriminator.
 To automate this process MMGeneration implement `GenOptimWrapperContructor`.
 And you should specify this constructor in your config is you want to train GAN model.
 
@@ -133,7 +133,7 @@ optim_wrapper = dict(
 </thead>
 </table>
 
-> Note that, in the 1.x, MMGeneration uses `OptimWrapper` to realize gradient accumulation.  This make the configure of `discriminator_steps` (training trick for updating the generator once after multiple updates of the discriminator) and gradient accumulation different between 0.x and 1.x version.
+> Note that, in the 1.x, MMGeneration uses `OptimWrapper` to realize gradient accumulation. This make the config of `discriminator_steps` (training trick for updating the generator once after multiple updates of the discriminator) and gradient accumulation different between 0.x and 1.x version.
 
 - In 0.x version,  we use `disc_steps`, `gen_steps` and `batch_accumulation_steps` in configs. `disc_steps` and `batch_accumulation_steps` are counted by the number of calls of `train_step` (is also the number of data reads from the dataloader). Therefore the number of consecutive updates of the discriminator is `disc_steps // batch_accumulation_steps`. And for generators, `gen_steps` is the number of times the generator actually updates continuously.
 - In 1.x version, we use `discriminator_steps`, `generator_steps` and `accumulative_counts` in configs. `discriminator_steps` and `generator_steps` are the number of consecutive updates to itself before updating other modules.
@@ -222,11 +222,11 @@ model = dict(
 optim_wrapper = dict(
     constructor='GenOptimWrapperConstructor',
     generator=dict(
-        # generators  perform `accumulative_counts = 8` times gradient accumulations before each update
+        # generator perform `accumulative_counts = 8` times gradient accumulations before each update
         accumulative_counts=8,
         optimizer=dict(type='Adam', lr=0.0001, betas=(0.0, 0.999), eps=1e-6)),
     discriminator=dict(
-        # generators  perform `accumulative_counts = 8` times gradient accumulations before each update
+        # discriminator perform `accumulative_counts = 8` times gradient accumulations before each update
         accumulative_counts=8,
         optimizer=dict(type='Adam', lr=0.0004, betas=(0.0, 0.999), eps=1e-6)))
 ```
@@ -240,7 +240,7 @@ optim_wrapper = dict(
 ## 3. AMP (auto mixed precision) training
 
 In 0.x, MMGeneration do not support AMP training for the entire forward process.
-Instead, Users must use `auto_fp16` decorator to warp the specific submodule and convert the parameter of submodule to fp16.
+Instead, users must use `auto_fp16` decorator to warp the specific submodule and convert the parameter of submodule to fp16.
 This allows for fine-grained control of the model parameters, but is more cumbersome to use.
 In addition, users need to handle operations such as scaling of the loss function during the training process by themselves.
 
@@ -390,14 +390,14 @@ bash tools/dist_train.sh CONFIG GPUS --amp
 bash tools/slurm_train.sh PARTITION JOB_NAME CONFIG WORK_DIR --amp
 ```
 
-## 4. 数据集
+## 4. Dataset
 
 MMGeneration redesign data flow and data transforms pipelien based on MMCV 2.x and MMEngine.
 
 The main differences between 0.x and 1.x are as follow:
 
 1. Normalization, color space transforms are no longer performed in transforms pipelines, but converted to `data_preprocessor`.
-2. Data is packed to `GenDataSample` by `PackGenInputs` in the last step of transforms pipeline. (More about datasample please refers to this tutorial. TODO:)
+2. Data is packed to `GenDataSample` by `PackGenInputs` in the last step of transforms pipeline. To know more about datasample please refers to [this tutorial](https://github.com/open-mmlab/mmengine/blob/main/docs/en/tutorials/data_element.md).
 
 Take config for FFHQ-Flip dataset as example:
 
