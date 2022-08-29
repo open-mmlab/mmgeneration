@@ -19,7 +19,6 @@ domain_b = source_domain
 train_pipeline = [
     dict(
         type='LoadPairedImageFromFile',
-        io_backend='disk',
         key='pair',
         domain_a=domain_a,
         domain_b=domain_b,
@@ -52,7 +51,6 @@ train_pipeline = [
 test_pipeline = [
     dict(
         type='LoadPairedImageFromFile',
-        io_backend='disk',
         key='pair',
         domain_a=domain_a,
         domain_b=domain_b,
