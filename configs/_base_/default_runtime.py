@@ -13,7 +13,7 @@ default_hooks = dict(
     # record time of every iteration.
     timer=dict(type='GenIterTimerHook'),
     # print log every 100 iterations.
-    logger=dict(type='LoggerHook', interval=100),
+    logger=dict(type='LoggerHook', interval=100, log_metric_by_epoch=False),
     # save checkpoint per 10000 iterations
     checkpoint=dict(
         type='CheckpointHook',

@@ -4,8 +4,10 @@ import os
 
 try:
     import clip
-except ImportError:
-    raise 'To use styleclip, openai clip need to be installed first'
+except Exception:
+    raise ModuleNotFoundError(
+        'To use styleclip, openai clip need to be installed first')
+
 import mmcv
 import torch
 import torchvision
@@ -111,7 +113,7 @@ def main():
     text_inputs = torch.cat([clip.tokenize(args.description)]).cuda()
 
     model = init_model(args.config, args.checkpoint, device='cpu')
-    g_ema = model.generator_ema
+    g_ema = model.generator_ema.module
     g_ema.eval()
     if not args.use_cpu:
         g_ema = g_ema.cuda()

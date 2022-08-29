@@ -119,6 +119,11 @@ def parse_args():
         action='store_true',
         help='run at local instead of cluster.')
     parser.add_argument(
+        '--cpus-per-task',
+        type=int,
+        default=16,
+        help='Number of cpus for each training process.')
+    parser.add_argument(
         '--mail', type=str, help='Mail address to watch train status.')
     parser.add_argument(
         '--mail-type',
@@ -179,13 +184,19 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
         else:
             n_gpus = int(parse_res.group().split('x')[-1])
 
+    launcher = 'none' if args.local else 'slurm'
+    runner = 'python' if args.local else 'srun python'
+
     # deal cpu train
     ntasks_per_node = min(n_gpus, 8)
     ntasks = n_gpus
+    cuda_limitation = ''
     if args.cpu:
         n_gpus = 0
         ntasks_per_node = 1
         ntasks = 1
+        launcher = 'none'
+        cuda_limitation = 'export CUDA_VISIBLE_DEVICES=-1'
 
     job_name = f'{args.job_name}_{fname}'
     work_dir = Path(args.work_dir) / fname
@@ -202,19 +213,17 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
     else:
         quota_cfg = ''
 
-    launcher = 'none' if args.local else 'slurm'
-    runner = 'python' if args.local else 'srun python'
-
     job_script = (f'#!/bin/bash\n'
                   f'#SBATCH --output {work_dir}/job.%j.out\n'
                   f'#SBATCH --partition={args.partition}\n'
                   f'#SBATCH --job-name {job_name}\n'
-                  f'#SBATCH --gres=gpu:{n_gpus}\n'
+                  f'#SBATCH --gres=gpu:{ntasks_per_node}\n'
                   f'{mail_cfg}{quota_cfg}'
                   f'#SBATCH --ntasks-per-node={ntasks_per_node}\n'
                   f'#SBATCH --ntasks={ntasks}\n'
-                  f'#SBATCH --cpus-per-task=5\n\n'
+                  f'#SBATCH --cpus-per-task={args.cpus_per_task}\n\n'
                   f'export MASTER_PORT={port}\n'
+                  f'{cuda_limitation}\n'
                   f'{runner} -u {script_name} {config} '
                   f'--work-dir={work_dir} '
                   f'--launcher={launcher}')
@@ -284,11 +293,12 @@ def train(args):
             continue
 
         model_name = model_info.name
-        if 'cvt' in model_name:
-            print(f'Skip converted config: {model_name} ({model_info.config})')
-            continue
 
         if train_list is not None and model_info.name not in train_list:
+            continue
+
+        if 'cvt' in model_name:
+            print(f'Skip converted config: {model_name} ({model_info.config})')
             continue
 
         script_path = create_train_job_batch(commands, model_info, args, port,

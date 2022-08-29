@@ -2,9 +2,117 @@ import glob
 import os.path as osp
 import shutil
 from argparse import ArgumentParser
+from copy import deepcopy
 from importlib.machinery import SourceFileLoader
 
 from mmengine import Config
+
+
+def update_data(data_cfg, data_root_mapping):
+
+    local_dataroot_prefix = ['data', './data']
+    ceph_dataroot_prefix_temp = 'openmmlab:s3://openmmlab/datasets/{}/'
+
+    # val_dataloader may None
+    if data_cfg is None:
+        return None
+    dataset: dict = data_cfg['dataset']
+    dataset_updated = deepcopy(dataset)
+
+    dataset_type: str = dataset['type']
+    if 'mmcls' in dataset_type:
+        repo_name = 'classification'
+    else:
+        repo_name = 'editing'
+    ceph_dataroot_prefix = ceph_dataroot_prefix_temp.format(repo_name)
+
+    if 'data_root' in dataset:
+        data_root: str = dataset['data_root']
+
+        for dataroot_prefix in local_dataroot_prefix:
+            if data_root.startswith(dataroot_prefix):
+                # avoid cvt './data/imagenet' ->
+                # openmmlab:s3://openmmlab/datasets/classification//imagenet
+                if data_root.startswith(dataroot_prefix + '/'):
+                    dataroot_prefix = dataroot_prefix + '/'
+                data_root = data_root.replace(dataroot_prefix,
+                                              ceph_dataroot_prefix)
+                # add '/' at the end
+                if not data_root.endswith('/'):
+                    data_root = data_root + '/'
+                data_root = data_root_mapping.get(data_root, data_root)
+                # NOTE: a dirty solution because high-level and
+                # low-level datasets are saved on different clustre
+                if 'classification' in data_root:
+                    data_root = data_root.replace('openmmlab', 'openmmlab_cls',
+                                                  1)
+                dataset_updated['data_root'] = data_root
+
+    elif 'data_roots' in dataset:
+        # specific for pggan dataset, which need a dict of data_roots
+        data_roots: dict = dataset['data_roots']
+        for k, data_root in data_roots.items():
+            for dataroot_prefix in local_dataroot_prefix:
+                if data_root.startswith(dataroot_prefix):
+                    # avoid cvt './data/imagenet' ->
+                    # openmmlab:s3://openmmlab/datasets/classification//imagenet
+                    if data_root.startswith(dataroot_prefix + '/'):
+                        dataroot_prefix = dataroot_prefix + '/'
+                    data_root = data_root.replace(dataroot_prefix,
+                                                  ceph_dataroot_prefix)
+                    # add '/' at the end
+                    if not data_root.endswith('/'):
+                        data_root = data_root + '/'
+                    data_root = data_root_mapping.get(data_root, data_root)
+                    data_roots[k] = data_root
+        dataset_updated['data_roots'] = data_roots
+
+    else:
+        raise KeyError
+
+    # update pipeline in dataset_updated inplace
+    pipelines = dataset_updated['pipeline']
+    for pipeline in pipelines:
+        type_ = pipeline['type']
+        # only change mmcv(mmcls)'s loading config
+        if type_ == 'mmcls.LoadImageFromFile':
+            pipeline['file_client_args'] = dict(backend='petrel')
+            break
+    return dataset_updated
+
+
+def update_intervals(config):
+    # 1. change max-iters and val-interval
+    if 'train_cfg' in config and config['train_cfg']:
+        train_cfg = config['train_cfg']
+        train_cfg['max_iters'] = 500
+        train_cfg['val_interval'] = 100
+    # 2. change num samples
+    if 'val_evaluator' in config and config['val_evaluator']:
+        val_metrics = config['val_evaluator']['metrics']
+    else:
+        val_metrics = []
+    if 'test_evaluator' in config and config['test_evaluator']:
+        test_metrics = config['test_evaluator']['metrics']
+    else:
+        test_metrics = []
+    # test_metrics = config['test_evaluator']['metrics'] \
+    #     if 'test_evaluator' in config else []
+    for metric in val_metrics + test_metrics:
+        if 'fake_nums' in metric:
+            metric['fake_nums'] = 500
+        if 'real_nums' in metric:
+            metric['real_nums'] = 500
+    # 3. change vis interval
+    if 'custom_hooks' in config and config['custom_hooks']:
+        for hook in config['custom_hooks']:
+            if hook['type'] == 'GenVisualizationHook':
+                hook['interval'] = 100
+    # 4. change logging interval
+    if 'default_hooks' in config and config['default_hooks']:
+        config['default_hooks']['logger'] = dict(
+            type='LoggerHook', interval=10)
+    return config
 
 
 def update_ceph_config(filename,
@@ -32,74 +140,13 @@ def update_ceph_config(filename,
         dataloader_prefix = [
             f'{p}_dataloader' for p in ['train', 'val', 'test']
         ]
-        local_dataroot_prefix = ['data', './data']
-        ceph_dataroot_prefix_temp = 'openmmlab:s3://openmmlab/datasets/{}/'
-
         for prefix in dataloader_prefix:
-            if not hasattr(config, prefix):
+            if not hasattr(config, prefix) or config[prefix] is None:
                 continue
             data_cfg = config[prefix]
 
-            # val_dataloader may None
-            if data_cfg is None:
-                continue
-            dataset: dict = data_cfg['dataset']
-
-            dataset_type: str = dataset['type']
-            if 'mmcls' in dataset_type:
-                repo_name = 'classification'
-            else:
-                repo_name = 'editing'
-            ceph_dataroot_prefix = ceph_dataroot_prefix_temp.format(repo_name)
-
-            if 'data_root' in dataset:
-                data_root: str = dataset['data_root']
-
-                for dataroot_prefix in local_dataroot_prefix:
-                    if data_root.startswith(dataroot_prefix):
-                        # avoid cvt './data/imagenet' ->
-                        # openmmlab:s3://openmmlab/datasets/classification//imagenet
-                        if data_root.startswith(dataroot_prefix + '/'):
-                            dataroot_prefix = dataroot_prefix + '/'
-                        data_root = data_root.replace(dataroot_prefix,
-                                                      ceph_dataroot_prefix)
-                        # add '/' at the end
-                        if not data_root.endswith('/'):
-                            data_root = data_root + '/'
-                        data_root = data_root_mapping.get(data_root, data_root)
-                        dataset['data_root'] = data_root
-
-            elif 'data_roots' in dataset:
-                # specific for pggan dataset, which need a dict of data_roots
-                data_roots: dict = dataset['data_roots']
-                for k, data_root in data_roots.items():
-                    for dataroot_prefix in local_dataroot_prefix:
-                        if data_root.startswith(dataroot_prefix):
-                            # avoid cvt './data/imagenet' ->
-                            # openmmlab:s3://openmmlab/datasets/classification//imagenet
-                            if data_root.startswith(dataroot_prefix + '/'):
-                                dataroot_prefix = dataroot_prefix + '/'
-                            data_root = data_root.replace(
-                                dataroot_prefix, ceph_dataroot_prefix)
-                            # add '/' at the end
-                            if not data_root.endswith('/'):
-                                data_root = data_root + '/'
-                            data_root = data_root_mapping.get(
-                                data_root, data_root)
-                            data_roots[k] = data_root
-                dataset['data_roots'] = data_roots
-
-            else:
-                raise KeyError
-
-            pipelines = dataset['pipeline']
-            for pipeline in pipelines:
-                type_ = pipeline['type']
-                # only change mmcv(mmcls)'s loading config
-                if type_ == 'mmcls.LoadImageFromFile':
-                    pipeline['file_client_args'] = dict(backend='petrel')
-                    break
-            config[prefix]['dataset'] = dataset
+            dataset_updated = update_data(data_cfg, data_root_mapping)
+            config[prefix]['dataset'] = dataset_updated
 
         # 2. change visualizer
         _, project, name = filename.split('.')[0].split('/')
@@ -171,7 +218,11 @@ def update_ceph_config(filename,
                 hooks['out_dir'] = ceph_path
                 hooks['file_client_args'] = file_client_args
 
-        # 4. save
+        # 4. change interval and num_samples for quick run
+        if args.quick_run:
+            update_intervals(config)
+
+        # 5. save
         config.dump(config.filename)
         return True
 
@@ -202,6 +253,11 @@ if __name__ == '__main__':
         '--add-tensorboard',
         action='store_true',
         help='Add Tensorboard config or not.')
+    parser.add_argument(
+        '--quick-run',
+        action='store_true',
+        help=('Whether start a quick run to detect bugs. This is usefully in '
+              'train/test-benchmark.'))
     parser.add_argument(
         '--not-delete-local',
         action='store_true',
