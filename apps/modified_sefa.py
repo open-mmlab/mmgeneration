@@ -20,11 +20,13 @@ from mmcv import DictAction
 from mmcv.runner import load_checkpoint
 from torchvision import utils
 
+from mmgen.registry import MODELS
+
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
 
 from mmgen.apis import set_random_seed  # isort:skip  # noqa
-from mmgen.models import build_model  # isort:skip  # noqa
+from mmgen.models import build_model, ExponentialMovingAverage  # isort:skip  # noqa
 
 # yapf: enable
 
@@ -119,18 +121,19 @@ if __name__ == '__main__':
 
     mmcv.print_log('Building models and loading checkpoints', 'mmgen')
     # build model
-    model = build_model(
-        cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
+    model = MODELS.build(cfg.model)
 
     model.eval()
     load_checkpoint(model, args.ckpt, map_location='cpu')
 
     # get generator
-    if model.use_ema:
+    if model._with_ema_gen:
         generator = model.generator_ema
     else:
         generator = model.generator
 
+    if isinstance(generator, ExponentialMovingAverage):
+        generator = generator.module
     generator = generator.to(device)
     generator.eval()
 

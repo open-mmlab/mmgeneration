@@ -10,7 +10,7 @@ train_cfg = dict(max_iters=total_iters * disc_step)
 
 # define dataset
 batch_size = 64
-data_root = './data/lsun/bedroom_train'
+data_root = './data/lsun/images/bedroom_train'
 
 train_dataloader = dict(
     batch_size=batch_size, dataset=dict(data_root=data_root))
