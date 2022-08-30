@@ -26,7 +26,7 @@ When submitting jobs using "tools/train.py" or "tools/test.py", you may specify 
 
 ## Config File Structure
 
-There are 4 basic component types under `config/_base_`, dataset, model, default_metrics, default_runtime.
+There are 3 basic component types under `config/_base_`, dataset, model, default_runtime.
 Many methods could be easily constructed with one of each like StyleGAN2, CycleGAN, SinGAN.
 Configs consisting of components from `_base_` are called _primitive_.
 
@@ -57,9 +57,9 @@ We follow the below style to name config files. Contributors are advised to foll
 
 ## An Example of StyleGAN2
 
-To help the users have a basic idea of a complete config and the modules in a modern detection system,
+To help the users have a basic idea of a complete config and the modules in a modern GAN model,
 we make brief comments on the config of Stylegan2 at 256x256 scale.
-For more detailed usage and the corresponding alternative for each module, please refer to the API documentation and the [tutorial in MMDetection](https://github.com/open-mmlab/mmdetection/blob/master/docs/en/tutorials/config.md).
+For more detailed usage and the corresponding alternative for each module, please refer to the API documentation and the [tutorial in MMEngine](https://github.com/open-mmlab/mmengine/blob/main/docs/en/tutorials/config.md).
 
 ```python
 
@@ -78,7 +78,7 @@ d_reg_ratio = d_reg_interval / (d_reg_interval + 1)
 
 ema_half_life = 10.  # G_smoothing_kimg
 
-# update the `out_size` and `in_size` arguments.
+# Define model
 model = dict(
     generator=dict(out_size=1024),
     discriminator=dict(in_size=1024),
@@ -94,6 +94,7 @@ model = dict(
         g_reg_weight=2. * g_reg_interval,
         pl_batch_shrink=2))
 
+# define training config required by runner
 train_cfg = dict(max_iters=800002)  # total iterations to train the model
 
 # define optimizator for generator and discriminator
@@ -150,17 +151,3 @@ default_hooks = dict(checkpoint=dict(save_best='FID-Full-50k/fid'))  # save chec
 val_evaluator = dict(metrics=metrics)  # define metric in evaluation process
 test_evaluator = dict(metrics=metrics)  # define metric in test process
 ```
-
-## FAQ
-
-### Ignore some fields in the base configs
-
-Sometimes, you may set `_delete_=True` to ignore some of fields in base configs.
-You may refer to [MMEngine](https://github.com/open-mmlab/mmengine/blob/main/docs/zh_cn/tutorials/config.md#%E5%88%A0%E9%99%A4%E5%AD%97%E5%85%B8%E4%B8%AD%E7%9A%84-key) for simple illustration.
-
-You may have a careful look at [this tutorial](https://github.com/open-mmlab/mmengine/blob/main/docs/en/tutorials/config.md) for better understanding of this feature.
-
-### Use intermediate variables in configs
-
-Some intermediate variables are used in the config files, like `train_pipeline`/`test_pipeline` in datasets.
-It's worth noting that when modifying intermediate variables in the children configs, users need to pass the intermediate variables into corresponding fields again.
