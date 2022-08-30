@@ -324,3 +324,7 @@ Finally we can start training our own model by：
 ```python
 python train.py configs/dcgan/dcgan_1xb128-5epoches_lsun-bedroom-64x64.py
 ```
+
+## References
+
+1. Radford, Alec, Luke Metz, and Soumith Chintala. "Unsupervised representation learning with deep convolutional generative adversarial networks." arXiv preprint arXiv:1511.06434 (2015).
