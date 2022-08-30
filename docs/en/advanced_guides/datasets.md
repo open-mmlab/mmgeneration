@@ -1,6 +1,6 @@
 # Dataset
 
-In this document, we will introduce the design of each datasets in MMGeneration and how users to add their own dataset.
+In this document, we will introduce the design of each datasets in MMGeneration and how users can design their own dataset.
 
 In 1.x version of MMGeneration, all datasets are inherited from `BaseDataset`.
 Each dataset load the list of data info (e.g., data path) by `load_data_list`.
