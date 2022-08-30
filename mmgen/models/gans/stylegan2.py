@@ -17,7 +17,6 @@ from ..losses import gen_path_regularizer, r1_gradient_penalty_loss
 from .base_gan import BaseGAN
 
 ModelType = Union[Dict, nn.Module]
-TrainInput = Union[dict, Tensor]
 
 
 @MODELS.register_module()
@@ -204,7 +203,7 @@ class StyleGAN2(BaseGAN):
         """Train generator.
 
         Args:
-            inputs (TrainInput): Inputs from dataloader.
+            inputs (dict): Inputs from dataloader.
             data_samples (List[GenDataSample]): Data samples from dataloader.
                 Do not used in generator's training.
             optim_wrapper (OptimWrapper): OptimWrapper instance used to update

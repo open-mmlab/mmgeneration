@@ -1,6 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Dict, List, Optional, Union
+
 import numpy as np
 import torch
+import torch.nn as nn
+from mmengine import Config, MessageHub
+from mmengine.optim import OptimWrapper
+from torch import Tensor
 
 from mmgen.models.architectures.common import get_module_device
 from mmgen.registry import MODELS
@@ -13,6 +19,8 @@ from ..architectures.stylegan.utils import (apply_fractional_pseudo_rotation,
                                             rotation_matrix)
 from ..common import get_valid_num_batches
 from .stylegan2 import StyleGAN2
+
+ModelType = Union[Dict, nn.Module]
 
 
 @MODELS.register_module()
@@ -27,6 +35,26 @@ class StyleGAN3(StyleGAN2):
     and
     :class:~`mmgen.models.architectures.stylegan.generator_discriminator_v2.StyleGAN2Discriminator`  # noqa
     """
+
+    def __init__(self,
+                 generator: ModelType,
+                 discriminator: Optional[ModelType] = None,
+                 data_preprocessor: Optional[Union[dict, Config]] = None,
+                 generator_steps: int = 1,
+                 discriminator_steps: int = 1,
+                 forward_kwargs: Optional[Dict] = None,
+                 ema_config: Optional[Dict] = None,
+                 loss_config=dict()):
+        super().__init__(generator, discriminator, data_preprocessor,
+                         generator_steps, discriminator_steps, ema_config,
+                         loss_config)
+
+        forward_kwargs = dict() if forward_kwargs is None else forward_kwargs
+        disc_default_forward_kwargs = dict(update_emas=True, force_fp32=False)
+        gen_default_forward_kwargs = dict(force_fp32=False)
+        forward_kwargs.setdefault('disc', disc_default_forward_kwargs)
+        forward_kwargs.setdefault('gen', gen_default_forward_kwargs)
+        self.forward_kwargs = forward_kwargs
 
     def test_step(self, data: dict) -> ForwardOutputs:
         """Gets the generated image of given data. Same as :meth:`val_step`.
@@ -75,6 +103,67 @@ class StyleGAN3(StyleGAN2):
         else:
             outputs = self(inputs_dict, data_samples)
         return outputs
+
+    def train_discriminator(
+            self, inputs: dict, data_samples: List[GenDataSample],
+            optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
+        """Train discriminator.
+
+        Args:
+            inputs (dict): Inputs from dataloader.
+            data_samples (List[GenDataSample]): Data samples from dataloader.
+            optim_wrapper (OptimWrapper): OptimWrapper instance used to update
+                model parameters.
+        Returns:
+            Dict[str, Tensor]: A ``dict`` of tensor for logging.
+        """
+        real_imgs = inputs['img']
+
+        num_batches = real_imgs.shape[0]
+
+        noise_batch = self.noise_fn(num_batches=num_batches)
+        with torch.no_grad():
+            fake_imgs = self.generator(
+                noise_batch, return_noise=False, **self.forward_kwargs['disc'])
+
+        disc_pred_fake = self.discriminator(fake_imgs)
+        disc_pred_real = self.discriminator(real_imgs)
+
+        parsed_losses, log_vars = self.disc_loss(disc_pred_fake,
+                                                 disc_pred_real, real_imgs)
+        optimizer_wrapper.update_params(parsed_losses)
+        # save ada info
+        message_hub = MessageHub.get_current_instance()
+        message_hub.update_info('disc_pred_real', disc_pred_real)
+        return log_vars
+
+    def train_generator(self, inputs: dict, data_samples: List[GenDataSample],
+                        optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
+        """Train generator.
+
+        Args:
+            inputs (dict): Inputs from dataloader.
+            data_samples (List[GenDataSample]): Data samples from dataloader.
+                Do not used in generator's training.
+            optim_wrapper (OptimWrapper): OptimWrapper instance used to update
+                model parameters.
+
+        Returns:
+            Dict[str, Tensor]: A ``dict`` of tensor for logging.
+        """
+        # num_batches = inputs['real_imgs'].shape[0]
+        num_batches = inputs['img'].shape[0]
+
+        # >>> new setting
+        noise = self.noise_fn(num_batches=num_batches)
+        fake_imgs = self.generator(
+            noise, return_noise=False, **self.forward_kwargs['gen'])
+
+        disc_pred_fake = self.discriminator(fake_imgs)
+        parsed_loss, log_vars = self.gen_loss(disc_pred_fake, num_batches)
+
+        optimizer_wrapper.update_params(parsed_loss)
+        return log_vars
 
     def sample_equivarience_pairs(self,
                                   batch_size,
