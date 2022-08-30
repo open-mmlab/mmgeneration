@@ -2,10 +2,15 @@
 
 In this document, we will introduce the design of each datasets in MMGeneration and how users to add their own dataset.
 
-In 1.x version of MMGeneration, all datasets are inherited from BaseDataset.
-Each dataset load the data list by `load_data_list` and call `prepare_data` in `__getitem__` to load the data info. In `prepare_data`, `get_data_info` and transforms pipeline will be called progressively.
+In 1.x version of MMGeneration, all datasets are inherited from `BaseDataset`.
+Each dataset load the list of data info (e.g., data path) by `load_data_list`.
+In `__getitem__`, `prepare_data` is called to get the preprocessed data.
+In `prepare_data`, data loading pipeline consists of the following steps:
 
-If you want to implement a new dataset class, you must implement `load_data_list` function. We also encourage users to use the original data loading logic provided by `BaseDataset`.
+1. fetch the data info by passed index, implemented by `get_data_info`
+2. apply data transforms to the data, implemented by `pipeline`
+
+If you want to implement a new dataset class, you only need to implement `load_data_list` function. We also encourage users to use the original data loading logic provided by `BaseDataset`.
 If the default loading logic is difficult to meet your needs, you can overwrite the `__getitem__` interface to implement your data loading logic.
 
 ## 1. `UnconditionalImageDataset`
@@ -142,6 +147,6 @@ def prepare_test_data(self, idx):
     return self.pipeline(results)
 ```
 
-## 6. Add new dataset
+## 6. Design your own dataset
 
 You may refer to [tutorial in MMEngine](https://github.com/open-mmlab/mmengine/blob/main/docs/en/tutorials/basedataset.md).
