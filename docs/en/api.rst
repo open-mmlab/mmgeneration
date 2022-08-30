@@ -1,7 +1,8 @@
 mmgen.apis
 --------------
-.. automodule:: mmgen.apis
-    :members:
+.. autosummary::
+   :toctree: generated
+   :nosignatures:
 
 
 mmgen.datasets

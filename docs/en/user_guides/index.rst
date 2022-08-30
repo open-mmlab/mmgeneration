@@ -1,18 +1,40 @@
-Train & Test
-**************
 
 .. toctree::
    :maxdepth: 1
 
    1_config.md
-   2_dataset_prepare.md
-   3_inference.md
-   4_train_test.md
 
-Useful Tools
-*************
+
 
 .. toctree::
    :maxdepth: 1
 
-   useful_tools.md
+   2_dataset_prepare.md
+
+
+
+.. toctree::
+   :maxdepth: 1
+
+   3_inference.md
+
+
+
+.. toctree::
+   :maxdepth: 1
+
+   4_train_test.md
+
+
+
+.. toctree::
+   :maxdepth: 1
+
+   5_visualization.md
+
+
+
+.. toctree::
+   :maxdepth: 1
+   
+   6_useful_tools.md

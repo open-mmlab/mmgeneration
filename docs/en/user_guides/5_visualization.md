@@ -179,7 +179,7 @@ By this interface,
 This interface will call the corresponding drawing function according to the corresponding `vis_mode` to obtain the visualization result in `np.ndarray` type.
 Then `show` or `add_image` will be called to directly show the results or pass the visualization result to the predefined vis_backend.
 
-# 4. `VisBackend`
+## 4. `VisBackend`
 
 In general, users do not need to manipulate `VisBackend` objects, only when the current visualization storage can not meet the needs, users will want to manipulate the storage backend directly.
 MMGeneration supports a variety of different visualization backends, including:

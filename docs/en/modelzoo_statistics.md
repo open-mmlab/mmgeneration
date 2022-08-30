@@ -1,8 +1,10 @@
+
 # Model Zoo Statistics
 
-- Number of papers: 16
+* Number of papers: 16
+* Number of checkpoints: 100
 
-- Number of checkpoints: 100
+	* [BigGAN](https://github.com/open-mmlab/mmgeneration/blob/master/configs/biggan) (7 ckpts)
 
 
 	* [CycleGAN: Unpaired Image-to-Image Translation Using Cycle-Consistent Adversarial Networks](https://github.com/open-mmlab/mmgeneration/blob/master/configs/cyclegan) (6 ckpts)
@@ -47,5 +49,5 @@
 	* [StyleGANv3](https://github.com/open-mmlab/mmgeneration/blob/master/configs/styleganv3) (9 ckpts)
 
 
-  - [StyleGANv3](https://github.com/open-mmlab/mmgeneration/blob/master/configs/styleganv3) (9 ckpts)
+	* [WGAN-GP](https://github.com/open-mmlab/mmgeneration/blob/master/configs/wgan-gp) (2 ckpts)
 
