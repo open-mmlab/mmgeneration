@@ -10,12 +10,14 @@ from mmcv import Config, DictAction
 from mmcv.runner import load_checkpoint
 from torchvision.utils import save_image
 
+from mmgen.registry import MODELS
+
 # yapf: disable
 sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip  # noqa
 
 from mmgen.apis import set_random_seed # isort:skip  # noqa
-from mmgen.engine.evaluation import slerp # isort:skip  # noqa
-from mmgen.models import build_model # isort:skip  # noqa
+from mmgen.evaluation import slerp # isort:skip  # noqa
+from mmgen.models import build_model, ExponentialMovingAverage # isort:skip  # noqa
 
 # yapf: enable
 
@@ -248,16 +250,17 @@ def main():
         set_random_seed(args.seed, deterministic=args.deterministic)
 
     # build the model and load checkpoint
-    model = build_model(
-        cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
+    model = MODELS.build(cfg.model)
     _ = load_checkpoint(model, args.checkpoint, map_location='cpu')
     # sanity check for models without ema
-    if not model.use_ema:
+    if not model._with_ema_gen:
         args.sample_model = 'orig'
     if args.sample_model == 'ema':
         generator = model.generator_ema
     else:
         generator = model.generator
+    if isinstance(generator, ExponentialMovingAverage):
+        generator = generator.module
     mmcv.print_log(f'Sampling model: {args.sample_model}', 'mmgen')
     mmcv.print_log(f'Show mode: {args.show_mode}', 'mmgen')
     mmcv.print_log(f'Samples path: {args.samples_path}', 'mmgen')
