@@ -6,13 +6,13 @@ We recommend that users follow our best practices to install MMGeneration 1.x . 
 
 ### Prerequisites
 
-## Installation
+In this section we demonstrate how to prepare an environment with PyTorch.
 
-\<! -- 与 MMGen 0.xx 一致-->
+MMGeneration works on Linux, Windows and macOS. It requires Python 3.6+, CUDA 9.2+ and PyTorch 1.5+.
 
-```{note}
+**note**
 If you are experienced with PyTorch and have already installed it, just skip this part and jump to the [next section](###Best Practices). Otherwise, you can follow these steps for the preparation.
-```
+
 
 **Step 0.** Download and install Miniconda from the [official website](https://docs.conda.io/en/latest/miniconda.html).
 
@@ -75,9 +75,9 @@ When installing PyTorch, you need to specify the version of CUDA. If you are not
 
 Please make sure the GPU driver satisfies the minimum version requirements. See [this table](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cuda-major-component-versions__table-cuda-toolkit-driver-versions) for more information.
 
-```{note}
+**note**
 Installing CUDA runtime libraries is enough if you follow our best practices, because no CUDA code will be compiled locally. However if you hope to compile MMCV from source or develop other CUDA operators, you need to install the complete CUDA toolkit from NVIDIA's [website](https://developer.nvidia.com/cuda-downloads), and its version should match the CUDA version of PyTorch. i.e., the specified version of cudatoolkit in `conda install` command.
-```
+
 
 #### Install MMCV without MIM
 
