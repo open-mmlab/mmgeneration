@@ -784,6 +784,13 @@ class InceptionScore(GenerativeMetric):
     """
     name = 'IS'
 
+    pil_resize_method_mapping = {
+        'bicubic': Image.BICUBIC,
+        'bilinear': Image.BILINEAR,
+        'nearest': Image.NEAREST,
+        'box': Image.BOX
+    }
+
     def __init__(self,
                  fake_nums: int = 5e4,
                  resize: bool = True,
@@ -800,7 +807,6 @@ class InceptionScore(GenerativeMetric):
                          collect_device, prefix)
 
         self.resize = resize
-        self.resize_method = resize_method
         self.splits = splits
         self.device = 'cpu'
 
@@ -811,15 +817,26 @@ class InceptionScore(GenerativeMetric):
                 'unreliable', 'current')
         self.use_pillow_resize = use_pillow_resize
 
+        if self.use_pillow_resize:
+            allowed_resize_method = list(self.pil_resize_method_mapping.keys())
+            assert resize_method in self.pil_resize_method_mapping, (
+                f'\'resize_method\' (\'{resize_method}\') is not supported '
+                'for PIL resize. Please select resize method in '
+                f'{allowed_resize_method}.')
+            self.resize_method = self.pil_resize_method_mapping[resize_method]
+        else:
+            self.resize_method = resize_method
+
         self.inception, self.inception_style = self._load_inception(
             inception_style, inception_path)
 
     def prepare(self, module: nn.Module, dataloader: DataLoader) -> None:
-        """_summary_
+        """Prepare for the pre-calculating items of the metric. Defaults to do
+        nothing.
 
         Args:
-            module (nn.Module): _description_
-            dataloader (DataLoader): _description_
+            module (nn.Module): Model to evaluate.
+            dataloader (DataLoader): Dataloader for the real images.
         """
         self.device = module.data_preprocessor.device
         self.inception.to(self.device)
@@ -862,7 +879,11 @@ class InceptionScore(GenerativeMetric):
             x_np = [x_.permute(1, 2, 0).detach().cpu().numpy() for x_ in image]
 
             # use bicubic resize as default
-            x_pil = [Image.fromarray(x_).resize((299, 299)) for x_ in x_np]
+            x_pil = [
+                Image.fromarray(x_).resize((299, 299),
+                                           resample=self.resize_method)
+                for x_ in x_np
+            ]
             x_ten = torch.cat(
                 [torch.FloatTensor(np.array(x_)[None, ...]) for x_ in x_pil])
             x_ten = (x_ten / 127.5 - 1).to(torch.float)
@@ -1178,7 +1199,7 @@ class PrecisionAndRecall(GenerativeMetric):
         """compute_metrics.
 
         Returns:
-            dict | list: Summarized results.
+            dict: Summarized results.
         """
         gen_features = torch.cat(results_fake, dim=0).to(self.collect_device)
         real_features = self.results_real
