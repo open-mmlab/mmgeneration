@@ -1,13 +1,14 @@
 # Losses
 
 We provide two ways of defining loss.
-One is using default loss configuration, which has fixed loss components, and offer related loss arguments for users to adjust.
-The other is customized losses, in which users can define loss modules and combine loss modules as they like.
+
+1. Default losses, which has fixed loss components, and remains related loss arguments for users to adjust.
+2. Customized losses. Users can define loss modules and combine loss modules as they like.
 
 ## Default losses
 
 For convenient usage, you can directly use default loss calculation process we set for concrete algorithms like lsgan, biggan, styleganv2 etc.
-Take `stylegan2` as example, we use R1 gradient penalty and generator path length regularization as configurable losses, and users can adjust
+Take `stylegan2` as an example, we use R1 gradient penalty and generator path length regularization as configurable losses, and users can adjust
 related arguments like `r1_loss_weight` and `g_reg_weight`.
 
 ```python
@@ -28,7 +29,7 @@ model = dict(
 
 ## Customized losses
 
-As shown in the advanced tutorial for [models](models.md), `losses` are regarded/registered as `MODULES` in `MMGeneration`. Customizing losses is similar to customizing any other models. This section is mainly for clarifying the design of loss modules in our repo. Importantly, when writing your own loss modules, you should follow the same design, so that the new loss module can be adopted in our framework without extra efforts.
+As shown in the advanced tutorial for [models](models.md), `losses` are regarded/registered as `MODULES` in `MMGeneration`. Customizing losses is similar to customizing any other models. This section is mainly for clarifying the design of loss modules in our repo. Importantly, when implementing loss modules, you should follow the same design, so that the new loss module can be adopted in our framework without extra efforts.
 
 In general, to implement a loss module, we will write a function implementation and then wrap it with a class implementation. However, in `MMGeneration`, we provide another unified interface `data_info` for users to define the mapping between the input argument and data items.
 
@@ -106,14 +107,12 @@ class DiscShiftLoss(nn.Module):
 
 As shown in this part of codes, once users set the `data_info`, the loss module will receive a dictionary containing all of the necessary data and modules, which is provided by the `MODELS` in the training procedure. If this dictionary is given as a non-keyword argument, it should be offered as the first argument. If you are using a keyword argument, please name it as `outputs_dict`.
 
-To build the computational graph, the generative models have to provide a dictionary containing all kinds of data. Having a close look at any generative model, you will find that we collect all kinds of features and modules into a dictionary. The following codes are from our `ProgressiveGrowingGAN`:
+To build the computational graph, the generative models have to provide a dictionary containing all kinds of data. Having a close look at any generative model, you will find that we collect all kinds of features and modules into a dictionary. We provide a customized `GANWithCustomizedLoss` here to show the process.
 
 ```python
-    def train_step(self,
-                   data_batch,
-                   optimizer,
-                   ddp_reducer=None,
-                   running_status=None)
+class GANWithCustomizedLoss(BaseModel):
+    def train_step(self, data: TrainStepInputs,
+                    optim_wrapper: OptimWrapperDict) -> Dict[str, Tensor]:
         # ...
 
         # get data dict to compute losses for disc
@@ -139,11 +138,7 @@ To build the computational graph, the generative models have to provide a dictio
         loss_disc, log_vars_disc = self._get_disc_loss(data_dict_)
 
         # ...
-```
 
-Here, the `_get_disc_loss` defined in [BaseGAN](https://github.com/open-mmlab/mmgeneration/tree/master/mmgen/models/gans/base_gan.py) will help to combine all kinds of losses automatically.
-
-```python
     def _get_disc_loss(self, outputs_dict):
         # Construct losses dict. If you hope some items to be included in the
         # computational graph, you have to add 'loss' in its name. Otherwise,
@@ -172,7 +167,8 @@ Here, the `_get_disc_loss` defined in [BaseGAN](https://github.com/open-mmlab/mm
         loss, log_var = self._parse_losses(losses_dict)
 
         return loss, log_var
-
 ```
+
+Here, the `_get_disc_loss` will help to combine all kinds of losses automatically.
 
 Therefore, as long as users design the loss module with the same rules, any kind of loss can be inserted in the training of generative models, without other modifications in the code of models. What you only need to do is just defining the `data_info` in the config files.
