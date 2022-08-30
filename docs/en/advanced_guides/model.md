@@ -9,10 +9,6 @@ In MMGeneration, one algorithm can be splited two compents: **Model** and **Arch
 - **Model** are topmost wrappers and always inherint from `BaseModel` provided in MMEngine. **Model** is responsible to network forward, loss calculation and backward, parameters updating, etc. In MMGeneration, **Model** should be registered as `MODELS`.
 - **Architecture**(s) is the neural network to train or inference, and always as element(s) of **Model**. In MMGeneration, **Architecture** should be registered as **MODULES**.
 
-<!-- > MMGeneration has two basic categories, `MODULES` and `MODELS`, exist in our repo. In other words, each module will be registered as `MODULES` or `MODELS`.
-`MODELS` only contains all of the topmost wrappers for generative models. It supports the commonly used `train_step` and other sampling interface, which can be directly called during training. For static architectures in unconditional GANs, `StaticUnconditionalGAN` is the model that you can use for training your generator and discriminator.
-All of the other modules in `MMGeneration` will be registered as `MODULES`, including components of loss functions, generators and discriminators. -->
-
 Take BigGAN model as an example, [generator and discriminator](https://github.com/open-mmlab/mmgeneration/blob/test-1.x/mmgen/models/architectures/biggan/generator_discriminator.py), [`BigGAN`](https://github.com/open-mmlab/mmgeneration/blob/test-1.x/mmgen/models/gans/biggan.py) is the **Model**, which take data from dataloader and train generator and discriminator alternatively.
 
 You can find implementation **Model** for [GAN](https://github.com/open-mmlab/mmgeneration/tree/test-1.x/mmgen/models/gans) and [Diffusion](https://github.com/open-mmlab/mmgeneration/tree/test-1.x/mmgen/models/architectures) models here. And implementation of **Architecture**(s) can be find [here](https://github.com/open-mmlab/mmgeneration/tree/test-1.x/mmgen/models/architectures).
