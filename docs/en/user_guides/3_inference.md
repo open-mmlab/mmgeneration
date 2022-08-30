@@ -1,14 +1,21 @@
-# Inference
+# Tutorial 3: Inference with pre-trained models
 
 Currently, we support various popular generative models, including unconditional GANs, conditional GANs, image translation models, internal GANs and diffusion models.
-In this section, we will specify how to sample fake images by using our existing models. For model inference, all of the APIs have been included in [mmgen/apis/inference.py](https://github.com/open-mmlab/mmgeneration/tree/1.x/mmgen/apis/inference.py). The most important function is `init_model` for creating a generative model from a config. Then, adopting the sampling function in this file with the generative model will offer you the synthesized images.
+In this section, we will specify how to sample fake images by using our pre-trained models. For model inference, all of the APIs have been included in [mmgen/apis/inference.py](../../../mmgen/apis/inference.py). The most important function is `init_model` for creating a generative model from a config. Then, adopting the sampling function in this file with the generative model will offer you the synthesized images.
+
+The following document will show how to sample the pre-trained models using python codes and scripts. Lists are as follows.
+
+- [Sample images with unconditional GANs](#Sample images with unconditional GANs)
+- [Sample images with conditional GANs](#Sample images with conditional GANs)
+- [Sample images with image translation models](#Sample images with image translation models)
+- [Sample images with diffusion models](#Sample images with diffusion models)
+
 
 ## Sample images with unconditional GANs
 
 MMGeneration provides high-level APIs for sampling images with unconditional GANs. Here is an example for building StyleGAN2-256 and obtaining the synthesized images.
 
 ```python
-import mmcv
 from mmgen.apis import init_model, sample_unconditional_model
 
 # Specify the path to model config and checkpoint file
@@ -23,7 +30,7 @@ model = init_model(config_file, checkpoint_file, device=device)
 fake_imgs = sample_unconditional_model(model, 4)
 ```
 
-Indeed, we have already provided a more friendly demo script to users. You can use [demo/unconditional_demo.py](https://github.com/open-mmlab/mmgeneration/tree/1.x/mmgen/demo/unconditional_demo.py) with the following commands:
+Indeed, we have already provided a more friendly demo script to users. You can use [demo/unconditional_demo.py](../../../demo/unconditional_demo.py) with the following commands:
 
 ```shell
 python demo/unconditional_demo.py \
@@ -40,7 +47,6 @@ Note that more arguments are also offered to customizing your sampling procedure
 MMGeneration provides high-level APIs for sampling images with conditional GANs. Here is an example for building SAGAN-128 and obtaining the synthesized images.
 
 ```python
-import mmcv
 from mmgen.apis import init_model, sample_conditional_model
 
 # Specify the path to model config and checkpoint file
@@ -61,7 +67,7 @@ fake_imgs = sample_conditional_model(model, 4, label=0)
 fake_imgs = sample_conditional_model(model, 4, label=[0, 1, 2, 3])
 ```
 
-Indeed, we have already provided a more friendly demo script to users. You can use [demo/conditional_demo.py](https://github.com/open-mmlab/mmgeneration/tree/1.x/mmgen/demo/conditional_demo.py) with the following commands:
+Indeed, we have already provided a more friendly demo script to users. You can use [demo/conditional_demo.py](../../../demo/conditional_demo.py) with the following commands:
 
 ```shell
 python demo/conditional_demo.py \
@@ -85,8 +91,6 @@ Note that more arguments are also offered to customizing your sampling procedure
 MMGeneration provides high-level APIs for translating images by using image translation models. Here is an example of building Pix2Pix and obtaining the translated images.
 
 ```python
-import mmcv
-
 from mmgen.apis import init_model, sample_img2img_model
 
 # Specify the path to model config and checkpoint file
@@ -102,7 +106,7 @@ model = init_model(config_file, checkpoint_file, device=device)
 translated_image = sample_img2img_model(model, image_path, target_domain='photo')
 ```
 
-Indeed, we have already provided a more friendly demo script to users. You can use [demo/translation_demo.py](https://github.com/open-mmlab/mmgeneration/tree/1.x/mmgen/demo/translation_demo.py) with the following commands:
+Indeed, we have already provided a more friendly demo script to users. You can use [demo/translation_demo.py](../../../demo/translation_demo.py) with the following commands:
 
 ```shell
 python demo/translation_demo.py \
@@ -120,8 +124,6 @@ Note that more customized arguments are also offered to customizing your samplin
 MMGeneration provides high-level APIs for sampling images with diffusion models. Here is an example for building I-DDPM and obtaining the synthesized images.
 
 ```python
-import mmcv
-
 from mmgen.apis import init_model, sample_ddpm_model
 
 # Specify the path to model config and checkpoint file
@@ -135,7 +137,7 @@ model = init_model(config_file, checkpoint_file, device=device)
 fake_imgs = sample_ddpm_model(model, 4)
 ```
 
-Indeed, we have already provided a more friendly demo script to users. You can use [demo/ddpm_demo.py](https://github.com/open-mmlab/mmgeneration/tree/1.x/mmgen/demo/ddpm_demo.py) with the following commands:
+Indeed, we have already provided a more friendly demo script to users. You can use [demo/ddpm_demo.py](../../../demo/ddpm_demo.py) with the following commands:
 
 ```shell
 python demo/ddpm_demo.py \
