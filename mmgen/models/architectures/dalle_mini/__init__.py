@@ -1,4 +1,4 @@
-from .mmgen_test import EncoderLayer, DecoderLayer
+from .modules import EncoderLayer, DecoderLayer
 
 __all__ = [
     'EncoderLayer', 'DecoderLayer'
