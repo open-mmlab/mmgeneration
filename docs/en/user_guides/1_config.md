@@ -14,15 +14,13 @@ When submitting jobs using "tools/train.py" or "tools/test.py", you may specify 
 
 - Update keys inside a list of configs.
 
-  Some config dicts are composed as a list in your config. For example, the training pipeline `data.train.pipeline` is normally a list
+  Some config dicts are composed as a list in your config. For example, the training pipeline `train_dataloader.dataset.pipeline` is normally a list
   e.g. `[dict(type='LoadImageFromFile'), ...]`. If you want to change `'LoadImageFromFile'` to `'LoadImageFromWebcam'` in the pipeline,
-  you may specify `--cfg-options data.train.pipeline.0.type=LoadImageFromWebcam`.
+  you may specify `--cfg-options train_dataloader.dataset.pipeline.0.type=LoadImageFromWebcam`.
 
 - Update values of list/tuples.
 
-  If the value to be updated is a list or a tuple. For example, the config file normally sets `workflow=[('train', 1)]`. If you want to
-  change this key, you may specify `--cfg-options workflow="[(train,1),(val,1)]"`. Note that the quotation mark " is necessary to
-  support list/tuple data types, and that **NO** white space is allowed inside the quotation marks in the specified value.
+  If the value to be updated is a list or a tuple. You can set `--cfg-options key="[a,b]"` or `--cfg-options key=a,b`. It also allows nested list/tuple values, e.g., `--cfg-options key="[(a,b),(c,d)]"`. Note that the quotation mark " is necessary to support list/tuple data types, and that **NO** white space is allowed inside the quotation marks in the specified value.
 
 ## Config File Structure
 
@@ -206,7 +204,7 @@ param_scheduler = dict(
 
 ### Hook config
 
-Users can attach hooks to training, validation, and testing loops to insert some oprations during running. There are two different hook fields, one is `default_hooks` and the other is `custom_hooks`.
+Users can attach hooks to training, validation, and testing loops to insert some operations during running. There are two different hook fields, one is `default_hooks` and the other is `custom_hooks`.
 
 `default_hooks` is a dict of hook configs. `default_hooks` are the hooks must required at runtime. They have default priority which should not be modified. If not set, runner will use the default values. To disable a default hook, users can set its config to `None`.
 
@@ -224,7 +222,7 @@ default_hooks = dict(
         save_best='FID-Full-50k/fid'))
 ```
 
-`default_hooks` is a list of hook configs. Users can develop there own hooks and insert them in this field.
+`custom_hooks` is a list of hook configs. Users can develop there own hooks and insert them in this field.
 
 ```python
 custom_hooks = [
