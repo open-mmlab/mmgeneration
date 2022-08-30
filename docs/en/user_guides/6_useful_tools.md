@@ -1,10 +1,10 @@
-# Useful tools
+# Tutorial 6: Useful tools
 
-We also provide tools for users.
+In this tutorial, we introduce some useful tools for users.
 
 ## Print full config
 
-We incorporate modular and inheritance design into our [config](config.md) system, which is convenient to conduct various experiments. If you wish to inspect the config file, you may run `python tools/misc/print_config.py /PATH/TO/CONFIG` to see the complete config.
+MMGeneration incorporates config mechanism to set parameters used for training and testing models. With our [config](config.md) mechanism, users can easily conduct extensive experiments without hard coding. If you wish to inspect the config file, you may run `python tools/misc/print_config.py /PATH/TO/CONFIG` to see the complete config.
 
 An Example:
 
@@ -12,9 +12,7 @@ An Example:
 python tools/misc/print_config.py configs/styleganv2/stylegan2_c2-PL_8xb4-fp16-partial-GD-no-scaler-800kiters_ffhq-256x256.py
 ```
 
-### Prepare a model for publishing
-
-`tools/publish_model.py` helps users to prepare their model for publishing.
+## Prepare a model for publishing
 
 Before you upload a model to AWS, you may want to
 
@@ -22,6 +20,8 @@ Before you upload a model to AWS, you may want to
 2. delete the optimizer states and
 3. compute the hash of the checkpoint file and append time and the hash id to the
    filename.
+
+`tools/publish_model.py` helps users to prepare their model for publishing.
 
 ```shell
 python tools/publish_model.py ${INPUT_FILENAME} ${OUTPUT_FILENAME}
