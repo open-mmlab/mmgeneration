@@ -111,8 +111,33 @@ To build the computational graph, the generative models have to provide a dictio
 
 ```python
 class GANWithCustomizedLoss(BaseModel):
-    def train_step(self, data: TrainStepInputs,
-                    optim_wrapper: OptimWrapperDict) -> Dict[str, Tensor]:
+
+    def __init__(self, gan_loss, disc_auxiliary_loss, gen_auxiliary_loss,
+                 *args, **kwargs):
+        # ...
+        if gan_loss is not None:
+            self.gan_loss = MODULES.build(gan_loss)
+        else:
+            self.gan_loss = None
+
+        if disc_auxiliary_loss:
+            self.disc_auxiliary_losses = MODULES.build(disc_auxiliary_loss)
+            if not isinstance(self.disc_auxiliary_losses, nn.ModuleList):
+                self.disc_auxiliary_losses = nn.ModuleList(
+                    [self.disc_auxiliary_losses])
+        else:
+            self.disc_auxiliary_loss = None
+
+        if gen_auxiliary_loss:
+            self.gen_auxiliary_losses = MODULES.build(gen_auxiliary_loss)
+            if not isinstance(self.gen_auxiliary_losses, nn.ModuleList):
+                self.gen_auxiliary_losses = nn.ModuleList(
+                    [self.gen_auxiliary_losses])
+        else:
+            self.gen_auxiliary_losses = None
+
+    def train_step(self, data: dict,
+                   optim_wrapper: OptimWrapperDict) -> Dict[str, Tensor]:
         # ...
 
         # get data dict to compute losses for disc
@@ -123,17 +148,7 @@ class GANWithCustomizedLoss(BaseModel):
             disc_pred_fake=disc_pred_fake,
             disc_pred_real=disc_pred_real,
             fake_imgs=fake_imgs,
-            real_imgs=real_imgs,
-            curr_scale=self.curr_scale[0],
-            transition_weight=transition_weight,
-            gen_partial=partial(
-                self.generator,
-                curr_scale=self.curr_scale[0],
-                transition_weight=transition_weight),
-            disc_partial=partial(
-                self.discriminator,
-                curr_scale=self.curr_scale[0],
-                transition_weight=transition_weight))
+            real_imgs=real_imgs)
 
         loss_disc, log_vars_disc = self._get_disc_loss(data_dict_)
 
@@ -164,9 +179,10 @@ class GANWithCustomizedLoss(BaseModel):
                     )] = losses_dict[loss_module.loss_name()] + loss_
                 else:
                     losses_dict[loss_module.loss_name()] = loss_
-        loss, log_var = self._parse_losses(losses_dict)
+        loss, log_var = self.parse_losses(losses_dict)
 
         return loss, log_var
+
 ```
 
 Here, the `_get_disc_loss` will help to combine all kinds of losses automatically.
