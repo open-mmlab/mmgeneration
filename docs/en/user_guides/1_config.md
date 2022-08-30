@@ -57,97 +57,201 @@ We follow the below style to name config files. Contributors are advised to foll
 
 ## An Example of StyleGAN2
 
-To help the users have a basic idea of a complete config and the modules in a modern GAN model,
-we make brief comments on the config of Stylegan2 at 256x256 scale.
+To help the users have a basic idea of a complete config and the modules in a modern GAN model.
+Taking [Stylegan2 at 1024x1024 scale](../../../configs/styleganv2/stylegan2_c2_8xb4-fp16-global-800kiters_quicktest-ffhq-256x256.py) as an example, we will introduce each field in the config according to different function modules.
 For more detailed usage and the corresponding alternative for each module, please refer to the API documentation and the [tutorial in MMEngine](https://github.com/open-mmlab/mmengine/blob/main/docs/en/tutorials/config.md).
 
+### Model config
+
+In MMGeneration's config, we use model to setup generation algorithm components.
+In addition to neural network components such as generator, discriminator etc, it also requires `data_preprocessor`, `loss_config`, and some of them contains `ema_config`.
+`data_preprocessor` is responsible for processing a batch of data output by dataloader.
+`loss_config` is responsible for weight of loss terms.
+`ema_config` is responsible for exponential moving average (EMA) operation for generator.
+
 ```python
-
-_base_ = [
-    '../_base_/datasets/ffhq_flip.py',
-    '../_base_/models/stylegan/stylegan2_base.py',
-    '../_base_/default_runtime.py'
-]  # base config file which we build new config file on.
-
-# reg params
-d_reg_interval = 16
-g_reg_interval = 4
-
-g_reg_ratio = g_reg_interval / (g_reg_interval + 1)
-d_reg_ratio = d_reg_interval / (d_reg_interval + 1)
-
-ema_half_life = 10.  # G_smoothing_kimg
-
-# Define model
 model = dict(
-    generator=dict(out_size=1024),
-    discriminator=dict(in_size=1024),
-    ema_config=dict(
-        type='ExponentialMovingAverage',
-        interval=1,
-        momentum=0.5**(32. / (ema_half_life * 1000.))),
-    loss_config=dict(
-        r1_loss_weight=10. / 2. * d_reg_interval,
-        r1_interval=d_reg_interval,
-        norm_mode='HWC',
-        g_reg_interval=g_reg_interval,
-        g_reg_weight=2. * g_reg_interval,
-        pl_batch_shrink=2))
+    type='StyleGAN2',  # The name of the model
+    data_preprocessor=dict(type='GANDataPreprocessor'),  # The config of data preprocessor, usually includs image normalization and padding
+    generator=dict(  # The config for generator
+        type='StyleGANv2Generator',  # The name of the generator
+        out_size=1024,  # The output resolution of the generator
+        style_channels=512),  # The number of style channels of the generator
+    discriminator=dict(  # The config for discriminator
+        type='StyleGAN2Discriminator',  # The name of the discriminator
+        in_size=1024),  # The input resolution of the discriminator
+    ema_config=dict(  # The config for EMA
+        type='ExponentialMovingAverage',  # Specific the type of Average model
+        interval=1,  # The interval of EMA operation
+        momentum=0.9977843871238888),  # The momentum of EMA operation
+    loss_config=dict(  # The config for loss terms
+        r1_loss_weight=80.0,  # The weight for r1 gradient penalty
+        r1_interval=16,  # The interval of r1 gradient penalty
+        norm_mode='HWC',  # The normalization mode for r1 gradient penalty
+        g_reg_interval=4,  # The interval for generator's regularization
+        g_reg_weight=8.0,  # The weight for generator's regularization
+        pl_batch_shrink=2))  # The factor of shrinking the batch size in path length regularization
+```
 
-# define training config required by runner
-train_cfg = dict(max_iters=800002)  # total iterations to train the model
+### Dataset and evaluator config
 
-# define optimizator for generator and discriminator
+[Dataloaders](https://pytorch.org/docs/stable/data.html?highlight=data%20loader#torch.utils.data.DataLoader) are required for the training, validation, and testing of the [runner](https://mmengine.readthedocs.io/en/latest/tutorials/runner.html).
+Dataset and data pipeline need to be set to build the dataloader. Due to the complexity of this part, we use intermediate variables to simplify the writing of dataloader configs.
+
+```python
+dataset_type = 'UnconditionalImageDataset'  # Dataset type, this will be used to define the dataset
+data_root = './data/ffhq/'  # Root path of data
+
+train_pipeline = [  # Training data process pipeline
+    dict(type='LoadImageFromFile', key='img'),  # First pipeline to load images from file path
+    dict(type='Flip', keys=['img'], direction='horizontal'),  # Argumentation pipeline that flip the images
+    dict(type='PackGenInputs', keys=['img'], meta_keys=['img_path'])  # The last pipeline that formats the annotation data (if have) and decides which keys in the data should be packed into data_samples
+]
+val_pipeline = [
+    dict(type='LoadImageFromFile', key='img'),  # First pipeline to load images from file path
+    dict(type='PackGenInputs', keys=['img'], meta_keys=['img_path'])  # The last pipeline that formats the annotation data (if have) and decides which keys in the data should be packed into data_samples
+]
+train_dataloader = dict(  # The config of train dataloader
+    batch_size=4,  # Batch size of a single GPU
+    num_workers=8,  # Worker to pre-fetch data for each single GPU
+    persistent_workers=True,  # If ``True``, the dataloader will not shutdown the worker processes after an epoch end, which can accelerate training speed.
+    sampler=dict(  # The config of training data sampler
+        type='InfiniteSampler',  # InfiniteSampler for iteratiion-based training. Refers to https://github.com/open-mmlab/mmengine/blob/fe0eb0a5bbc8bf816d5649bfdd34908c258eb245/mmengine/dataset/sampler.py#L107
+        shuffle=True),  # Whether randomly shuffle the training data
+    dataset=dict(  # The config of the training dataset
+        type=dataset_type,
+        data_root=data_root,
+        pipeline=train_pipeline))
+val_dataloader = dict(  # The config of validation dataloader
+    batch_size=4,  # Batch size of a single GPU
+    num_workers=8,  # Worker to pre-fetch data for each single GPU
+    dataset=dict(  # The config of the validation dataset
+        type=dataset_type,
+        data_root=data_root,
+        pipeline=val_pipeline),
+    sampler=dict(  # The config of validatioin data sampler
+        type='DefaultSampler',  # DefaultSampler which supports both distributed and non-distributed training. Refer to https://github.com/open-mmlab/mmengine/blob/fe0eb0a5bbc8bf816d5649bfdd34908c258eb245/mmengine/dataset/sampler.py#L14
+        shuffle=False),  # Whether randomly shuffle the validation data
+    persistent_workers=True)
+test_dataloader = val_dataloader  # The config of the testing dataloader
+```
+
+[Evaluators](https://mmengine.readthedocs.io/en/latest/tutorials/metric_and_evaluator.html) are used to compute the metrics of the trained model on the validation and testing datasets.
+The config of evaluators consists of one or a list of metric configs:
+
+```python
+val_evaluator = dict(  # The config for validation evaluator
+    type='GenEvaluator',  # The type of evaluation
+    metrics=[  # The config for metrics
+        dict(
+            type='FrechetInceptionDistance',
+            prefix='FID-Full-50k',
+            fake_nums=50000,
+            inception_style='StyleGAN',
+            sample_model='ema'),
+        dict(type='PrecisionAndRecall', fake_nums=50000, prefix='PR-50K'),
+        dict(type='PerceptualPathLength', fake_nums=50000, prefix='ppl-w')
+    ])
+test_evaluator = val_evaluator  # The config for testing evaluator
+```
+
+### Training and testing config
+
+MMEngine's runner uses Loop to control the training, validation, and testing processes.
+Users can set the maximum training iteration and validation intervals with these fields.
+
+```python
+train_cfg = dict(  # The config for training
+    by_epoch=False,  # Set `by_epoch` as False to use iteration-based training
+    val_begin=1,  # Which iteration to start the validation
+    val_interval=10000,  # Validation intervals
+    max_iters=800002)  # Maximum training iterations
+val_cfg = dict(type='GenValLoop')  # The validation loop type
+test_cfg = dict(type='GenTestLoop')  # The testing loop type
+```
+
+### Optimization config
+
+`optim_wrapper` is the field to configure optimization related settings.
+The optimizer wrapper not only provides the functions of the optimizer, but also supports functions such as gradient clipping, mixed precision training, etc. Find more in [optimizer wrapper tutorial](https://mmengine.readthedocs.io/en/latest/tutorials/optimizer.html).
+
+```python
 optim_wrapper = dict(
+    constructor='GenOptimWrapperConstructor',
     generator=dict(
-        optimizer=dict(
-            type='Adam', lr=0.002 * g_reg_ratio, betas=(0,
-                                                        0.99**g_reg_ratio))),
+        optimizer=dict(type='Adam', lr=0.0016, betas=(0, 0.9919919678228657))),
     discriminator=dict(
         optimizer=dict(
-            type='Adam', lr=0.002 * d_reg_ratio, betas=(0,
-                                                        0.99**d_reg_ratio))))
+            type='Adam',
+            lr=0.0018823529411764706,
+            betas=(0, 0.9905854573074332))))
+```
 
-batch_size = 4
-data_root = './data/ffhq/images'
+`param_scheduler` is a field that configures methods of adjusting optimization hyperparameters such as learning rate and momentum.
+Users can combine multiple schedulers to create a desired parameter adjustment strategy.
+Find more in [parameter scheduler tutorial](https://mmengine.readthedocs.io/en/latest/tutorials/param_scheduler.html).
+Since StyleGAN2 do not use parameter scheduler, we use config in [CycleGAN](../../../configs/cyclegan/cyclegan_lsgan-id0-resnet-in_1xb1-250kiters_summer2winter.py) as an example:
 
-train_dataloader = dict(
-    batch_size=batch_size,  # specify the number of samples on each GPU
-    dataset=dict(data_root=data_root))
+```python
+# parameter scheduler in CycleGAN config
+param_scheduler = dict(
+    type='LinearLrInterval',  # The type of scheduler
+    interval=400,  # The interval to update the learning rate
+    by_epoch=False,  # The scheduler is called by iteration
+    start_factor=0.0002,  # The number we multiply parameter value in the first iteration
+    end_factor=0,  # The number we multiply parameter value at the end of linear changing process.
+    begin=40000,  # The start iteration of the scheduler
+    end=80000)  # The end iteration of the scheduler
+```
 
-val_dataloader = dict(
-    batch_size=batch_size,  # specify the number of samples on each GPU
-    dataset=dict(data_root=data_root))
+### Hook config
 
-test_dataloader = dict(
-    batch_size=batch_size,  # specify the number of samples on each GPU
-    dataset=dict(data_root=data_root))
+Users can attach hooks to training, validation, and testing loops to insert some oprations during running. There are two different hook fields, one is `default_hooks` and the other is `custom_hooks`.
 
-# add customized hooks for training
+`default_hooks` is a dict of hook configs. `default_hooks` are the hooks must required at runtime. They have default priority which should not be modified. If not set, runner will use the default values. To disable a default hook, users can set its config to `None`.
+
+```python
+default_hooks = dict(
+    timer=dict(type='GenIterTimerHook'),
+    logger=dict(type='LoggerHook', interval=100, log_metric_by_epoch=False),
+    checkpoint=dict(
+        type='CheckpointHook',
+        interval=10000,
+        by_epoch=False,
+        less_keys=['FID-Full-50k/fid'],
+        greater_keys=['IS-50k/is'],
+        save_optimizer=True,
+        save_best='FID-Full-50k/fid'))
+```
+
+`default_hooks` is a list of hook configs. Users can develop there own hooks and insert them in this field.
+
+```python
 custom_hooks = [
     dict(
-        type='GenVisualizationHook',  # visualize training samples for GANs
-        interval=5000,  # the interval of calling this hook
-        fixed_input=True,  # whether fix the input when generate images
-        vis_kwargs_list=dict(type='GAN', name='fake_img')  # pre-defined visualize config for GAN models
-    )
+        type='GenVisualizationHook',
+        interval=5000,
+        fixed_input=True,
+        vis_kwargs_list=dict(type='GAN', name='fake_img'))
 ]
+```
 
-# metrics we used to test this model
-metrics = [
-    dict(
-        type='FrechetInceptionDistance',
-        prefix='FID-Full-50k',
-        fake_nums=50000,
-        inception_style='StyleGAN',
-        inception_pkl='work_dirs/inception_pkl/ffhq256-full.pkl',  # provide the inception pkl for FID
-        sample_model='ema'  # use ema model to evaluate the metric
-    ),
-    dict(type='PrecisionAndRecall', fake_nums=50000, prefix='PR-50K'),
-    dict(type='PerceptualPathLength', fake_nums=50000, prefix='ppl-w')
-]
-default_hooks = dict(checkpoint=dict(save_best='FID-Full-50k/fid'))  # save checkpoint has the best FID metric
+### Runtime config
 
-val_evaluator = dict(metrics=metrics)  # define metric in evaluation process
-test_evaluator = dict(metrics=metrics)  # define metric in test process
+```python
+default_scope = 'mmgen'  # The default registry scope to find modules. Refer to https://mmengine.readthedocs.io/en/latest/tutorials/registry.html
+
+# config for environment
+env_cfg = dict(
+    cudnn_benchmark=True,  # whether to enable cudnn benchmark.
+    mp_cfg=dict(mp_start_method='fork', opencv_num_threads=0),  # set multi process parameters.
+    dist_cfg=dict(backend='nccl'),  # set distributed parameters.
+)
+
+log_level = 'INFO'  # The level of logging
+log_processor = dict(
+    type='GenLogProcessor',  # log processor to process runtime logs
+    by_epoch=False)  # print log by iteration
+load_from = None  # load model checkpoint as a pre-trained model for a given path
+resume = False  # Whether to resume from the checkpoint define in `load_from`. If `load_from` is `None`, it will resume the latest checkpoint in `work_dir`
 ```
