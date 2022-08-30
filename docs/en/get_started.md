@@ -109,7 +109,7 @@ docker run --gpus all --shm-size=8g -it -v {DATA_DIR}:/mmgeneration/data mmgener
 
 ### Trouble shooting
 
-If you have some issues during the installation, please first view the [FAQ](docs/en/notes/faq.md) page.
+If you have some issues during the installation, please first view the [FAQ](notes/faq.md) page.
 You may [open an issue](https://github.com/open-mmlab/mmgeneration/issues/new/choose) on GitHub if no solution is found.
 
 ### Developing with multiple MMGeneration versions
