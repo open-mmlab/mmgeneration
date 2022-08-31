@@ -371,7 +371,7 @@ optim_wrapper = dict(
 
 ## 5. Learining rate schedule
 
-In 0.x version, MMGeneration use `lr_config` field to define the learning reate scheduler. In 1.x version, we use `param_scheduler` to replace it.
+In 0.x version, MMGeneration use `lr_config` field to define the learning reate scheduler. In 1.x version, we use [`param_scheduler`](https://github.com/open-mmlab/mmengine/blob/main/docs/en/tutorials/param_scheduler.md) to replace it.
 
 <table class="docutils">
 <thead>
