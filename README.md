@@ -30,7 +30,7 @@
 [📘Documentation](https://mmgeneration.readthedocs.io/en/1.x/) |
 [🛠️Installation](https://mmgeneration.readthedocs.io/en/1.x/get_started.html#installation) |
 [👀Model Zoo](https://mmgeneration.readthedocs.io/en/1.x/modelzoo_statistics.html) |
-[🆕Update News](https://github.com/open-mmlab/mmgeneration/blob/1.x/docs/en/changelog.md) |
+[🆕Update News](https://github.com/open-mmlab/mmgeneration/blob/1.x/docs/en/notes/changelog.md) |
 [🚀Ongoing Projects](https://github.com/open-mmlab/mmgeneration/projects) |
 [🤔Reporting Issues](https://github.com/open-mmlab/mmgeneration/issues)
 

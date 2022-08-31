@@ -20,17 +20,17 @@
 </div>
 
 [![PyPI](https://img.shields.io/pypi/v/mmgen)](https://pypi.org/project/mmgen)
-[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmgeneration.readthedocs.io/en/1.x/)
+[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmgeneration.readthedocs.io/zh_CN/1.x/index.html)
 [![badge](https://github.com/open-mmlab/mmgeneration/workflows/build/badge.svg)](https://github.com/open-mmlab/mmgeneration/actions)
 [![codecov](https://codecov.io/gh/open-mmlab/mmgeneration/branch/1.x/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmgeneration)
 [![license](https://img.shields.io/github/license/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/blob/1.x/LICENSE)
 [![open issues](https://isitmaintained.com/badge/open/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/issues)
 [![issue resolution](https://isitmaintained.com/badge/resolution/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/issues)
 
-[📘使用文档](https://mmgeneration.readthedocs.io/en/1.x/) |
-[🛠️安装教程](https://mmgeneration.readthedocs.io/en/1.x/get_started.html#installation) |
-[👀模型库](https://mmgeneration.readthedocs.io/en/1.x/modelzoo_statistics.html) |
-[🆕更新记录](https://github.com/open-mmlab/mmgeneration/blob/1.x/docs/en/changelog.md) |
+[📘使用文档](https://mmgeneration.readthedocs.io/zh_CN/1.x/index.html) |
+[🛠️安装教程](https://mmgeneration.readthedocs.io/zh_CN/1.x/get_started.html#installation) |
+[👀模型库](https://mmgeneration.readthedocs.io/zh_CN/1.x/modelzoo_statistics.html) |
+[🆕更新记录](https://github.com/open-mmlab/mmgeneration/blob/1.x/docs/zh_cn/notes/changelog.md) |
 [🚀进行中的项目](https://github.com/open-mmlab/mmgeneration/projects) |
 [🤔提出问题](https://github.com/open-mmlab/mmgeneration/issues)
 
@@ -93,9 +93,9 @@ MMGeneration 是一个基于 PyTorch 和[MMCV](https://github.com/open-mmlab/mmc
 
 2022/8/31 发布了 v1.0.0rc0 版本
 
-这个版本引入一个全新的，可扩展性强的训练和测试引擎，但目前仍在开发中。欢迎根据[文档](https://mmgeneration.readthedocs.io/zh_cn/1.x/)进行试用。
+这个版本引入一个全新的，可扩展性强的训练和测试引擎，但目前仍在开发中。欢迎根据[文档](https://mmgeneration.readthedocs.io/zh_CN/1.x/index.html)进行试用。
 
-同时，新版本中存在一些与旧版本不兼容的修改。请查看[迁移文档](https://mmgeneration.readthedocs.io/zh_cn/1.x/migration.html)来详细了解这些变动。
+同时，新版本中存在一些与旧版本不兼容的修改。请查看[迁移文档](https://mmgeneration.readthedocs.io/zh_CN/1.x/migration.html)来详细了解这些变动。
 
 新版本的公测将持续到 2022 年末，在此期间，我们将基于 `1.x` 分支进行更新，不会合入到 `master` 分支。另外，至少
 到 2023 年末，我们会保持对 0.x 版本的维护。
@@ -135,7 +135,7 @@ pip3 install -e .[all]
 
 ## 快速入门
 
-对于 `MMGeneration` 的基本使用请参考 [快速入门](docs/zh_cn/get_started.md)。其他细节和教程，请参考我们的[文档](https://mmgeneration.readthedocs.io/zh_cn/1.x)。
+对于 `MMGeneration` 的基本使用请参考 [快速入门](docs/zh_cn/get_started.md)。其他细节和教程，请参考我们的[文档](https://mmgeneration.readthedocs.io/zh_CN/1.x/index.html)。
 
 ## 模型库
 
