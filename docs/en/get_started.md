@@ -56,7 +56,7 @@ pip install git+https://github.com/open-mmlab/mmengine.git
 **Step 2.** Install MMGeneration 1.x .
 
 ```shell
-git clone -b dev-1.x https://github.com/open-mmlab/mmgeneration.git
+git clone -b 1.x https://github.com/open-mmlab/mmgeneration.git
 cd mmgeneration
 pip install -v -e .
 # "-v" means verbose, or more output

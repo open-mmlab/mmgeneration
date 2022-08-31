@@ -1,4 +1,5 @@
 mmcls
+mmengine
 ninja
 numpy
 prettytable

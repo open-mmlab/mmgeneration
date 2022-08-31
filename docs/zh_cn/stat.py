@@ -40,5 +40,5 @@ modelzoo = f"""
 {msglist}
 """
 
-with open('modelzoo_statistics.md', 'w') as f:
+with open('model_zoo.md', 'w') as f:
     f.write(modelzoo)

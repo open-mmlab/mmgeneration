@@ -52,8 +52,7 @@ Welcome to MMGeneration's documentation!
 .. toctree::
    :caption: Switch Language
 
-   English <en_docs_url>
-   简体中文 <zh_CM_docs_url>
+   switch_language.md
 
 
 
