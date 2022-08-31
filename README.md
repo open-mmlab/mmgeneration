@@ -51,7 +51,6 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 - **Efficient Distributed Training for Generative Models:** With support of [MMSeparateDistributedDataParallel](https://github.com/open-mmlab/mmengine/blob/main/mmengine/model/wrappers/seperate_distributed.py), distributed training for dynamic architectures can be easily implemented.
 - **New Modular Design for Flexible Combination:** A new design for complex loss modules is proposed for customizing the links between modules, which can achieve flexible combination among different modules.(Tutorial for [losses](docs/en/advanced_guides/losses.md))
 
-
 <table>
 <thead>
   <tr>
