@@ -1281,6 +1281,7 @@ class PrecisionAndRecall(GenerativeMetric):
         self.results_real = vgg_feat
 
 
+@METRICS.register_module('EQ')
 @METRICS.register_module()
 class Equivariance(GenerativeMetric):
 

@@ -1,41 +1,61 @@
 Welcome to MMGeneration's documentation!
 =======================================
 
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Get Started
 
+   overview.md
    get_started.md
-   modelzoo_statistics.md
 
 .. toctree::
    :maxdepth: 2
-   :caption: Quick Run
+   :caption: User Guides
 
-   quick_run.md
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorials
-
-   tutorials/index.rst
+   user_guides/index.rst
 
 .. toctree::
    :maxdepth: 2
+   :caption: Advanced Guides
+
+   advanced_guides/index.rst
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Migration
+
+   migration.md
+
+.. toctree::
+   :maxdepth: 1
+   :caption: API Reference
+
+   api.rst
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Model Zoo
+
+   model_zoo.md
+
+.. toctree::
+   :maxdepth: 1
    :caption: Notes
 
-   changelog.md
-   faq.md
+   notes/contribution_guide.md
+   notes/projects.md
+   notes/changelog.md
+   notes/faq.md
+
 
 .. toctree::
    :caption: Switch Language
 
-   switch_language.md
+   English <en_docs_url>
+   简体中文 <zh_CM_docs_url>
 
-.. toctree::
-   :caption: API Reference
 
-   api.rst
 
 Indices and tables
 ==================
