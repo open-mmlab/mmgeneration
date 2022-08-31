@@ -3,9 +3,23 @@
 We incorporate modular and inheritance design into our config system, which is convenient to conduct various experiments.
 If you wish to inspect the config file, you may run `python tools/misc/print_config.py /PATH/TO/CONFIG` to see the complete config.
 
+The structure of this guide are as follows:
+
+- [Tutorial 1: Learn about Configs](#tutorial-1-learn-about-configs)
+  - [Modify config through script arguments](#modify-config-through-script-arguments)
+  - [Config File Structure](#config-file-structure)
+  - [Config Name Style](#config-name-style)
+  - [An Example of StyleGAN2](#an-example-of-stylegan2)
+    - [Model config](#model-config)
+    - [Dataset and evaluator config](#dataset-and-evaluator-config)
+    - [Training and testing config](#training-and-testing-config)
+    - [Optimization config](#optimization-config)
+    - [Hook config](#hook-config)
+    - [Runtime config](#runtime-config)
+
 ## Modify config through script arguments
 
-When submitting jobs using "tools/train.py" or "tools/test.py", you may specify `--cfg-options` to in-place modify the config.
+When submitting jobs using `tools/train.py` or `tools/test.py`, you may specify `--cfg-options` to in-place modify the config.
 
 - Update config keys of dict chains.
 

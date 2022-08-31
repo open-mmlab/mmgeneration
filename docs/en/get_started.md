@@ -2,7 +2,7 @@
 
 ## Installation
 
-We recommend that users follow our best practices to install MMGeneration 1.x . However, the whole process is highly customizable. See [Customize Installation](###customize-installation) section for more information.
+We recommend that users follow our [best practices](#best-practices) to install MMGeneration 1.x . However, the whole process is highly customizable. See [Customize Installation](#customize-installation) section for more information.
 
 ### Prerequisites
 
@@ -10,9 +10,9 @@ In this section we demonstrate how to prepare an environment with PyTorch.
 
 MMGeneration works on Linux, Windows and macOS. It requires Python 3.6+, CUDA 9.2+ and PyTorch 1.5+.
 
-**note**
-If you are experienced with PyTorch and have already installed it, just skip this part and jump to the [next section](###Best Practices). Otherwise, you can follow these steps for the preparation.
+>
 
+If you are experienced with PyTorch and have already installed it, just skip this part and jump to the [next section](#best-practices). Otherwise, you can follow these steps for the preparation.
 
 **Step 0.** Download and install Miniconda from the [official website](https://docs.conda.io/en/latest/miniconda.html).
 
@@ -44,7 +44,7 @@ conda install pytorch torchvision cpuonly -c pytorch
 ```shell
 pip install -U openmim
 # wait for more pre-compiled pkgs to release
-mim install mmcv-full==2.0.0rc0
+mim install 'mmcv>=2.0.0rc1'
 ```
 
 **Step 1.** Install [MMEngine](https://github.com/open-mmlab/mmengine).
@@ -78,7 +78,6 @@ Please make sure the GPU driver satisfies the minimum version requirements. See 
 **note**
 Installing CUDA runtime libraries is enough if you follow our best practices, because no CUDA code will be compiled locally. However if you hope to compile MMCV from source or develop other CUDA operators, you need to install the complete CUDA toolkit from NVIDIA's [website](https://developer.nvidia.com/cuda-downloads), and its version should match the CUDA version of PyTorch. i.e., the specified version of cudatoolkit in `conda install` command.
 
-
 #### Install MMCV without MIM
 
 MMCV contains C++ and CUDA extensions, thus depending on PyTorch in a complex way. MIM solves such dependencies automatically and makes the installation easier. However, it is not a must.
@@ -88,7 +87,7 @@ To install MMCV with pip instead of MIM, please follow [MMCV installation guides
 For example, the following command install mmcv-full built for PyTorch 1.10.x and CUDA 11.3.
 
 ```shell
-pip install mmcv-full==2.0.0rc0 -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.10/index.html
+pip install 'mmcv>=2.0.0rc1' -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.10/index.html
 ```
 
 #### Using MMGeneration with Docker
@@ -142,7 +141,9 @@ fake_imgs = sample_unconditional_model(model, 4)
 Or you can just run the following command.
 
 ```bash
-python demo/unconditional_demo.py configs/styleganv2/stylegan2_c2_lsun-church_256_b4x8_800k.py https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth
+python demo/unconditional_demo.py \
+configs/styleganv2/stylegan2_c2_lsun-church_256_b4x8_800k.py \
+https://download.openmmlab.com/mmgen/stylegan2/official_weights/stylegan2-church-config-f-official_20210327_172657-1d42b7d1.pth
 
 ```
 

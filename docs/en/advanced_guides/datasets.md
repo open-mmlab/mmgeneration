@@ -13,12 +13,22 @@ In `prepare_data`, data loading pipeline consists of the following steps:
 If you want to implement a new dataset class, you only need to implement `load_data_list` function. We also encourage users to use the original data loading logic provided by `BaseDataset`.
 If the default loading logic is difficult to meet your needs, you can overwrite the `__getitem__` interface to implement your data loading logic.
 
-## 1. `UnconditionalImageDataset`
+The structure of this guide are as follows:
+
+- [Dataset](#dataset)
+  - [UnconditionalImageDataset](#unconditionalimagedataset)
+  - [GrowScaleImgDataset](#growscaleimgdataset)
+  - [SinGANDataset](#singandataset)
+  - [PairedImageDataset](#pairedimagedataset)
+  - [UnpairedImageDataset](#unpairedimagedataset)
+  - [Design your own dataset](#design-your-own-dataset)
+
+## UnconditionalImageDataset
 
 `UnconditionalImageDataset` is used for loading data for unconditional GAN models (e.g., StyleGANv2, StyleGANv3, WGAN-GP).
 In this class, we implement `load_data_list` to scan the data list from passed `data_root` and use the default data loading logic provided by `BaseDataset`.
 
-## 2. `GrowScaleImgDataset`
+## GrowScaleImgDataset
 
 `GrowScaleImgDataset` is designed for dynamic GAN models (e.g., PGGAN and StyleGANv1).
 In this dataset, we support switching the data root during training to load training images of different resolutions.
@@ -49,7 +59,7 @@ def update_annotations(self, curr_scale):
     return True
 ```
 
-## 3. `SinGANDataset`
+## SinGANDataset
 
 `SinGANDataset` is designed for SinGAN's training.
 In SinGAN's training, we do not iterate the images in the dataset but return a consistent preprocessed image dict.
@@ -77,7 +87,7 @@ def __getitem__(self, index):
     return self.pipeline(self.data_dict)
 ```
 
-## 4. `PairedImageDataset`
+## PairedImageDataset
 
 `PairedImageDataset` is designed for translation models that needs paried training data (e.g., Pix2Pix).
 The directory structure is shown below. Each image files are the concatenation of the image pair.
@@ -103,7 +113,7 @@ def load_data_list(self):
     return data_infos
 ```
 
-## 5. `UnpairedImageDataset`
+## UnpairedImageDataset
 
 `UnpairedImageDataset` is designed for translation models that do not need paired data (e.g., CycleGAN). The directory structure is shown below.
 
@@ -147,6 +157,6 @@ def prepare_test_data(self, idx):
     return self.pipeline(results)
 ```
 
-## 6. Design your own dataset
+## Design your own dataset
 
 You may refer to [tutorial in MMEngine](https://github.com/open-mmlab/mmengine/blob/main/docs/en/tutorials/basedataset.md).

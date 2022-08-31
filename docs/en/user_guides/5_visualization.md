@@ -3,7 +3,15 @@
 The visualization of images is an important way to measure the quality of generation during the training process of generative models.
 In MMGeneration, we provide a rich set of visualization functions, and in this tutorial, we introduce the usage of the visualization functions provided by MMGeneration.
 
-## 1. Overview
+The structure of this guide are as follows:
+
+- [Tutorial 5: Visualization](#tutorial-5-visualization)
+  - [Overview](#overview)
+  - [Visualization Hook](#visualization-hook)
+  - [Visualizer](#visualizer)
+  - [VisBackend](#visbackend)
+
+## Overview
 
 In MMGeneration, the visualization of the training or testing process requires the configuration of three components: VisualizationHook, Visualizer, and VisBackend.
 
@@ -109,7 +117,7 @@ visualizer = dict(type='GenVisualizer', vis_backends=vis_backends)
 
 The specific configuration of the `VisualizationHook`, `Visualizer` and `GenVisBackend` components are described below
 
-## 2. `VisualizationHook`
+## Visualization Hook
 
 In MMGeneration, we use `GenVisualizationHook` as `VisualizationHook`. `GenVisualizationHook` support three following cases.
 
@@ -154,7 +162,7 @@ vis_kwargs_list = dict(type='TranslationTest')
 vis_kwargs_list = dict(type='DDPMDenoising')
 ```
 
-## 3. `Visualizer`
+## Visualizer
 
 In MMGeneration, we implement `GenVisualizer`, which inherits from `mmengine.Visualizer`. The base class of `GenVisualizer` is `ManagerMixin` and this make `GenVisualizer` a globally unique object.
 After be instantiated, `GenVisualizer` can be called at anywhere of the code by `Visualizer.get_current_instance()`, as shown below:
@@ -179,7 +187,7 @@ By this interface,
 This interface will call the corresponding drawing function according to the corresponding `vis_mode` to obtain the visualization result in `np.ndarray` type.
 Then `show` or `add_image` will be called to directly show the results or pass the visualization result to the predefined vis_backend.
 
-## 4. `VisBackend`
+## VisBackend
 
 In general, users do not need to manipulate `VisBackend` objects, only when the current visualization storage can not meet the needs, users will want to manipulate the storage backend directly.
 MMGeneration supports a variety of different visualization backends, including:

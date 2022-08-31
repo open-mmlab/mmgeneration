@@ -2,62 +2,12 @@
 
 This section will tell users how to train ,test and eval models by following steps below.
 
-- Prepare dataset for training and testing
-- Train predefined models
-- Test predefined models
-- Evaluation during training
-
-## Prepare dataset for training and testing
-
-This section details how to prepare the dataset for MMGeneration and provides a standard way which we have used in our default configs. We recommend that all of the users may follow the following steps to organize their datasets.
-
-### Datasets for unconditional models
-
-Firstly, please create a directory, named `data`, in the MMGeneration project. After that, all of datasets can be used by adopting the technology of symlink (soft link).
-
-```shell
-mkdir data
-
-ln -s absolute_path_to_dataset ./data/dataset_name
-```
-
-Since unconditional models only need real images for training and testing, all you need to do is link your dataset to the `data` directory. Our dataset will automatically check all of the images in a specified path (recursively).
-
-Here, we provide several download links of datasets frequently used in unconditional models: [LSUN](http://dl.yf.io/lsun/), [CelebA](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html), [CelebA-HQ](https://drive.google.com/drive/folders/11Vz0fqHS2rXDb5pprgTjpD7S2BAJhi1P), [FFHQ](https://drive.google.com/drive/folders/1u2xu7bSrWxrbUxk-dT-UvEJq8IjdmNTP).
-
-### Datasets for image translation models
-
-For translation models, now we offer two settings for datasets called paired image dataset and unpaired image dataset.
-
-For paired image dataset, every image is formed by concatenating two corresponding images from two domains along the width dimension. You are supposed to make two folders "train" and "test" filled with images of this format for training and testing. Folder structure is presented below.
-
-```
-./data/dataset_name/
-├── test
-│   └── XXX.jpg
-└── train
-    └── XXX.jpg
-
-```
-
-For unpaired image dataset, you are supposed to make two folders "trainA" and "testA" filled with images from domain A and two folders "trainB" and "testB" filled with images from domain B. Folder structure is presented below.
-
-```
-./data/dataset_name/
-├── testA
-│   └── XXX.jpg
-├── testB
-│   └── XXX.jpg
-├── trainA
-│   └── XXX.jpg
-└── trainB
-    └── XXX.jpg
-
-```
-
-Please read the section `Datasets for unconditional models` and also use the symlink (soft link) to build up the dataset.
-
-Here, we provide download links of datasets used in [Pix2Pix](http://efrosgans.eecs.berkeley.edu/pix2pix/datasets/) and [CycleGAN](https://people.eecs.berkeley.edu/~taesung_park/cyclegan/datasets/).
+- [Tutorial 4: Train and test with predefined models](#tutorial-4-train-and-test-with-predefined-models)
+  - [Train predefined models](#train-predefined-models)
+    - [Training with multiple machines](#training-with-multiple-machines)
+    - [Training on CPU](#training-on-cpu)
+  - [Test predefined models](#test-predefined-models)
+  - [Evaluation during training](#evaluation-during-training)
 
 ## Train predefined models
 
@@ -122,7 +72,7 @@ And then run this script.
 python tools/train.py config --work-dir WORK_DIR
 ```
 
-**Note**:
+>
 
 We do not recommend users to use CPU for training because it is too slow. We support this feature to allow users to debug on machines without GPU for convenience.
 

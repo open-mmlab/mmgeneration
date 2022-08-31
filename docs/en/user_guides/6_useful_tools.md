@@ -2,13 +2,19 @@
 
 In this tutorial, we introduce some useful tools for users.
 
+The structure of this guide are as follows:
+
+- [Tutorial 6: Useful tools](#tutorial-6-useful-tools)
+  - [Print full config](#print-full-config)
+  - [Prepare a model for publishing](#prepare-a-model-for-publishing)
+
 ## Print full config
 
 MMGeneration incorporates config mechanism to set parameters used for training and testing models. With our [config](config.md) mechanism, users can easily conduct extensive experiments without hard coding. If you wish to inspect the config file, you may run `python tools/misc/print_config.py /PATH/TO/CONFIG` to see the complete config.
 
 An Example:
 
-```python
+```shell
 python tools/misc/print_config.py configs/styleganv2/stylegan2_c2-PL_8xb4-fp16-partial-GD-no-scaler-800kiters_ffhq-256x256.py
 ```
 

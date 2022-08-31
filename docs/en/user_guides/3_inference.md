@@ -5,11 +5,11 @@ In this section, we will specify how to sample fake images by using our pre-trai
 
 The following document will show how to sample the pre-trained models using python codes and scripts. Lists are as follows.
 
-- [Sample images with unconditional GANs](#Sample images with unconditional GANs)
-- [Sample images with conditional GANs](#Sample images with conditional GANs)
-- [Sample images with image translation models](#Sample images with image translation models)
-- [Sample images with diffusion models](#Sample images with diffusion models)
-
+- [Tutorial 3: Inference with pre-trained models](#tutorial-3-inference-with-pre-trained-models)
+  - [Sample images with unconditional GANs](#sample-images-with-unconditional-gans)
+  - [Sample images with conditional GANs](#sample-images-with-conditional-gans)
+  - [Sample images with image translation models](#sample-images-with-image-translation-models)
+  - [Sample images with diffusion models](#sample-images-with-diffusion-models)
 
 ## Sample images with unconditional GANs
 

@@ -3,7 +3,18 @@
 MMGeneration support 9 metrics to assess the quality of generative models. Refer to [train_test](../user_guides/4_train_test.md) for usages.
 Here, we will specify the details of different metrics one by one.
 
-## **FID** and **TransFID**
+The structure of this guide are as follows:
+
+- [Metrics](#metrics)
+  - [FID and TransFID](#fid-and-transfid)
+  - [IS and TransIS](#is-and-transis)
+  - [Precision and Recall](#precision-and-recall)
+  - [PPL](#ppl)
+  - [SWD](#swd)
+  - [MS-SSIM](#ms-ssim)
+  - [Equivarience](#equivarience)
+
+## FID and TransFID
 
 Fréchet Inception Distance is a measure of similarity between two datasets of images. It was shown to correlate well with the human judgment of visual quality and is most often used to evaluate the quality of samples of Generative Adversarial Networks. FID is calculated by computing the Fréchet distance between two Gaussians fitted to feature representations of the Inception network.
 
@@ -44,7 +55,7 @@ metrics = [
 `TransFID` has same usage as `FID`, but it's designed for translation models like `Pix2Pix` and `CycleGAN`, which is adapted for our evaluator. You can refer
 to [evaluation](../advanced_guides/evaluation.md) for details.
 
-## **IS** and **TransIS**
+## IS and TransIS
 
 Inception score is an objective metric for evaluating the quality of generated images, proposed in [Improved Techniques for Training GANs](https://arxiv.org/pdf/1606.03498.pdf). It uses an InceptionV3 model to predict the class of the generated images, and suppose that 1) If an image is of high quality, it will be categorized into a specific class. 2) If images are of high diversity, the range of images' classes will be wide. So the KL-divergence of the conditional probability and marginal probability can indicate the quality and diversity of generated images. You can see the complete implementation in `metrics.py`, which refers to https://github.com/sbarratt/inception-score-pytorch/blob/master/inception_score.py.
 If you want to evaluate models with `IS` metrics, you can add the `metrics` into your config file like this:

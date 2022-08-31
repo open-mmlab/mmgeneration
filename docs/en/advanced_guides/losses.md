@@ -5,6 +5,12 @@ We provide two ways of defining loss.
 1. Default losses, which has fixed loss components, and remains related loss arguments for users to adjust.
 2. Customized losses. Users can define loss modules and combine loss modules as they like.
 
+The structure of this guide are as follows:
+
+- [Losses](#losses)
+  - [Default losses](#default-losses)
+  - [Customized losses](#customized-losses)
+
 ## Default losses
 
 For convenient usage, you can directly use default loss calculation process we set for concrete algorithms like lsgan, biggan, styleganv2 etc.

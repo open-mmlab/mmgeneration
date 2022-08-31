@@ -2,6 +2,15 @@
 
 MMGeneration is built upon MMEngine and MMCV, which enables users to design new models quickly, train and evaluate them easily. In this section, you will learn how to design your own models.
 
+The structure of this guide are as follows:
+
+- [Design Your Own Models](#design-your-own-models)
+  - [Overview of models in MMGeneration](#overview-of-models-in-mmgeneration)
+  - [Step 1: Define your own Module](#step-1-define-your-own-module)
+  - [Step 2: Define the your Model](#step-2-define-the-your-model)
+  - [Step 3: Start training](#step-3-start-training)
+  - [References](#references)
+
 ## Overview of models in MMGeneration
 
 In MMGeneration, one algorithm can be splited two compents: **Model** and **Module**.
@@ -26,11 +35,11 @@ Here, we take the implementation of the classical gan model, DCGAN \[1\], as an 
 
 To implement DCGAN, you need to follow these steps:
 
-- [Step 1: Define your own **Module**](#step-1-define-your-own-module)
-- [Step 2: Define your own **Model**](#step-2-define-the-forward-loop-of-your-model)
+- [Step 1: Define your own Module](#step-1-define-your-own-module)
+- [Step 2: Define the your Model](#step-2-define-the-your-model)
 - [Step 3: Start training](#step-3-start-training)
 
-## Step 1: Define your own **Module**
+## Step 1: Define your own Module
 
 DCGAN is a classical image generative adversarial network \[1\]. To implement the network architecture of DCGAN, we need to create a new file `mmgen/models/architectures/dcgan/generator_discriminator.py` and implement generator (`class DCGANGenerator`) and discriminator (`class DCGANDiscriminator`).
 
@@ -148,7 +157,7 @@ After the implementation of class `DCGANGenerator`, we need to update the model 
 
 Implementation of Class `DCGANDiscriminator` follows the similar logic, and you can find the implementation [here](https://github.com/open-mmlab/mmgeneration/blob/dev-1.x/mmgen/models/architectures/dcgan/generator_discriminator.py#L195).
 
-## Step 2: Define the your **Model**
+## Step 2: Define the your Model
 
 After the implementation of the network **Module**, we need to define our **Model** class `DCGAN`.
 

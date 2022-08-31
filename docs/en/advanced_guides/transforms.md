@@ -2,6 +2,12 @@
 
 In this tutorial, we introduce the design of transforms pipeline in MMGeneration.
 
+The structure of this guide are as follows:
+
+- [Data Transforms](#data-transforms)
+  - [Design of Data pipelines](#design-of-data-pipelines)
+  - [Customization data transformation](#customization-data-transformation)
+
 ## Design of Data pipelines
 
 Following typical conventions, we use `Dataset` and `DataLoader` for data loading with multiple workers.

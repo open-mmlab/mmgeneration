@@ -2,9 +2,15 @@
 
 In this section, we will detail how to prepare data and adopt proper dataset in our repo for different methods.
 
+The structure of this guide are as follows:
+
+- [Tutorial 2: Prepare Datasets](#tutorial-2-prepare-datasets)
+  - [Datasets for unconditional models](#datasets-for-unconditional-models)
+  - [Datasets for image translation models](#datasets-for-image-translation-models)
+
 ## Datasets for unconditional models
 
-**Data preparation for unconditional model** is simple. What you need to do is downloading the images and put them into a directory. Next, you should set a symlink in the `data` directory. For standard unconditional gans with static architectures, like DCGAN and StyleGAN2, `UnconditionalImageDataset` is designed to train such unconditional models. Here is an example config for FFHQ dataset:
+**Data preparation for unconditional model** is simple. What you need to do is downloading the images and put them into a directory. Next, you should set a symlink in the `data` directory. For standard unconditional gans with static architectures, like DCGAN and StyleGAN2, [UnconditionalImageDataset](<>) is designed to train such unconditional models. Here is an example config for FFHQ dataset:
 
 ```python
 dataset_type = 'UnconditionalImageDataset'
@@ -90,6 +96,8 @@ custom_hooks = [
 ```
 
 This fetching data hook helps the dataloader update the status of dataset to change the data source and batch size during training.
+
+Here, we provide several download links of datasets frequently used in unconditional models: [LSUN](http://dl.yf.io/lsun/), [CelebA](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html), [CelebA-HQ](https://drive.google.com/drive/folders/11Vz0fqHS2rXDb5pprgTjpD7S2BAJhi1P), [FFHQ](https://drive.google.com/drive/folders/1u2xu7bSrWxrbUxk-dT-UvEJq8IjdmNTP).
 
 ## Datasets for image translation models
 
@@ -237,4 +245,6 @@ test_dataloader = dict(
     persistent_workers=True)
 ```
 
-Here, `UnpairedImageDataset` will load both images (domain A and B) from different paths and transform them at the same time.
+`UnpairedImageDataset` will load both images (domain A and B) from different paths and transform them at the same time.
+
+Here, we provide download links of datasets used in [Pix2Pix](http://efrosgans.eecs.berkeley.edu/pix2pix/datasets/) and [CycleGAN](https://people.eecs.berkeley.edu/~taesung_park/cyclegan/datasets/).
