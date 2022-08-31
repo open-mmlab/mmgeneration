@@ -1,47 +1,47 @@
-Welcome to MMGeneration's documentation!
+欢迎来到 MMGeneration 中文教程！
 =======================================
 
 
 .. toctree::
    :maxdepth: 1
-   :caption: Get Started
+   :caption: 开始你的第一步
 
    overview.md
    get_started.md
 
 .. toctree::
    :maxdepth: 2
-   :caption: User Guides
+   :caption: 用户指南
 
    user_guides/index.rst
 
 .. toctree::
    :maxdepth: 2
-   :caption: Advanced Guides
+   :caption: 进阶指南
 
    advanced_guides/index.rst
 
 .. toctree::
    :maxdepth: 1
-   :caption: Migration
+   :caption: 迁移指南
 
    migration.md
 
 .. toctree::
    :maxdepth: 1
-   :caption: API Reference
+   :caption: API 文档
 
    api.rst
 
 .. toctree::
    :maxdepth: 1
-   :caption: Model Zoo
+   :caption: 模型库
 
    model_zoo.md
 
 .. toctree::
    :maxdepth: 1
-   :caption: Notes
+   :caption: 其他说明
 
    notes/contribution_guide.md
    notes/projects.md
@@ -50,10 +50,10 @@ Welcome to MMGeneration's documentation!
 
 
 .. toctree::
-   :caption: Switch Language
+   :caption: 切换语言
 
-   English <en_docs_url>
-   简体中文 <zh_CM_docs_url>
+   <a href='https://mmgeneration.readthedocs.io/en/1.x/'>English</a>
+   <a href='https://mmgeneration.readthedocs.io/zh_CN/1.x/'>简体中文</a>
 
 
 
