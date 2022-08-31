@@ -119,6 +119,12 @@ def parse_args():
         action='store_true',
         help='run at local instead of cluster.')
     parser.add_argument(
+        '--gpus',
+        type=int,
+        default=None,
+        help=('Number of gpus for each training process. If not specified, '
+              'number of gpus will inference from config name.'))
+    parser.add_argument(
         '--cpus-per-task',
         type=int,
         default=16,
@@ -175,14 +181,16 @@ def create_train_job_batch(commands, model_info, args, port, script_name):
     if 'singan' in config.name:
         # sinGAN use only 1 gpu
         n_gpus = 1
+    elif args.gpus is not None:
+        n_gpus = args.gpus
     else:
-        # parse n gpus from config (b{batch_size}x{n_gpu})
-        pattern = r'b\d+x\d+'
+        # parse n gpus from config ({n_gpu}xb{batch_size})
+        pattern = r'\d+xb\d+'
         parse_res = re.search(pattern, config.name)
         if not parse_res:
             n_gpus = 8  # defaults as 8 gpu
         else:
-            n_gpus = int(parse_res.group().split('x')[-1])
+            n_gpus = int(parse_res.group().split('x')[0])
 
     launcher = 'none' if args.local else 'slurm'
     runner = 'python' if args.local else 'srun python'

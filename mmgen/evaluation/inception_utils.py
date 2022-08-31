@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from typing import Optional, Tuple
 
-import mmcv
+import mmengine
 import numpy as np
 import torch
 import torch.nn as nn
@@ -371,7 +371,7 @@ def prepare_inception_feat(dataloader: DataLoader,
         slurm_env_name = ['SLURM_PROCID', 'SLURM_NTASKS', 'SLURM_NODELIST']
         if all([n in os.environ for n in slurm_env_name]):
             is_slurm = True
-            pbar = mmcv.ProgressBar(len(inception_dataloader))
+            pbar = mmengine.ProgressBar(len(inception_dataloader))
         else:
             is_slurm = False
             columns = [

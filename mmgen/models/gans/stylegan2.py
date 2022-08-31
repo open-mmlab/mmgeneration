@@ -17,7 +17,6 @@ from ..losses import gen_path_regularizer, r1_gradient_penalty_loss
 from .base_gan import BaseGAN
 
 ModelType = Union[Dict, nn.Module]
-TrainInput = Union[dict, Tensor]
 
 
 @MODELS.register_module()
@@ -204,7 +203,7 @@ class StyleGAN2(BaseGAN):
         """Train generator.
 
         Args:
-            inputs (TrainInput): Inputs from dataloader.
+            inputs (dict): Inputs from dataloader.
             data_samples (List[GenDataSample]): Data samples from dataloader.
                 Do not used in generator's training.
             optim_wrapper (OptimWrapper): OptimWrapper instance used to update
@@ -247,13 +246,21 @@ class StyleGAN2(BaseGAN):
         message_hub = MessageHub.get_current_instance()
         curr_iter = message_hub.get_info('iter')
         data = self.data_preprocessor(data, True)
+        inputs_dict, data_samples = data['inputs'], data['data_samples']
 
         disc_optimizer_wrapper: OptimWrapper = optim_wrapper['discriminator']
         disc_accu_iters = disc_optimizer_wrapper._accumulative_counts
 
-        with disc_optimizer_wrapper.optim_context(self.discriminator):
-            log_vars = self.train_discriminator(
-                **data, optimizer_wrapper=disc_optimizer_wrapper)
+        # NOTE: Do not use context manager of optim_wrapper. Because
+        # in mixed-precision training, StyleGAN2 only enable fp16 in
+        # specified blocks (refers to `:attr:enable_fp16` in
+        # :class:~`StyleGANv2Generator` and :class:~`StyleGAN2Discriminator`
+        # for more details), but in :func:~`AmpOptimWrapper.optim_context`,
+        # fp16 is applied to all modules. This may slow down gradient
+        # accumulation because `no_sycn` in
+        # :func:~`OptimWrapper.optim_context` will not be called any more.
+        log_vars = self.train_discriminator(inputs_dict, data_samples,
+                                            disc_optimizer_wrapper)
 
         # add 1 to `curr_iter` because iter is updated in train loop.
         # Whether to update the generator. We update generator with
@@ -270,9 +277,8 @@ class StyleGAN2(BaseGAN):
             gen_optimizer_wrapper.initialize_count_status(
                 self.generator, 0, self.generator_steps * gen_accu_iters)
             for _ in range(self.generator_steps * gen_accu_iters):
-                with gen_optimizer_wrapper.optim_context(self.generator):
-                    log_vars_gen = self.train_generator(
-                        **data, optimizer_wrapper=gen_optimizer_wrapper)
+                log_vars_gen = self.train_generator(inputs_dict, data_samples,
+                                                    gen_optimizer_wrapper)
 
                 log_vars_gen_list.append(log_vars_gen)
             log_vars_gen = gather_log_vars(log_vars_gen_list)

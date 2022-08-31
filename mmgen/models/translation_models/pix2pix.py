@@ -111,21 +111,24 @@ class Pix2Pix(StaticTranslationGAN):
 
         # forward generator
         outputs = dict()
-        results = self(
-            source_image, target_domain=self._default_domain, test_mode=False)
-        outputs[f'real_{source_domain}'] = results['source']
-        outputs[f'fake_{target_domain}'] = results['target']
-        outputs[f'real_{target_domain}'] = target_image
-        log_vars = dict()
+        with disc_optimizer_wrapper.optim_context(self.discriminators):
+            results = self(
+                source_image,
+                target_domain=self._default_domain,
+                test_mode=False)
+            outputs[f'real_{source_domain}'] = results['source']
+            outputs[f'fake_{target_domain}'] = results['target']
+            outputs[f'real_{target_domain}'] = target_image
+            log_vars = dict()
 
-        # discriminator
-        set_requires_grad(self.discriminators, True)
-        # optimize
-        disc_optimizer_wrapper.zero_grad()
-        loss_d, log_vars_d = self._get_disc_loss(outputs)
-        log_vars.update(log_vars_d)
-        loss_d.backward()
-        disc_optimizer_wrapper.step()
+            # discriminator
+            set_requires_grad(self.discriminators, True)
+            # optimize
+            disc_optimizer_wrapper.zero_grad()
+            loss_d, log_vars_d = self._get_disc_loss(outputs)
+            log_vars.update(log_vars_d)
+            disc_optimizer_wrapper.backward(loss_d)
+            disc_optimizer_wrapper.step()
 
         # generator, no updates to discriminator parameters.
         gen_optimizer_wrapper = optim_wrapper['generators']
@@ -133,11 +136,12 @@ class Pix2Pix(StaticTranslationGAN):
                 and curr_iter >= self.disc_init_steps):
             set_requires_grad(self.discriminators, False)
             # optimize
-            gen_optimizer_wrapper.zero_grad()
-            loss_g, log_vars_g = self._get_gen_loss(outputs)
-            log_vars.update(log_vars_g)
-            loss_g.backward()
-            gen_optimizer_wrapper.step()
+            with gen_optimizer_wrapper.optim_context(self.generators):
+                gen_optimizer_wrapper.zero_grad()
+                loss_g, log_vars_g = self._get_gen_loss(outputs)
+                log_vars.update(log_vars_g)
+                gen_optimizer_wrapper.backward(loss_g)
+                gen_optimizer_wrapper.step()
 
         return log_vars
 
