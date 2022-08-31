@@ -20,16 +20,16 @@
 </div>
 
 [![PyPI](https://img.shields.io/pypi/v/mmgen)](https://pypi.org/project/mmgen)
-[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmgeneration.readthedocs.io/en/latest/)
+[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmgeneration.readthedocs.io/en/1.x/)
 [![badge](https://github.com/open-mmlab/mmgeneration/workflows/build/badge.svg)](https://github.com/open-mmlab/mmgeneration/actions)
 [![codecov](https://codecov.io/gh/open-mmlab/mmgeneration/branch/1.x/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmgeneration)
 [![license](https://img.shields.io/github/license/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/blob/1.x/LICENSE)
 [![open issues](https://isitmaintained.com/badge/open/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/issues)
 [![issue resolution](https://isitmaintained.com/badge/resolution/open-mmlab/mmgeneration.svg)](https://github.com/open-mmlab/mmgeneration/issues)
 
-[📘使用文档](https://mmgeneration.readthedocs.io/en/latest/) |
-[🛠️安装教程](https://mmgeneration.readthedocs.io/en/latest/get_started.html#installation) |
-[👀模型库](https://mmgeneration.readthedocs.io/en/latest/modelzoo_statistics.html) |
+[📘使用文档](https://mmgeneration.readthedocs.io/en/1.x/) |
+[🛠️安装教程](https://mmgeneration.readthedocs.io/en/1.x/get_started.html#installation) |
+[👀模型库](https://mmgeneration.readthedocs.io/en/1.x/modelzoo_statistics.html) |
 [🆕更新记录](https://github.com/open-mmlab/mmgeneration/blob/1.x/docs/en/changelog.md) |
 [🚀进行中的项目](https://github.com/open-mmlab/mmgeneration/projects) |
 [🤔提出问题](https://github.com/open-mmlab/mmgeneration/issues)
