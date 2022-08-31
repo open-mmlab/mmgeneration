@@ -1,6 +1,6 @@
-# Projects
+# 下游项目
 
-## Research Papers
+## 论文
 
 - [Positional Encoding as Spatial Inductive Bias in GANs (CVPR 2021)](https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans)
 
@@ -8,6 +8,6 @@
 
 - [Arbitrary-Scale Image Synthesis (CVPR 2022)](https://github.com/vglsd/ScaleParty)
 
-## Open Source Projects
+## 开源项目
 
 - [Manga-Colorization-with-CycleGAN](https://github.com/chandlerbing65nm/Manga-Colorization-with-CycleGAN)
