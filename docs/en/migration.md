@@ -1,6 +1,6 @@
 # Migration from MMGeneration 0.x
 
-In 1.x version of MMGeneration, we redesign distributed training and mixed precision training, the usage of optimizer and data flow based on MMEngine. This document will help users of the 0.x version to quickly migrate to the newest version.
+In 1.x version of MMGeneration, we redesign distributed training and mixed precision training, while the usage of optimizer and data flow is based on MMEngine. This document will help users of the 0.x version to quickly migrate to the newest version.
 
 - [Migration from MMGeneration 0.x](#migration-from-mmgeneration-0x)
   - [New dependencies](#new-dependencies)
@@ -25,9 +25,9 @@ MMGeneration 1.x depends on some new packages, you can prepare a new clean envir
 ## 1. Runner and schedule
 
 In 0.x version, MMGeneration use `total_iters` fields to control the total training iteration and use `DynamicIterBasedRunner` to handle the training process.
-In 1.x version, we use [`Runner`](https://github.com/open-mmlab/mmengine/blob/main/docs/zh_cn/tutorials/runner.md) and [`Loops`](https://github.com/open-mmlab/mmengine/blob/main/mmengine/runner/loops.py) provided by `MMEngine` and use `train_cfg.max_iters` field to control to define the total training iteration and use `train_cfg.val_interval` to control the evaluation interval.
+In 1.x version, we use [`Runner`](https://github.com/open-mmlab/mmengine/blob/main/docs/zh_cn/tutorials/runner.md) and [`Loops`](https://github.com/open-mmlab/mmengine/blob/main/mmengine/runner/loops.py) provided by `MMEngine` and use `train_cfg.max_iters` field to control the total training iteration and use `train_cfg.val_interval` to control the evaluation interval.
 
-And to evaluate and test the model correctly, we need to set specific loop in `val_cfg` and `test_cfg`.
+To evaluate and test the model correctly, we need to set specific loop in `val_cfg` and `test_cfg`.
 
 <table class="docutils">
 <thead>
@@ -69,7 +69,7 @@ test_cfg = dict(type='GenTestLoop')  # specific loop in testing
 
 ## 2. Evaluation and testing setting
 
-The evaluation field is splited to `val_evaluator` and `test_evaluator`. And it won't supports `interval` and `save_best` arguments. The `interval` is moved to `train_cfg.val_interval`, see [the schedule settings](#1-runner-and-schedule) and the `save_best` is moved to `default_hooks.checkpoint.save_best`.
+The evaluation field is splited to `val_evaluator` and `test_evaluator`. And it won't support `interval` and `save_best` arguments. The `interval` is moved to `train_cfg.val_interval`, see [the schedule settings](#1-runner-and-schedule) and the `save_best` is moved to `default_hooks.checkpoint.save_best`.
 
 <table class="docutils">
 <thead>
@@ -105,13 +105,13 @@ val_evaluator = dict(
     type='GenEvaluator',
     metrics=[
         dict(
-            type='FrechetInceptionDistance',
+            type='FID',
             prefix='FID-Full-50k',
             fake_nums=50000,
             inception_style='StyleGAN',
             sample_model='orig')
         dict(
-            type='InceptionScore',
+            type='IS',
             prefix='IS-50k',
             fake_nums=50000)])
 # set best config
@@ -136,7 +136,7 @@ test_evaluator = val_evaluator
 
 ## 3. Distributed Training setting
 
-In 0.x version, MMGeneration uses `DDPWrapper` and `DynamicRunner` to train of static and dynamic model (e.g., PGGAN and StyleGANv2) respectively. In 1.x version, we use `MMSeparateDistributedDataParallel` provided by MMEngine to implement distributed training.
+In 0.x version, MMGeneration uses `DDPWrapper` and `DynamicRunner` to train static and dynamic model (e.g., PGGAN and StyleGANv2) respectively. In 1.x version, we use `MMSeparateDistributedDataParallel` provided by MMEngine to implement distributed training.
 
 The configuration differences are shown below:
 
