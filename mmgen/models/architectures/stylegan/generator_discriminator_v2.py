@@ -5,9 +5,9 @@ import mmengine
 import numpy as np
 import torch
 import torch.nn as nn
+from mmengine.runner.amp import autocast
 from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 
-from mmgen.engine.runners.fp16_utils import auto_fp16
 from mmgen.models.architectures import PixelNorm
 from mmgen.models.architectures.common import get_module_device
 from mmgen.models.builder import build_module
@@ -148,7 +148,8 @@ class StyleGANv2Generator(nn.Module):
             self.channels[4],
             kernel_size=3,
             style_channels=style_channels,
-            blur_kernel=blur_kernel)
+            blur_kernel=blur_kernel,
+            fp16_enabled=fp16_enabled)
         self.to_rgb1 = ModulatedToRGB(
             self.channels[4],
             style_channels,
@@ -280,7 +281,7 @@ class StyleGANv2Generator(nn.Module):
             truncation_latent=truncation_latent,
             style_channels=self.style_channels)
 
-    @auto_fp16()
+    # @auto_fp16()
     def forward(self,
                 styles,
                 num_batches=-1,
@@ -366,72 +367,75 @@ class StyleGANv2Generator(nn.Module):
                 styles = [torch.randn((num_batches, self.style_channels))]
             styles = [s.to(device) for s in styles]
 
-        if not input_is_latent:
-            noise_batch = styles
-            styles = [self.style_mapping(s) for s in styles]
-        else:
-            noise_batch = None
-
-        if injected_noise is None:
-            if randomize_noise:
-                injected_noise = [None] * self.num_injected_noises
+        with autocast(enabled=self.fp16_enabled):
+            if not input_is_latent:
+                noise_batch = styles
+                styles = [self.style_mapping(s) for s in styles]
             else:
-                injected_noise = [
-                    getattr(self, f'injected_noise_{i}')
-                    for i in range(self.num_injected_noises)
-                ]
-        # use truncation trick
-        if truncation < 1:
-            style_t = []
-            # calculate truncation latent on the fly
-            if truncation_latent is None and not hasattr(
-                    self, 'truncation_latent'):
-                self.truncation_latent = self.get_mean_latent()
-                truncation_latent = self.truncation_latent
-            elif truncation_latent is None and hasattr(self,
-                                                       'truncation_latent'):
-                truncation_latent = self.truncation_latent
+                noise_batch = None
 
-            for style in styles:
-                style_t.append(truncation_latent + truncation *
-                               (style - truncation_latent))
+            if injected_noise is None:
+                if randomize_noise:
+                    injected_noise = [None] * self.num_injected_noises
+                else:
+                    injected_noise = [
+                        getattr(self, f'injected_noise_{i}')
+                        for i in range(self.num_injected_noises)
+                    ]
+            # use truncation trick
+            if truncation < 1:
+                style_t = []
+                # calculate truncation latent on the fly
+                if truncation_latent is None and not hasattr(
+                        self, 'truncation_latent'):
+                    self.truncation_latent = self.get_mean_latent()
+                    truncation_latent = self.truncation_latent
+                elif truncation_latent is None and hasattr(
+                        self, 'truncation_latent'):
+                    truncation_latent = self.truncation_latent
 
-            styles = style_t
-        # no style mixing
-        if len(styles) < 2:
-            inject_index = self.num_latents
+                for style in styles:
+                    style_t.append(truncation_latent + truncation *
+                                   (style - truncation_latent))
 
-            if styles[0].ndim < 3:
+                styles = style_t
+            # no style mixing
+            if len(styles) < 2:
+                inject_index = self.num_latents
+
+                if styles[0].ndim < 3:
+                    latent = styles[0].unsqueeze(1).repeat(1, inject_index, 1)
+
+                else:
+                    latent = styles[0]
+            # style mixing
+            else:
+                if inject_index is None:
+                    inject_index = random.randint(1, self.num_latents - 1)
+
                 latent = styles[0].unsqueeze(1).repeat(1, inject_index, 1)
+                latent2 = styles[1].unsqueeze(1).repeat(
+                    1, self.num_latents - inject_index, 1)
 
-            else:
-                latent = styles[0]
-        # style mixing
-        else:
-            if inject_index is None:
-                inject_index = random.randint(1, self.num_latents - 1)
+                latent = torch.cat([latent, latent2], 1)
 
-            latent = styles[0].unsqueeze(1).repeat(1, inject_index, 1)
-            latent2 = styles[1].unsqueeze(1).repeat(
-                1, self.num_latents - inject_index, 1)
+            # 4x4 stage
+            out = self.constant_input(latent)
+            if self.fp16_enabled:
+                out = out.to(torch.float16)
+            out = self.conv1(out, latent[:, 0], noise=injected_noise[0])
+            skip = self.to_rgb1(out, latent[:, 1])
 
-            latent = torch.cat([latent, latent2], 1)
+            _index = 1
 
-        # 4x4 stage
-        out = self.constant_input(latent)
-        out = self.conv1(out, latent[:, 0], noise=injected_noise[0])
-        skip = self.to_rgb1(out, latent[:, 1])
-
-        _index = 1
-
-        # 8x8 ---> higher resolutions
-        for up_conv, conv, noise1, noise2, to_rgb in zip(
-                self.convs[::2], self.convs[1::2], injected_noise[1::2],
-                injected_noise[2::2], self.to_rgbs):
-            out = up_conv(out, latent[:, _index], noise=noise1)
-            out = conv(out, latent[:, _index + 1], noise=noise2)
-            skip = to_rgb(out, latent[:, _index + 2], skip)
-            _index += 2
+            # 8x8 ---> higher resolutions
+            for up_conv, conv, noise1, noise2, to_rgb in zip(
+                    self.convs[::2], self.convs[1::2], injected_noise[1::2],
+                    injected_noise[2::2], self.to_rgbs):
+                out = up_conv(out, latent[:, _index], noise=noise1)
+                out = conv(out, latent[:, _index + 1], noise=noise2)
+                skip = to_rgb(out, latent[:, _index + 2], skip)
+                _index += 2
 
         # make sure the output image is torch.float32 to avoid RunTime Error
         # in other modules
@@ -570,7 +574,8 @@ class StyleGAN2Discriminator(nn.Module):
 
         self.mbstd_layer = ModMBStddevLayer(**mbstd_cfg)
 
-        self.final_conv = ConvDownLayer(in_channels + 1, channels[4], 3)
+        self.final_conv = ConvDownLayer(
+            in_channels + 1, channels[4], 3, fp16_enabled=fp16_enabled)
         self.final_linear = nn.Sequential(
             EqualLinearActModule(
                 channels[4] * 4 * 4,
@@ -593,7 +598,6 @@ class StyleGAN2Discriminator(nn.Module):
         self.load_state_dict(state_dict, strict=strict)
         mmengine.print_log(f'Load pretrained model from {ckpt_path}')
 
-    @auto_fp16()
     def forward(self, x):
         """Forward function.
 
@@ -607,14 +611,19 @@ class StyleGAN2Discriminator(nn.Module):
         if self.input_bgr2rgb:
             x = x[:, [2, 1, 0], ...]
 
+        # convs has own fp-16 controller, do not wrap here
         x = self.convs(x)
 
         x = self.mbstd_layer(x)
-        if not self.final_conv.fp16_enabled and self.convert_input_fp32:
-            x = x.to(torch.float32)
-        x = self.final_conv(x)
-        x = x.view(x.shape[0], -1)
-        x = self.final_linear(x)
+
+        fp16_enabled = (
+            self.final_conv.fp16_enabled or not self.convert_input_fp32)
+        with autocast(enabled=fp16_enabled):
+            if not fp16_enabled:
+                x = x.to(torch.float32)
+            x = self.final_conv(x)
+            x = x.view(x.shape[0], -1)
+            x = self.final_linear(x)
 
         return x
 

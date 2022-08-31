@@ -100,9 +100,9 @@ def update_intervals(config):
     #     if 'test_evaluator' in config else []
     for metric in val_metrics + test_metrics:
         if 'fake_nums' in metric:
-            metric['fake_nums'] = 500
+            metric['fake_nums'] = min(500, metric['fake_nums'])
         if 'real_nums' in metric:
-            metric['real_nums'] = 500
+            metric['real_nums'] = min(500, metric['real_nums'])
     # 3. change vis interval
     if 'custom_hooks' in config and config['custom_hooks']:
         for hook in config['custom_hooks']:

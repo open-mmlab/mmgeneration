@@ -11,8 +11,8 @@ from mmcv.ops.fused_bias_leakyrelu import (FusedBiasLeakyReLU,
                                            fused_bias_leakyrelu)
 from mmcv.ops.upfirdn2d import upfirdn2d
 from mmengine.dist import get_dist_info
+from mmengine.runner.amp import autocast
 
-from mmgen.engine.runners.fp16_utils import auto_fp16
 from mmgen.models.architectures.pggan import (EqualizedLRConvModule,
                                               EqualizedLRLinearModule,
                                               equalized_lr)
@@ -288,13 +288,15 @@ class ModulatedConv2d(nn.Module):
             style_mod_cfg=dict(bias_init=1.),
             style_bias=0.,
             padding=None,  # self define padding
-            eps=1e-8):
+            eps=1e-8,
+            fp16_enabled=False):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.style_channels = style_channels
         self.demodulate = demodulate
+        self.fp16_enabled = fp16_enabled
         # sanity check for kernel size
         assert isinstance(self.kernel_size,
                           int) and (self.kernel_size >= 1
@@ -344,7 +346,8 @@ class ModulatedConv2d(nn.Module):
 
         weight = self.weight
         # Pre-normalize inputs to avoid FP16 overflow.
-        if x.dtype == torch.float16 and self.demodulate:
+        # if x.dtype == torch.float16 and self.demodulate:
+        if self.fp16_enabled and self.demodulate:
             weight = weight * (
                 1 / np.sqrt(
                     self.in_channels * self.kernel_size * self.kernel_size) /
@@ -353,45 +356,49 @@ class ModulatedConv2d(nn.Module):
             style = style / style.norm(
                 float('inf'), dim=1, keepdim=True)  # max_I
 
-        # process style code
-        style = self.style_modulation(style).view(n, 1, c, 1,
-                                                  1) + self.style_bias
-        # combine weight and style
-        weight = weight * style
-        if self.demodulate:
-            demod = torch.rsqrt(weight.pow(2).sum([2, 3, 4]) + self.eps)
-            weight = weight * demod.view(n, self.out_channels, 1, 1, 1)
+        with autocast(enabled=self.fp16_enabled):
+            # process style code
+            style = self.style_modulation(style).view(n, 1, c, 1,
+                                                      1) + self.style_bias
+            # combine weight and style
+            weight = weight * style
+            if self.demodulate:
+                demod = torch.rsqrt(weight.pow(2).sum([2, 3, 4]) + self.eps)
+                weight = weight * demod.view(n, self.out_channels, 1, 1, 1)
 
-        if input_gain is not None:
-            # input_gain shape [batch, in_ch]
-            input_gain = input_gain.expand(n, self.in_channels)
-            # weight shape [batch, out_ch, in_ch, kernel_size, kernel_size]
-            weight = weight * input_gain.unsqueeze(1).unsqueeze(3).unsqueeze(4)
+            if input_gain is not None:
+                # input_gain shape [batch, in_ch]
+                input_gain = input_gain.expand(n, self.in_channels)
+                # weight shape [batch, out_ch, in_ch, kernel_size, kernel_size]
+                weight = weight * input_gain.unsqueeze(1).unsqueeze(
+                    3).unsqueeze(4)
 
-        weight = weight.view(n * self.out_channels, c, self.kernel_size,
-                             self.kernel_size)
-
-        weight = weight.to(x.dtype)
-        if self.upsample:
-            x = x.reshape(1, n * c, h, w)
-            weight = weight.view(n, self.out_channels, c, self.kernel_size,
+            weight = weight.view(n * self.out_channels, c, self.kernel_size,
                                  self.kernel_size)
-            weight = weight.transpose(1, 2).reshape(n * c, self.out_channels,
-                                                    self.kernel_size,
-                                                    self.kernel_size)
-            x = conv_transpose2d(x, weight, padding=0, stride=2, groups=n)
-            x = x.reshape(n, self.out_channels, *x.shape[-2:])
-            x = self.blur(x)
 
-        elif self.downsample:
-            x = self.blur(x)
-            x = x.view(1, n * self.in_channels, *x.shape[-2:])
-            x = conv2d(x, weight, stride=2, padding=0, groups=n)
-            x = x.view(n, self.out_channels, *x.shape[-2:])
-        else:
-            x = x.reshape(1, n * c, h, w)
-            x = conv2d(x, weight, stride=1, padding=self.padding, groups=n)
-            x = x.view(n, self.out_channels, *x.shape[-2:])
+            if self.fp16_enabled:
+                weight = weight.to(torch.float16)
+            if self.upsample:
+                x = x.reshape(1, n * c, h, w)
+                weight = weight.view(n, self.out_channels, c, self.kernel_size,
+                                     self.kernel_size)
+                weight = weight.transpose(1,
+                                          2).reshape(n * c, self.out_channels,
+                                                     self.kernel_size,
+                                                     self.kernel_size)
+                x = conv_transpose2d(x, weight, padding=0, stride=2, groups=n)
+                x = x.reshape(n, self.out_channels, *x.shape[-2:])
+                x = self.blur(x)
+
+            elif self.downsample:
+                x = self.blur(x)
+                x = x.view(1, n * self.in_channels, *x.shape[-2:])
+                x = conv2d(x, weight, stride=2, padding=0, groups=n)
+                x = x.view(n, self.out_channels, *x.shape[-2:])
+            else:
+                x = x.reshape(1, n * c, h, w)
+                x = conv2d(x, weight, stride=1, padding=self.padding, groups=n)
+                x = x.view(n, self.out_channels, *x.shape[-2:])
         return x
 
 
@@ -716,7 +723,8 @@ class ModulatedStyleConv(nn.Module):
             upsample=upsample,
             blur_kernel=blur_kernel,
             style_mod_cfg=style_mod_cfg,
-            style_bias=style_bias)
+            style_bias=style_bias,
+            fp16_enabled=fp16_enabled)
 
         self.noise_injector = NoiseInjection()
         self.activate = _FusedBiasLeakyReLU(out_channels)
@@ -724,7 +732,6 @@ class ModulatedStyleConv(nn.Module):
         # if self.fp16_enabled:
         #     self.half()
 
-    @auto_fp16(apply_to=('x', 'noise'))
     def forward(self, x, style, noise=None, return_noise=False):
         """Forward Function.
 
@@ -738,20 +745,22 @@ class ModulatedStyleConv(nn.Module):
         Returns:
             Tensor: Output features with shape of (N, C, H, W)
         """
-        out = self.conv(x, style)
+        with autocast(enabled=self.fp16_enabled):
+            out = self.conv(x, style)
 
-        if return_noise:
-            out, noise = self.noise_injector(
-                out, noise=noise, return_noise=return_noise)
-        else:
-            out = self.noise_injector(
-                out, noise=noise, return_noise=return_noise)
+            if return_noise:
+                out, noise = self.noise_injector(
+                    out, noise=noise, return_noise=return_noise)
+            else:
+                out = self.noise_injector(
+                    out, noise=noise, return_noise=return_noise)
 
-        # TODO: FP16 in activate layers
-        out = self.activate(out)
+            # TODO: FP16 in activate layers
+            out = self.activate(out)
 
-        if self.fp16_enabled:
-            out = torch.clamp(out, min=-self.conv_clamp, max=self.conv_clamp)
+            if self.fp16_enabled:
+                out = torch.clamp(
+                    out, min=-self.conv_clamp, max=self.conv_clamp)
 
         if return_noise:
             return out, noise
@@ -896,14 +905,15 @@ class ModulatedToRGB(nn.Module):
             style_channels=style_channels,
             demodulate=False,
             style_mod_cfg=style_mod_cfg,
-            style_bias=style_bias)
+            style_bias=style_bias,
+            fp16_enabled=fp16_enabled)
 
         self.bias = nn.Parameter(torch.zeros(1, 3, 1, 1))
 
         # enforece the output to be fp32 (follow Tero's implementation)
         self.out_fp32 = out_fp32
 
-    @auto_fp16(apply_to=('x', 'style'))
+    # @auto_fp16(apply_to=('x', 'style'))
     def forward(self, x, style, skip=None):
         """Forward Function.
 
@@ -915,16 +925,20 @@ class ModulatedToRGB(nn.Module):
         Returns:
             Tensor: Output features with shape of (N, C, H, W)
         """
-        out = self.conv(x, style)
-        out = out + self.bias.to(x.dtype)
+        with autocast(enabled=self.fp16_enabled):
+            out = self.conv(x, style)
+            out = out + self.bias.to(x.dtype)
 
-        if self.fp16_enabled:
-            out = torch.clamp(out, min=-self.conv_clamp, max=self.conv_clamp)
+            if self.fp16_enabled:
+                out = torch.clamp(
+                    out, min=-self.conv_clamp, max=self.conv_clamp)
 
-        # Here, Tero adopts FP16 at `skip`.
-        if skip is not None:
-            skip = self.upsample(skip)
-            out = out + skip
+            # Here, Tero adopts FP16 at `skip`.
+            if skip is not None:
+                skip = self.upsample(skip)
+                out = out + skip
+        if self.out_fp32:
+            out = out.to(torch.float32)
         return out
 
 
@@ -999,11 +1013,12 @@ class ConvDownLayer(nn.Sequential):
 
         super(ConvDownLayer, self).__init__(*layers)
 
-    @auto_fp16(apply_to=('x', ))
+    # @auto_fp16(apply_to=('x', ))
     def forward(self, x):
-        x = super().forward(x)
-        if self.fp16_enabled:
-            x = torch.clamp(x, min=-self.conv_clamp, max=self.conv_clamp)
+        with autocast(enabled=self.fp16_enabled):
+            x = super().forward(x)
+            if self.fp16_enabled:
+                x = torch.clamp(x, min=-self.conv_clamp, max=self.conv_clamp)
         return x
 
 
@@ -1051,7 +1066,7 @@ class ResBlock(nn.Module):
             bias=False,
             blur_kernel=blur_kernel)
 
-    @auto_fp16()
+    # @auto_fp16()
     def forward(self, input):
         """Forward function.
 
@@ -1063,13 +1078,15 @@ class ResBlock(nn.Module):
         """
         # TODO: study whether this explicit datatype transfer will harm the
         # apex training speed
-        if not self.fp16_enabled and self.convert_input_fp32:
-            input = input.to(torch.float32)
-        out = self.conv1(input)
-        out = self.conv2(out)
+        fp16_enabled = self.fp16_enabled and not self.convert_input_fp32
+        with autocast(enabled=fp16_enabled):
+            if not fp16_enabled:
+                input = input.to(torch.float32)
+            out = self.conv1(input)
+            out = self.conv2(out)
 
-        skip = self.skip(input)
-        out = (out + skip) / np.sqrt(2)
+            skip = self.skip(input)
+            out = (out + skip) / np.sqrt(2)
 
         return out
 
