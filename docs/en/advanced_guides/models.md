@@ -4,24 +4,33 @@ MMGeneration is built upon MMEngine and MMCV, which enables users to design new 
 
 ## Overview of models in MMGeneration
 
-In MMGeneration, one algorithm can be splited two compents: **Model** and **Architecture**(s).
+In MMGeneration, one algorithm can be splited two compents: **Model** and **Module**.
 
 - **Model** are topmost wrappers and always inherint from `BaseModel` provided in MMEngine. **Model** is responsible to network forward, loss calculation and backward, parameters updating, etc. In MMGeneration, **Model** should be registered as `MODELS`.
-- **Architecture**(s) is the neural network to train or inference, and always as element(s) of **Model**. In MMGeneration, **Architecture** should be registered as **MODULES**.
+- **Module** includes the neural network **architectures** to train or inference, pre-defined **loss classes**, and **data preprocessors** to preprocess the input data batch. **Module** always present as elements of **Model**. In MMGeneration, **Module** should be registered as **MODULES**.
 
-Take BigGAN model as an example, [generator and discriminator](https://github.com/open-mmlab/mmgeneration/blob/test-1.x/mmgen/models/architectures/biggan/generator_discriminator.py), [`BigGAN`](https://github.com/open-mmlab/mmgeneration/blob/test-1.x/mmgen/models/gans/biggan.py) is the **Model**, which take data from dataloader and train generator and discriminator alternatively.
+Take DCGAN model as an example, [generator and discriminator](https://github.com/open-mmlab/mmgeneration/blob/dev-1.x/mmgen/models/architectures/dcgan/generator_discriminator.py) are the **Module**, which generate images and discriminate real or fake images. [`DCGAN`](https://github.com/open-mmlab/mmgeneration/blob/dev-1.x/mmgen/models/gans/dcgan.py) is the **Model**, which take data from dataloader and train generator and discriminator alternatively.
 
-You can find implementation **Model** for [GAN](https://github.com/open-mmlab/mmgeneration/tree/test-1.x/mmgen/models/gans) and [Diffusion](https://github.com/open-mmlab/mmgeneration/tree/test-1.x/mmgen/models/architectures) models here. And implementation of **Architecture**(s) can be find [here](https://github.com/open-mmlab/mmgeneration/tree/test-1.x/mmgen/models/architectures).
+You can find the implementation of **Model** and **Module** by the following link.
+
+- **Model**:
+  - [GAN](https://github.com/open-mmlab/mmgeneration/tree/dev-1.x/mmgen/models/gans)
+  - [Diffusion Models](https://github.com/open-mmlab/mmgeneration/tree/dev-1.x/mmgen/models/diffusions)
+  - [Translation Models](https://github.com/open-mmlab/mmgeneration/tree/dev-1.x/mmgen/models/translation_models)
+- **Module**:
+  - [Architectures](https://github.com/open-mmlab/mmgeneration/tree/dev-1.x/mmgen/models/architectures)
+  - [Losses](https://github.com/open-mmlab/mmgeneration/tree/dev-1.x/mmgen/models/losses)
+  - [Data Preprocessor](https://github.com/open-mmlab/mmgeneration/blob/dev-1.x/mmgen/models/gans/gan_data_processer.py)
 
 Here, we take the implementation of the classical gan model, DCGAN \[1\], as an example.
 
 To implement DCGAN, you need to follow these steps:
 
-- [Step 1: Define your own network **Architecture**(s)](#step-1-define-your-own-network-architectures)
+- [Step 1: Define your own **Module**](#step-1-define-your-own-module)
 - [Step 2: Define your own **Model**](#step-2-define-the-forward-loop-of-your-model)
 - [Step 3: Start training](#step-3-start-training)
 
-## Step 1: Define your own network **Architecture**(s)
+## Step 1: Define your own **Module**
 
 DCGAN is a classical image generative adversarial network \[1\]. To implement the network architecture of DCGAN, we need to create a new file `mmgen/models/architectures/dcgan/generator_discriminator.py` and implement generator (`class DCGANGenerator`) and discriminator (`class DCGANDiscriminator`).
 
@@ -137,21 +146,23 @@ If you want to implement specific weights initialization method for you network,
 
 After the implementation of class `DCGANGenerator`, we need to update the model list in `mmgen/models/architectures/__init__.py`, so that we can import and use class `DCGANGenerator` by `mmgen.models.architectures`.
 
-Implementation of Class `DCGANDiscriminator` follows the similar logic, and you can find the implementation [here](https://github.com/open-mmlab/mmgeneration/blob/test-1.x/mmgen/models/architectures/dcgan/generator_discriminator.py#L195).
+Implementation of Class `DCGANDiscriminator` follows the similar logic, and you can find the implementation [here](https://github.com/open-mmlab/mmgeneration/blob/dev-1.x/mmgen/models/architectures/dcgan/generator_discriminator.py#L195).
 
 ## Step 2: Define the your **Model**
 
-After the implementation of the network **Architecture**, we need to define our **Model** class `DCGAN`.
+After the implementation of the network **Module**, we need to define our **Model** class `DCGAN`.
 
-In **Model**, you should implement three function `train_step`, `val_step` and `test_step`.
+Your **Model** should inherit from [`BaseModel`](https://github.com/open-mmlab/mmengine/blob/main/mmengine/model/base_model/base_model.py#L16) provided by MMEngine and implement three functions, `train_step`, `val_step` and `test_step`.
 
-- `train_step`: This function is responsible to update the parameters of the network and called by `IterBasedTrainLoop` or `EpochBasedTrainLoop`. `train_step` take data batch as input and return a dict of log.
-- `val_step`: This function is responsible for getting output for validation during the training process. and is called by `GenValLoop`.
-- `test_step`: This function is responsible for getting output in test process and is called by `GenTestLoop`.
+- `train_step`: This function is responsible to update the parameters of the network and called by MMEngine's Loop ([`IterBasedTrainLoop`](https://github.com/open-mmlab/mmengine/blob/main/mmengine/runner/loops.py#L183) or [`EpochBasedTrainLoop`](https://github.com/open-mmlab/mmengine/blob/main/mmengine/runner/loops.py#L18)). `train_step` take data batch and [`OptimWrapper`](https://github.com/open-mmlab/mmengine/blob/main/docs/en/tutorials/optim_wrapper.md) as input and return a dict of log.
+- `val_step`: This function is responsible for getting output for validation during the training process. and is called by [`GenValLoop`](https://github.com/open-mmlab/mmgeneration/blob/dev-1.x/mmgen/engine/runners/loops.py#L12).
+- `test_step`: This function is responsible for getting output in test process and is called by [`GenTestLoop`](https://github.com/open-mmlab/mmgeneration/blob/dev-1.x/mmgen/engine/runners/loops.py#L95).
 
-For simplify using, we provide `BaseGAN` class im MMGeneration, which implement generic `train_step`, `val_step` and `test_step` function for GAN models. With `BaseGAN`, each specific GAN algorithm only need to implement `train_generator` and `train_discriminator`.
+> Note that, in `train_step`, `val_step` and `test_step`, `DataPreprocessor` is called to preprocess the input data batch before feed them to the neural network. To know more about `DataPreprocessor` please refer to this [file](https://github.com/open-mmlab/mmgeneration/blob/dev-1.x/mmgen/models/gans/gan_data_processer.py) and this [tutorial](https://github.com/open-mmlab/mmengine/blob/main/docs/zh_cn/tutorials/model.md#%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86%E5%99%A8datapreprocessor).
 
-In `train_step`, we support data preprocessing, gradient accumulation (realized by [`OptimWrapper`](https://github.com/open-mmlab/mmengine/blob/main/docs/en/tutorials/optim_wrapper.md)) and expontial moving averate (EMA) realized by [(`ExponentialMovingAverage`)](https://github.com/open-mmlab/mmgeneration/blob/test-1.x/mmgen/models/averaged_model.py#L19). With `BaseGAN.train_step`, each specific GAN algorithm only need to implement `train_generator` and `train_discriminator`.
+For simplify using, we provide [`BaseGAN`](https://github.com/open-mmlab/mmgeneration/blob/dev-1.x/mmgen/models/gans/base_gan.py) class in MMGeneration, which implements generic `train_step`, `val_step` and `test_step` function for GAN models. With `BaseGAN` as base class, each specific GAN algorithm only need to implement `train_generator` and `train_discriminator`.
+
+In `train_step`, we support data preprocessing, gradient accumulation (realized by [`OptimWrapper`](https://github.com/open-mmlab/mmengine/blob/main/docs/en/tutorials/optim_wrapper.md)) and expontial moving averate (EMA) realized by [(`ExponentialMovingAverage`)](https://github.com/open-mmlab/mmgeneration/blob/dev-1.x/mmgen/models/averaged_model.py#L19). With `BaseGAN.train_step`, each specific GAN algorithm only need to implement `train_generator` and `train_discriminator`.
 
 ```python
     def train_step(self, data: dict,
@@ -298,11 +309,11 @@ After the implementation of `class DCGAN`, we need to update the model list in `
 
 ## Step 3: Start training
 
-After implementing the network architecture and the forward loop of DCGAN,
+After implementing the network **Module** and the **Model** of DCGAN,
 now we can create a new file `configs/dcgan/dcgan_1xb128-5epoches_lsun-bedroom-64x64.py`
 to set the configurations needed by training DCGAN.
 
-In the configuration file, we need to specify the parameters of our model, `class DCGAN`, including the generator network architecture, loss function and data preprocessor of input tensors.
+In the configuration file, we need to specify the parameters of our model, `class DCGAN`, including the generator network architecture and data preprocessor of input tensors.
 
 ```python
 # model settings
