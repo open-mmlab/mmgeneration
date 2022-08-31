@@ -300,10 +300,8 @@ class DCGAN(BaseGAN):
 
     def train_generator(self, inputs, data_sample,
                         optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
-        # num_batches = inputs['real_imgs'].shape[0]
         num_batches = inputs['img'].shape[0]
 
-        # >>> new setting
         noise = self.noise_fn(num_batches=num_batches)
         fake_imgs = self.generator(noise=noise, return_noise=False)
 

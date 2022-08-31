@@ -247,4 +247,4 @@ test_dataloader = dict(
 
 `UnpairedImageDataset` will load both images (domain A and B) from different paths and transform them at the same time.
 
-Here, we provide download links of datasets used in [Pix2Pix](http://efrosgans.eecs.berkeley.edu/pix2pix/datasets/) and [CycleGAN](https://people.eecs.berkeley.edu/~taesung_park/cyclegan/datasets/).
+Here, we provide download links of datasets used in [Pix2Pix](http://efrosgans.eecs.berkeley.edu/pix2pix/datasets/) and [CycleGAN](https://people.eecs.berkeley.edu/~taesung_park/CycleGAN/datasets/).
