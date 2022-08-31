@@ -263,15 +263,17 @@ class TestIS(TestCase):
                           self.mock_inception_stylegan):
             IS = InceptionScore(fake_nums=2, fake_key='fake')
 
+        from PIL import Image
         self.assertEqual(IS.resize, True)
         self.assertEqual(IS.splits, 10)
-        self.assertEqual(IS.resize_method, 'bicubic')
+        self.assertEqual(IS.resize_method, Image.BICUBIC)
 
         with patch.object(InceptionScore, '_load_inception',
                           self.mock_inception_stylegan):
             IS = InceptionScore(
                 fake_nums=2, fake_key='fake', use_pillow_resize=False)
         self.assertEqual(IS.use_pillow_resize, False)
+        self.assertEqual(IS.resize_method, 'bicubic')
 
         module = MagicMock()
         module.data_preprocessor = MagicMock()
