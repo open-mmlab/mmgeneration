@@ -7,3 +7,4 @@ scikit-image
 scipy
 tqdm
 yapf
+mmengine
