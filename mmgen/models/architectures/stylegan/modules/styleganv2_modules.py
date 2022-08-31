@@ -1078,9 +1078,7 @@ class ResBlock(nn.Module):
         """
         # TODO: study whether this explicit datatype transfer will harm the
         # apex training speed
-        fp16_enabled = not self.fp16_enabled and self.convert_input_fp32
-        # if not self.fp16_enabled and self.convert_input_fp32:
-        #     input = input.to(torch.float32)
+        fp16_enabled = self.fp16_enabled and not self.convert_input_fp32
         with autocast(enabled=fp16_enabled):
             if not fp16_enabled:
                 input = input.to(torch.float32)
