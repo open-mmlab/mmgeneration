@@ -75,7 +75,10 @@ def main():
     # enable automatic-mixed-precision training
     if args.amp is True:
         constructor = cfg.optim_wrapper.constructor
-        if constructor == 'GenOptimWrapperConstructor':
+        if constructor in [
+                'GenOptimWrapperConstructor', 'PGGANOptimWrapperConstructor',
+                'SinGANOptimWrapperConstructor'
+        ]:
             for key in cfg.optim_wrapper:
                 if key != 'constructor':
                     optim_wrapper = cfg.optim_wrapper[key].get(

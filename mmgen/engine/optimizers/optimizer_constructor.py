@@ -154,15 +154,15 @@ class SinGANOptimWrapperConstructor:
 
 @OPTIM_WRAPPER_CONSTRUCTORS.register_module()
 class PGGANOptimWrapperConstructor:
-    """OptimizerConstructor for SinGAN models. Set optimizers for each
-    submodule of SinGAN. All submodule must be contained in a
+    """OptimizerConstructor for PGGAN models. Set optimizers for each
+    stage of PGGAN. All submodule must be contained in a
     :class:~`torch.nn.ModuleList` named 'blocks'. And we access each submodule
     by `MODEL.blocks[SCALE]`, where `MODLE` is generator or discriminator, and
     the scale is the index of the resolution scale.
 
     More detail about the resolution scale and naming rule please refers to
-    :class:~`mmgen.models.SinGANMultiScaleGenerator` and
-    :class:~`mmgen.models.SinGANMultiScaleDiscriminator`.
+    :class:~`mmgen.models.PGGANGenerator` and
+    :class:~`mmgen.models.PGGANDiscriminator`.
 
     Example:
         >>> # build PGGAN model
