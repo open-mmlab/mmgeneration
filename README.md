@@ -88,9 +88,18 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 - Conditional GANs have been supported in our toolkit. More methods and pre-trained weights will come soon.
 - Mixed-precision training (FP16) for StyleGAN2 has been supported. Please check [the comparison](configs/styleganv2/README.md) between different implementations.
 
-## Changelog
+## What's new
 
-v0.7.1 was released on 30/04/2022. Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
+v1.0.0rc0 was released in 31/8/2022.
+
+This release introduced a brand new and flexible training & test engine, but it's still in progress. Welcome
+to try according to [the documentation](https://mmgeneration.readthedocs.io/en/1.x/).
+
+And there are some BC-breaking changes. Please check [the migration tutorial](https://mmgeneration.readthedocs.io/en/1.x/migration.html).
+
+The release candidate will last until the end of 2022, and during the release candidate, we will develop on the `1.x` branch. And we will still maintain 0.x version still at least the end of 2023.
+
+Please refer to [changelog.md](https://mmgeneration.readthedocs.io/en/1.x/notes/changelog.html) for more details and other release history.
 
 ## Installation
 
@@ -186,7 +195,7 @@ These methods have been carefully studied and supported in our frameworks:
 
 ## Contributing
 
-We appreciate all contributions to improve MMGeneration. Please refer to [CONTRIBUTING.md](https://github.com/open-mmlab/mmcv/tree/2.x/CONTRIBUTING.md) in MMCV for more details about the contributing guideline.
+We appreciate all contributions to improve MMGeneration. Please refer to [CONTRIBUTING.md](https://github.com/open-mmlab/mmcv/tree/2.x/CONTRIBUTING.md) in MMCV and \[https://github.com/open-mmlab/mmengine/blob/main/CONTRIBUTING.md\] in MMEngine for more details about the contributing guideline.
 
 ## Citation
 
@@ -207,6 +216,7 @@ This project is released under the [Apache 2.0 license](LICENSE). Some operation
 
 ## Projects in OpenMMLab 2.0
 
+- [MMEngine](https://github.com/open-mmlab/mmengine): OpenMMLab foundational library for training deep learning models.
 - [MMCV](https://github.com/open-mmlab/mmcv/tree/2.x): OpenMMLab foundational library for computer vision.
 - [MIM](https://github.com/open-mmlab/mim): MIM installs OpenMMLab packages.
 - [MMClassification](https://github.com/open-mmlab/mmclassification/tree/1.x): OpenMMLab image classification toolbox and benchmark.

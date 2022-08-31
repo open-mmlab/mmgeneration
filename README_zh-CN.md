@@ -91,7 +91,16 @@ MMGeneration 是一个基于 PyTorch 和[MMCV](https://github.com/open-mmlab/mmc
 
 ## 更新日志
 
-v0.7.1 在 30/04/2022 发布。 关于细节和发布历史，请参考 [changelog.md](docs/zh_cn/changelog.md)。
+2022/8/31 发布了 v1.0.0rc0 版本
+
+这个版本引入一个全新的，可扩展性强的训练和测试引擎，但目前仍在开发中。欢迎根据[文档](https://mmgeneration.readthedocs.io/zh_cn/1.x/)进行试用。
+
+同时，新版本中存在一些与旧版本不兼容的修改。请查看[迁移文档](https://mmgeneration.readthedocs.io/zh_cn/1.x/migration.html)来详细了解这些变动。
+
+新版本的公测将持续到 2022 年末，在此期间，我们将基于 `1.x` 分支进行更新，不会合入到 `master` 分支。另外，至少
+到 2023 年末，我们会保持对 0.x 版本的维护。
+
+发布历史和更新细节请参考 [更新日志](https://mmgeneration.readthedocs.io/zh_CN/1.x/notes/changelog.html)
 
 ## 安装
 
@@ -206,6 +215,7 @@ pip3 install -e .[all]
 
 ## OpenMMLab 的其他项目
 
+- [MMEngine](https://github.com/open-mmlab/mmengine): OpenMMLab 深度学习模型训练基础库
 - [MMCV](https://github.com/open-mmlab/mmcv/tree/2.x): OpenMMLab 计算机视觉基础库
 - [MIM](https://github.com/open-mmlab/mim): MIM 是 OpenMMlab 项目、算法、模型的统一入口
 - [MMClassification](https://github.com/open-mmlab/mmclassification/tree/1.x): OpenMMLab 图像分类工具箱
