@@ -14,9 +14,9 @@ from .base_gan import BaseGAN
 
 @MODELS.register_module()
 class WGANGP(BaseGAN):
-    """Impelmentation of ``.
+    """Impelmentation of `Improved Training of Wasserstein GANs`.
 
-    Paper link:
+    Paper link: https://arxiv.org/pdf/1704.00028
 
     Detailed architecture can be found in
     :class:~`mmgen.models.architectures.wgan_gp.generator_discriminator.WGANGPGenerator`  # noqa
@@ -35,9 +35,6 @@ class WGANGP(BaseGAN):
                   disc_pred_fake: Tensor, disc_pred_real: Tensor) -> Tuple:
         r"""Get disc loss. WGAN-GP use the wgan loss and gradient penalty to
         train the discriminator.
-
-        .. math::
-
 
         Args:
             real_data (Tensor): Real input data.
@@ -66,8 +63,6 @@ class WGANGP(BaseGAN):
 
     def gen_loss(self, disc_pred_fake: Tensor) -> Tuple:
         """Get gen loss. DCGAN use the wgan loss to train the generator.
-
-        .. math::
 
         Args:
             disc_pred_fake (Tensor): Discriminator's prediction of the fake
@@ -127,7 +122,6 @@ class WGANGP(BaseGAN):
         """
         num_batches = inputs['img'].shape[0]
 
-        # >>> new setting
         noise = self.noise_fn(num_batches=num_batches)
         fake_imgs = self.generator(noise=noise, return_noise=False)
 

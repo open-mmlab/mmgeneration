@@ -13,9 +13,9 @@ from .base_gan import BaseGAN
 
 @MODELS.register_module()
 class GGAN(BaseGAN):
-    """Impelmentation of ``.
+    """Impelmentation of `Geomoetric GAN.
 
-    Paper link:
+    <https://arxiv.org/abs/1705.02894>`_(GGAN).
     """
 
     def disc_loss(self, disc_pred_fake: Tensor,
@@ -108,10 +108,8 @@ class GGAN(BaseGAN):
         Returns:
             Dict[str, Tensor]: A ``dict`` of tensor for logging.
         """
-        # num_batches = inputs['real_imgs'].shape[0]
         num_batches = inputs['img'].shape[0]
 
-        # >>> new setting
         noise = self.noise_fn(num_batches=num_batches)
         fake_imgs = self.generator(noise=noise, return_noise=False)
 

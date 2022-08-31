@@ -17,7 +17,7 @@ from mmgen.models.architectures.common import get_module_device
 from mmgen.models.gans.base_gan import BaseGAN
 from mmgen.registry import MODELS
 from mmgen.structures import GenDataSample, PixelData
-from mmgen.utils.typing import ForwardInputs, ForwardOutputs, TrainStepInputs
+from mmgen.utils.typing import SampleList
 from ..common import gather_log_vars, set_requires_grad
 
 ModelType = Union[Dict, nn.Module]
@@ -109,6 +109,7 @@ class SinGAN(BaseGAN):
         self.pkl_data = test_pkl_data
 
     def load_test_pkl(self):
+        """Load pickle for test."""
         if self.pkl_data is not None:
             with open(self.pkl_data, 'rb') as f:
                 data = pickle.load(f)
@@ -142,7 +143,7 @@ class SinGAN(BaseGAN):
 
         return data
 
-    def get_module(self, model, module_name):
+    def get_module(self, model: nn.Module, module_name: str) -> nn.Module:
         """Get an inner module from model.
 
         Since we will wrapper DDP for some model, we have to judge whether the
@@ -170,16 +171,16 @@ class SinGAN(BaseGAN):
                 self.fixed_noises.append(noise)
 
     def forward(self,
-                batch_inputs: ForwardInputs,
+                batch_inputs: dict,
                 data_samples: Optional[list] = None,
-                mode=None):
+                mode=None) -> List[GenDataSample]:
         """Forward function for SinGAN. For SinGAN, `batch_inputs` should be a
         dict contains 'num_batches', 'mode' and other input arguments for the
         generator.
 
         Args:
-            batch_inputs (ForwardInputs): Dict containing the necessary
-                information (e.g. noise, num_batches, mode) to generate image.
+            batch_inputs (dict): Dict containing the necessary information
+                (e.g., noise, num_batches, mode) to generate image.
             data_samples (Optional[list]): Data samples collated by
                 :attr:`data_preprocessor`. Defaults to None.
             mode (Optional[str]): `mode` is not used in
@@ -394,7 +395,8 @@ class SinGAN(BaseGAN):
         optimizer_wrapper.update_params(parsed_loss)
         return log_vars
 
-    def train_gan(self, inputs_dict, data_sample, optim_wrapper):
+    def train_gan(self, inputs_dict: dict, data_sample: List[GenDataSample],
+                  optim_wrapper: OptimWrapperDict) -> Dict[str, torch.Tensor]:
         """Train GAN model. In the training of GAN models, generator and
         discriminator are updated alternatively. In MMGeneration's design,
         `self.train_step` is called with data input. Therefore we always update
@@ -404,7 +406,9 @@ class SinGAN(BaseGAN):
         in :meth:`should_gen_update`.
 
         Args:
-            data (List[dict]): Data sampled from dataloader.
+            data (dict): Data sampled from dataloader.
+            data_sample (List[GenDataSample]): List of data sample contains GT
+                and meta information.
             optim_wrapper (OptimWrapperDict): OptimWrapperDict instance
                 contains OptimWrapper of generator and discriminator.
 
@@ -467,7 +471,7 @@ class SinGAN(BaseGAN):
             log_vars.update(log_vars_gen)
         return log_vars
 
-    def train_step(self, data: TrainStepInputs,
+    def train_step(self, data: dict,
                    optim_wrapper: OptimWrapperDict) -> Dict[str, Tensor]:
         """Train step for SinGAN model. SinGAN is trained with multi-resolution
         images, and each resolution is trained for `:attr:self.iters_per_scale`
@@ -480,7 +484,7 @@ class SinGAN(BaseGAN):
         real image.
 
         Args:
-            data (List[dict]): Data sampled from dataloader.
+            data (dict): Data sampled from dataloader.
             optim_wrapper (OptimWrapperDict): OptimWrapperDict instance
                 contains OptimWrapper of generator and discriminator.
 
@@ -564,17 +568,17 @@ class SinGAN(BaseGAN):
 
         return log_vars
 
-    def test_step(self, data: dict) -> ForwardOutputs:
+    def test_step(self, data: dict) -> SampleList:
         """Gets the generated image of given data in test progress. Before
         generate images, we call `:meth:self.load_test_pkl` to load the fixed
         noise and current stage of the model from the pickle file.
 
         Args:
-            data (ValTestStepInputs): Data sampled from metric specific
+            data (dict): Data sampled from metric specific
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
-            ForwardOutputs: Generated image or image dict.
+            SampleList: A list of ``GenDataSample`` contain generated results.
         """
         if not self.loaded_test_pkl:
             self.load_test_pkl()

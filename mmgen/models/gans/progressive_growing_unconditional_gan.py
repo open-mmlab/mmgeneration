@@ -2,7 +2,7 @@
 from functools import partial
 from typing import Dict, List, Optional, Tuple, Union
 
-import mmcv
+import mmengine
 import numpy as np
 import torch
 import torch.autograd as autograd
@@ -16,7 +16,7 @@ from torch import Tensor
 
 from mmgen.registry import MODELS
 from mmgen.structures import GenDataSample, PixelData
-from mmgen.utils.typing import ForwardInputs
+from mmgen.utils.typing import ForwardInputs, SampleList
 from ..common import gather_log_vars, get_valid_num_batches, set_requires_grad
 from .base_gan import BaseGAN
 
@@ -84,7 +84,7 @@ class ProgressiveGrowingGAN(BaseGAN):
             elif isinstance(k, int):
                 k = (k, k)
             else:
-                assert mmcv.is_tuple_of(k, int)
+                assert mmengine.is_tuple_of(k, int)
 
             # sanity check for the order of scales
             assert len(self.scales) == 0 or k[0] > self.scales[-1][0]
@@ -114,8 +114,20 @@ class ProgressiveGrowingGAN(BaseGAN):
     def forward(self,
                 inputs: ForwardInputs,
                 data_samples: Optional[list] = None,
-                mode: Optional[str] = None):
-        """Sample images from noises by using the generator."""
+                mode: Optional[str] = None) -> SampleList:
+        """Sample images from noises by using the generator.
+
+        Args:
+            batch_inputs (ForwardInputs): Dict containing the necessary
+                information (e.g. noise, num_batches, mode) to generate image.
+            data_samples (Optional[list]): Data samples collated by
+                :attr:`data_preprocessor`. Defaults to None.
+            mode (Optional[str]): `mode` is not used in
+                :class:`ProgressiveGrowingGAN`. Defaults to None.
+
+        Returns:
+            SampleList: A list of ``GenDataSample`` contain generated results.
+        """
         if isinstance(inputs, Tensor):
             noise = inputs
             curr_scale = transition_weight = None
@@ -186,6 +198,18 @@ class ProgressiveGrowingGAN(BaseGAN):
     def train_discriminator(
             self, inputs: Tensor, data_samples: List[GenDataSample],
             optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
+        """Train discriminator.
+
+        Args:
+            inputs (dict): Inputs from dataloader.
+            data_samples (List[GenDataSample]): Data samples from dataloader.
+                Do not used in generator's training.
+            optim_wrapper (OptimWrapper): OptimWrapper instance used to update
+                model parameters.
+
+        Returns:
+            Dict[str, Tensor]: A ``dict`` of tensor for logging.
+        """
         real_imgs = inputs
         num_batches = real_imgs.shape[0]
         noise_batch = self.noise_fn(num_batches=num_batches)
@@ -274,6 +298,19 @@ class ProgressiveGrowingGAN(BaseGAN):
     def train_generator(self, inputs: Tensor,
                         data_samples: List[GenDataSample],
                         optimizer_wrapper: OptimWrapper) -> Dict[str, Tensor]:
+        """Train generator.
+
+        Args:
+            inputs (dict): Inputs from dataloader.
+            data_samples (List[GenDataSample]): Data samples from dataloader.
+                Do not used in generator's training.
+            optim_wrapper (OptimWrapper): OptimWrapper instance used to update
+                model parameters.
+
+        Returns:
+            Dict[str, Tensor]: A ``dict`` of tensor for logging.
+        """
+
         real_imgs = inputs
         num_batches = real_imgs.shape[0]
         noise_batch = self.noise_fn(num_batches=num_batches)

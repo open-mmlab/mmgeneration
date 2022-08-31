@@ -13,7 +13,10 @@ from .base_gan import BaseGAN
 
 @MODELS.register_module()
 class DCGAN(BaseGAN):
-    """Impelmentation of ``.
+    """Impelmentation of `Unsupervised Representation Learning with Deep
+    Convolutional Generative Adversarial Networks.
+
+    <https://arxiv.org/abs/1511.06434>`_ (DCGAN).
 
     Paper link:
 
@@ -27,9 +30,6 @@ class DCGAN(BaseGAN):
                   disc_pred_real: Tensor) -> Tuple:
         r"""Get disc loss. DCGAN use the vanilla gan loss to train
         the discriminator.
-
-        .. math::
-
 
         Args:
             disc_pred_fake (Tensor): Discriminator's prediction of the fake
@@ -51,8 +51,6 @@ class DCGAN(BaseGAN):
 
     def gen_loss(self, disc_pred_fake: Tensor) -> Tuple:
         """Get gen loss. DCGAN use the vanilla gan loss to train the generator.
-
-        .. math::
 
         Args:
             disc_pred_fake (Tensor): Discriminator's prediction of the fake
@@ -110,10 +108,8 @@ class DCGAN(BaseGAN):
         Returns:
             Dict[str, Tensor]: A ``dict`` of tensor for logging.
         """
-        # num_batches = inputs['real_imgs'].shape[0]
         num_batches = inputs['img'].shape[0]
 
-        # >>> new setting
         noise = self.noise_fn(num_batches=num_batches)
         fake_imgs = self.generator(noise=noise, return_noise=False)
 

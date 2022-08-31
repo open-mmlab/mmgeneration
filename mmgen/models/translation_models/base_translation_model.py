@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABCMeta, abstractmethod
+from typing import List
 
 from mmengine.model import BaseModel
 
@@ -41,12 +42,12 @@ class BaseTranslationModel(BaseModel, metaclass=ABCMeta):
     """
 
     def __init__(self,
-                 default_domain,
-                 reachable_domains,
-                 related_domains,
-                 discriminator_steps=1,
-                 disc_init_steps=0,
-                 real_img_key='real_img'):
+                 default_domain: str,
+                 reachable_domains: List[str],
+                 related_domains: List[str],
+                 discriminator_steps: int = 1,
+                 disc_init_steps: int = 0,
+                 real_img_key: str = 'real_img'):
         self._default_domain = default_domain
         self._reachable_domains = reachable_domains
         self._related_domains = related_domains
