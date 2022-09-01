@@ -1,6 +1,6 @@
 # Overview
 
-MMGeneration is a powerful toolkit for generative models, including GANs and diffusion models. It is based on PyTorch and [MMCV](https://github.com/open-mmlab/mmcv). The [dev-1.x](https://github.com/open-mmlab/mmgeneration/tree/dev-1.x) branch works with [**PyTorch 1.5+**](https://pytorch.org/).
+MMGeneration is a powerful toolkit for generative models, including GANs and diffusion models. It is based on PyTorch and [MMCV](https://github.com/open-mmlab/mmcv). The [1.x](https://github.com/open-mmlab/mmgeneration/tree/1.x) branch works with [**PyTorch 1.5+**](https://pytorch.org/).
 
 ## supported tasks
 
