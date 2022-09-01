@@ -13,11 +13,12 @@ RUN apt-get update && apt-get install -y ffmpeg libsm6 libxext6 git ninja-build 
     && rm -rf /var/lib/apt/lists/*
 
 # Install MMCV
-RUN pip install mmcv-full==1.3.16 -f https://download.openmmlab.com/mmcv/dist/cu111/torch1.8.0/index.html
+RUN pip install openmim
+RUN mim install mmcv>=2.0.0rc1
 
 # Install MMGeneration
 RUN conda clean --all
-RUN git clone https://github.com/open-mmlab/mmgeneration.git /mmgen
+RUN git clone -b 1.x https://github.com/open-mmlab/mmgeneration.git /mmgen
 WORKDIR /mmgen
 ENV FORCE_CUDA="1"
 RUN pip install -r requirements.txt
