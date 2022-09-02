@@ -45,7 +45,7 @@ python apps/conditional_interpolate.py \
 
 求生成网络 `g` 的逆是一个有趣的问题，有很多应用。例如，在潜码空间中操作一个给定的图像需要先为它找到一个匹配的潜码。一般来说，你可以通过对潜码进行优化来重建目标图像，使用 `lpips` 和像素级损失作为目标函数。
 
-事实上，我们已经向用户提供了一个应用脚本，为给定的图像找到 `StyleGAN` 系列生成网络的匹配潜码向量w。你可以使用[apps/stylegan_projector.py](https://github.com/open-mmlab/mmgeneration/tree/master/apps/stylegan_projector.py)的以下命令来执行投影。
+事实上，我们已经向用户提供了一个应用脚本，为给定的图像找到 `StyleGAN` 系列生成网络的匹配潜码向量 `w`。你可以使用[apps/stylegan_projector.py](https://github.com/open-mmlab/mmgeneration/tree/master/apps/stylegan_projector.py)的以下命令来执行投影。
 
 ```bash
 python apps/stylegan_projector.py \
@@ -60,7 +60,7 @@ python apps/stylegan_projector.py \
 
 ## 编辑
 
-基于 StyleGAN 模型的一个常见应用是操纵潜码空间来控制合成图像的属性。在这里，我们向用户提供了一个基于\[SeFa\]（https://arxiv.org/pdf/2007.06600.pdf%EF%BC%89%E7%9A%84%E7%AE%80%E5%8D%95%E8%80%8C%E6%B5%81%E8%A1%8C%E7%9A%84%E7%AE%97%E6%B3%95%E3%80%82%E8%BF%99%E9%87%8C%EF%BC%8C%E6%88%91%E4%BB%AC%E5%9C%A8%E8%AE%A1%E7%AE%97%E7%89%B9%E5%BE%81%E5%90%91%E9%87%8F%E6%97%B6%E5%AF%B9%E5%8E%9F%E5%A7%8B%E7%89%88%E6%9C%AC%E8%BF%9B%E8%A1%8C%E4%BA%86%E4%BF%AE%E6%94%B9%EF%BC%8C%E5%B9%B6%E6%8F%90%E4%BE%9B%E4%BA%86%E4%B8%80%E4%B8%AA%E6%9B%B4%E7%81%B5%E6%B4%BB%E7%9A%84%E6%8E%A5%E5%8F%A3%E3%80%82
+基于 StyleGAN 模型的一个常见应用是操纵潜码空间来控制合成图像的属性。在这里，我们向用户提供了一个基于[SeFa](https://arxiv.org/pdf/2007.06600.pdf)的简单而流行的算法。这里，我们在计算特征向量时对原始版本进行了修改，并提供了一个更灵活的接口。
 
 为了操纵你的生成器，你可以用以下命令运行脚本[apps/modified_sefa.py](https://github.com/open-mmlab/mmgeneration/tree/master/apps/modified_sefa.py)。
 
