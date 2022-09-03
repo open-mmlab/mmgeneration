@@ -1,8 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import mmcv
 import torch
 from torch import nn
-
-import mmcv
 from mmcv.cnn.bricks import Linear, build_norm_layer, build_activation_layer
 
 from mmgen.registry import MODULES
@@ -106,7 +105,7 @@ class AttentionBase(nn.Module):
         weights = torch.einsum('bqhc,bkhc->bhqk', q, k)
         weights += attention_bias
         weights = torch.softmax(weights, -1)
-        weights = torch.einsum("bhqk,bkhc->bqhc", weights, v)
+        weights = torch.einsum('bhqk,bkhc->bqhc', weights, v)
         shape = weights.shape[:2] + (self.in_channels,)
         weights = weights.reshape(shape)
         weights = self.proj(weights)
@@ -126,8 +125,8 @@ class EncoderLayer(nn.Module):
     """
 
     def __init__(self,
-                 in_channels, 
-                 head_num, 
+                 in_channels,
+                 head_num,
                  out_channels):
         super().__init__()
         self.selfAttention = AttentionBase(in_channels, head_num)
@@ -177,11 +176,11 @@ class DecoderLayer(nn.Module):
         self.token_indices = torch.arange(256, device=device)
 
 
-    def forward(self, 
-                decoder_state, 
-                encoder_state, 
-                attention_state, 
-                attention_mask, 
+    def forward(self,
+                decoder_state,
+                encoder_state,
+                attention_state,
+                attention_mask,
                 token_index):
         
         """Forward function for the decoder layer.
@@ -205,7 +204,7 @@ class DecoderLayer(nn.Module):
             self_attn_mask = self_attn_mask[:, None, None, :]
         else:
             self_attn_mask = (
-                self.token_indices[None, None, :token_count] <= 
+                self.token_indices[None, None, :token_count] <=
                 token_index[:, :, None]
             )
             self_attn_mask = self_attn_mask[:, None, :, :]

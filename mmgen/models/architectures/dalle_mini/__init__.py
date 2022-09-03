@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .modules import EncoderLayer, DecoderLayer
+from .modules import (DecoderLayer, EncoderLayer)
 
 __all__ = [
     'EncoderLayer', 'DecoderLayer'

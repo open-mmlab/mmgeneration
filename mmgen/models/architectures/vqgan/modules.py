@@ -1,9 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import mmcv
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-import mmcv
 from mmcv.cnn.bricks import Linear, build_activation_layer, build_norm_layer, build_conv_layer
 
 from mmgen.registry import MODULES
@@ -48,7 +47,7 @@ class DiffusionDownsample(nn.Module):
             downsampling.  Defaults to `True`.
     """
     def __init__(self,
-                 in_channels, 
+                 in_channels,
                  with_conv=True):
         super().__init__()
         self.with_conv = with_conv
@@ -71,7 +70,7 @@ class DiffusionDownsample(nn.Module):
         if self.with_conv:
             # do asymmetric padding
             pad = (0,1,0,1)
-            x = F.pad(x, pad, mode="constant", value=0)
+            x = F.pad(x, pad, mode='constant', value=0)
             x = self.conv(x)
         else:
             x = F.avg_pool2d(x, kernel_size=2, stride=2)
@@ -97,10 +96,10 @@ class DiffusionResnetBlock(nn.Module):
     """
     def __init__(self,
                  *,
-                 in_channels, 
-                 out_channels=None, 
-                 conv_shortcut=False, 
-                 dropout, 
+                 in_channels,
+                 out_channels=None,
+                 conv_shortcut=False,
+                 dropout,
                  temb_channels=512):
         super().__init__()
         self.in_channels = in_channels
