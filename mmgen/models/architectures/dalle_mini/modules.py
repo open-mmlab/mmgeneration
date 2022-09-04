@@ -1,10 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import torch
-from torch import nn
-from mmcv.cnn.bricks import Linear, build_norm_layer, build_activation_layer
+import torch.nn as nn
 
+from mmcv.cnn.bricks import build_activation_layer, build_norm_layer, Linear
 from mmgen.registry import MODULES
+
 
 @MODULES.register_module()
 class GLU(nn.Module):
@@ -15,16 +16,14 @@ class GLU(nn.Module):
         mid_channels (int): The channel number of the middle layer feature map.
     """
 
-    def __init__(self,
-                 in_out_channels,
-                 mid_channels):
+    def __init__(self, in_out_channels, mid_channels):
         super().__init__()
         self.norm1 = build_norm_layer(dict(type='LN'), in_out_channels)[1]
         self.norm2 = build_norm_layer(dict(type='LN'), mid_channels)[1]
         self.fc1 = Linear(in_out_channels, mid_channels, bias=False)
-        self.fc2 = Linear(mid_channels, in_out_channels, bias=False)
+        self.fc2 = Linear(in_out_channels, mid_channels, bias=False)
+        self.fc3 = Linear(mid_channels, in_out_channels, bias=False)
         self.gelu = build_activation_layer(dict(type='GELU'))
-    
 
     def forward(self, z):
         """Forward function.
@@ -38,9 +37,9 @@ class GLU(nn.Module):
         z = self.norm1(z)
         w = self.fc1(z)
         w = self.gelu(w)
-        v = self.fc1(z)
+        v = self.fc2(z)
         z = self.norm2(w * v)
-        z = self.fc2(z)
+        z = self.fc3(z)
         return z
 
 
@@ -55,9 +54,7 @@ class AttentionBase(nn.Module):
         head_num (int): Number of heads in the attention.
     """
 
-    def __init__(self,
-                 in_channels,
-                 head_num):
+    def __init__(self, in_channels, head_num):
         super().__init__()
         self.in_channels = in_channels
         self.head_num = head_num
@@ -80,9 +77,8 @@ class AttentionBase(nn.Module):
         q = self.querie(x)
         k = self.key(x)
         v = self.value(x)
-        
-        return q, k, v
 
+        return q, k, v
 
     def forward(self, q, k, v, attention_mask):
         """Forward function for attention.
@@ -97,7 +93,7 @@ class AttentionBase(nn.Module):
             weights (torch.FloatTensor): Feature map after attention.
         """
         q = q.reshape(q.shape[:2] + (self.head_num, -1))
-        q /= q.shape[-1] ** 0.5
+        q /= q.shape[-1]**0.5
         k = k.reshape(k.shape[:2] + (self.head_num, -1))
         v = v.reshape(v.shape[:2] + (self.head_num, -1))
 
@@ -106,7 +102,7 @@ class AttentionBase(nn.Module):
         weights += attention_bias
         weights = torch.softmax(weights, -1)
         weights = torch.einsum('bhqk,bkhc->bqhc', weights, v)
-        shape = weights.shape[:2] + (self.in_channels,)
+        shape = weights.shape[:2] + (self.in_channels, )
         weights = weights.reshape(shape)
         weights = self.proj(weights)
         return weights
@@ -124,15 +120,12 @@ class EncoderLayer(nn.Module):
         out_channels (int): The channel number of the output feature map.
     """
 
-    def __init__(self,
-                 in_channels,
-                 head_num,
-                 out_channels):
+    def __init__(self, in_channels, head_num, out_channels):
         super().__init__()
         self.selfAttention = AttentionBase(in_channels, head_num)
         self.norm = build_norm_layer(dict(type='LN'), in_channels)[1]
         self.glu = GLU(in_channels, out_channels)
-    
+
     def forward(self, x, attention_mask):
         """Forward function for the encoder layer.
         
@@ -167,6 +160,7 @@ class DecoderLayer(nn.Module):
         out_channels (int): The channel number of the output feature map.
         device (str): The type of device (cpu or cuda).
     """
+
     def __init__(self, in_channels, head_num, out_channels, device):
         super().__init__()
         self.selfAttention = AttentionBase(in_channels, head_num)
@@ -175,14 +169,8 @@ class DecoderLayer(nn.Module):
         self.glu = GLU(in_channels, out_channels)
         self.token_indices = torch.arange(256, device=device)
 
-
-    def forward(self,
-                decoder_state,
-                encoder_state,
-                attention_state,
-                attention_mask,
-                token_index):
-        
+    def forward(self, decoder_state, encoder_state, attention_state,
+                attention_mask, token_index):
         """Forward function for the decoder layer.
         
         Args:
@@ -203,12 +191,10 @@ class DecoderLayer(nn.Module):
             self_attn_mask = self.token_indices <= token_index
             self_attn_mask = self_attn_mask[:, None, None, :]
         else:
-            self_attn_mask = (
-                self.token_indices[None, None, :token_count] <=
-                token_index[:, :, None]
-            )
+            self_attn_mask = (self.token_indices[None, None, :token_count] <=
+                              token_index[:, :, None])
             self_attn_mask = self_attn_mask[:, None, :, :]
-        
+
         residual = decoder_state.clone()
         decoder_state = self.norm(decoder_state)
         q, k, v = self.selfAttention.qkv(decoder_state)
@@ -237,5 +223,3 @@ class DecoderLayer(nn.Module):
         decoder_state = residual + decoder_state
 
         return decoder_state, attention_state
-
-
