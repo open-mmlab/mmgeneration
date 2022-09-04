@@ -35,8 +35,8 @@ def Normalize(in_channels):
 
 @MODULES.register_module()
 class DiffusionDownsample(nn.Module):
-    """Downsampling operation. Support padding, average
-    pooling and convolution for downsample operation.
+    """Downsampling operation. Support padding, average pooling and convolution
+    for downsample operation.
 
     Ref:
     https://github.com/CompVis/taming-transformers/blob/master/taming/modules
@@ -145,6 +145,7 @@ class DiffusionResnetBlock(nn.Module):
 
     def forward(self, x, temb):
         """Forward function.
+
         Args:
             x (torch.Tensor): Input feature map tensor.
             temb (torch.Tensor): Shared time embedding.
