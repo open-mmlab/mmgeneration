@@ -1,8 +1,8 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import mmcv
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from mmcv.cnn.bricks import (Linear, build_activation_layer, build_conv_layer,
                              build_norm_layer)
 from mmgen.registry import MODULES

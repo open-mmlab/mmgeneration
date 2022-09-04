@@ -2,7 +2,6 @@
 import mmcv
 import torch
 import torch.nn as nn
-
 from mmcv.cnn.bricks import build_activation_layer, build_norm_layer, Linear
 from mmgen.registry import MODULES
 
