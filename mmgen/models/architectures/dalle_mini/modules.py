@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import mmcv
 import torch
 import torch.nn as nn
 from mmcv.cnn.bricks import build_activation_layer, build_norm_layer, Linear
@@ -11,7 +10,8 @@ class GLU(nn.Module):
     """GLU variants used to improve Transformer.
 
     Args:
-        in_out_channels (int): The channel number of the input and the output feature map.
+        in_out_channels (int): The channel number of the input
+                                and the output feature map.
         mid_channels (int): The channel number of the middle layer feature map.
     """
 
@@ -29,7 +29,7 @@ class GLU(nn.Module):
 
         Args:
             z (torch.FloatTensor): Input feature map.
-        
+
         Returns:
             z (torch.FloatTensor): Output feature map.
         """
@@ -46,7 +46,8 @@ class GLU(nn.Module):
 class AttentionBase(nn.Module):
     """An Muti-head Attention block used in Bart model.
 
-    Ref: https://github.com/kuprel/min-dalle/blob/main/min_dalle/models/dalle_bart_encoder.py
+    Ref:
+    https://github.com/kuprel/min-dalle/blob/main/min_dalle/models
 
     Args:
         in_channels (int): The channel number of the input feature map.
@@ -64,7 +65,7 @@ class AttentionBase(nn.Module):
 
     def qkv(self, x):
         """Calculate queries, keys and values for the embedding map.
-        
+
         Args:
             x (torch.FloatTensor): Input feature map.
 
@@ -81,12 +82,13 @@ class AttentionBase(nn.Module):
 
     def forward(self, q, k, v, attention_mask):
         """Forward function for attention.
-        
+
         Args:
             q (torch.FloatTensor): Querie feature map.
             k (torch.FloatTensor): Key feature map.
             v (torch.FloatTensor): Value feature map.
-            attention_mask (torch.BoolTensor): whether to use an attention mask.
+            attention_mask (torch.BoolTensor): whether to use
+                                                an attention mask.
 
         Returns:
             weights (torch.FloatTensor): Feature map after attention.
@@ -111,7 +113,8 @@ class AttentionBase(nn.Module):
 class EncoderLayer(nn.Module):
     """EncoderLayer of the Bart model.
 
-    Ref: https://github.com/kuprel/min-dalle/blob/main/min_dalle/models/dalle_bart_encoder.py
+    Ref:
+    https://github.com/kuprel/min-dalle/blob/main/min_dalle/models
 
     Args:
         in_channels (int): The channel number of the input feature map.
@@ -127,10 +130,11 @@ class EncoderLayer(nn.Module):
 
     def forward(self, x, attention_mask):
         """Forward function for the encoder layer.
-        
+
         Args:
             x (torch.FloatTensor): Input feature map.
-            attention_mask (torch.BoolTensor): whether to use an attention mask.
+            attention_mask (torch.BoolTensor): whether to use
+                                            an attention mask.
 
         Returns:
             x (torch.FloatTensor): Output feature map.
@@ -151,7 +155,8 @@ class EncoderLayer(nn.Module):
 class DecoderLayer(nn.Module):
     """DecoderLayer of the Bart model.
 
-    Ref: https://github.com/kuprel/min-dalle/blob/main/min_dalle/models/dalle_bart_decoder.py
+    Ref:
+    https://github.com/kuprel/min-dalle/blob/main/min_dalle/models
 
     Args:
         in_channels (int): The channel number of the input feature map.
@@ -171,17 +176,23 @@ class DecoderLayer(nn.Module):
     def forward(self, decoder_state, encoder_state, attention_state,
                 attention_mask, token_index):
         """Forward function for the decoder layer.
-        
+
         Args:
-            decoder_state (torch.FloatTensor): Input feature map of the decoder embeddings.
-            encoder_state (torch.FloatTensor): Input feature map of the encoder embeddings.
-            attention_state (torch.FloatTensor): Input feature map of the attention.
-            attention_mask (torch.BoolTensor): whether to use an attention mask.
+            decoder_state (torch.FloatTensor): Input feature map of
+                                                the decoder embeddings.
+            encoder_state (torch.FloatTensor): Input feature map of
+                                                the encoder embeddings.
+            attention_state (torch.FloatTensor): Input feature map of
+                                                the attention.
+            attention_mask (torch.BoolTensor): whether to use
+                                                an attention mask.
             token_index (torch.LongTensor): The index of tokens.
 
         Returns:
-            decoder_state (torch.FloatTensor): Output feature map of the decoder embeddings.
-            attention_state (torch.FloatTensor): Output feature map of the attention.
+            decoder_state (torch.FloatTensor): Output feature map of
+                                                the decoder embeddings.
+            attention_state (torch.FloatTensor): Output feature map of
+                                                the attention.
         """
 
         # Self Attention

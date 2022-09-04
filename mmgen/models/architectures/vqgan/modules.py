@@ -1,6 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import mmcv
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn.bricks import (Linear, build_activation_layer, build_conv_layer,
@@ -40,8 +38,9 @@ class DiffusionDownsample(nn.Module):
     """Downsampling operation. Support padding, average
     pooling and convolution for downsample operation.
 
-    Ref: https://github.com/CompVis/taming-transformers/blob/master/taming/modules/diffusionmodules/model.py
-    
+    Ref:
+    https://github.com/CompVis/taming-transformers/blob/master/taming/modules
+
     Args:
         in_channels (int): Number of channels of the input feature map to be
             downsampled.
@@ -82,8 +81,9 @@ class DiffusionDownsample(nn.Module):
 class DiffusionResnetBlock(nn.Module):
     """Resblock for the diffusion model. If `in_channels` not equals to
     `out_channels`, a learnable shortcut with conv layers will be added.
-    
-    Ref: https://github.com/CompVis/taming-transformers/blob/master/taming/modules/diffusionmodules/model.py
+
+    Ref:
+    https://github.com/CompVis/taming-transformers/blob/master/taming/modules
 
     Args:
         in_channels (int): Number of channels of the input feature map.
@@ -93,7 +93,8 @@ class DiffusionResnetBlock(nn.Module):
         conv_shortcut (bool): Whether to use conv_shortcut in
             convolution layers. Defaults to `False`.
         dropout (float): Probability of the dropout layers.
-        temb_channels (int): Number of channels of the input time embedding. Defaults to `512`.
+        temb_channels (int): Number of channels of the input time embedding. 
+                            Defaults to `512`.
     """
 
     def __init__(self,
