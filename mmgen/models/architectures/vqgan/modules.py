@@ -93,7 +93,7 @@ class DiffusionResnetBlock(nn.Module):
         conv_shortcut (bool): Whether to use conv_shortcut in
             convolution layers. Defaults to `False`.
         dropout (float): Probability of the dropout layers.
-        temb_channels (int): Number of channels of the input time embedding. 
+        temb_channels (int): Number of channels of the input time embedding.
                             Defaults to `512`.
     """
 

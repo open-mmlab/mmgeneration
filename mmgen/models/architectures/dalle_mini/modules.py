@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
-from mmcv.cnn.bricks import build_activation_layer, build_norm_layer, Linear
+from mmcv.cnn.bricks import Linear, build_activation_layer, build_norm_layer
 from mmgen.registry import MODULES
 
 
