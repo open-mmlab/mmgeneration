@@ -114,7 +114,23 @@ class GenVisualizer(Visualizer):
     def _vis_gif_sample(self, gen_samples: SampleList,
                         target_keys: Union[str, List[str], None],
                         color_order: str, target_mean: mean_std_type,
-                        target_std: mean_std_type, n_row: int):
+                        target_std: mean_std_type, n_row: int) -> np.ndarray:
+        """Visualize gif samples.
+
+        Args:
+            gen_samples (SampleList): List of data samples to visualize
+            target_keys (Union[str, List[str], None]): Keys of the
+                visualization target in data samples.
+            color_order (str): The color order of the passed images.
+            target_mean (Sequence[Union[float, int]]): The target mean of the
+                visualization results.
+            target_std (Sequence[Union[float, int]]): The target std of the
+                visualization resutts.
+            n_rows (int, optional): Number of images in one row.
+
+        Returns:
+            np.ndarray: The visualization results.
+        """
         post_process_fn = partial(
             self._post_process_image,
             color_order=color_order,
@@ -175,6 +191,22 @@ class GenVisualizer(Visualizer):
                           target_keys: Union[str, List[str], None],
                           color_order: str, target_mean: mean_std_type,
                           target_std: mean_std_type, n_row: int) -> np.ndarray:
+        """Visualize image samples.
+
+        Args:
+            gen_samples (SampleList): List of data samples to visualize
+            target_keys (Union[str, List[str], None]): Keys of the
+                visualization target in data samples.
+            color_order (str): The color order of the passed images.
+            target_mean (Sequence[Union[float, int]]): The target mean of the
+                visualization results.
+            target_std (Sequence[Union[float, int]]): The target std of the
+                visualization resutts.
+            n_rows (int, optional): Number of images in one row.
+
+        Returns:
+            np.ndarray: The visualization results.
+        """
         if target_keys is None:
             target_keys = [
                 k for k, v in gen_samples[0].items()
@@ -250,22 +282,20 @@ class GenVisualizer(Visualizer):
                 PixelData), (f'Element with key \'{key}\' is not a PixelData.')
             return pixel_data.data
 
-    def add_datasample(
-            self,
-            name: str,
-            *,
-            gen_samples: Sequence[GenDataSample],
-            # draw_gt: bool = False,
-            target_keys: Optional[Tuple[str, List[str]]] = None,
-            vis_mode: Optional[str] = None,
-            n_row: Optional[int] = 1,
-            color_order: str = 'bgr',
-            target_mean: Sequence[Union[float, int]] = 127.5,
-            target_std: Sequence[Union[float, int]] = 127.5,
-            show: bool = False,
-            wait_time: int = 0,
-            step: int = 0,
-            **kwargs) -> None:
+    def add_datasample(self,
+                       name: str,
+                       *,
+                       gen_samples: Sequence[GenDataSample],
+                       target_keys: Optional[Tuple[str, List[str]]] = None,
+                       vis_mode: Optional[str] = None,
+                       n_row: Optional[int] = 1,
+                       color_order: str = 'bgr',
+                       target_mean: Sequence[Union[float, int]] = 127.5,
+                       target_std: Sequence[Union[float, int]] = 127.5,
+                       show: bool = False,
+                       wait_time: int = 0,
+                       step: int = 0,
+                       **kwargs) -> None:
         """Draw datasample and save to all backends.
 
         - If GT and prediction are plotted at the same time, they are
@@ -276,14 +306,16 @@ class GenVisualizer(Visualizer):
 
         Args:
             name (str): The image identifier.
-            gen_samples ()
-            gt_keys
-            vis_mode
-            n_rows
-            input_color_order
-            output_color_order
-            target_mean
-            target_std
+            gen_samples (List[GenDataSample]): Data samples to visualize.
+            vis_mode (str, optional): Visualization mode. If not passed, will
+                visualize results as image. Defaults to None.
+            n_rows (int, optional): Number of images in one row. Defaults to 1.
+            color_order (str): The color order of the passed images. Defaults
+                to 'bgr'.
+            target_mean (Sequence[Union[float, int]]): The target mean of the
+                visualization results. Defaults to 127.5.
+            target_std (Sequence[Union[float, int]]): The target std of the
+                visualization resutts. Defaults to 127.5.
             show (bool): Whether to display the drawn image. Default to False.
             wait_time (float): The interval of show (s). Defaults to 0.
             step (int): Global step value to record. Defaults to 0.

@@ -20,10 +20,6 @@ class StaticTranslationGAN(BaseTranslationModel, BaseModel):
         gan_loss (dict): Config for the gan loss.
         pretrained (str | optional): Path for pretrained model.
             Defaults to None.
-        disc_auxiliary_loss (dict | optional): Config for auxiliary loss to
-            discriminator. Defaults to None.
-        gen_auxiliary_loss (dict | optional): Config for auxiliary loss
-            to generator. Defaults to None.
     """
 
     def __init__(self,

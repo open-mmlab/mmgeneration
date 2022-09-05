@@ -5,7 +5,7 @@ from mmengine import MessageHub
 
 from mmgen.registry import MODELS
 from mmgen.structures import GenDataSample, PixelData
-from mmgen.utils.typing import ForwardOutputs, ValTestStepInputs
+from mmgen.utils.typing import SampleList
 from ..common import set_requires_grad
 from .static_translation_gan import StaticTranslationGAN
 
@@ -145,15 +145,15 @@ class Pix2Pix(StaticTranslationGAN):
 
         return log_vars
 
-    def test_step(self, data: ValTestStepInputs) -> ForwardOutputs:
+    def test_step(self, data: dict) -> SampleList:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
-            data (ValTestStepInputs): Data sampled from metric specific
+            data (dict): Data sampled from metric specific
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
-            ForwardOutputs: Generated image or image dict.
+            List[GenDataSample]: Generated image or image dict.
         """
         data = self.data_preprocessor(data)
         inputs_dict, data_samples = data['inputs'], data['data_samples']
@@ -177,15 +177,15 @@ class Pix2Pix(StaticTranslationGAN):
             batch_sample_list.append(gen_sample)
         return batch_sample_list
 
-    def val_step(self, data: ValTestStepInputs) -> ForwardOutputs:
+    def val_step(self, data: dict) -> SampleList:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
-            data (ValTestStepInputs): Data sampled from metric specific
+            data (dict): Data sampled from metric specific
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
-            ForwardOutputs: Generated image or image dict.
+            List[GenDataSample]: Generated image or image dict.
         """
         data = self.data_preprocessor(data)
         inputs_dict, data_samples = data['inputs'], data['data_samples']

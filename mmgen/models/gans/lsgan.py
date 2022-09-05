@@ -114,10 +114,8 @@ class LSGAN(BaseGAN):
         Returns:
             Dict[str, Tensor]: A ``dict`` of tensor for logging.
         """
-        # num_batches = inputs['real_imgs'].shape[0]
         num_batches = inputs['img'].shape[0]
 
-        # >>> new setting
         noise = self.noise_fn(num_batches=num_batches)
         fake_imgs = self.generator(noise=noise, return_noise=False)
 

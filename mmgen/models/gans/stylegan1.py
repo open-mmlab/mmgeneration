@@ -19,7 +19,10 @@ TrainInput = Union[dict, Tensor]
 @MODELS.register_module()
 class StyleGANv1(ProgressiveGrowingGAN):
     """Implementation of `A Style-Based Generator Architecture for Generative
-    Adversarial Networks<>`_ (StyleGANv1). This class is inheriant from
+    Adversarial Networks.
+
+    <https://openaccess.thecvf.com/content_CVPR_2019/html/Karras_A_Style-Based_Generator_Architecture_for_Generative_Adversarial_Networks_CVPR_2019_paper.html>`_  # noqa
+    (StyleGANv1). This class is inheriant from
     :class:~`ProgressiveGrowingGAN` to support progressive training.
 
     Detailed architecture can be found in
@@ -144,7 +147,6 @@ class StyleGANv1(ProgressiveGrowingGAN):
         Args:
             disc_pred_fake (Tensor): Discriminator's prediction of the fake
                 images.
-            recon_imgs (Tensor): Reconstructive images.
 
         Returns:
             Tuple[Tensor, dict]: Loss value and a dict of log variables.

@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import sys
 
-import mmcv
+import mmengine
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -32,8 +32,8 @@ def extract_inception_features(dataloader,
     num_iters = num_samples // batch_size
     if num_iters * batch_size < num_samples:
         num_iters += 1
-    # define mmcv progress bar
-    pbar = mmcv.ProgressBar(num_iters)
+    # define mmengine progress bar
+    pbar = mmengine.ProgressBar(num_iters)
 
     feature_list = []
     curr_iter = 1

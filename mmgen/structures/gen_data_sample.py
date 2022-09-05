@@ -69,12 +69,11 @@ class GenDataSample(BaseDataElement):
     Data field:
         gt_img (PixelData): Input real images
         fake_img (PixelData): Output fake images
-
         gt_label (LabelData): The ground truth label.
-        pred_label (LabelData): The predicted label.
-        scores (torch.Tensor): The outputs of model.
-        logits (torch.Tensor): The outputs of model without softmax nor
-            sigmoid.
+        noise (Tensor): The noise passed to generator.
+        sample_model (str): The sample model used to generate image.
+        ema (GenDataSample): The output data sample of the EMA model
+        orig (GenDataSample): The output data sample of the original model.
 
     Examples:
         >>> import torch
@@ -104,16 +103,6 @@ class GenDataSample(BaseDataElement):
             num_classes: 5
             DATA FIELDS
             label: tensor([0, 1, 4])
-        ) at 0x7fd7d1b41970>
-        >>> # Set one-hot format score
-        >>> score = torch.tensor([0.1, 0.1, 0.6, 0.1, 0.1])
-        >>> data_sample.set_pred_score(score)
-        >>> print(data_sample.pred_label)
-        <LabelData(
-            META INFORMATION
-            num_classes: 5
-            DATA FIELDS
-            score: tensor([0.1, 0.1, 0.6, 0.1, 0.1])
         ) at 0x7fd7d1b41970>
     """
 

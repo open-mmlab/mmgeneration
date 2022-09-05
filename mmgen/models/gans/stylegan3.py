@@ -11,7 +11,7 @@ from torch import Tensor
 from mmgen.models.architectures.common import get_module_device
 from mmgen.registry import MODELS
 from mmgen.structures import GenDataSample
-from mmgen.utils.typing import ForwardOutputs
+from mmgen.utils.typing import SampleList
 from ..architectures.stylegan.utils import (apply_fractional_pseudo_rotation,
                                             apply_fractional_rotation,
                                             apply_fractional_translation,
@@ -56,7 +56,7 @@ class StyleGAN3(StyleGAN2):
         forward_kwargs.setdefault('gen', gen_default_forward_kwargs)
         self.forward_kwargs = forward_kwargs
 
-    def test_step(self, data: dict) -> ForwardOutputs:
+    def test_step(self, data: dict) -> SampleList:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
@@ -64,7 +64,7 @@ class StyleGAN3(StyleGAN2):
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
-            ForwardOutputs: Generated image or image dict.
+            SampleList: A list of ``GenDataSample`` contain generated results.
         """
         data = self.data_preprocessor(data)
         inputs_dict, data_samples = data['inputs'], data['data_samples']
@@ -80,7 +80,7 @@ class StyleGAN3(StyleGAN2):
             outputs = self(inputs_dict, data_samples)
         return outputs
 
-    def val_step(self, data: dict) -> ForwardOutputs:
+    def val_step(self, data: dict) -> SampleList:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
@@ -88,7 +88,7 @@ class StyleGAN3(StyleGAN2):
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
-            ForwardOutputs: Generated image or image dict.
+            SampleList: A list of ``GenDataSample`` contain generated results.
         """
         data = self.data_preprocessor(data)
         inputs_dict, data_samples = data['inputs'], data['data_samples']
@@ -151,10 +151,8 @@ class StyleGAN3(StyleGAN2):
         Returns:
             Dict[str, Tensor]: A ``dict`` of tensor for logging.
         """
-        # num_batches = inputs['real_imgs'].shape[0]
         num_batches = inputs['img'].shape[0]
 
-        # >>> new setting
         noise = self.noise_fn(num_batches=num_batches)
         fake_imgs = self.generator(
             noise, return_noise=False, **self.forward_kwargs['gen'])

@@ -6,7 +6,7 @@ from mmengine.optim import OptimWrapperDict
 
 from mmgen.registry import MODELS
 from mmgen.structures import GenDataSample, PixelData
-from mmgen.utils.typing import ForwardOutputs
+from mmgen.utils.typing import SampleList
 from ..common import GANImageBuffer, set_requires_grad
 from .static_translation_gan import StaticTranslationGAN
 
@@ -203,7 +203,7 @@ class CycleGAN(StaticTranslationGAN):
 
         return log_vars
 
-    def test_step(self, data: dict) -> ForwardOutputs:
+    def test_step(self, data: dict) -> SampleList:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
@@ -211,7 +211,7 @@ class CycleGAN(StaticTranslationGAN):
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
-            ForwardOutputs: Generated image or image dict.
+            SampleList: A list of ``GenDataSample`` contain generated results.
         """
         data = self.data_preprocessor(data)
         inputs_dict, data_samples = data['inputs'], data['data_samples']
@@ -242,7 +242,7 @@ class CycleGAN(StaticTranslationGAN):
             batch_sample_list.append(gen_sample)
         return batch_sample_list
 
-    def val_step(self, data: dict) -> ForwardOutputs:
+    def val_step(self, data: dict) -> SampleList:
         """Gets the generated image of given data. Same as :meth:`val_step`.
 
         Args:
@@ -250,7 +250,7 @@ class CycleGAN(StaticTranslationGAN):
                 sampler. More detials in `Metrics` and `Evaluator`.
 
         Returns:
-            ForwardOutputs: Generated image or image dict.
+            SampleList: A list of ``GenDataSample`` contain generated results.
         """
         data = self.data_preprocessor(data)
         inputs_dict, data_samples = data['inputs'], data['data_samples']

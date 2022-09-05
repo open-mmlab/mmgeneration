@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import math
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import torch
 import torch.nn.functional as F
@@ -10,10 +10,7 @@ from mmengine.utils import is_list_of
 from torch import Tensor
 
 from mmgen.registry import MODELS
-from mmgen.utils.typing import PreprocessOutputs
 
-CollectOutputTyping = Tuple[Union[Tensor, Dict[str, Union[Tensor, str, int]]],
-                            list]
 CastData = Union[tuple, dict, BaseDataElement, torch.Tensor, list]
 
 
@@ -84,81 +81,15 @@ class GANDataPreprocessor(ImgDataPreprocessor):
                 non_concentate_keys = [non_concentate_keys]
             self._NON_CONCENTATE_KEYS += non_concentate_keys
 
-    def _check_keys_consistency(self, data) -> None:
-        """Ensure keys in all inputs are consistency."""
-        first_data_keys = data[0].keys()
-        assert all([data_.keys() == first_data_keys for data_ in data
-                    ]), ('Keys must be consistency in \'data\'.')
-
-    def collate_data(self, data: Sequence[dict]) -> CollectOutputTyping:
-        """NOTE: support two special suitation.
-        support input keys other than `inputs` and `data_sample`.
-        - If value is `torch.Tensor` and key belongs to `_NON_IMAGE_KEYS`, this
-            element will be concentrated.
-        - If value is `torch.Tensor` and key not belongs to `_NON_IMAGE_KEYS`,
-            this element will be preprocessed and concentrated.
-        - If value is int, we will concentrate them as torch.Tensor.
-        - If value is str, we assert all string are same and remain only one
-        in the inputs dict.
-
-        Example 1:
-            >>> data = [dict(inputs=dict(noise=..., mode='ema', num_batches=1),
-                            data_sample=xxx),
-                        dict(inputs=dict(noise=..., mode='ema', num_batches=1),
-                            data_sample=xxx)]
-            >>> self.collect_data(data)
-            >>> (dict(noise=..., mode='ema', num_batches=1), DATA_SAMPLE)
-
-        Example 2:
-            >>> data = [dict(inputs=Tensor, data_sample=xxx), ...]
-            >>> self.collect_data(data)
-            >>> (Tensor, [data_sample_1, data_sample_2, ...])
+    def cast_data(self, data: CastData) -> CastData:
+        """Copying data to the target device.
 
         Args:
-            data (Sequence[dict]): The data need to collect.
+            data (dict): Data returned by ``DataLoader``.
 
         Returns:
-            CollectOutputTyping: Collected results.
+            CollatedResult: Inputs and data sample at target device.
         """
-
-        self._check_keys_consistency(data)
-        batch_data_samples: List[BaseDataElement] = []
-        # Allow no `data_samples` in data
-        for data_ in data:
-            if 'data_sample' in data_:
-                batch_data_samples.append(data_['data_sample'])
-
-        inputs_list = [data_['inputs'] for data_ in data]
-        if isinstance(inputs_list[0], Tensor):
-            batch_inputs = [input_.to(self.device) for input_ in inputs_list]
-        else:
-            # inputs is a dict
-            self._check_keys_consistency(inputs_list)
-            inputs_keys = inputs_list[0].keys()
-            batch_inputs = dict()
-
-            for k in inputs_keys:
-
-                if k in self._NON_CONCENTATE_KEYS:
-                    first_value = inputs_list[0][k]
-                    assert all([
-                        input_[k] == first_value for input_ in inputs_list
-                    ]), (f'NON_CONCENTATE_KEY \'{k}\' should be consistency '
-                         'among the data list.')
-                    # Do not move to corresponding device.
-                    batch_inputs[k] = first_value
-                else:
-                    # Move data from CPU to corresponding device.
-                    batch_inputs[k] = [(inputs_[k]).to(self.device)
-                                       for inputs_ in inputs_list]
-
-        # Move data from CPU to corresponding device.
-        batch_data_samples = [
-            data_sample.to(self.device) for data_sample in batch_data_samples
-        ]
-        return batch_inputs, batch_data_samples
-
-    def cast_data(self, data: CastData) -> CastData:
         if isinstance(data, str):
             return data
         return super().cast_data(data)
@@ -193,17 +124,14 @@ class GANDataPreprocessor(ImgDataPreprocessor):
 
         return batch_inputs
 
-    def process_dict_inputs(self, batch_inputs: dict):
-        """_summary_
+    def process_dict_inputs(self, batch_inputs: dict) -> dict:
+        """Preprocess dict type inputs.
 
         Args:
-            batch_inputs (dict): _description_
-
-        Raises:
-            TypeError: _description_
+            batch_inputs (dict): Input dict.
 
         Returns:
-            _type_: _description_
+            dict: Preprocessed dict.
         """
         for k, inputs in batch_inputs.items():
             # handle concentrate for values in list
@@ -232,7 +160,7 @@ class GANDataPreprocessor(ImgDataPreprocessor):
 
         return batch_inputs
 
-    def forward(self, data: dict, training: bool = False) -> PreprocessOutputs:
+    def forward(self, data: dict, training: bool = False) -> dict:
         """Performs normalization、padding and bgr2rgb conversion based on
         ``BaseDataPreprocessor``.
 
@@ -242,14 +170,11 @@ class GANDataPreprocessor(ImgDataPreprocessor):
                 This is ignored for :class:`GANDataPreprocessor`. Defaults to
                 False.
         Returns:
-            PreprocessOutputs: Data in the same format as the model input.
+            dict: Data in the same format as the model input.
         """
 
         data = self.cast_data(data)
         _batch_inputs = data['inputs']
-        # if isinstance(_batch_inputs, dict) and 'img' in _batch_inputs:
-        #     import ipdb
-        #     ipdb.set_trace()
         if (isinstance(_batch_inputs, torch.Tensor)
                 or is_list_of(_batch_inputs, torch.Tensor)):
             return super().forward(data, training)
