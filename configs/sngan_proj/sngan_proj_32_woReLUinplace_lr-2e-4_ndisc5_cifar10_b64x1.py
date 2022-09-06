@@ -22,7 +22,8 @@ custom_hooks = [
         interval=5000)
 ]
 
-inception_pkl = './work_dirs/inception_pkl/cifar10.pkl'
+inception_pkl = ('https://download.openmmlab.com/mmgen/evaluation/'
+                 'fid_inception_pkl/cifar10.pkl')
 
 evaluation = dict(
     type='GenerativeEvalHook',

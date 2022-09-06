@@ -12,32 +12,45 @@ from mmgen.datasets import UnconditionalImageDataset, build_dataloader
 from mmgen.models import build_model
 from mmgen.models.architectures import InceptionV3
 
-# def test_inception_download():
-#     from mmgen.core.evaluation.metrics import load_inception
-#     from mmgen.utils import MMGEN_CACHE_DIR
 
-#     args_FID_pytorch = dict(type='pytorch', normalize_input=False)
-#     args_FID_tero = dict(type='StyleGAN', inception_path='')
-#     args_IS_pytorch = dict(type='pytorch')
-#     args_IS_tero = dict(
-#         type='StyleGAN',
-#         inception_path=osp.join(MMGEN_CACHE_DIR, 'inception-2015-12-05.pt'))
+def test_inception_download():
+    from mmgen.core.evaluation.metrics import load_inception
+    from mmgen.utils import MMGEN_CACHE_DIR
 
-#     tar_style_list = ['pytorch', 'StyleGAN', 'pytorch', 'StyleGAN']
+    args_FID_pytorch = dict(type='pytorch', normalize_input=False)
+    args_FID_tero = dict(type='StyleGAN')
+    args_IS_pytorch = dict(type='pytorch')
+    args_IS_tero = dict(
+        type='StyleGAN',
+        inception_path=osp.join(MMGEN_CACHE_DIR, 'inception-2015-12-05.pt'))
 
-#     for inception_args, metric, tar_style in zip(
-#         [args_FID_pytorch, args_FID_tero, args_IS_pytorch, args_IS_tero],
-#         ['FID', 'FID', 'IS', 'IS'], tar_style_list):
-#         model, style = load_inception(inception_args, metric)
-#         assert style == tar_style
+    arg_list = [args_FID_pytorch, args_FID_tero, args_IS_pytorch, args_IS_tero]
+    metric_list = ['FID', 'FID', 'IS', 'IS']
+    tar_style_list = ['pytorch', 'StyleGAN', 'pytorch', 'StyleGAN']
 
-#     args_empty = ''
-#     with pytest.raises(TypeError) as exc_info:
-#         load_inception(args_empty, 'FID')
+    for inception_args, metric, tar_style in zip(arg_list, metric_list,
+                                                 tar_style_list):
+        model, style = load_inception(inception_args, metric)
 
-#     args_error_path = dict(type='StyleGAN', inception_path='error-path')
-#     with pytest.raises(RuntimeError) as exc_info:
-#         load_inception(args_error_path, 'FID')
+        if torch.__version__ < '1.6.0':
+            print(inception_args, metric, tar_style)
+            assert style == 'pytorch'
+        else:
+            assert style == tar_style
+
+    args_empty = ''
+    with pytest.raises(TypeError):
+        load_inception(args_empty, 'FID')
+
+    # pt lower than this version cannot load Tero's inception and direct use
+    # torch ones, only test this for pt >= 1.6
+    if torch.__version__ >= '1.6.0':
+        args_error_path = dict(type='StyleGAN', inception_path='error-path')
+        with pytest.raises(RuntimeError):
+            load_inception(args_error_path, 'FID')
+
+    with pytest.raises(AssertionError):
+        load_inception(dict(type='pytorch', normalize_input=False), 'PPL')
 
 
 def test_swd_metric():
@@ -145,21 +158,52 @@ class TestFID:
         assert fid_score > 0 and mean > 0 and cov > 0
 
         # To reduce the size of git repo, we remove the following test
-        # fid = FID(
-        #     3,
-        #     inception_args=dict(
-        #         normalize_input=False, load_fid_inception=False),
-        #     inception_pkl=osp.join(
-        #         osp.dirname(__file__), '..', 'data', 'test_dirty.pkl'))
-        # assert fid.num_real_feeded == 3
-        # for b in self.reals:
-        #     fid.feed(b, 'reals')
 
-        # for b in self.fakes:
-        #     fid.feed(b, 'fakes')
+        inception_pkl = ('https://download.openmmlab.com/mmgen/evaluation/'
+                         'fid_inception_pkl/cifar10.pkl')
+        fid = FID(
+            3,
+            inception_args=dict(
+                normalize_input=False, load_fid_inception=False),
+            inception_pkl=inception_pkl)
+        fid.prepare()
+        assert fid.num_real_feeded == 3
+        for b in self.reals:
+            fid.feed(b, 'reals')
 
-        # fid_score, mean, cov = fid.summary()
-        # assert fid_score > 0 and mean > 0 and cov > 0
+        for b in self.fakes:
+            fid.feed(b, 'fakes')
+
+        fid_score, mean, cov = fid.summary()
+        assert fid_score > 0 and mean > 0 and cov > 0
+
+        # test load
+        inception_pkl = osp.expanduser('~/.cache/openmmlab/mmgen/cifar10.pkl')
+        fid = FID(
+            3,
+            inception_args=dict(
+                normalize_input=False, load_fid_inception=False),
+            inception_pkl=inception_pkl)
+        fid.prepare()
+        assert fid.num_real_feeded == 3
+        for b in self.reals:
+            fid.feed(b, 'reals')
+
+        for b in self.fakes:
+            fid.feed(b, 'fakes')
+
+        fid_score, mean, cov = fid.summary()
+        assert fid_score > 0 and mean > 0 and cov > 0
+
+        # test raise load error
+        inception_pkl = 'wrong_path'
+        fid = FID(
+            3,
+            inception_args=dict(
+                normalize_input=False, load_fid_inception=False),
+            inception_pkl=inception_pkl)
+        with pytest.raises(FileNotFoundError):
+            fid.prepare()
 
 
 class TestPR:
