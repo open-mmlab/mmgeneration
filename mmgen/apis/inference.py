@@ -290,8 +290,7 @@ def sample_ddpm_model(model,
             noise=noise_batch_,
             num_batches=batches,
             sample_model=sample_model,
-            show_pbar=True,
-            **kwargs)
+            sample_kwargs=dict(show_pbar=True, **kwargs))
         res = model(batch_input)
         for idx in range(len(res)):
             if res[idx].sample_model == 'ema/orig':

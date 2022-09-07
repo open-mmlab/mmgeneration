@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import math
 from copy import deepcopy
 from functools import partial
 
@@ -31,6 +32,33 @@ class EmbedSequential(nn.Sequential):
             else:
                 x = layer(x)
         return x
+
+
+@MODELS.register_module('GN32')
+class GroupNorm32(nn.GroupNorm):
+
+    def __init__(self, num_channels, num_groups=32, **kwargs):
+        super().__init__(num_groups, num_channels, **kwargs)
+
+    def forward(self, x):
+        return super().forward(x.float()).type(x.dtype)
+
+
+def convert_module_to_f16(layer):
+    """Convert primitive modules to float16."""
+    if isinstance(layer, (nn.Conv1d, nn.Conv2d, nn.Conv3d)):
+        layer.weight.data = layer.weight.data.half()
+        if layer.bias is not None:
+            layer.bias.data = layer.bias.data.half()
+
+
+def convert_module_to_f32(layer):
+    """Convert primitive modules to float32, undoing
+    convert_module_to_f16()."""
+    if isinstance(layer, (nn.Conv1d, nn.Conv2d, nn.Conv3d)):
+        layer.weight.data = layer.weight.data.float()
+        if layer.bias is not None:
+            layer.bias.data = layer.bias.data.float()
 
 
 @MODELS.register_module()
@@ -119,6 +147,113 @@ class MultiHeadAttention(nn.Module):
 
     def init_weights(self):
         constant_init(self.proj, 0)
+
+
+@MODULES.register_module()
+class MultiHeadAttentionBlock(nn.Module):
+    """An attention block that allows spatial positions to attend to each
+    other.
+
+    Originally ported from here, but adapted to the N-d case.
+    https://github.com/hojonathanho/diffusion/blob/1e0dceb3b3495bbe19116a5e1b3596cd0706c543/diffusion_tf/models/unet.py#L66.
+    """
+
+    def __init__(self,
+                 in_channels,
+                 num_heads=1,
+                 num_head_channels=-1,
+                 use_new_attention_order=False,
+                 norm_cfg=dict(type='GN32', num_groups=32)):
+        super().__init__()
+        self.in_channels = in_channels
+        if num_head_channels == -1:
+            self.num_heads = num_heads
+        else:
+            assert (in_channels % num_head_channels == 0), (
+                f'q,k,v channels {in_channels} is not divisible by '
+                'num_head_channels {num_head_channels}')
+            self.num_heads = in_channels // num_head_channels
+        _, self.norm = build_norm_layer(norm_cfg, in_channels)
+        self.qkv = nn.Conv1d(in_channels, in_channels * 3, 1)
+
+        if use_new_attention_order:
+            # split qkv before split heads
+            self.attention = QKVAttention(self.num_heads)
+        else:
+            # split heads before split qkv
+            self.attention = QKVAttentionLegacy(self.num_heads)
+
+        self.proj_out = nn.Conv1d(in_channels, in_channels, 1)
+
+    def forward(self, x):
+        b, c, *spatial = x.shape
+        x = x.reshape(b, c, -1)
+        qkv = self.qkv(self.norm(x))
+        h = self.attention(qkv)
+        h = self.proj_out(h)
+        return (x + h).reshape(b, c, *spatial)
+
+
+@MODULES.register_module()
+class QKVAttentionLegacy(nn.Module):
+    """A module which performs QKV attention.
+
+    Matches legacy QKVAttention + input/output heads shaping
+    """
+
+    def __init__(self, n_heads):
+        super().__init__()
+        self.n_heads = n_heads
+
+    def forward(self, qkv):
+        """Apply QKV attention.
+
+        :param qkv: an [N x (H * 3 * C) x T] tensor of Qs, Ks, and Vs.
+        :return: an [N x (H * C) x T] tensor after attention.
+        """
+        bs, width, length = qkv.shape
+        assert width % (3 * self.n_heads) == 0
+        ch = width // (3 * self.n_heads)
+        q, k, v = qkv.reshape(bs * self.n_heads, ch * 3, length).split(
+            ch, dim=1)
+        scale = 1 / math.sqrt(math.sqrt(ch))
+        weight = torch.einsum(
+            'bct,bcs->bts', q * scale,
+            k * scale)  # More stable with f16 than dividing afterwards
+        weight = torch.softmax(weight.float(), dim=-1).type(weight.dtype)
+        a = torch.einsum('bts,bcs->bct', weight, v)
+        return a.reshape(bs, -1, length)
+
+
+@MODULES.register_module()
+class QKVAttention(nn.Module):
+    """A module which performs QKV attention and splits in a different
+    order."""
+
+    def __init__(self, n_heads):
+        super().__init__()
+        self.n_heads = n_heads
+
+    def forward(self, qkv):
+        """Apply QKV attention.
+
+        :param qkv: an [N x (3 * H * C) x T] tensor of Qs, Ks, and Vs.
+        :return: an [N x (H * C) x T] tensor after attention.
+        """
+        bs, width, length = qkv.shape
+        assert width % (3 * self.n_heads) == 0
+        ch = width // (3 * self.n_heads)
+        q, k, v = qkv.chunk(3, dim=1)
+        scale = 1 / math.sqrt(math.sqrt(ch))
+        weight = torch.einsum(
+            'bct,bcs->bts',
+            (q * scale).view(bs * self.n_heads, ch, length),
+            (k * scale).view(bs * self.n_heads, ch, length),
+        )  # More stable with f16 than dividing afterwards
+        weight = torch.softmax(weight.float(), dim=-1).type(weight.dtype)
+        a = torch.einsum('bts,bcs->bct', weight,
+                         v.reshape(bs * self.n_heads, ch, length))
+        return a.reshape(bs, -1, length)
 
 
 @MODULES.register_module()
@@ -228,7 +363,9 @@ class DenoisingResBlock(nn.Module):
                  out_channels=None,
                  norm_cfg=dict(type='GN', num_groups=32),
                  act_cfg=dict(type='SiLU', inplace=False),
-                 shortcut_kernel_size=1):
+                 shortcut_kernel_size=1,
+                 up=False,
+                 down=False):
         super().__init__()
         out_channels = in_channels if out_channels is None else out_channels
 
@@ -272,6 +409,18 @@ class DenoisingResBlock(nn.Module):
                 out_channels,
                 shortcut_kernel_size,
                 padding=shortcut_padding)
+
+        self.updown = up or down
+
+        if up:
+            self.h_upd = DenoisingUpsample(in_channels, False)
+            self.x_upd = DenoisingUpsample(in_channels, False)
+        elif down:
+            self.h_upd = DenoisingDownsample(in_channels, False)
+            self.x_upd = DenoisingDownsample(in_channels, False)
+        else:
+            self.h_upd = self.x_upd = nn.Identity()
+
         self.init_weights()
 
     def forward_shortcut(self, x):
@@ -289,11 +438,19 @@ class DenoisingResBlock(nn.Module):
         Returns:
             torch.Tensor : Output feature map tensor.
         """
+        if self.updown:
+            in_rest, in_conv = self.conv_1[:-1], self.conv_1[-1]
+            h = in_rest(x)
+            h = self.h_upd(h)
+            x = self.x_upd(x)
+            h = in_conv(h)
+        else:
+            h = self.conv_1(x)
+
         shortcut = self.forward_shortcut(x)
-        x = self.conv_1(x)
-        x = self.norm_with_embedding(x, y)
-        x = self.conv_2(x)
-        return x + shortcut
+        h = self.norm_with_embedding(h, y)
+        h = self.conv_2(h)
+        return h + shortcut
 
     def init_weights(self):
         # apply zero init to last conv layer
@@ -346,7 +503,8 @@ class NormWithEmbedding(nn.Module):
         Returns:
             torch.Tensor : Output feature map tensor.
         """
-        embedding = self.embedding_layer(y)[:, :, None, None]
+        embedding = self.embedding_layer(y).type(x.dtype)
+        embedding = embedding[:, :, None, None]
         if self.use_scale_shift:
             scale, shift = torch.chunk(embedding, 2, dim=1)
             x = self.norm(x)
@@ -373,7 +531,7 @@ class DenoisingDownsample(nn.Module):
         if with_conv:
             self.downsample = nn.Conv2d(in_channels, in_channels, 3, 2, 1)
         else:
-            self.downsample = nn.AvgPool2d(stride=2)
+            self.downsample = nn.AvgPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
         """Forward function for downsampling operation.
@@ -401,8 +559,8 @@ class DenoisingUpsample(nn.Module):
 
     def __init__(self, in_channels, with_conv=True):
         super().__init__()
+        self.with_conv = with_conv
         if with_conv:
-            self.with_conv = True
             self.conv = nn.Conv2d(in_channels, in_channels, 3, 1, 1)
 
     def forward(self, x):
