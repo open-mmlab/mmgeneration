@@ -311,15 +311,16 @@ class DenoisingUnet(nn.Module):
                                      {'in_channels': in_channels_}))
                 if (level != len(self.channel_factor_list) - 1
                         and idx == resblocks_per_downsample):
+                    out_channels_ = in_channels_
                     layers.append(
                         DenoisingResBlock(
-                            out_channels_,
+                            in_channels_,
                             embedding_channels,
                             use_scale_shift_norm,
                             dropout,
                             norm_cfg=norm_cfg,
                             out_channels=out_channels_,
-                            down=True) if resblock_updown else build_module(
+                            up=True) if resblock_updown else build_module(
                                 self.
                                 upsample_cfg, {'in_channels': in_channels_}))
                     scale //= 2
