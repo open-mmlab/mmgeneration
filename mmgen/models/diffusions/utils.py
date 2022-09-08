@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import math
 import numpy as np
 import torch
 
@@ -77,3 +78,47 @@ def var_to_tensor(var, index, target_shape=None, device=None):
     while len(var_indexed.shape) < len(target_shape):
         var_indexed = var_indexed[..., None]
     return var_indexed
+
+
+def sinusoidal_embedding(diffusion_timesteps: int,
+                         embedding_dim: int = 32,
+                         embedding_max_frequency: float = 1000.0,
+                         embedding_min_frequency: float = 1.0):
+    """Fuction used to build sinusoidal embeddings for DDIM.
+    This matches the implementation in DDPM: from Fairseq,
+    and matches the implementation in tensor2tensor,
+    but differs slightly from the description in Section 3.5
+    of "Attention Is All You Need."
+    Args:
+        diffusion_timesteps(int): The number of betas to produce.
+        embedding_dim: The number of embedding dimensions.
+        embedding_max_frequency: maximum frequency of embedding.
+        embedding_min_frequency: minimum frequency of embedding.
+
+    Returns:
+        embeddings
+    """
+
+    frequencies = torch.exp(
+        torch.linspace(
+            torch.log(embedding_min_frequency),
+            torch.log(embedding_max_frequency),
+            embedding_dim // 2
+        )
+    )
+    angular_speeds = 2.0 * math.pi * frequencies
+    embeddings = torch.cat(
+        [torch.sin(angular_speeds * diffusion_timesteps),
+         torch.cos(angular_speeds * diffusion_timesteps)
+         ],
+        dim=1
+    )
+    return embeddings
+
+def ResidualBlock(width):
+    def apply(x):
+        input_width = x.shape[3]
+        if input_width == width:
+            residual = x
+        else:
+            residual =
