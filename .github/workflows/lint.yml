@@ -25,3 +25,6 @@ jobs:
         run: |
           pip install interrogate
           interrogate -v --ignore-init-method --ignore-module --ignore-nested-functions --exclude mmgen/ops --ignore-regex "__repr__" --fail-under 50 mmgen
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3

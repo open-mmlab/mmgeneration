@@ -56,6 +56,9 @@ jobs:
           env_vars: OS,PYTHON
           name: codecov-umbrella
           fail_ci_if_error: false
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
 
   build_cu102:
     runs-on: ubuntu-18.04
@@ -121,3 +124,6 @@ jobs:
       - name: Run unittests and generate coverage report
         run: |
           pytest tests/
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
