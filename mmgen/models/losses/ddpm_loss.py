@@ -7,6 +7,7 @@ import mmcv
 import torch
 import torch.distributed as dist
 import torch.nn as nn
+from mmcv.utils import digit_version
 
 from mmgen.models.builder import MODULES
 from .pixelwise_loss import (DiscretizedGaussianLogLikelihoodLoss,
@@ -274,7 +275,7 @@ class DDPMLoss(nn.Module):
         Returns:
             dict: Collected log variables.
         """
-        if torch.__version__ < '1.6.0':
+        if digit_version(torch.__version__) <= digit_version('1.6.0'):
             # use true_divide in older torch version
             quartile = torch.true_divide(timesteps, total_timesteps) * 4
         else:
