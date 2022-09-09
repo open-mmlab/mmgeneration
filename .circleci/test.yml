@@ -73,7 +73,7 @@ jobs:
       - run:
           name: Run unittests
           command: |
-            coverage run --branch --source mmegen -m pytest tests/
+            coverage run --branch --source mmgen -m pytest tests/
             coverage xml
             coverage report -m
   build_cuda:
