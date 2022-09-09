@@ -22,8 +22,8 @@ Training generative adversarial networks (GAN) using too little data typically l
   <img src="https://user-images.githubusercontent.com/22982797/165905181-66d6b4e7-6d40-48db-8281-50ebd2705f64.png" width="800"/>
 </div>
 
-|      Model      |      Dataset      |  Iter  | FID50k |                                                                 Config                                                                  |                                                               Log                                                               |                                                                          Download                                                                          |
-| :-------------: | :---------------: | :----: | :----: | :-------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|      Model      |      Dataset      |  Iter  | FID50k |                        Config                        |                        Log                        |                        Download                         |
+| :-------------: | :---------------: | :----: | :----: | :--------------------------------------------------: | :-----------------------------------------------: | :-----------------------------------------------------: |
 | stylegan3-t-ada | metface 1024x1024 | 130000 | 15.09  | [config](https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv3/stylegan3_t_ada_fp16_gamma6.6_metfaces_1024_b4x8.py) | [log](https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_ada_fp16_gamma6.6_metfaces_1024_b4x8_20220328_142211.log.json) | [model](https://download.openmmlab.com/mmgen/stylegan3/stylegan3_t_ada_fp16_gamma6.6_metfaces_1024_b4x8_best_fid_iter_130000_20220401_115101-f2ef498e.pth) |
 
 ## Usage
