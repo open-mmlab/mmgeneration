@@ -15,9 +15,10 @@ from ..common import get_module_device
 from .biggan_snmodule import SNEmbedding, SNLinear
 from .modules import SelfAttentionBlock, SNConvModule
 
+from mmengine.model import BaseModule
 
 @MODULES.register_module()
-class BigGANGenerator(nn.Module):
+class BigGANGenerator(BaseModule):
     """BigGAN Generator. The implementation refers to
     https://github.com/ajbrock/BigGAN-PyTorch/blob/master/BigGAN.py # noqa.
 
@@ -449,7 +450,7 @@ class BigGANGenerator(nn.Module):
 
 
 @MODULES.register_module()
-class BigGANDiscriminator(nn.Module):
+class BigGANDiscriminator(BaseModule):
     """BigGAN Discriminator. The implementation refers to
     https://github.com/ajbrock/BigGAN-PyTorch/blob/master/BigGAN.py # noqa.
 

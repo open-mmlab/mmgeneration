@@ -12,10 +12,11 @@ from mmgen.models.architectures.biggan.biggan_snmodule import SNEmbedding
 from mmgen.models.architectures.biggan.modules import SNConvModule
 from mmgen.registry import MODELS, MODULES
 from mmgen.utils import check_dist_init
+from mmengine.model import BaseModule
 
 
 @MODULES.register_module()
-class SNGANGenResBlock(nn.Module):
+class SNGANGenResBlock(BaseModule):
     """ResBlock used in Generator of SNGAN / Proj-GAN.
 
     Args:
@@ -204,7 +205,7 @@ class SNGANGenResBlock(nn.Module):
 
 
 @MODULES.register_module()
-class SNGANDiscResBlock(nn.Module):
+class SNGANDiscResBlock(BaseModule):
     """resblock used in discriminator of sngan / proj-gan.
 
     args:
@@ -348,7 +349,7 @@ class SNGANDiscResBlock(nn.Module):
 
 
 @MODULES.register_module()
-class SNGANDiscHeadResBlock(nn.Module):
+class SNGANDiscHeadResBlock(BaseModule):
     """The first ResBlock used in discriminator of sngan / proj-gan. Compared
     to ``SNGANDisResBlock``, this module has a different forward order.
 
@@ -470,7 +471,7 @@ class SNGANDiscHeadResBlock(nn.Module):
 
 
 @MODULES.register_module()
-class SNConditionNorm(nn.Module):
+class SNConditionNorm(BaseModule):
     """Conditional Normalization for SNGAN / Proj-GAN. The implementation
     refers to.
 

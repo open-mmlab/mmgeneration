@@ -11,9 +11,10 @@ from mmgen.models.builder import build_module
 from mmgen.registry import MODULES
 from .utils import get_mean_latent
 
+from mmengine.model import BaseModule
 
 @MODULES.register_module()
-class StyleGANv3Generator(nn.Module):
+class StyleGANv3Generator(BaseModule):
     """StyleGAN3 Generator.
 
     In StyleGAN3, we make several changes to StyleGANv2's generator which

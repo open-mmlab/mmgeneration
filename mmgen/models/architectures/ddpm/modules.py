@@ -15,6 +15,7 @@ from mmengine.utils.version_utils import digit_version
 from mmgen.models.builder import build_module
 from mmgen.registry import MODELS, MODULES
 
+from mmengine.model import BaseModule
 
 class EmbedSequential(nn.Sequential):
     """A sequential module that passes timestep embeddings to the children that
@@ -34,7 +35,7 @@ class EmbedSequential(nn.Sequential):
 
 
 @MODELS.register_module()
-class SiLU(nn.Module):
+class SiLU(BaseModule):
     r"""Applies the Sigmoid Linear Unit (SiLU) function, element-wise.
     The SiLU function is also known as the swish function.
     Args:
@@ -66,7 +67,7 @@ class SiLU(nn.Module):
 
 
 @MODULES.register_module()
-class MultiHeadAttention(nn.Module):
+class MultiHeadAttention(BaseModule):
     """An attention block allows spatial position to attend to each other.
 
     Originally ported from here, but adapted to the N-d case.
@@ -122,7 +123,7 @@ class MultiHeadAttention(nn.Module):
 
 
 @MODULES.register_module()
-class TimeEmbedding(nn.Module):
+class TimeEmbedding(BaseModule):
     """Time embedding layer, reference to Two level embedding. First embedding
     time by an embedding function, then feed to neural networks.
 
@@ -199,7 +200,7 @@ class TimeEmbedding(nn.Module):
 
 
 @MODULES.register_module()
-class DenoisingResBlock(nn.Module):
+class DenoisingResBlock(BaseModule):
     """Resblock for the denoising network. If `in_channels` not equals to
     `out_channels`, a learnable shortcut with conv layers will be added.
 
@@ -301,7 +302,7 @@ class DenoisingResBlock(nn.Module):
 
 
 @MODULES.register_module()
-class NormWithEmbedding(nn.Module):
+class NormWithEmbedding(BaseModule):
     """Nornalization with embedding layer. If `use_scale_shift == True`,
     embedding results will be chunked and used to re-shift and re-scale
     normalization results. Otherwise, embedding results will directly add to
@@ -357,7 +358,7 @@ class NormWithEmbedding(nn.Module):
 
 
 @MODULES.register_module()
-class DenoisingDownsample(nn.Module):
+class DenoisingDownsample(BaseModule):
     """Downsampling operation used in the denoising network. Support average
     pooling and convolution for downsample operation.
 
@@ -387,7 +388,7 @@ class DenoisingDownsample(nn.Module):
 
 
 @MODULES.register_module()
-class DenoisingUpsample(nn.Module):
+class DenoisingUpsample(BaseModule):
     """Upsampling operation used in the denoising network. Allows users to
     apply an additional convolution layer after the nearest interpolation
     operation.

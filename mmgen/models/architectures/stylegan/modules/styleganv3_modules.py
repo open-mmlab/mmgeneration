@@ -64,7 +64,7 @@ def modulated_conv2d(
     return x
 
 
-class FullyConnectedLayer(nn.Module):
+class FullyConnectedLayer(BaseModule):
     """Fully connected layer used in StyleGANv3.
 
     Args:
@@ -120,7 +120,7 @@ class FullyConnectedLayer(nn.Module):
 
 
 @MODULES.register_module()
-class MappingNetwork(nn.Module):
+class MappingNetwork(BaseModule):
     """Style mapping network used in StyleGAN3. The main difference between it
     and styleganv1,v2 is that mean latent is registered as a buffer and dynamic
     updated during training.
@@ -220,7 +220,7 @@ class MappingNetwork(nn.Module):
         return x
 
 
-class SynthesisInput(nn.Module):
+class SynthesisInput(BaseModule):
     """Module which generate input for synthesis layer.
 
     Args:
@@ -320,7 +320,7 @@ class SynthesisInput(nn.Module):
         return x
 
 
-class SynthesisLayer(nn.Module):
+class SynthesisLayer(BaseModule):
     """Layer of Synthesis network for stylegan3.
 
     Args:
@@ -569,7 +569,7 @@ class SynthesisLayer(nn.Module):
 
 
 @MODULES.register_module()
-class SynthesisNetwork(nn.Module):
+class SynthesisNetwork(BaseModule):
     """Synthesis network for stylegan3.
 
     Args:

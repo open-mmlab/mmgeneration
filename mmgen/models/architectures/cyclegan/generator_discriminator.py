@@ -7,10 +7,11 @@ from mmengine.runner import load_checkpoint
 from mmgen.models.architectures.pix2pix import generation_init_weights
 from mmgen.models.builder import MODULES
 from .modules import ResidualBlockWithDropout
+from mmengine.model import BaseModule
 
 
 @MODULES.register_module()
-class ResnetGenerator(nn.Module):
+class ResnetGenerator(BaseModule):
     """Construct a Resnet-based generator that consists of residual blocks
     between a few downsampling/upsampling operations.
 

@@ -11,6 +11,7 @@ from torch.nn.init import _calculate_correct_fan
 
 from mmgen.models.common import AllGatherLayer
 from mmgen.registry import MODELS, MODULES
+from mmengine.model import BaseModule
 
 
 class EqualizedLR:
@@ -43,7 +44,7 @@ class EqualizedLR:
         """Compute weight with equalized learning rate.
 
         Args:
-            module (nn.Module): A module that is wrapped with equalized lr.
+            module (BaseModule): A module that is wrapped with equalized lr.
 
         Returns:
             torch.Tensor: Updated weight.
@@ -73,7 +74,7 @@ class EqualizedLR:
         ``nn.Module``.
 
         Args:
-            module (nn.Module): Module to be wrapped.
+            module (BaseModule): Module to be wrapped.
             name (str | optional): The name of weights. Defaults to 'weight'.
             mode (str, optional): The mode of computing ``fan`` which is the
                 same as ``kaiming_init`` in pytorch. You can choose one from
@@ -123,7 +124,7 @@ def equalized_lr(module, name='weight', gain=2**0.5, mode='fan_in', lr_mul=1.):
     is initialized with :math:`\mathcal{N}(0, 1)`.
 
     Args:
-        module (nn.Module): Module to be wrapped.
+        module (BaseModule): Module to be wrapped.
         name (str | optional): The name of weights. Defaults to 'weight'.
         mode (str, optional): The mode of computing ``fan`` which is the
             same as ``kaiming_init`` in pytorch. You can choose one from
@@ -163,7 +164,7 @@ def pixel_norm(x, eps=1e-6):
 
 @MODULES.register_module()
 @MODELS.register_module()
-class PixelNorm(nn.Module):
+class PixelNorm(BaseModule):
     """Pixel Normalization.
 
     This module is proposed in:
@@ -379,7 +380,7 @@ class EqualizedLRLinearModule(nn.Linear):
 
 
 @MODULES.register_module()
-class PGGANNoiseTo2DFeat(nn.Module):
+class PGGANNoiseTo2DFeat(BaseModule):
 
     def __init__(self,
                  noise_size,
@@ -441,7 +442,7 @@ class PGGANNoiseTo2DFeat(nn.Module):
         return x
 
 
-class PGGANDecisionHead(nn.Module):
+class PGGANDecisionHead(BaseModule):
 
     def __init__(self,
                  in_channels,
@@ -507,7 +508,7 @@ class PGGANDecisionHead(nn.Module):
 
 @MODULES.register_module()
 @MODELS.register_module()
-class MiniBatchStddevLayer(nn.Module):
+class MiniBatchStddevLayer(BaseModule):
     """Minibatch standard deviation.
 
     Args:

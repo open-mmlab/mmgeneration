@@ -8,7 +8,7 @@ from mmgen.models.architectures.stylegan.modules import (Blur, ConstantInput,
                                                          NoiseInjection)
 
 
-class AdaptiveInstanceNorm(nn.Module):
+class AdaptiveInstanceNorm(BaseModule):
     r"""Adaptive Instance Normalization Module.
 
     Ref: https://github.com/rosinality/style-based-gan-pytorch/blob/master/model.py  # noqa
@@ -46,7 +46,7 @@ class AdaptiveInstanceNorm(nn.Module):
         return out
 
 
-class StyleConv(nn.Module):
+class StyleConv(BaseModule):
 
     def __init__(self,
                  in_channels,

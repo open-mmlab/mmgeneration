@@ -6,8 +6,9 @@ from mmengine.model import constant_init, normal_init
 from mmengine.runner import load_checkpoint
 from mmengine.utils.dl_utils.parrots_wrapper import _BatchNorm
 
+from mmengine.model import BaseModule
 
-class GeneratorBlock(nn.Module):
+class GeneratorBlock(BaseModule):
     """Generator block used in SinGAN.
 
     Args:
@@ -126,7 +127,7 @@ class GeneratorBlock(nn.Module):
                             f' got {type(pretrained)} instead.')
 
 
-class DiscriminatorBlock(nn.Module):
+class DiscriminatorBlock(BaseModule):
     """Discriminator Block used in SinGAN.
 
     Args:

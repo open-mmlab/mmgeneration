@@ -11,9 +11,10 @@ from mmengine.utils.dl_utils.parrots_wrapper import _BatchNorm
 from mmgen.models.builder import MODULES
 from ..common import get_module_device
 
+from mmengine.model import BaseModule
 
 @MODULES.register_module()
-class DCGANGenerator(nn.Module):
+class DCGANGenerator(BaseModule):
     """Generator for DCGAN.
 
     Implementation Details for DCGAN architecture:
@@ -192,7 +193,7 @@ class DCGANGenerator(nn.Module):
 
 
 @MODULES.register_module()
-class DCGANDiscriminator(nn.Module):
+class DCGANDiscriminator(BaseModule):
     """Discriminator for DCGAN.
 
     Implementation Details for DCGAN architecture:

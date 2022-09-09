@@ -12,6 +12,7 @@ from torch.nn.utils import spectral_norm
 
 from mmgen.registry import MODELS, MODULES
 from .biggan_snmodule import SNConv2d, SNLinear
+from mmengine.model import BaseModule
 
 
 class SNConvModule(ConvModule):
@@ -61,7 +62,7 @@ class SNConvModule(ConvModule):
 
 
 @MODULES.register_module()
-class BigGANGenResBlock(nn.Module):
+class BigGANGenResBlock(BaseModule):
     """Residual block used in BigGAN's generator.
 
     Args:
@@ -184,7 +185,7 @@ class BigGANGenResBlock(nn.Module):
 
 
 @MODULES.register_module()
-class BigGANConditionBN(nn.Module):
+class BigGANConditionBN(BaseModule):
     """Conditional Batch Normalization used in BigGAN.
 
     Args:
@@ -288,7 +289,7 @@ class BigGANConditionBN(nn.Module):
 
 
 @MODULES.register_module()
-class SelfAttentionBlock(nn.Module):
+class SelfAttentionBlock(BaseModule):
     """Self-Attention block used in BigGAN.
 
     Args:
@@ -379,7 +380,7 @@ class SelfAttentionBlock(nn.Module):
 
 
 @MODULES.register_module()
-class BigGANDiscResBlock(nn.Module):
+class BigGANDiscResBlock(BaseModule):
     """Residual block used in BigGAN's discriminator.
 
     Args:
@@ -494,7 +495,7 @@ class BigGANDiscResBlock(nn.Module):
 
 
 @MODULES.register_module()
-class BigGANDeepGenResBlock(nn.Module):
+class BigGANDeepGenResBlock(BaseModule):
     """Residual block used in BigGAN-Deep's generator.
 
     Args:
@@ -668,7 +669,7 @@ class BigGANDeepGenResBlock(nn.Module):
 
 
 @MODULES.register_module()
-class BigGANDeepDiscResBlock(nn.Module):
+class BigGANDeepDiscResBlock(BaseModule):
     """Residual block used in BigGAN-Deep's discriminator.
 
     Args:

@@ -17,11 +17,12 @@ from mmgen.models.builder import build_module
 from mmgen.registry import MODELS, MODULES
 from mmgen.utils import check_dist_init
 from ..common import get_module_device
+from mmengine.model import BaseModule
 
 
 @MODULES.register_module('SAGANGenerator')
 @MODULES.register_module()
-class SNGANGenerator(nn.Module):
+class SNGANGenerator(BaseModule):
     r"""Generator for SNGAN / Proj-GAN. The implementation refers to
     https://github.com/pfnet-research/sngan_projection/tree/master/gen_models
 
@@ -427,7 +428,7 @@ class SNGANGenerator(nn.Module):
 
 @MODULES.register_module('SAGANDiscriminator')
 @MODULES.register_module()
-class ProjDiscriminator(nn.Module):
+class ProjDiscriminator(BaseModule):
     r"""Discriminator for SNGAN / Proj-GAN. The implementation is refer to
     https://github.com/pfnet-research/sngan_projection/tree/master/dis_models
 

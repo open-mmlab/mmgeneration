@@ -7,9 +7,10 @@ from mmcv.cnn import ConvModule
 from mmgen.registry import MODELS, MODULES
 from ..common import get_module_device
 
+from mmengine.model import BaseModule
 
 @MODULES.register_module()
-class LSGANGenerator(nn.Module):
+class LSGANGenerator(BaseModule):
     """Generator for LSGAN.
 
     Implementation Details for LSGAN architecture:
@@ -185,7 +186,7 @@ class LSGANGenerator(nn.Module):
 
 
 @MODULES.register_module()
-class LSGANDiscriminator(nn.Module):
+class LSGANDiscriminator(BaseModule):
     """Discriminator for LSGAN.
 
     Implementation Details for LSGAN architecture:

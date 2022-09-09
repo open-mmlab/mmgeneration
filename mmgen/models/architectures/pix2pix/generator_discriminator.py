@@ -7,9 +7,10 @@ from mmengine.runner import load_checkpoint
 from mmgen.models.builder import MODULES
 from .modules import UnetSkipConnectionBlock, generation_init_weights
 
+from mmengine.model import BaseModule
 
 @MODULES.register_module()
-class UnetGenerator(nn.Module):
+class UnetGenerator(BaseModule):
     """Construct the Unet-based generator from the innermost layer to the
     outermost layer, which is a recursive process.
 
@@ -127,7 +128,7 @@ class UnetGenerator(nn.Module):
 
 
 @MODULES.register_module()
-class PatchDiscriminator(nn.Module):
+class PatchDiscriminator(BaseModule):
     """A PatchGAN discriminator.
 
     Args:

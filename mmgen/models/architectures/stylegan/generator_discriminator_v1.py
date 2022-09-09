@@ -17,10 +17,11 @@ from .. import MiniBatchStddevLayer
 from .modules.styleganv1_modules import StyleConv
 from .modules.styleganv2_modules import EqualLinearActModule
 from .utils import get_mean_latent, style_mixing
+from mmengine.model import BaseModule
 
 
 @MODULES.register_module()
-class StyleGANv1Generator(nn.Module):
+class StyleGANv1Generator(BaseModule):
     """StyleGAN1 Generator.
 
     In StyleGAN1, we use a progressive growing architecture composing of a
@@ -373,7 +374,7 @@ class StyleGANv1Generator(nn.Module):
 
 
 @MODULES.register_module()
-class StyleGAN1Discriminator(nn.Module):
+class StyleGAN1Discriminator(BaseModule):
     """StyleGAN1 Discriminator.
 
     The architecture of this discriminator is proposed in StyleGAN1. More

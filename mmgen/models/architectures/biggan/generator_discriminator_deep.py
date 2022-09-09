@@ -14,10 +14,10 @@ from mmgen.models.builder import MODELS, MODULES, build_module
 from ..common import get_module_device
 from .biggan_snmodule import SNEmbedding, SNLinear
 from .modules import SelfAttentionBlock, SNConvModule
-
+from mmengine.model import BaseModule
 
 @MODULES.register_module()
-class BigGANDeepGenerator(nn.Module):
+class BigGANDeepGenerator(BaseModule):
     """BigGAN-Deep Generator. The implementation refers to
     https://github.com/ajbrock/BigGAN-PyTorch/blob/master/BigGANdeep.py # noqa.
 
@@ -464,7 +464,7 @@ class BigGANDeepGenerator(nn.Module):
 
 
 @MODULES.register_module()
-class BigGANDeepDiscriminator(nn.Module):
+class BigGANDeepDiscriminator(BaseModule):
     """BigGAN-Deep Discriminator. The implementation refers to
     https://github.com/ajbrock/BigGAN-PyTorch/blob/master/BigGANdeep.py # noqa.
 

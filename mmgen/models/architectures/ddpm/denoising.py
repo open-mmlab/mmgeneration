@@ -11,9 +11,10 @@ from mmengine.runner import load_checkpoint
 from mmgen.models.builder import MODULES, build_module
 from .modules import EmbedSequential, TimeEmbedding
 
+from mmengine.model import BaseModule
 
 @MODULES.register_module()
-class DenoisingUnet(nn.Module):
+class DenoisingUnet(BaseModule):
     """Denoising Unet. This network receives a diffused image ``x_t`` and
     current timestep ``t``, and returns a ``output_dict`` corresponding to the
     passed ``output_cfg``.

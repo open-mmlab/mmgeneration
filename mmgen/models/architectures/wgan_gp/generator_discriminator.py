@@ -9,10 +9,11 @@ from mmcv.cnn import ConvModule
 from mmgen.registry import MODELS, MODULES
 from ..common import get_module_device
 from .modules import ConvLNModule, WGANDecisionHead, WGANNoiseTo2DFeat
+from mmengine.model import BaseModule
 
 
 @MODULES.register_module()
-class WGANGPGenerator(nn.Module):
+class WGANGPGenerator(BaseModule):
     r"""Generator for WGANGP.
 
     Implementation Details for WGANGP generator the same as training
@@ -143,7 +144,7 @@ class WGANGPGenerator(nn.Module):
 
 
 @MODULES.register_module()
-class WGANGPDiscriminator(nn.Module):
+class WGANGPDiscriminator(BaseModule):
     r"""Discriminator for WGANGP.
 
     Implementation Details for WGANGP discriminator the same as training

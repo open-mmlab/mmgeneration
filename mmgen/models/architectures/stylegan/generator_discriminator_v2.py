@@ -19,10 +19,11 @@ from .modules.styleganv2_modules import (ConstantInput, ConvDownLayer,
                                          ModMBStddevLayer, ModulatedStyleConv,
                                          ModulatedToRGB, ResBlock)
 from .utils import get_mean_latent, style_mixing
+from mmengine.model import BaseModule
 
 
 @MODULES.register_module()
-class StyleGANv2Generator(nn.Module):
+class StyleGANv2Generator(BaseModule):
     r"""StyleGAN2 Generator.
 
     In StyleGAN2, we use a static architecture composing of a style mapping
@@ -453,7 +454,7 @@ class StyleGANv2Generator(nn.Module):
 
 
 @MODULES.register_module()
-class StyleGAN2Discriminator(nn.Module):
+class StyleGAN2Discriminator(BaseModule):
     """StyleGAN2 Discriminator.
 
     The architecture of this discriminator is proposed in StyleGAN2. More
@@ -654,7 +655,7 @@ class ADAStyleGAN2Discriminator(StyleGAN2Discriminator):
 
 
 @MODULES.register_module()
-class ADAAug(nn.Module):
+class ADAAug(BaseModule):
     """Data Augmentation Module for Adaptive Discriminator augmentation.
 
     Args:

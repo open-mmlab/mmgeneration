@@ -12,10 +12,11 @@ from mmengine.runner import load_state_dict
 
 from mmgen.models.builder import MODULES
 from .modules import DiscriminatorBlock, GeneratorBlock
+from mmengine.model import BaseModule
 
 
 @MODULES.register_module()
-class SinGANMultiScaleGenerator(nn.Module):
+class SinGANMultiScaleGenerator(BaseModule):
     """Multi-Scale Generator used in SinGAN.
 
     More details can be found in: Singan: Learning a Generative Model from a
@@ -188,7 +189,7 @@ class SinGANMultiScaleGenerator(nn.Module):
 
 
 @MODULES.register_module()
-class SinGANMultiScaleDiscriminator(nn.Module):
+class SinGANMultiScaleDiscriminator(BaseModule):
     """Multi-Scale Discriminator used in SinGAN.
 
     More details can be found in: Singan: Learning a Generative Model from a

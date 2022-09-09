@@ -8,7 +8,7 @@ from mmgen.registry import MODULES
 
 @MODULES.register_module('SPE')
 @MODULES.register_module('SPE2d')
-class SinusoidalPositionalEmbedding(nn.Module):
+class SinusoidalPositionalEmbedding(BaseModule):
     """Sinusoidal Positional Embedding 1D or 2D (SPE/SPE2d).
 
     This module is a modified from:
@@ -178,7 +178,7 @@ class SinusoidalPositionalEmbedding(nn.Module):
 @MODULES.register_module('CSG2d')
 @MODULES.register_module('CSG')
 @MODULES.register_module()
-class CatersianGrid(nn.Module):
+class CatersianGrid(BaseModule):
     """Catersian Grid for 2d tensor.
 
     The Catersian Grid is a common-used positional encoding in deep learning.

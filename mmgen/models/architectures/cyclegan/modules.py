@@ -2,8 +2,9 @@
 import torch.nn as nn
 from mmcv.cnn import ConvModule
 
+from mmengine.model import BaseModule
 
-class ResidualBlockWithDropout(nn.Module):
+class ResidualBlockWithDropout(BaseModule):
     """Define a Residual Block with dropout layers.
 
     Ref:

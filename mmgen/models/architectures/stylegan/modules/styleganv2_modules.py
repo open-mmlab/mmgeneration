@@ -37,7 +37,7 @@ class _FusedBiasLeakyReLU(FusedBiasLeakyReLU):
                                     self.negative_slope, self.scale)
 
 
-class EqualLinearActModule(nn.Module):
+class EqualLinearActModule(BaseModule):
     """Equalized LR Linear Module with Activation Layer.
 
     This module is modified from ``EqualizedLRLinearModule`` defined in PGGAN.
@@ -126,7 +126,7 @@ def _make_kernel(k):
     return k
 
 
-class UpsampleUpFIRDn(nn.Module):
+class UpsampleUpFIRDn(BaseModule):
     """UpFIRDn for Upsampling.
 
     This module is used in the ``to_rgb`` layers in StyleGAN2 for upsampling
@@ -166,7 +166,7 @@ class UpsampleUpFIRDn(nn.Module):
         return out
 
 
-class DownsampleUpFIRDn(nn.Module):
+class DownsampleUpFIRDn(BaseModule):
     """UpFIRDn for Downsampling.
 
     This module is mentioned in StyleGAN2 for dowampling the feature maps.
@@ -209,7 +209,7 @@ class DownsampleUpFIRDn(nn.Module):
         return out
 
 
-class Blur(nn.Module):
+class Blur(BaseModule):
     """Blur module.
 
     This module is adopted rightly after upsampling operation in StyleGAN2.
@@ -244,7 +244,7 @@ class Blur(nn.Module):
         return upfirdn2d(x, self.kernel.to(x.dtype), pad=self.pad)
 
 
-class ModulatedConv2d(nn.Module):
+class ModulatedConv2d(BaseModule):
     r"""Modulated Conv2d in StyleGANv2.
 
     This module implements the modulated convolution layers proposed in
@@ -402,7 +402,7 @@ class ModulatedConv2d(nn.Module):
         return x
 
 
-class NoiseInjection(nn.Module):
+class NoiseInjection(BaseModule):
     """Noise Injection Module.
 
     In StyleGAN2, they adopt this module to inject spatial random noise map in
@@ -440,7 +440,7 @@ class NoiseInjection(nn.Module):
         return image + self.weight.to(image.dtype) * noise
 
 
-class ConstantInput(nn.Module):
+class ConstantInput(BaseModule):
     """Constant Input.
 
     In StyleGAN2, they substitute the original head noise input with such a
@@ -480,7 +480,7 @@ class ConstantInput(nn.Module):
         return out
 
 
-class ModulatedPEConv2d(nn.Module):
+class ModulatedPEConv2d(BaseModule):
     r"""Modulated Conv2d in StyleGANv2 with Positional Encoding (PE).
 
     This module is modified from the ``ModulatedConv2d`` in StyleGAN2 to
@@ -665,7 +665,7 @@ class ModulatedPEConv2d(nn.Module):
         return x
 
 
-class ModulatedStyleConv(nn.Module):
+class ModulatedStyleConv(BaseModule):
     """Modulated Style Convolution.
 
     In this module, we integrate the modulated conv2d, noise injector and
@@ -768,7 +768,7 @@ class ModulatedStyleConv(nn.Module):
         return out
 
 
-class ModulatedPEStyleConv(nn.Module):
+class ModulatedPEStyleConv(BaseModule):
     """Modulated Style Convolution with Positional Encoding.
 
     This module is modified from the ``ModulatedStyleConv`` in StyleGAN2 to
@@ -853,7 +853,7 @@ class ModulatedPEStyleConv(nn.Module):
         return out
 
 
-class ModulatedToRGB(nn.Module):
+class ModulatedToRGB(BaseModule):
     """To RGB layer.
 
     This module is designed to output image tensor in StyleGAN2.
@@ -1022,7 +1022,7 @@ class ConvDownLayer(nn.Sequential):
         return x
 
 
-class ResBlock(nn.Module):
+class ResBlock(BaseModule):
     """Residual block used in the discriminator of StyleGAN2.
 
     Args:
@@ -1091,7 +1091,7 @@ class ResBlock(nn.Module):
         return out
 
 
-class ModMBStddevLayer(nn.Module):
+class ModMBStddevLayer(BaseModule):
     """Modified MiniBatch Stddev Layer.
 
     This layer is modified from ``MiniBatchStddevLayer`` used in PGGAN. In

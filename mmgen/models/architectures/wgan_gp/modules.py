@@ -7,10 +7,11 @@ from mmcv.cnn import ConvModule, build_norm_layer
 from mmengine.model import constant_init
 
 from mmgen.registry import MODELS, MODULES
+from mmengine.model import BaseModule
 
 
 @MODULES.register_module()
-class WGANNoiseTo2DFeat(nn.Module):
+class WGANNoiseTo2DFeat(BaseModule):
     """Module used in WGAN-GP to transform 1D noise tensor in order [N, C] to
     2D shape feature tensor in order [N, C, H, W].
 
@@ -88,7 +89,7 @@ class WGANNoiseTo2DFeat(nn.Module):
             constant_init(self.norm, 1, bias=0)
 
 
-class WGANDecisionHead(nn.Module):
+class WGANDecisionHead(BaseModule):
     """Module used in WGAN-GP to get the final prediction result with 4x4
     resolution input tensor in the bottom of the discriminator.
 

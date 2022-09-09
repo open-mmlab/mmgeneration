@@ -4,6 +4,7 @@ import torch.nn as nn
 from mmcv.cnn import ConvModule
 from mmengine.model import kaiming_init, normal_init, xavier_init
 from torch.nn import init
+from mmengine.model import BaseModule
 
 
 def generation_init_weights(module, init_type='normal', init_gain=0.02):
@@ -13,7 +14,7 @@ def generation_init_weights(module, init_type='normal', init_gain=0.02):
     better for some applications.
 
     Args:
-        module (nn.Module): Module to be initialized.
+        module (BaseModule): Module to be initialized.
         init_type (str): The name of an initialization method:
             normal | xavier | kaiming | orthogonal.
         init_gain (float): Scaling factor for normal, xavier and
@@ -24,7 +25,7 @@ def generation_init_weights(module, init_type='normal', init_gain=0.02):
         """Initialization function.
 
         Args:
-            m (nn.Module): Module to be initialized.
+            m (BaseModule): Module to be initialized.
         """
         classname = m.__class__.__name__
         if hasattr(m, 'weight') and (classname.find('Conv') != -1
@@ -54,7 +55,7 @@ def generation_init_weights(module, init_type='normal', init_gain=0.02):
     module.apply(init_func)
 
 
-class UnetSkipConnectionBlock(nn.Module):
+class UnetSkipConnectionBlock(BaseModule):
     """Construct a Unet submodule with skip connections, with the following.
 
     structure: downsampling - `submodule` - upsampling.

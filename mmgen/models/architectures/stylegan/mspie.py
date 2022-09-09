@@ -18,10 +18,11 @@ from .modules.styleganv2_modules import (ConstantInput, ConvDownLayer,
                                          ModulatedPEStyleConv, ModulatedToRGB,
                                          ResBlock)
 from .utils import get_mean_latent, style_mixing
+from mmengine.model import BaseModule
 
 
 @MODULES.register_module()
-class MSStyleGANv2Generator(nn.Module):
+class MSStyleGANv2Generator(BaseModule):
     """StyleGAN2 Generator.
 
     In StyleGAN2, we use a static architecture composing of a style mapping
@@ -465,7 +466,7 @@ class MSStyleGANv2Generator(nn.Module):
 
 
 @MODULES.register_module()
-class MSStyleGAN2Discriminator(nn.Module):
+class MSStyleGAN2Discriminator(BaseModule):
     """StyleGAN2 Discriminator.
 
     The architecture of this discriminator is proposed in StyleGAN2. More

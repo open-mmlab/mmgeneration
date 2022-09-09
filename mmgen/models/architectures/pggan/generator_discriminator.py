@@ -13,9 +13,10 @@ from .modules import (EqualizedLRConvDownModule, EqualizedLRConvModule,
                       EqualizedLRConvUpModule, MiniBatchStddevLayer,
                       PGGANDecisionHead, PGGANNoiseTo2DFeat)
 
+from mmengine.model import BaseModule
 
 @MODULES.register_module()
-class PGGANGenerator(nn.Module):
+class PGGANGenerator(BaseModule):
     """Generator for PGGAN.
 
     Args:
@@ -250,7 +251,7 @@ class PGGANGenerator(nn.Module):
 
 
 @MODULES.register_module()
-class PGGANDiscriminator(nn.Module):
+class PGGANDiscriminator(BaseModule):
     """Discriminator for PGGAN.
 
     Args:
