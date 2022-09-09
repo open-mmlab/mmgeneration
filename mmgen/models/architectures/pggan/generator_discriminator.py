@@ -118,6 +118,14 @@ class PGGANGenerator(nn.Module):
         self.upsample_layer = MODELS.build(self.upsample_cfg)
 
     def _get_torgb_layer(self, in_channels):
+        """Get layer which convert feature to rgb image.
+
+        Args:
+            in_channels (int): Input Channels.
+
+        Returns:
+            nn.Module: Feature to rgb layer.
+        """
         return EqualizedLRConvModule(
             in_channels,
             3,
@@ -129,11 +137,28 @@ class PGGANGenerator(nn.Module):
             act_cfg=None)
 
     def _num_out_channels(self, log_scale):
+        """Number of output channels.
+
+        Args:
+            log_scale (int): Logarithm of scale with base 2.
+
+        Returns:
+            int: Number of output channels.
+        """
         return min(
             int(self.base_channels / (2.0**(log_scale * self.channel_decay))),
             self.max_channels)
 
     def _get_upconv_block(self, in_channels, log_scale):
+        """Get upsample convolution block.
+
+        Args:
+            in_channels (int): Input channels.
+            log_scale (int): Logarithm of scale with base 2.
+
+        Returns:
+            int: Number of output channels.
+        """
         modules = []
         # start 4x4 scale
         if log_scale == 2:
@@ -382,16 +407,42 @@ class PGGANDiscriminator(nn.Module):
                                           1 + self.label_size)
 
     def _num_out_channels(self, log_scale):
+        """Number of output channels.
+
+        Args:
+            log_scale (int): Logarithm of scale with base 2.
+
+        Returns:
+            int: Number of output channels.
+        """
         return min(
             int(self.base_channels / (2.0**(log_scale * self.channel_decay))),
             self.max_channels)
 
     def _get_fromrgb_layer(self, in_channels, log2_scale):
+        """Get layer which convert rgb image to feature.
+
+        Args:
+            in_channels (int): Input channels.
+            log2_scale (int): Logarithm of scale with base 2.
+
+        Returns:
+            nn.Module: RGB to feature layer.
+        """
         return EqualizedLRConvModule(in_channels,
                                      self._num_out_channels(log2_scale - 1),
                                      **self.fromrgb_layer_cfg)
 
     def _get_convdown_block(self, in_channels, log2_scale):
+        """Get downsample convolution block.
+
+        Args:
+            in_channels (int): Input channels.
+            log2_scale (int): Logarithm of scale with base 2.
+
+        Returns:
+            int: Number of output channels.
+        """
         modules = []
         if log2_scale == 2:
             modules.append(

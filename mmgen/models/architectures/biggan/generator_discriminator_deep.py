@@ -246,6 +246,17 @@ class BigGANDeepGenerator(nn.Module):
         self.init_weights(pretrained=pretrained, init_type=init_type)
 
     def _get_default_arch_cfg(self, output_scale, base_channels):
+        """Get default architecture config.
+
+        Args:
+            output_scale (int): Output scale for the generated image.
+            base_channels (int, optional): The basic channel number of the
+                generator. The other layers contains channels based on this
+                number. Defaults to 96.
+
+        Returns:
+            Dict: Architecture config dict.
+        """
         assert output_scale in [32, 64, 128, 256, 512]
         _default_arch_cfgs = {
             '32': {
@@ -625,6 +636,19 @@ class BigGANDeepDiscriminator(nn.Module):
         self.init_weights(pretrained=pretrained, init_type=init_type)
 
     def _get_default_arch_cfg(self, input_scale, base_channels):
+        """Get default architecture config.
+
+        Args:
+            input_scale (int): The scale of the input image.
+            in_channels (int, optional): The channel number of the input image.
+                Defaults to 3.
+            base_channels (int, optional): The basic channel number of the
+                discriminator. The other layers contains channels based on this
+                number. Defaults to 96.
+
+        Returns:
+            Dict: Architecture config dict.
+        """
         assert input_scale in [32, 64, 128, 256, 512]
         _default_arch_cfgs = {
             '32': {

@@ -9,7 +9,6 @@ from mmcv.transforms import Resize as MMCV_Resize
 from mmgen.registry import TRANSFORMS
 
 
-# TODO: remove the item since mmcv.transforms already contain
 @TRANSFORMS.register_module()
 class Flip(BaseTransform):
     """Flip the input data with a probability.
@@ -72,6 +71,15 @@ class Flip(BaseTransform):
 class Resize(MMCV_Resize):
 
     def transform(self, results: dict) -> dict:
+        """Call function.
+
+        Args:
+            results (dict): A dict containing the necessary information and
+                data for augmentation.
+
+        Returns:
+            dict: A dict containing the processed data and information.
+        """
         results = super().transform(results)
         if len(results['img'].shape) == 2:
             results['img'] = np.expand_dims(results['img'], axis=2)

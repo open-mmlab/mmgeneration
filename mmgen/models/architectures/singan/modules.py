@@ -112,6 +112,12 @@ class GeneratorBlock(nn.Module):
         return x + prev
 
     def init_weights(self, pretrained=None):
+        """Initialize weights for the model.
+
+        Args:
+            pretrained (str, optional): Path for pretrained weights. If given
+                None, pretrained weights will not be loaded. Default: None.
+        """
         if isinstance(pretrained, str):
             logger = MMLogger.get_current_instance()
             load_checkpoint(self, pretrained, strict=False, logger=logger)
@@ -216,6 +222,12 @@ class DiscriminatorBlock(nn.Module):
 
     # TODO: study the effects of init functions
     def init_weights(self, pretrained=None):
+        """Initialize weights for the model.
+
+        Args:
+            pretrained (str, optional): Path for pretrained weights. If given
+                None, pretrained weights will not be loaded. Default: None.
+        """
         if isinstance(pretrained, str):
             logger = MMLogger.get_current_instance()
             load_checkpoint(self, pretrained, strict=False, logger=logger)

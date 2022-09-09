@@ -9,6 +9,7 @@ import os
 import sys
 from collections import OrderedDict
 
+import lpips
 import mmengine
 import numpy as np
 import torch
@@ -28,7 +29,6 @@ sys.path.append(os.path.abspath(os.path.join(__file__, '../..')))  # isort:skip 
 
 from mmgen.apis import set_random_seed # isort:skip  # noqa
 from mmgen.models import build_model, ExponentialMovingAverage # isort:skip  # noqa
-from mmgen.models.architectures.lpips import PerceptualLoss # isort:skip  # noqa
 
 # yapf: enable
 
@@ -207,7 +207,7 @@ def main():
     latent_in.requires_grad = True
 
     # define lpips loss
-    percept = PerceptualLoss(use_gpu=device.startswith('cuda'))
+    percept = lpips.LPIPS(net='vgg').to(device)
 
     # initialize layer noises
     noises_single = generator.make_injected_noise()

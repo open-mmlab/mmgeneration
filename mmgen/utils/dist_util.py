@@ -7,6 +7,7 @@ from mmengine.dist import get_dist_info
 
 
 def check_dist_init():
+    """Check whether distributed environment is available and initialized."""
     return dist.is_available() and dist.is_initialized()
 
 

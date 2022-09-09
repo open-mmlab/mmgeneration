@@ -47,6 +47,23 @@ def style_mixing(generator,
                  truncation=0.7,
                  style_channels=512,
                  **kwargs):
+    """Generating style mixing images.
+
+    Args:
+        generator (nn.Module): Generator of a Style-Based GAN.
+        n_source (int): Number of source images.
+        n_target (int): Number of target images.
+        inject_index (int, optional): Index from which replace with source
+            latent. Defaults to 1.
+        truncation_latent (torch.Tensor, optional): Mean truncation latent.
+            Defaults to None.
+        truncation (float, optional): Truncation factor. Give value less
+            than 1., the truncation trick will be adopted. Defaults to 1.
+        style_channels (int): The number of channels for style code.
+
+    Returns:
+        torch.Tensor: Table of style-mixing images.
+    """
     device = get_module_device(generator)
     source_code = torch.randn(n_source, style_channels).to(device)
     target_code = torch.randn(n_target, style_channels).to(device)
