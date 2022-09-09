@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from mmengine.model import BaseModule
 
 from mmgen.registry import MODELS, MODULES
 from ..common import get_module_device
@@ -13,7 +14,6 @@ from .modules import (EqualizedLRConvDownModule, EqualizedLRConvModule,
                       EqualizedLRConvUpModule, MiniBatchStddevLayer,
                       PGGANDecisionHead, PGGANNoiseTo2DFeat)
 
-from mmengine.model import BaseModule
 
 @MODULES.register_module()
 class PGGANGenerator(BaseModule):

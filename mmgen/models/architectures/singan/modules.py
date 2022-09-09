@@ -2,11 +2,10 @@
 import torch.nn as nn
 from mmcv.cnn import ConvModule
 from mmengine.logging import MMLogger
-from mmengine.model import constant_init, normal_init
+from mmengine.model import BaseModule, constant_init, normal_init
 from mmengine.runner import load_checkpoint
 from mmengine.utils.dl_utils.parrots_wrapper import _BatchNorm
 
-from mmengine.model import BaseModule
 
 class GeneratorBlock(BaseModule):
     """Generator block used in SinGAN.

@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
 import torch
-import torch.nn as nn
+from mmengine.model import BaseModule
 
 from mmgen.registry import MODULES
 

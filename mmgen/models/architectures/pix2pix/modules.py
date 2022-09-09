@@ -2,9 +2,8 @@
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
-from mmengine.model import kaiming_init, normal_init, xavier_init
+from mmengine.model import BaseModule, kaiming_init, normal_init, xavier_init
 from torch.nn import init
-from mmengine.model import BaseModule
 
 
 def generation_init_weights(module, init_type='normal', init_gain=0.02):

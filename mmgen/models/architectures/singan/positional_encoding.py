@@ -18,7 +18,6 @@ from mmgen.registry import MODULES
 from .generator_discriminator import SinGANMultiScaleGenerator
 from .modules import GeneratorBlock
 
-from mmengine.model import BaseModule
 
 @MODULES.register_module()
 class SinGANMSGeneratorPE(SinGANMultiScaleGenerator):

@@ -11,6 +11,7 @@ from mmcv.ops.fused_bias_leakyrelu import (FusedBiasLeakyReLU,
                                            fused_bias_leakyrelu)
 from mmcv.ops.upfirdn2d import upfirdn2d
 from mmengine.dist import get_dist_info
+from mmengine.model import BaseModule
 from mmengine.runner.amp import autocast
 
 from mmgen.models.architectures.pggan import (EqualizedLRConvModule,

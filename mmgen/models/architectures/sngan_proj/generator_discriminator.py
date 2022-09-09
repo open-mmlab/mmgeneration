@@ -7,7 +7,7 @@ import torch.nn as nn
 from mmcv.cnn import ConvModule
 from mmengine import is_list_of
 from mmengine.logging import MMLogger
-from mmengine.model import constant_init, xavier_init
+from mmengine.model import BaseModule, constant_init, xavier_init
 from mmengine.runner import load_checkpoint
 from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 from torch.nn.init import xavier_uniform_
@@ -17,7 +17,6 @@ from mmgen.models.builder import build_module
 from mmgen.registry import MODELS, MODULES
 from mmgen.utils import check_dist_init
 from ..common import get_module_device
-from mmengine.model import BaseModule
 
 
 @MODULES.register_module('SAGANGenerator')

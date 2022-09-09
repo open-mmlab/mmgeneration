@@ -5,11 +5,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
+from mmengine.model import BaseModule
 
 from mmgen.registry import MODELS, MODULES
 from ..common import get_module_device
 from .modules import ConvLNModule, WGANDecisionHead, WGANNoiseTo2DFeat
-from mmengine.model import BaseModule
 
 
 @MODULES.register_module()

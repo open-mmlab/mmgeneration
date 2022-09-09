@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import mmengine
 import torch
-import torch.nn as nn
+from mmengine.model import BaseModule
 from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 
 from mmgen.models.architectures.common import get_module_device
@@ -11,7 +11,6 @@ from mmgen.models.builder import build_module
 from mmgen.registry import MODULES
 from .utils import get_mean_latent
 
-from mmengine.model import BaseModule
 
 @MODULES.register_module()
 class StyleGANv3Generator(BaseModule):

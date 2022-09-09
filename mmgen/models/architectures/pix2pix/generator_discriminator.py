@@ -2,12 +2,12 @@
 import torch.nn as nn
 from mmcv.cnn import ConvModule, build_conv_layer
 from mmengine.logging import MMLogger
+from mmengine.model import BaseModule
 from mmengine.runner import load_checkpoint
 
 from mmgen.models.builder import MODULES
 from .modules import UnetSkipConnectionBlock, generation_init_weights
 
-from mmengine.model import BaseModule
 
 @MODULES.register_module()
 class UnetGenerator(BaseModule):

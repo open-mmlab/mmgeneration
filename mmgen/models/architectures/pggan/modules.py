@@ -6,12 +6,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn.bricks import ConvModule, build_norm_layer
-from mmengine.model import normal_init
+from mmengine.model import BaseModule, normal_init
 from torch.nn.init import _calculate_correct_fan
 
 from mmgen.models.common import AllGatherLayer
 from mmgen.registry import MODELS, MODULES
-from mmengine.model import BaseModule
 
 
 class EqualizedLR:

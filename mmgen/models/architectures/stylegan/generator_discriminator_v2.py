@@ -5,6 +5,7 @@ import mmengine
 import numpy as np
 import torch
 import torch.nn as nn
+from mmengine.model import BaseModule
 from mmengine.runner.amp import autocast
 from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 
@@ -19,7 +20,6 @@ from .modules.styleganv2_modules import (ConstantInput, ConvDownLayer,
                                          ModMBStddevLayer, ModulatedStyleConv,
                                          ModulatedToRGB, ResBlock)
 from .utils import get_mean_latent, style_mixing
-from mmengine.model import BaseModule
 
 
 @MODULES.register_module()

@@ -7,12 +7,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmengine import print_log
 from mmengine.logging import MMLogger
+from mmengine.model import BaseModule
 # from mmcv.runner import load_state_dict
 from mmengine.runner import load_state_dict
 
 from mmgen.models.builder import MODULES
 from .modules import DiscriminatorBlock, GeneratorBlock
-from mmengine.model import BaseModule
 
 
 @MODULES.register_module()

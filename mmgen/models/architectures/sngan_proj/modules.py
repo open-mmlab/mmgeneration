@@ -4,7 +4,7 @@ from copy import deepcopy
 import numpy as np
 import torch.nn as nn
 from mmcv.cnn import build_norm_layer
-from mmengine.model import constant_init, xavier_init
+from mmengine.model import BaseModule, constant_init, xavier_init
 from torch.nn.init import xavier_uniform_
 from torch.nn.utils import spectral_norm
 
@@ -12,7 +12,6 @@ from mmgen.models.architectures.biggan.biggan_snmodule import SNEmbedding
 from mmgen.models.architectures.biggan.modules import SNConvModule
 from mmgen.registry import MODELS, MODULES
 from mmgen.utils import check_dist_init
-from mmengine.model import BaseModule
 
 
 @MODULES.register_module()

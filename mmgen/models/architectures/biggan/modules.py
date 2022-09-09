@@ -6,13 +6,13 @@ import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule
+from mmengine.model import BaseModule
 from torch.nn import Parameter
 from torch.nn.modules.batchnorm import SyncBatchNorm
 from torch.nn.utils import spectral_norm
 
 from mmgen.registry import MODELS, MODULES
 from .biggan_snmodule import SNConv2d, SNLinear
-from mmengine.model import BaseModule
 
 
 class SNConvModule(ConvModule):

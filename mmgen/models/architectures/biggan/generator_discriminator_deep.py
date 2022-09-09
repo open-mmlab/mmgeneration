@@ -5,7 +5,7 @@ import mmengine
 import torch
 import torch.nn as nn
 from mmengine.logging import MMLogger
-from mmengine.model import normal_init, xavier_init
+from mmengine.model import BaseModule, normal_init, xavier_init
 from mmengine.runner import load_checkpoint
 from mmengine.runner.checkpoint import _load_checkpoint_with_prefix
 from torch.nn.utils import spectral_norm
@@ -14,7 +14,7 @@ from mmgen.models.builder import MODELS, MODULES, build_module
 from ..common import get_module_device
 from .biggan_snmodule import SNEmbedding, SNLinear
 from .modules import SelfAttentionBlock, SNConvModule
-from mmengine.model import BaseModule
+
 
 @MODULES.register_module()
 class BigGANDeepGenerator(BaseModule):

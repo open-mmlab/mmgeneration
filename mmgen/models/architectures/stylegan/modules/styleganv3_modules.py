@@ -2,7 +2,7 @@
 import numpy as np
 import scipy
 import torch
-import torch.nn as nn
+from mmengine.model import BaseModule
 from mmengine.runner.amp import autocast
 
 from mmgen.ops import bias_act, conv2d_gradfix, filtered_lrelu

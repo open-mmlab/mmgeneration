@@ -4,10 +4,9 @@ from copy import deepcopy
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, build_norm_layer
-from mmengine.model import constant_init
+from mmengine.model import BaseModule, constant_init
 
 from mmgen.registry import MODELS, MODULES
-from mmengine.model import BaseModule
 
 
 @MODULES.register_module()

@@ -8,14 +8,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn.bricks import build_norm_layer
-from mmengine.model import constant_init
+from mmengine.model import BaseModule, constant_init
 from mmengine.utils.dl_utils import TORCH_VERSION
 from mmengine.utils.version_utils import digit_version
 
 from mmgen.models.builder import build_module
 from mmgen.registry import MODELS, MODULES
 
-from mmengine.model import BaseModule
 
 class EmbedSequential(nn.Sequential):
     """A sequential module that passes timestep embeddings to the children that

@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from mmengine.model import BaseModule
 
 from mmgen.models.architectures import PixelNorm
 from mmgen.models.architectures.common import get_module_device
@@ -17,7 +18,6 @@ from .. import MiniBatchStddevLayer
 from .modules.styleganv1_modules import StyleConv
 from .modules.styleganv2_modules import EqualLinearActModule
 from .utils import get_mean_latent, style_mixing
-from mmengine.model import BaseModule
 
 
 @MODULES.register_module()

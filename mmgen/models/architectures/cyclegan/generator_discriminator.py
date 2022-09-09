@@ -2,12 +2,12 @@
 import torch.nn as nn
 from mmcv.cnn import ConvModule
 from mmengine.logging import MMLogger
+from mmengine.model import BaseModule
 from mmengine.runner import load_checkpoint
 
 from mmgen.models.architectures.pix2pix import generation_init_weights
 from mmgen.models.builder import MODULES
 from .modules import ResidualBlockWithDropout
-from mmengine.model import BaseModule
 
 
 @MODULES.register_module()
