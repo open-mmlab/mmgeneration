@@ -76,8 +76,10 @@ jobs:
       - name: Upgrade pip
         run: pip install pip --upgrade
       - name: Setup tmate session
-        # if: ${{ failure() }}
+        if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
+        with:
+          sudo: false
       - name: Fetch GPG keys
         run: |
           apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
