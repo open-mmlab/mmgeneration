@@ -1,6 +1,7 @@
+exclude: ^tests/data/
 repos:
-  - repo: https://gitlab.com/pycqa/flake8.git
-    rev: 3.8.3
+  - repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
     hooks:
       - id: flake8
   - repo: https://github.com/PyCQA/isort
@@ -24,25 +25,20 @@ repos:
         args: ["--remove"]
       - id: mixed-line-ending
         args: ["--fix=lf"]
-  - repo: https://github.com/myint/docformatter
-    rev: v1.3.1
-    hooks:
-      - id: docformatter
-        args: ["--in-place", "--wrap-descriptions", "79"]
-  - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.9
-    hooks:
-      - id: mdformat
-        args: ["--number"]
-        additional_dependencies:
-          - mdformat-openmmlab
-          - mdformat_frontmatter
-          - linkify-it-py
   - repo: https://github.com/codespell-project/codespell
     rev: v2.1.0
     hooks:
       - id: codespell
         args: ["--skip", "*.ipynb,tools/data/hvu/label_map.json,docs/zh_cn/*", "-L", "formating,te,nd,thre,Gool,gool,lod"]
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.9
+    hooks:
+      - id: mdformat
+        args: ["--number", "--table-width", "200"]
+        additional_dependencies:
+          - mdformat-openmmlab
+          - mdformat_frontmatter
+          - linkify-it-py
   - repo: local
     hooks:
       - id: update-model-index
@@ -53,9 +49,14 @@ repos:
         language: python
         files: ^configs/.*\.md$
         require_serial: true
+  - repo: https://github.com/myint/docformatter
+    rev: v1.3.1
+    hooks:
+      - id: docformatter
+        args: ["--in-place", "--wrap-descriptions", "79"]
   - repo: https://github.com/open-mmlab/pre-commit-hooks
-    rev: v0.2.0  # Use the ref you want to point at
+    rev: v0.2.0
     hooks:
       - id: check-algo-readme
       - id: check-copyright
-        args: ["mmgen", "tools", "demo", "tests"]  # replace the dir_to_check with your expected directory to check
+        args: ["demo", "mmgen", "tests", "tools"]
