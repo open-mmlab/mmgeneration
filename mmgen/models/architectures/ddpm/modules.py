@@ -9,7 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ACTIVATION_LAYERS
 from mmcv.cnn.bricks import build_activation_layer, build_norm_layer
-from mmcv.cnn.utils import constant_init, digit_version
+from mmcv.cnn.utils import constant_init
+from mmcv.utils import digit_version
 
 from mmgen.models.builder import MODULES, build_module
 

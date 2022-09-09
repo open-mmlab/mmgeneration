@@ -76,7 +76,7 @@ jobs:
       - name: Upgrade pip
         run: pip install pip --upgrade
       - name: Setup tmate session
-        if: ${{ failure() }}
+        # if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
         with:
           sudo: false
