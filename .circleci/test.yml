@@ -106,7 +106,7 @@ jobs:
           name: Install mmgen dependencies
           command: |
             docker exec mmgen pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/${MMCV_CUDA}/torch${MMCV_TORCH}/index.html
-            docker exec mmocr pip install mmcls
+            docker exec mmgen pip install mmcls
             docker exec mmgen pip install -r requirements.txt
       - run:
           name: Build and install
