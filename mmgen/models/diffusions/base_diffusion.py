@@ -1,10 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import sys
 from abc import ABCMeta
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from copy import deepcopy
 from functools import partial
-from typing import OrderedDict
 
 import mmcv
 import numpy as np
