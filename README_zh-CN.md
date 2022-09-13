@@ -91,7 +91,7 @@ MMGeneration 是一个基于 PyTorch 和[MMCV](https://github.com/open-mmlab/mmc
 
 ## 更新日志
 
-v0.7.1 在 30/04/2022 发布。 关于细节和发布历史，请参考 [changelog.md](docs/zh_cn/changelog.md)。
+v0.7.2 在 13/09/2022 发布。 关于细节和发布历史，请参考 [changelog.md](docs/zh_cn/changelog.md)。
 
 ## 安装
 
@@ -118,7 +118,7 @@ mim install mmcv-full
 ```
 git clone https://github.com/open-mmlab/mmgeneration.git
 cd mmgeneration
-pip3 install -e .[all]
+pip3 install -e .
 ```
 
 更详细的安装指南请参考 [get_started.md](docs/zh/get_started.md) .

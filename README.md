@@ -90,7 +90,7 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 
 ## Changelog
 
-v0.7.1 was released on 30/04/2022. Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
+v0.7.2 was released on 13/09/2022. Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
 
 ## Installation
 
@@ -119,7 +119,7 @@ Install MMGeneration from source.
 ```
 git clone https://github.com/open-mmlab/mmgeneration.git
 cd mmgeneration
-pip3 install -e .[all]
+pip3 install -e .
 ```
 
 Please refer to [get_started.md](docs/en/get_started.md) for more detailed instruction.

@@ -134,3 +134,15 @@
 - Fix ada typo (#283)
 - Add chinese application tutorial (#284)
 - Add chinese document of ddp training (#286)
+
+## v0.7.2 (12/09/2022)
+
+#### Highlights
+
+- Complete readme of StyleGAN-Ada (#391)
+
+#### Fix bugs and Improvements
+
+- Update limitation of MMCV's version (#397)
+- Add Circle CI (#431)
+- Update Chinese readme for `application.md` (#425)
