@@ -3,7 +3,6 @@ from .dataset_wrappers import RepeatDataset
 from .grow_scale_image_dataset import GrowScaleImgDataset
 from .paired_image_dataset import PairedImageDataset
 from .quick_test_dataset import QuickTestImageDataset
-from .samplers import DistributedSampler
 from .singan_dataset import SinGANDataset
 from .transforms import (FixedCrop, Flip, LoadImageFromFile, PackGenInputs,
                          Resize)
