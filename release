@@ -1,8 +1,0 @@
-## Improvements
-- \[Docs\] Fix typos in docs. by @RangeKing  in https://github.com/open-mmlab/mmgeneration/pull/425
-- \[Docs\] Add doc for StyleGAN-Ada by @plyfager  in https://github.com/open-mmlab/mmgeneration/pull/391
-- \[Fix\] Update MMCV_MAX to 1.7 by @LeoXing1996  in https://github.com/open-mmlab/mmgeneration/pull/436
-- \[CI\] update github workflow, circleci and github templates by @LeoXing1996  in https://github.com/open-mmlab/mmgeneration/pull/431
-
-## New Contributors
-* @RangeKing made their first contribution in https://github.com/open-mmlab/mmgeneration/pull/425
