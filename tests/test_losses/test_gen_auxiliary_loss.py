@@ -35,7 +35,10 @@ class TestPathRegularizer:
         with pytest.raises(AssertionError):
             _ = pl(1., 2, outputs_dict=output_dict)
 
-    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
+    @pytest.mark.skipif(
+        not torch.cuda.is_available()
+        or not hasattr(torch.backends.cudnn, 'allow_tf32'),
+        reason='requires cuda')
     def test_path_regularizer_cuda(self):
         gen = self.gen.cuda()
 
