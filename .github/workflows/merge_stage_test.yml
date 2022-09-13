@@ -10,7 +10,7 @@ on:
       - '.dev_scripts/**'
       - '.circleci/**'
     branches:
-      - dev-1.x
+      - 1.x
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

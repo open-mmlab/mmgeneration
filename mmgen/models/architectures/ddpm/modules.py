@@ -92,6 +92,14 @@ class MultiHeadAttention(nn.Module):
 
     @staticmethod
     def QKVAttention(qkv):
+        """Calculate attention feature.
+
+        Args:
+            qkv (torch.Tensor): Tensor contains query, key, and value.
+
+        Returns:
+            torch.Tensor: Attention-weighted tensor.
+        """
         channel = qkv.shape[1] // 3
         q, k, v = torch.chunk(qkv, 3, dim=1)
         scale = 1 / np.sqrt(np.sqrt(channel))
@@ -118,6 +126,7 @@ class MultiHeadAttention(nn.Module):
         return (h + x).reshape(b, c, *spatial)
 
     def init_weights(self):
+        """Init weights for modules."""
         constant_init(self.proj, 0)
 
 
@@ -275,6 +284,7 @@ class DenoisingResBlock(nn.Module):
         self.init_weights()
 
     def forward_shortcut(self, x):
+        """Residual forward."""
         if self.learnable_shortcut:
             return self.shortcut(x)
         return x
@@ -296,6 +306,7 @@ class DenoisingResBlock(nn.Module):
         return x + shortcut
 
     def init_weights(self):
+        """Init weights for modules."""
         # apply zero init to last conv layer
         constant_init(self.conv_2[-1], 0)
 

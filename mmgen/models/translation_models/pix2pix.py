@@ -40,7 +40,7 @@ class Pix2Pix(StaticTranslationGAN):
         return results
 
     def _get_disc_loss(self, outputs):
-        # GAN loss for the discriminator
+        """GAN loss for the discriminator."""
         losses = dict()
 
         discriminators = self.get_module(self.discriminators)
@@ -63,6 +63,7 @@ class Pix2Pix(StaticTranslationGAN):
         return loss_d, log_vars_d
 
     def _get_gen_loss(self, outputs):
+        """GAN loss for the generator."""
         target_domain = self._default_domain
         source_domain = self.get_other_domains(target_domain)[0]
         losses = dict()

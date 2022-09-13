@@ -101,6 +101,16 @@ def style_mixing(generator,
 
 
 def apply_integer_translation(x, tx, ty):
+    """Apply integer offset translation to feature map.
+
+    Args:
+        x (torch.Tensor): Intermediate feature map.
+        tx (float): X-axis translation to image width ratio.
+        ty (float): Y-axis translation to image height ratio.
+
+    Returns:
+        torch.Tensor: Feature map after translation.
+    """
     _N, _C, H, W = x.shape
     tx = torch.as_tensor(tx * W).to(dtype=torch.float32, device=x.device)
     ty = torch.as_tensor(ty * H).to(dtype=torch.float32, device=x.device)
@@ -123,6 +133,17 @@ def sinc(x):
 
 
 def apply_fractional_translation(x, tx, ty, a=3):
+    """Apply fractional offset translation to feature map.
+
+    Args:
+        x (torch.Tensor): Intermediate feature map.
+        tx (float): X-axis translation to image width ratio.
+        ty (float): Y-axis translation to image height ratio.
+        a (int): Spatial extent of the Lanczos kernel. Defaults to 3.
+
+    Returns:
+        torch.Tensor: Feature map after translation.
+    """
     _N, _C, H, W = x.shape
     tx = torch.as_tensor(tx * W).to(dtype=torch.float32, device=x.device)
     ty = torch.as_tensor(ty * H).to(dtype=torch.float32, device=x.device)
@@ -162,6 +183,14 @@ def apply_fractional_translation(x, tx, ty, a=3):
 
 
 def rotation_matrix(angle):
+    """Get rotation matrix.
+
+    Args:
+        angle (float): Rotation angle.
+
+    Returns:
+        torch.Tensor: Rotation matrix.
+    """
     angle = torch.as_tensor(angle).to(torch.float32)
     mat = torch.eye(3, device=angle.device)
     mat[0, 0] = angle.cos()
@@ -172,6 +201,15 @@ def rotation_matrix(angle):
 
 
 def lanczos_window(x, a):
+    """Get 2D lanczos kernel.
+
+    Args:
+        x (torch.Tensor):
+        a (int): Spatial extent of the Lanczos kernel. Defaults to 3.
+
+    Returns:
+        torch.Tensor: Lanczos window.
+    """
     x = x.abs() / a
     return torch.where(x < 1, sinc(x), torch.zeros_like(x))
 
@@ -217,6 +255,16 @@ def construct_affine_bandlimit_filter(mat,
 
 
 def apply_affine_transformation(x, mat, up=4, **filter_kwargs):
+    """Apply affine transformation to feature map.
+
+    Args:
+        x (torch.Tensor): Intermediate feature map.
+        mat (float): Rotation matrix.
+        up (int): Upsampling factor.
+
+    Returns:
+        torch.Tensor: Feature map after translation.
+    """
     _N, _C, H, W = x.shape
     mat = torch.as_tensor(mat).to(dtype=torch.float32, device=x.device)
 
@@ -250,6 +298,16 @@ def apply_affine_transformation(x, mat, up=4, **filter_kwargs):
 
 
 def apply_fractional_rotation(x, angle, a=3, **filter_kwargs):
+    """Apply fractional rotation to feature map.
+
+    Args:
+        x (torch.Tensor): Intermediate feature map.
+        angle (float): Rotate angle.
+        a (int): Spatial extent of the Lanczos kernel. Defaults to 3.
+
+    Returns:
+        torch.Tensor: Feature map after rotation.
+    """
     angle = torch.as_tensor(angle).to(dtype=torch.float32, device=x.device)
     mat = rotation_matrix(angle)
     return apply_affine_transformation(
