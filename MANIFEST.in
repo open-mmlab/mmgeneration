@@ -1,3 +1,10 @@
 include mmgen/model-index.yml
 recursive-include mmgen/configs *.py *.yml
 recursive-include mmgen/tools *.sh *.py
+
+include requirements/*.txt
+include mmgen/VERSION
+include mmgen/.mim/model-index.yml
+include mmgen/.mim/demo/*/*
+recursive-include mmgen/.mim/configs *.py *.yml
+recursive-include mmgen/.mim/tools *.sh *.py
