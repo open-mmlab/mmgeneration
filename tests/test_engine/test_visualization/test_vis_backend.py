@@ -29,8 +29,10 @@ class TestGenVisBackend(TestCase):
         src_path = osp.abspath(
             './mmgen/test/vis_backend_test/test_vis_data/test.png')
         tar_path = 's3://xxx/vis_backend_test/test_vis_data/test.png'
-        self.assertEqual(
-            vis_backend._file_client.client._map_path(src_path), tar_path)
+        import platform
+        if platform.system().lower() == 'linux':
+            self.assertEqual(
+                vis_backend._file_client.client._map_path(src_path), tar_path)
 
         # test with `delete_local` is True
         vis_backend.add_config(Config(dict(name='test')))
