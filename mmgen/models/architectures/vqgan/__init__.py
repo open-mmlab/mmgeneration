@@ -1,4 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .modules import DiffusionDownsample, DiffusionResnetBlock
+from .modules import DiffusionResnetBlock
 
-__all__ = ['DiffusionDownsample', 'DiffusionResnetBlock']
+__all__ = ['DiffusionResnetBlock']

@@ -366,10 +366,13 @@ class DenoisingDownsample(nn.Module):
             downsampled.
         with_conv (bool, optional): Whether use convolution operation for
             downsampling.  Defaults to `True`.
+        with_pad (bool, optional): Whether do asymmetric padding for
+            downsampling.  Defaults to `False`.
     """
 
-    def __init__(self, in_channels, with_conv=True):
+    def __init__(self, in_channels, with_conv=True, with_pad=False):
         super().__init__()
+        self.with_pad = with_pad
         if with_conv:
             self.downsample = nn.Conv2d(in_channels, in_channels, 3, 2, 1)
         else:
@@ -383,6 +386,9 @@ class DenoisingDownsample(nn.Module):
         Returns:
             torch.Tensor: Feature map after downsampling.
         """
+        if self.with_pad:
+            # do asymmetric padding
+            x = F.pad(x, (0, 1, 0, 1), mode='constant', value=0)
         return self.downsample(x)
 
 
