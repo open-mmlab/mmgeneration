@@ -108,86 +108,164 @@ class GenDataSample(BaseDataElement):
 
     @property
     def gt_img(self) -> PixelData:
+        """Ground truth image.
+
+        Returns:
+            PixelData: _description_
+        """
         return self._gt_img
 
     @gt_img.setter
     def gt_img(self, value: PixelData):
+        """Set ground truth image.
+
+        Args:
+            value (PixelData): _description_
+        """
         self.set_field(value, '_gt_img', dtype=PixelData)
 
     @gt_img.deleter
     def gt_img(self):
+        """Delete ground truth image."""
         del self._gt_img
 
     @property
     def gt_samples(self) -> 'GenDataSample':
+        """Ground truth samples.
+
+        Returns:
+            GenDataSample: _description_
+        """
         return self._gt_samples
 
     @gt_samples.setter
     def gt_samples(self, value: 'GenDataSample'):
+        """Set ground truth samples.
+
+        Args:
+            value (GenDataSample): _description_
+        """
         self.set_field(value, '_gt_samples', dtype=GenDataSample)
 
     @gt_samples.deleter
     def gt_samples(self):
+        """Delete ground truth samples."""
         del self._gt_samples
 
     @property
     def noise(self) -> torch.Tensor:
+        """Noise.
+
+        Returns:
+            torch.Tensor: Noise.
+        """
         return self._noise
 
     @noise.setter
     def noise(self, value: PixelData):
+        """Set noise.
+
+        Args:
+            value (PixelData): Noise tensor.
+        """
         self.set_field(value, '_noise', dtype=torch.Tensor)
 
     @noise.deleter
     def noise(self):
+        """Delete noise."""
         del self._noise
 
     @property
     def fake_img(self) -> PixelData:
+        """Synthesised image.
+
+        Returns:
+            PixelData: Fake image.
+        """
         return self._fake_img
 
     @fake_img.setter
     def fake_img(self, value: PixelData):
+        """Set fake image.
+
+        Args:
+            value (PixelData): Fake image.
+        """
         self.set_field(value, '_fake_img', dtype=PixelData)
 
     @fake_img.deleter
     def fake_img(self):
+        """Delete fake image."""
         del self._fake_img
 
     @property
     def sample_model(self) -> str:
+        """Sampling model. 'Orig' for original model, 'ema' for exponential
+        average model.
+
+        Returns:
+            str: Sampling model.
+        """
         return self._sample_model
 
     @sample_model.setter
     def sample_model(self, value: str):
+        """Set sampling model.
+
+        Args:
+            value (str): Sampling model.
+        """
         self.set_field(value, '_sample_model', dtype=str)
 
     @sample_model.deleter
     def sample_model(self):
+        """Delete sample model."""
         del self._sample_model
 
     @property
     def ema(self) -> 'GenDataSample':
+        """Data sample from ema model.
+
+        Returns:
+            GenDataSample: Data sample from ema model.
+        """
         return self._ema
 
     @ema.setter
     def ema(self, value: 'GenDataSample'):
+        """Set data sample from ema model.
+
+        Returns:
+            GenDataSample: Data sample from ema model.
+        """
         self.set_field(value, '_ema', dtype=GenDataSample)
 
     @ema.deleter
     def ema(self):
+        """Delete data sample from ema model."""
         del self._ema
 
     @property
     def orig(self) -> 'GenDataSample':
+        """Data sample from original model.
+
+        Returns:
+            GenDataSample: Data sample from original model.
+        """
         return self._orig
 
     @orig.setter
     def orig(self, value: 'GenDataSample'):
+        """Set data sample from original model.
+
+        Returns:
+            GenDataSample: Data sample from original model.
+        """
         self.set_field(value, '_orig', dtype=GenDataSample)
 
     @orig.deleter
     def orig(self):
+        """Delete data sample from orig model."""
         del self._orig
 
     def set_gt_label(
@@ -203,12 +281,15 @@ class GenDataSample(BaseDataElement):
 
     @property
     def gt_label(self):
+        """Ground truth label."""
         return self._gt_label
 
     @gt_label.setter
     def gt_label(self, value: LabelData):
+        """Set ground truth label."""
         self.set_field(value, '_gt_label', dtype=LabelData)
 
     @gt_label.deleter
     def gt_label(self):
+        """Delete ground truth label."""
         del self._gt_label

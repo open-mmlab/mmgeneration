@@ -166,6 +166,11 @@ class SinGANMultiScaleGenerator(nn.Module):
         return g_res
 
     def check_and_load_prev_weight(self, curr_scale):
+        """Check and load pretrained model from last scale.
+
+        Args:
+            curr_scale (int): Current image scale.
+        """
         logger = MMLogger.get_current_instance()
         if curr_scale == 0:
             return
@@ -252,6 +257,11 @@ class SinGANMultiScaleDiscriminator(nn.Module):
         return out
 
     def check_and_load_prev_weight(self, curr_scale):
+        """Check and load pretrained model from last scale.
+
+        Args:
+            curr_scale (int): Current image scale.
+        """
         if curr_scale == 0:
             return
         prev_ch = self.blocks[curr_scale - 1].base_channels

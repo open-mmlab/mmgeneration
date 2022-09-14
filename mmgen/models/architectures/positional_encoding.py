@@ -109,11 +109,35 @@ class SinusoidalPositionalEmbedding(nn.Module):
             b, seq_len, self.embedding_dim).detach()
 
     def make_positions(self, input, padding_idx):
+        """Make position tensors.
+
+        Args:
+            input (tensor): Input tensor.
+            padding_idx (int | list[int]): The index for the padding contents.
+            The padding positions will obtain an encoding vector filling
+            in zeros.
+
+        Returns:
+            tensor: Position tensors.
+        """
         mask = input.ne(padding_idx).int()
         return (torch.cumsum(mask, dim=1).type_as(mask) *
                 mask).long() + padding_idx
 
     def make_grid2d(self, height, width, num_batches=1, center_shift=None):
+        """Make 2-d grid mask.
+
+        Args:
+            height (int): Height of the grid.
+            width (int): Width of the grid.
+            num_batches (int, optional): The number of batch size.
+                Defaults to 1.
+            center_shift (int | None, optional): Shift the center point to some
+                index. Defaults to None.
+
+        Returns:
+            Tensor: 2-d Grid mask.
+        """
         h, w = height, width
         # if `center_shift` is not given from the outside, use
         # `self.center_shift`
@@ -205,6 +229,12 @@ class CatersianGrid(nn.Module):
         return grid
 
     def make_grid2d_like(self, x, requires_grad=False):
+        """Input tensor with shape of (b, ..., h, w) Return tensor with shape
+        of (b, 2 x emb_dim, h, w)
+
+        Note that the positional embedding highly depends on the the function,
+        ``make_grid2d``.
+        """
         h, w = x.shape[-2:]
         grid = self.make_grid2d(h, w, x.size(0), requires_grad=requires_grad)
 

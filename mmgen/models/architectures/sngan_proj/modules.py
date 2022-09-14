@@ -166,6 +166,7 @@ class SNGANGenResBlock(nn.Module):
         return out + shortcut
 
     def forward_shortcut(self, x):
+        """Residual forward."""
         out = x
         if self.learnable_sc:
             if self.with_upsample:
@@ -311,6 +312,7 @@ class SNGANDiscResBlock(nn.Module):
         return out + shortcut
 
     def forward_shortcut(self, x):
+        """Residual forward."""
         out = x
         if self.learnable_sc:
             out = self.shortcut(out)
@@ -319,6 +321,7 @@ class SNGANDiscResBlock(nn.Module):
         return out
 
     def init_weights(self):
+        """Init weights for modules."""
         if self.init_type.upper() == 'STUDIO':
             nn.init.orthogonal_(self.conv_1.conv.weight)
             nn.init.orthogonal_(self.conv_2.conv.weight)
@@ -443,11 +446,13 @@ class SNGANDiscHeadResBlock(nn.Module):
         return out + shortcut
 
     def forward_shortcut(self, x):
+        """Residual forward."""
         out = self.downsample(x)
         out = self.shortcut(out)
         return out
 
     def init_weights(self):
+        """Init weights for modules."""
         if self.init_type.upper() == 'STUDIO':
             for m in [self.conv_1, self.conv_2, self.shortcut]:
                 nn.init.orthogonal_(m.conv.weight)
@@ -593,6 +598,7 @@ class SNConditionNorm(nn.Module):
         return out
 
     def init_weights(self):
+        """Init weights for modules."""
         if self.use_cbn:
             if self.init_type.upper() == 'STUDIO':
                 nn.init.orthogonal_(self.weight_embedding.weight)

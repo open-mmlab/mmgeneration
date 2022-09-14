@@ -30,6 +30,15 @@ class PGGANFetchDataHook(Hook):
                           runner,
                           batch_idx: int,
                           data_batch: DATA_BATCH = None) -> None:
+        """Before train iteration, we will update dataloader if next scale is
+        about to replace last scale.
+
+        Args:
+            runner (object): The runner.
+            batch_idx (int): The index of the current batch in the train loop.
+            data_batch (Sequence[dict], optional): Data from dataloader.
+                Defaults to None.
+        """
 
         _module = runner.model.module if is_model_wrapper(
             runner.model) else runner.model
@@ -47,6 +56,15 @@ class PGGANFetchDataHook(Hook):
                     _InfiniteDataloaderIterator(new_dataloader)
 
     def update_dataloader(self, dataloader: DataLoader, curr_scale: int):
+        """Update dataloader according to current scale.
+
+        Args:
+            dataloader (DataLoader): The dataloader for real images.
+            curr_scale (int): Current image scale.
+
+        Returns:
+            DataLoader(Optional): Updated dataloader.
+        """
 
         if hasattr(dataloader.dataset, 'update_annotations'):
             update_flag = dataloader.dataset.update_annotations(curr_scale)

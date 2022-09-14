@@ -1,3 +1,4 @@
+lpips
 mmcls
 mmengine
 ninja

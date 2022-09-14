@@ -218,12 +218,30 @@ class StyleGANv2Generator(nn.Module):
                                prefix='',
                                map_location='cpu',
                                strict=True):
+        """Load pretrained model.
+
+        Args:
+            ckpt_path (str): Path of checkpoint.
+            prefix (str, optional): the prefix of a sub-module in the
+                pretrained model. it is for loading a part of the pretrained
+                model to initialize. For example, if we would like to only load
+                the backbone of a detector model, we can set
+                ``prefix='backbone.'``. Defaults to None.
+            map_location (str): map tensors into proper locations.
+            strict (bool): Whether to allow different params for the model and
+                checkpoint.
+        """
         state_dict = _load_checkpoint_with_prefix(prefix, ckpt_path,
                                                   map_location)
         self.load_state_dict(state_dict, strict=strict)
         mmengine.print_log(f'Load pretrained model from {ckpt_path}')
 
     def train(self, mode=True):
+        """Set train/eval mode.
+
+        Args:
+            mode (bool, optional): Whether set train mode. Defaults to True.
+        """
         if mode:
             if self.default_style_mode != self._default_style_mode:
                 mmengine.print_log(
@@ -272,6 +290,23 @@ class StyleGANv2Generator(nn.Module):
                      inject_index=1,
                      truncation_latent=None,
                      truncation=0.7):
+        """Generating style mixing images.
+
+        Args:
+            n_source (int): Number of source images.
+            n_target (int): Number of target images.
+            inject_index (int, optional): Index from which replace with source
+                latent. Defaults to 1.
+            truncation_latent (torch.Tensor, optional): Mean truncation latent.
+                Defaults to None.
+            truncation (float, optional): Truncation factor. Give value less
+                than 1., the truncation trick will be adopted. Defaults to 1.
+            curr_scale (int): Current image scale. Defaults to -1.
+            transition_weight (float, optional): The weight used in resolution
+                transition. Defaults to 1.0.
+        Returns:
+            torch.Tensor: Table of style-mixing images.
+        """
         return style_mixing(
             self,
             n_source=n_source,

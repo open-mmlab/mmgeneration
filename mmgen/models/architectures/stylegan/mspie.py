@@ -192,6 +192,11 @@ class MSStyleGANv2Generator(nn.Module):
                                  noises[layer_idx])
 
     def train(self, mode=True):
+        """Set train/eval mode.
+
+        Args:
+            mode (bool, optional): Whether set train mode. Defaults to True.
+        """
         if mode:
             if self.default_style_mode != self._default_style_mode:
                 mmengine.print_log(
@@ -207,6 +212,14 @@ class MSStyleGANv2Generator(nn.Module):
         return super(MSStyleGANv2Generator, self).train(mode)
 
     def make_injected_noise(self, chosen_scale=0):
+        """make noises that will be injected into feature maps.
+
+        Args:
+            chosen_scale (int, optional): Chosen scale. Defaults to 0.
+
+        Returns:
+            list[Tensor]: List of layer-wise noise tensor.
+        """
         device = get_module_device(self)
 
         base_scale = 2**2 + chosen_scale
@@ -247,6 +260,24 @@ class MSStyleGANv2Generator(nn.Module):
                      truncation_latent=None,
                      truncation=0.7,
                      chosen_scale=0):
+        """Generating style mixing images.
+
+        Args:
+            n_source (int): Number of source images.
+            n_target (int): Number of target images.
+            inject_index (int, optional): Index from which replace with source
+                latent. Defaults to 1.
+            truncation_latent (torch.Tensor, optional): Mean truncation latent.
+                Defaults to None.
+            truncation (float, optional): Truncation factor. Give value less
+                than 1., the truncation trick will be adopted. Defaults to 1.
+            curr_scale (int): Current image scale. Defaults to -1.
+            transition_weight (float, optional): The weight used in resolution
+                transition. Defaults to 1.0.
+            chosen_scale (int, optional): Chosen scale. Defaults to 0.
+        Returns:
+            torch.Tensor: Table of style-mixing images.
+        """
         return style_mixing(
             self,
             n_source=n_source,

@@ -7,6 +7,7 @@ from collections import defaultdict
 from copy import deepcopy
 from typing import Any, Iterator, List, Optional, Sequence, Tuple
 
+import lpips
 import numpy as np
 import torch
 import torch.nn as nn
@@ -25,7 +26,6 @@ from torch.utils.data.dataloader import DataLoader
 from torchvision import models as torchvision_models
 
 from mmgen.models.architectures.common import get_module_device
-from mmgen.models.architectures.lpips import PerceptualLoss
 from mmgen.registry import METRICS
 from .inception_utils import (disable_gpu_fuser_on_pt19, load_inception,
                               prepare_inception_feat, prepare_vgg_feat)
@@ -1718,8 +1718,7 @@ class PerceptualPathLength(GenerativeMetric):
         """
         # use minibatch's device type to initialize a lpips calculator
         if not hasattr(self, 'percept'):
-            self.percept = PerceptualLoss(
-                use_gpu=images.device.type.startswith('cuda'))
+            self.percept = lpips.LPIPS(net='vgg').to(images.device)
         # crop and resize images
         if self.crop:
             c = images.shape[2] // 8

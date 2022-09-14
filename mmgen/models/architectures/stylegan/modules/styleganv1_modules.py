@@ -47,6 +47,25 @@ class AdaptiveInstanceNorm(nn.Module):
 
 
 class StyleConv(nn.Module):
+    """Convolutional style blocks composing of noise injector, AdaIN module and
+    convolution layers.
+
+    Args:
+        in_channels (int): The channel number of the input tensor.
+        out_channels (itn): The channel number of the output tensor.
+        kernel_size (int): The kernel size of convolution layers.
+        style_channels (int): The number of channels for style code.
+        padding (int, optional): Padding of convolution layers.
+            Defaults to 1.
+        initial (bool, optional): Whether this is the first StyleConv of
+            StyleGAN's generator. Defaults to False.
+        blur_kernel (list, optional): The blurry kernel.
+            Defaults to [1, 2, 1].
+        upsample (bool, optional): Whether perform upsampling.
+            Defaults to False.
+        fused (bool, optional): Whether use fused upconv.
+            Defaults to False.
+    """
 
     def __init__(self,
                  in_channels,
@@ -58,25 +77,6 @@ class StyleConv(nn.Module):
                  blur_kernel=[1, 2, 1],
                  upsample=False,
                  fused=False):
-        """Convolutional style blocks composing of noise injector, AdaIN module
-        and convolution layers.
-
-        Args:
-            in_channels (int): The channel number of the input tensor.
-            out_channels (itn): The channel number of the output tensor.
-            kernel_size (int): The kernel size of convolution layers.
-            style_channels (int): The number of channels for style code.
-            padding (int, optional): Padding of convolution layers.
-                Defaults to 1.
-            initial (bool, optional): Whether this is the first StyleConv of
-                StyleGAN's generator. Defaults to False.
-            blur_kernel (list, optional): The blurry kernel.
-                Defaults to [1, 2, 1].
-            upsample (bool, optional): Whether perform upsampling.
-                Defaults to False.
-            fused (bool, optional): Whether use fused upconv.
-                Defaults to False.
-        """
         super().__init__()
 
         if initial:
