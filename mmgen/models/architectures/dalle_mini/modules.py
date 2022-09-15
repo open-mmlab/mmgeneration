@@ -134,7 +134,7 @@ class BartEncoderLayer(nn.Module):
 
         Args:
             x (torch.FloatTensor): Input feature map.
-            attention_mask (torch.BoolTensor): whether to use
+            attention_mask (torch.BoolTensor): Whether to use
                                             an attention mask.
 
         Returns:
