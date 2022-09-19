@@ -2,7 +2,7 @@
 
 In this tutorial, we introduce the design of transforms pipeline in MMGeneration.
 
-The structure of this guide are as follows:
+The structure of this guide is as follows:
 
 - [Data Transforms](#data-transforms)
   - [Design of Data pipelines](#design-of-data-pipelines)
@@ -17,7 +17,7 @@ In 1.x version of MMGeneration, all data transformations are inherited from `Bas
 The input and output types of transformations are both dict. A simple example is as follow:
 
 ```python
->>> from mmgen.transforms import LoadPairedImageFromFile
+>>> from mmgen.datasets.transforms import LoadPairedImageFromFile
 >>> transforms = LoadPairedImageFromFile(
 >>>     key='pair',
 >>>     domain_a='horse',

@@ -17,7 +17,7 @@ datasets
 
 transforms
 ^^^^^^^^^^
-.. automodule:: mmgen.transforms
+.. automodule:: mmgen.datasets.transforms
     :members:
 
 
