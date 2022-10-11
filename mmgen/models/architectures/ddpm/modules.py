@@ -32,7 +32,7 @@ class EmbedSequential(nn.Sequential):
         return x
 
 
-if digit_version(mmcv.__version__) < digit_version('1.6.2'):
+if 'SiLU' not in ACTIVATION_LAYERS:
 
     @ACTIVATION_LAYERS.register_module()
     class SiLU(nn.Module):
