@@ -112,9 +112,9 @@ class DenoisingUnet(nn.Module):
         downsample_conv (bool, optional): Whether use conv operation in
             downsample block.  Defaults to ``True``.
         upsample_cfg (dict, optional): Config for upsample blocks.
-            Defaults to ``dict(type='DenoisingDownsample')``.
-        downsample_cfg (dict, optional): Config for downsample blocks.
             Defaults to ``dict(type='DenoisingUpsample')``.
+        downsample_cfg (dict, optional): Config for downsample blocks.
+            Defaults to ``dict(type='DenoisingDownsample')``.
         attention_res (int | list[int], optional): Resolution of feature maps
             to apply attention operation. Defaults to ``[16, 8]``.
         pretrained (str | dict, optional): Path for the pretrained model or
