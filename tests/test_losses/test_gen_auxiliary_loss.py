@@ -72,83 +72,129 @@ class TestPerceptualLoss:
         cls.data_info = dict(pred='fake_imgs', target='real_imgs')
         cls.gen = UnetGenerator(3, 3)
 
-    def test_perceptual_loss(self):
+    def test_perceptual_loss_cpu(self):
         unknown_h, unknown_w = (32, 32)
         weight = torch.zeros(1, 1, 64, 64)
         weight[0, 0, :unknown_h, :unknown_w] = 1
         pred = weight.clone()
         target = weight.clone() * 2
 
-        # test perceptual and style loss
         perceptual_loss = PerceptualLoss(data_info=self.data_info)
-        loss_percep, loss_style = perceptual_loss(
+        loss_perceptual = perceptual_loss(
             outputs_dict=dict(fake_imgs=pred, real_imgs=target))
-        assert loss_percep.shape == () and loss_style.shape == ()
+        assert loss_perceptual.shape == ()
         assert id(perceptual_loss.criterion) == id(l1_loss)
 
-        # test only perceptual loss
+    def test_only_perceptual_loss(self):
+        unknown_h, unknown_w = (32, 32)
+        weight = torch.zeros(1, 1, 64, 64)
+        weight[0, 0, :unknown_h, :unknown_w] = 1
+        pred = weight.clone()
+        target = weight.clone() * 2
+
         perceptual_loss = PerceptualLoss(
             data_info=self.data_info, style_weight=0)
-        loss_percep, loss_style = perceptual_loss(
-            dict(fake_imgs=pred, real_imgs=target))
+        loss_percep = perceptual_loss(dict(fake_imgs=pred, real_imgs=target))
         assert loss_percep.shape == ()
-        assert loss_style is None
+        assert perceptual_loss.style_weight == 0
 
-        # test only style loss
+    def test_only_style_loss(self):
+        unknown_h, unknown_w = (32, 32)
+        weight = torch.zeros(1, 1, 64, 64)
+        weight[0, 0, :unknown_h, :unknown_w] = 1
+        pred = weight.clone()
+        target = weight.clone() * 2
+
         perceptual_loss = PerceptualLoss(
             data_info=self.data_info, perceptual_weight=0)
-        loss_percep, loss_style = perceptual_loss(
-            dict(fake_imgs=pred, real_imgs=target))
+        loss_style = perceptual_loss(dict(fake_imgs=pred, real_imgs=target))
         assert loss_style.shape == ()
-        assert loss_percep is None
+        assert perceptual_loss.perceptual_weight is None
 
-        # test with different layer weights
+    def test_with_different_layer_weights(self):
+        unknown_h, unknown_w = (32, 32)
+        weight = torch.zeros(1, 1, 64, 64)
+        weight[0, 0, :unknown_h, :unknown_w] = 1
+        pred = weight.clone()
+        target = weight.clone() * 2
+
         layer_weights = {'1': 1., '2': 2., '3': 3.}
         perceptual_loss = PerceptualLoss(
             data_info=self.data_info, layer_weights=layer_weights)
-        loss_percep, loss_style = perceptual_loss(
+        loss_perceptual = perceptual_loss(
             dict(fake_imgs=pred, real_imgs=target))
-        assert loss_percep.shape == () and loss_style.shape == ()
+        assert loss_perceptual.shape == ()
         assert perceptual_loss.layer_weights == layer_weights and \
             perceptual_loss.layer_weights_style == layer_weights
 
-        # test with different perceptual and style layers
+    def test_with_different_perceptual_and_style_layers(self):
+        unknown_h, unknown_w = (32, 32)
+        weight = torch.zeros(1, 1, 64, 64)
+        weight[0, 0, :unknown_h, :unknown_w] = 1
+        pred = weight.clone()
+        target = weight.clone() * 2
+
         layer_weights = {'1': 1., '2': 2., '3': 3.}
         layer_weights_style = {'4': 4., '5': 5., '6': 6.}
         perceptual_loss = PerceptualLoss(
             data_info=self.data_info,
             layer_weights=layer_weights,
             layer_weights_style=layer_weights_style)
-        loss_percep, loss_style = perceptual_loss(
+        loss_perceptual = perceptual_loss(
             dict(fake_imgs=pred, real_imgs=target))
-        assert loss_percep.shape == () and loss_style.shape == ()
+        assert loss_perceptual.shape == ()
         assert perceptual_loss.layer_weights == layer_weights and \
             perceptual_loss.layer_weights_style == layer_weights_style
 
-        # test MSE critierion
+    def test_MSE_critierion(self):
+        unknown_h, unknown_w = (32, 32)
+        weight = torch.zeros(1, 1, 64, 64)
+        weight[0, 0, :unknown_h, :unknown_w] = 1
+        pred = weight.clone()
+        target = weight.clone() * 2
+
         perceptual_loss = PerceptualLoss(
             data_info=self.data_info, criterion='mse')
-        loss_percep, loss_style = perceptual_loss(
+        loss_perceptual = perceptual_loss(
             outputs_dict=dict(fake_imgs=pred, real_imgs=target))
-        assert loss_percep.shape == () and loss_style.shape == ()
+        assert loss_perceptual.shape == ()
         assert id(perceptual_loss.criterion) == id(mse_loss)
 
-        # test VGG 16
+    def test_VGG_16(self):
+        unknown_h, unknown_w = (32, 32)
+        weight = torch.zeros(1, 1, 64, 64)
+        weight[0, 0, :unknown_h, :unknown_w] = 1
+        pred = weight.clone()
+        target = weight.clone() * 2
+
         perceptual_loss = PerceptualLoss(
             data_info=self.data_info,
             vgg_type='vgg16',
             pretrained='torchvision://vgg16')
-        loss_percep, loss_style = perceptual_loss(
+        loss_perceptual = perceptual_loss(
             outputs_dict=dict(fake_imgs=pred, real_imgs=target))
-        assert loss_percep.shape == () and loss_style.shape == ()
+        assert loss_perceptual.shape == ()
         # TODO need to check whether vgg16 is loaded
         # assert perceptual_loss.vgg
 
-        # test cuda
-        device = 'cuda:0'
-        perceptual_loss = PerceptualLoss(data_info=self.data_info).to(device)
+    def test_split_style_loss(self):
+        unknown_h, unknown_w = (32, 32)
+        weight = torch.zeros(1, 1, 64, 64)
+        weight[0, 0, :unknown_h, :unknown_w] = 1
+        pred = weight.clone()
+        target = weight.clone() * 2
+
+        perceptual_loss = PerceptualLoss(
+            data_info=self.data_info, split_style_loss=True)
         loss_percep, loss_style = perceptual_loss(
-            outputs_dict=dict(
-                fake_imgs=pred.to(device), real_imgs=target.to(device)))
-        assert str(loss_percep.device) == device and \
-            str(loss_style.device) == device
+            outputs_dict=dict(fake_imgs=pred, real_imgs=target))
+        assert loss_percep.shape == () and loss_style.shape == ()
+
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
+    def test_perceptual_loss_cuda(self):
+        pred = torch.rand([2, 3, 256, 256]).cuda()
+        target = torch.rand_like(pred).cuda()
+        perceptual_loss = PerceptualLoss(data_info=self.data_info).cuda()
+        loss_perceptual = perceptual_loss(
+            outputs_dict=dict(fake_imgs=pred, real_imgs=target))
+        assert loss_perceptual.shape == ()

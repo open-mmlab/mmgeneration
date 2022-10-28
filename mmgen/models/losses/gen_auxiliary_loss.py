@@ -648,7 +648,12 @@ class PerceptualLoss(nn.Module):
 
         data_info = dict(
             pred='fake_imgs',
-            target='real_imgs')
+            target='real_imgs',
+            layer_weights={
+                     '4': 1.,
+                     '9': 1.,
+                     '18': 1.},
+            )
 
     Then, the module will automatically construct this mapping from the input
     data dictionary.
@@ -687,6 +692,8 @@ class PerceptualLoss(nn.Module):
             'torchvision://vgg19'.
         criterion (str): Criterion type. Options are 'l1' and 'mse'.
             Default: 'l1'.
+        split_style_loss (bool): Whether return a separate style loss item.
+            Options are True and False. Default: False
     """
 
     def __init__(self,
@@ -704,7 +711,8 @@ class PerceptualLoss(nn.Module):
                  style_weight=1.0,
                  norm_img=True,
                  pretrained='torchvision://vgg19',
-                 criterion='l1'):
+                 criterion='l1',
+                 split_style_loss=False):
         super().__init__()
         self.data_info = data_info
         self._loss_name = loss_name
@@ -713,6 +721,7 @@ class PerceptualLoss(nn.Module):
         self.style_weight = style_weight
         self.layer_weights = layer_weights
         self.layer_weights_style = layer_weights_style
+        self.split_style_loss = split_style_loss
 
         self.vgg = PerceptualVGG(
             layer_name_list=list(self.layer_weights.keys()),
@@ -752,8 +761,8 @@ class PerceptualLoss(nn.Module):
         argument will be directly passed to loss function, ``mse_loss``.
 
         Args:
-            x (Tensor): Input tensor with shape (n, c, h, w).
-            gt (Tensor): Ground-truth tensor with shape (n, c, h, w).
+            pred (Tensor): Input tensor with shape (n, c, h, w).
+            target (Tensor): Ground-truth tensor with shape (n, c, h, w).
 
         Returns:
             Tensor: Forward results.
@@ -805,7 +814,7 @@ class PerceptualLoss(nn.Module):
                     weight=self.layer_weights[k])
             percep_loss *= self.perceptual_weight
         else:
-            percep_loss = None
+            percep_loss = 0.
 
         # calculate style loss
         if self.style_weight > 0:
@@ -821,9 +830,12 @@ class PerceptualLoss(nn.Module):
                         target_features[k])) * self.layer_weights_style[k]
             style_loss *= self.style_weight
         else:
-            style_loss = None
+            style_loss = 0.
 
-        return percep_loss, style_loss
+        if self.split_style_loss:
+            return percep_loss, style_loss
+        else:
+            return percep_loss + style_loss
 
     def _gram_mat(self, x):
         """Calculate Gram matrix.
