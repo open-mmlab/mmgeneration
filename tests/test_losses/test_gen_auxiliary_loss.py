@@ -109,7 +109,7 @@ class TestPerceptualLoss:
             data_info=self.data_info, perceptual_weight=0)
         loss_style = perceptual_loss(dict(fake_imgs=pred, real_imgs=target))
         assert loss_style.shape == ()
-        assert perceptual_loss.perceptual_weight is None
+        assert perceptual_loss.perceptual_weight == 0
 
     def test_with_different_layer_weights(self):
         unknown_h, unknown_w = (32, 32)
