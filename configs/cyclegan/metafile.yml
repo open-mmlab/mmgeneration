@@ -14,7 +14,7 @@ Models:
     Adversarial Networks'
   Metadata:
     Training Data: FACADES
-  Name: cyclegan_in
+  Name: cyclegan_lsgan_resnet_in_facades_b1x1_80k
   Results:
   - Dataset: FACADES
     Metrics:
@@ -27,7 +27,7 @@ Models:
     Adversarial Networks'
   Metadata:
     Training Data: FACADES
-  Name: cyclegan_id0
+  Name: cyclegan_lsgan_id0_resnet_in_facades_b1x1_80k
   Results:
   - Dataset: FACADES
     Metrics:
@@ -40,7 +40,7 @@ Models:
     Adversarial Networks'
   Metadata:
     Training Data: SUMMER2WINTER
-  Name: cyclegan_summer2winter
+  Name: cyclegan_lsgan_resnet_in_summer2winter_b1x1_250k
   Results:
   - Dataset: SUMMER2WINTER
     Metrics:
@@ -53,7 +53,7 @@ Models:
     Adversarial Networks'
   Metadata:
     Training Data: SUMMER2WINTER
-  Name: cyclegan_250k
+  Name: cyclegan_lsgan_id0_resnet_in_summer2winter_b1x1_250k
   Results:
   - Dataset: SUMMER2WINTER
     Metrics:
@@ -66,7 +66,7 @@ Models:
     Adversarial Networks'
   Metadata:
     Training Data: SUMMER2WINTER
-  Name: cyclegan_summer2winter
+  Name: cyclegan_lsgan_resnet_in_summer2winter_b1x1_250k
   Results:
   - Dataset: SUMMER2WINTER
     Metrics:
@@ -79,7 +79,7 @@ Models:
     Adversarial Networks'
   Metadata:
     Training Data: SUMMER2WINTER
-  Name: cyclegan_250k
+  Name: cyclegan_lsgan_id0_resnet_in_summer2winter_b1x1_250k
   Results:
   - Dataset: SUMMER2WINTER
     Metrics:
@@ -92,7 +92,7 @@ Models:
     Adversarial Networks'
   Metadata:
     Training Data: HORSE2ZEBRA
-  Name: cyclegan_horse2zebra
+  Name: cyclegan_lsgan_resnet_in_horse2zebra_b1x1_270k
   Results:
   - Dataset: HORSE2ZEBRA
     Metrics:
@@ -105,7 +105,7 @@ Models:
     Adversarial Networks'
   Metadata:
     Training Data: HORSE2ZEBRA
-  Name: cyclegan_b1x1
+  Name: cyclegan_lsgan_id0_resnet_in_horse2zebra_b1x1_270k
   Results:
   - Dataset: HORSE2ZEBRA
     Metrics:
@@ -118,7 +118,7 @@ Models:
     Adversarial Networks'
   Metadata:
     Training Data: HORSE2ZEBRA
-  Name: cyclegan_horse2zebra
+  Name: cyclegan_lsgan_resnet_in_horse2zebra_b1x1_270k
   Results:
   - Dataset: HORSE2ZEBRA
     Metrics:
@@ -131,7 +131,7 @@ Models:
     Adversarial Networks'
   Metadata:
     Training Data: HORSE2ZEBRA
-  Name: cyclegan_b1x1
+  Name: cyclegan_lsgan_id0_resnet_in_horse2zebra_b1x1_270k
   Results:
   - Dataset: HORSE2ZEBRA
     Metrics:

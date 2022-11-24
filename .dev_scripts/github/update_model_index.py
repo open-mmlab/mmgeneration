@@ -159,7 +159,7 @@ def parse_md(md_file, task):
     Returns:
         Bool: If the target YAML file is different from the original.
     """
-    unique_dict = generate_unique_name(md_file)
+    # unique_dict = generate_unique_name(md_file)
 
     collection_name = osp.splitext(osp.basename(md_file))[0]
     collection = dict(
@@ -226,13 +226,7 @@ def parse_md(md_file, task):
                         right = line[checkpoint_idx].index(')', left)
                         checkpoint = line[checkpoint_idx][left:right]
                     name_key = osp.splitext(osp.basename(config))[0]
-                    if name_key in unique_dict:
-                        model_name = unique_dict[name_key]
-                    else:
-                        model_name = name_key
-                        warnings.warn(
-                            f'Config file of {model_name} is not found,'
-                            'please check it again.')
+                    model_name = name_key
 
                     # find dataset in config file
                     dataset = 'Others'

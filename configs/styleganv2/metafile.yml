@@ -11,7 +11,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_ffhq
+  Name: stylegan2_c2_ffhq_1024_b4x8
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -24,7 +24,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: LSUN
-  Name: stylegan2_lsun-car
+  Name: stylegan2_c2_lsun-car_384x512_b4x8
   Results:
   - Dataset: LSUN
     Metrics:
@@ -37,7 +37,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: LSUN
-  Name: stylegan2_lsun-horse
+  Name: stylegan2_c2_lsun-horse_256_b4x8_800k
   Results:
   - Dataset: LSUN
     Metrics:
@@ -50,7 +50,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: LSUN
-  Name: stylegan2_lsun-church
+  Name: stylegan2_c2_lsun-church_256_b4x8_800k
   Results:
   - Dataset: LSUN
     Metrics:
@@ -63,7 +63,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: LSUN
-  Name: stylegan2_lsun-cat
+  Name: stylegan2_c2_lsun-cat_256_b4x8_800k
   Results:
   - Dataset: LSUN
     Metrics:
@@ -76,7 +76,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_256
+  Name: stylegan2_c2_ffhq_256_b4x8_800k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -89,7 +89,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_ffhq
+  Name: stylegan2_c2_ffhq_1024_b4x8
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -102,7 +102,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: LSUN
-  Name: stylegan2_lsun-car
+  Name: stylegan2_c2_lsun-car_384x512_b4x8
   Results:
   - Dataset: LSUN
     Metrics:
@@ -115,7 +115,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_256
+  Name: stylegan2_c2_ffhq_256_b4x8_800k
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -127,43 +127,43 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_partial-GD
+  Name: stylegan2_c2_fp16_partial-GD_PL-no-scaler_ffhq_256_b4x8_800k
   Results:
   - Dataset: FFHQ
     Metrics:
       Comment: partial layers in fp16
       FID50k: 4.331
     Task: Unconditional GANs
-  Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_fp16_partial-GD_PL-no-scaler_ffhq_256_b4x8_800k_20210508_114854-dacbe4c9.pth?versionId=CAEQKxiBgIDNhrOoyhciIGM1OTIwZmFiYWM4MzQyNzE4YzlkYjYxMTNhZjU1ZGFj
+  Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_fp16_partial-GD_PL-no-scaler_ffhq_256_b4x8_800k_20210508_114854-dacbe4c9.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_fp16-globalG-partialD_PL-R1-no-scaler_ffhq_256_b4x8_800k.py
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_fp16-globalG-partialD
+  Name: stylegan2_c2_fp16-globalG-partialD_PL-R1-no-scaler_ffhq_256_b4x8_800k
   Results:
   - Dataset: FFHQ
     Metrics:
       Comment: the whole G in fp16
       FID50k: 4.362
     Task: Unconditional GANs
-  Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_fp16-globalG-partialD_PL-R1-no-scaler_ffhq_256_b4x8_800k_20210508_114930-ef8270d4.pth?versionId=CAEQKxiBgIDOhrOoyhciIDM4ZTQxYzkxZTE4ZjQ2ZjM4ZmU3YzlhOWNkYWI1OWQ1
+  Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_fp16-globalG-partialD_PL-R1-no-scaler_ffhq_256_b4x8_800k_20210508_114930-ef8270d4.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_apex_fp16_PL-R1-no-scaler_ffhq_256_b4x8_800k.py
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_PL-R1-no-scaler
+  Name: stylegan2_c2_apex_fp16_PL-R1-no-scaler_ffhq_256_b4x8_800k
   Results:
   - Dataset: FFHQ
     Metrics:
       Comment: the whole G&D in fp16 + two loss scaler
       FID50k: 4.614
     Task: Unconditional GANs
-  Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_apex_fp16_PL-R1-no-scaler_ffhq_256_b4x8_800k_20210508_114701-c2bb8afd.pth?versionId=CAEQKxiBgMDQhrOoyhciIGE0ZGJkOWM2MTNjMzQ3Mjk4Y2NmMWMyNTViOTNiZTNh
+  Weights: https://download.openmmlab.com/mmgen/stylegan2/stylegan2_c2_apex_fp16_PL-R1-no-scaler_ffhq_256_b4x8_800k_20210508_114701-c2bb8afd.pth
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_ffhq
+  Name: stylegan2_c2_ffhq_1024_b4x8
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -176,7 +176,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_ffhq
+  Name: stylegan2_c2_ffhq_1024_b4x8
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -189,7 +189,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_ffhq
+  Name: stylegan2_c2_ffhq_1024_b4x8
   Results:
   - Dataset: FFHQ
     Metrics:
@@ -202,7 +202,7 @@ Models:
   In Collection: StyleGANv2
   Metadata:
     Training Data: FFHQ
-  Name: stylegan2_ffhq
+  Name: stylegan2_c2_ffhq_1024_b4x8
   Results:
   - Dataset: FFHQ
     Metrics:

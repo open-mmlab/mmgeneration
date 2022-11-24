@@ -11,7 +11,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: CIFAR
-  Name: sagan_woReLUinplace
+  Name: sagan_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -29,7 +29,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: CIFAR
-  Name: sagan_woReLUinplace
+  Name: sagan_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -47,7 +47,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: CIFAR
-  Name: sagan_32
+  Name: sagan_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -65,7 +65,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: CIFAR
-  Name: sagan_32
+  Name: sagan_32_wReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1
   Results:
   - Dataset: CIFAR
     Metrics:
@@ -83,7 +83,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
-  Name: sagan_128
+  Name: sagan_128_woReLUinplace_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b64x4
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -101,7 +101,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
-  Name: sagan_128
+  Name: sagan_128_woReLUinplace_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b64x4
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -119,7 +119,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
-  Name: sagan_noaug
+  Name: sagan_128_woReLUinplace_noaug_bigGAN_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -137,7 +137,7 @@ Models:
   In Collection: SAGAN
   Metadata:
     Training Data: IMAGENET
-  Name: sagan_noaug
+  Name: sagan_128_woReLUinplace_noaug_bigGAN_Glr-1e-4_Dlr-4e-4_ndisc1_imagenet1k_b32x8
   Results:
   - Dataset: IMAGENET
     Metrics:
@@ -151,11 +151,11 @@ Models:
       dist_step: 1.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_128_woReLUinplace_noaug_bigGAN_imagenet1k_b32x8_Glr1e-4_Dlr-4e-4_ndisc1_20210818_210232-3f5686af.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/sagan_32x32.py
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_32_cvt_studioGAN.py
   In Collection: SAGAN
   Metadata:
     Training Data: Others
-  Name: sagan_32x32
+  Name: sagan_32_cvt_studioGAN
   Results:
   - Dataset: Others
     Metrics:
@@ -168,11 +168,11 @@ Models:
       n_disc: 5.0
     Task: Conditional GANs
   Weights: https://download.openmmlab.com/mmgen/sagan/sagan_32_cifar10_convert-studio-rgb_20210730_153321-080da7e2.pth
-- Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/_base_/models/sagan_128x128.py
+- Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_32_cvt_studioGAN.py
   In Collection: SAGAN
   Metadata:
     Training Data: Others
-  Name: sagan_128x128
+  Name: sagan_32_cvt_studioGAN
   Results:
   - Dataset: Others
     Metrics:

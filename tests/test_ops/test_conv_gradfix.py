@@ -16,7 +16,10 @@ class TestCond2d:
         cls.input = torch.randn((1, 3, 32, 32))
         cls.weight = nn.Parameter(torch.randn(1, 3, 3, 3))
 
-    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
+    @pytest.mark.skipif(
+        not torch.cuda.is_available()
+        or not hasattr(torch.backends.cudnn, 'allow_tf32'),
+        reason='requires cuda')
     def test_conv2d_cuda(self):
         x = self.input.cuda()
         weight = self.weight.cuda()
@@ -32,7 +35,10 @@ class TestCond2dTansposed:
         cls.input = torch.randn((1, 3, 32, 32))
         cls.weight = nn.Parameter(torch.randn(3, 1, 3, 3))
 
-    @pytest.mark.skipif(not torch.cuda.is_available(), reason='requires cuda')
+    @pytest.mark.skipif(
+        not torch.cuda.is_available()
+        or not hasattr(torch.backends.cudnn, 'allow_tf32'),
+        reason='requires cuda')
     def test_conv2d_transposed_cuda(self):
         x = self.input.cuda()
         weight = self.weight.cuda()

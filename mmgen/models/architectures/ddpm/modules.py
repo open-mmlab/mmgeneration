@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from mmcv.cnn import ACTIVATION_LAYERS
 from mmcv.cnn.bricks import build_activation_layer, build_norm_layer
 from mmcv.cnn.utils import constant_init
+from mmcv.utils import digit_version
 
 from mmgen.models.builder import MODULES, build_module
 
@@ -31,35 +32,39 @@ class EmbedSequential(nn.Sequential):
         return x
 
 
-@ACTIVATION_LAYERS.register_module()
-class SiLU(nn.Module):
-    r"""Applies the Sigmoid Linear Unit (SiLU) function, element-wise.
-    The SiLU function is also known as the swish function.
-    Args:
-        input (bool, optional): Use inplace operation or not.
-            Defaults to `False`.
-    """
+if 'SiLU' not in ACTIVATION_LAYERS:
 
-    def __init__(self, inplace=False):
-        super().__init__()
-        if torch.__version__ < '1.6.0' and inplace:
-            mmcv.print_log('Inplace version of \'SiLU\' is not supported for '
-                           f'torch < 1.6.0, found \'{torch.version}\'.')
-        self.inplace = inplace
-
-    def forward(self, x):
-        """Forward function for SiLU.
+    @ACTIVATION_LAYERS.register_module()
+    class SiLU(nn.Module):
+        r"""Applies the Sigmoid Linear Unit (SiLU) function, element-wise.
+        The SiLU function is also known as the swish function.
         Args:
-            x (torch.Tensor): Input tensor.
-
-        Returns:
-            torch.Tensor: Tensor after activation.
+            input (bool, optional): Use inplace operation or not.
+                Defaults to `False`.
         """
 
-        if torch.__version__ < '1.6.0':
-            return x * torch.sigmoid(x)
+        def __init__(self, inplace=False):
+            super().__init__()
+            if digit_version(
+                    torch.__version__) < digit_version('1.7.0') and inplace:
+                mmcv.print_log('Inplace version of \'SiLU\' is not supported '
+                               'for torch < 1.7.0, found '
+                               f'\'{torch.version}\'.')
+            self.inplace = inplace
 
-        return F.silu(x, inplace=self.inplace)
+        def forward(self, x):
+            """Forward function for SiLU.
+            Args:
+                x (torch.Tensor): Input tensor.
+
+            Returns:
+                torch.Tensor: Tensor after activation.
+            """
+
+            if digit_version(torch.__version__) < digit_version('1.7.0'):
+                return x * torch.sigmoid(x)
+
+            return F.silu(x, inplace=self.inplace)
 
 
 @MODULES.register_module()

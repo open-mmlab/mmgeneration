@@ -258,7 +258,7 @@ def var_to_tensor(var, index, target_shape=None, device=None):
         torch.Tensor: Converted variable.
     """
     # we must move var to cuda for it's ndarray in current design
-    var_indexed = torch.from_numpy(var)[index].float()
+    var_indexed = torch.from_numpy(var)[index.cpu()].float()
 
     if device is not None:
         var_indexed = var_indexed.to(device)

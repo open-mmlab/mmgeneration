@@ -6,7 +6,7 @@ from .disc_auxiliary_loss import (DiscShiftLoss, GradientPenaltyLoss,
                                   r1_gradient_penalty_loss)
 from .gan_loss import GANLoss
 from .gen_auxiliary_loss import (CLIPLoss, FaceIdLoss,
-                                 GeneratorPathRegularizer,
+                                 GeneratorPathRegularizer, PerceptualLoss,
                                  gen_path_regularizer)
 from .pixelwise_loss import (DiscretizedGaussianLogLikelihoodLoss,
                              GaussianKLDLoss, L1Loss, MSELoss,
@@ -18,5 +18,5 @@ __all__ = [
     'GeneratorPathRegularizer', 'gen_path_regularizer', 'MSELoss', 'L1Loss',
     'gaussian_kld', 'GaussianKLDLoss', 'DiscretizedGaussianLogLikelihoodLoss',
     'DDPMVLBLoss', 'discretized_gaussian_log_likelihood', 'FaceIdLoss',
-    'CLIPLoss'
+    'CLIPLoss', 'PerceptualLoss'
 ]
