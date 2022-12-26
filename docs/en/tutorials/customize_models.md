@@ -73,7 +73,7 @@ Only decorating the new class will **NOT** register the new class into our regis
 
 from .new_generators import NewGenerator
 
-__all__ = ['NewGenerator]
+__all__ = ['NewGenerator']
 ```
 
 If you have already import some modules in a `__init__.py` file, the code still meets `cannot import error`, though. You may try to import this module from the parent package's `__init__.py` file.
