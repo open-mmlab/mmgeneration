@@ -73,7 +73,7 @@ class VisualizationHook(Hook):
         img_cat = torch.cat(img_list, dim=3).detach()
         if self.rerange:
             img_cat = ((img_cat + 1) / 2)
-        if self.bgr2rgb:
+        if self.bgr2rgb and img_cat.size(1) == 3:
             img_cat = img_cat[:, [2, 1, 0], ...]
         img_cat = img_cat.clamp_(0, 1)
 
