@@ -36,6 +36,20 @@
 
 English | [简体中文](README_zh-CN.md)
 
+## What's New
+
+MMGeneration has been merged in [MMEditing](https://github.com/open-mmlab/mmediting/tree/1.x). And we have supported new generation tasks and models. We highlight the following new features:
+
+- 🌟 Text2Image
+
+  - ✅ [GLIDE](https://github.com/open-mmlab/mmediting/tree/1.x/projects/glide/configs/README.md)
+  - ✅ [Disco-Diffusion](https://github.com/open-mmlab/mmediting/tree/1.x/configs/disco_diffusion/README.md)
+  - ✅ [Stable-Diffusion](https://github.com/open-mmlab/mmediting/tree/1.x/configs/stable_diffusion/README.md)
+
+- 🌟 3D-aware Generation
+
+  - ✅ [EG3D](https://github.com/open-mmlab/mmediting/tree/1.x/configs/eg3d/README.md)
+
 ## Introduction
 
 MMGeneration is a powerful toolkit for generative models, especially for GANs now. It is based on PyTorch and [MMCV](https://github.com/open-mmlab/mmcv). The master branch works with **PyTorch 1.5+**.
