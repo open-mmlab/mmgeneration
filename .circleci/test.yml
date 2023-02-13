@@ -65,7 +65,7 @@ jobs:
           name: Install mmgen dependencies
           command: |
             python -m pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cpu/torch${MMCV_TORCH}/index.html
-            python -m pip install -r requirements.txt
+            python -m pip install -r requirements/tests.txt
       - run:
           name: Build and install
           command: |
