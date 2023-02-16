@@ -36,6 +36,20 @@
 
 [English](README.md) | 简体中文
 
+## 最新进展
+
+我们将MMGeneration合入了[MMEditing](https://github.com/open-mmlab/mmediting/tree/1.x)，并支持了新的生成任务和算法。请关注以下新特性：
+
+- 🌟 图文生成任务
+
+  - ✅ [GLIDE](https://github.com/open-mmlab/mmediting/tree/1.x/projects/glide/configs/README.md)
+  - ✅ [Disco-Diffusion](https://github.com/open-mmlab/mmediting/tree/1.x/configs/disco_diffusion/README.md)
+  - ✅ [Stable-Diffusion](https://github.com/open-mmlab/mmediting/tree/1.x/configs/stable_diffusion/README.md)
+
+- 🌟 3D生成任务
+
+  - ✅ [EG3D](https://github.com/open-mmlab/mmediting/tree/1.x/configs/eg3d/README.md)
+
 ## 简介
 
 MMGeneration 是一个基于 PyTorch 和[MMCV](https://github.com/open-mmlab/mmcv)的强有力的生成模型工具箱，尤其专注于 GAN 模型。
