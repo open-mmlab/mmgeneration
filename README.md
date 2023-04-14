@@ -104,7 +104,7 @@ MMGeneration is a powerful toolkit for generative models, especially for GANs no
 
 ## Changelog
 
-v0.7.2 was released on 13/09/2022. Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
+v0.7.3 was released on 14/04/2023. Please refer to [changelog.md](docs/en/changelog.md) for details and release history.
 
 ## Installation
 
