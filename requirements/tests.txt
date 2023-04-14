@@ -1,3 +1,4 @@
+coverage < 7.0.0
 # codecov
 flake8
 interrogate
