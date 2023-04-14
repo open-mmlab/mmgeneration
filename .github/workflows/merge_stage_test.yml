@@ -18,18 +18,18 @@ concurrency:
 
 jobs:
   build_cpu_py:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: [3.6, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9]
         torch: [1.8.1]
         include:
           - torch: 1.8.1
             torchvision: 0.9.1
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Upgrade pip
@@ -41,7 +41,7 @@ jobs:
       - name: Install MMCV
         run: |
           pip install -U openmim
-          mim install 'mmcv >= 2.0.0rc1'
+          mim install 'mmcv <= 2.0.0rc6'
       - name: Install MMCls
         run: pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
       - name: Install other dependencies
@@ -54,7 +54,7 @@ jobs:
           coverage xml
           coverage report -m
   build_cpu_pt:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version: [3.7]
@@ -87,7 +87,7 @@ jobs:
       - name: Install MMCV
         run: |
           pip install -U openmim
-          mim install 'mmcv >= 2.0.0rc1'
+          mim install 'mmcv <= 2.0.0rc6'
       - name: Install MMCls
         run: pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
       - name: Install other dependencies
@@ -121,9 +121,9 @@ jobs:
           - torch: 1.8.1
             cuda: 10.2
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Upgrade pip
@@ -144,13 +144,12 @@ jobs:
         run: |
           pip install git+https://github.com/open-mmlab/mmengine.git@main
           pip install -U openmim
-          mim install 'mmcv >= 2.0.0rc1'
+          mim install 'mmcv <= 2.0.0rc6'
           pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
           pip install -r requirements/tests.txt
       - name: Build and install
         run: |
-          python setup.py check -m -s
-          TORCH_CUDA_ARCH_LIST=7.0 pip install -e .
+          pip install -e .
   build_windows:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -174,7 +173,7 @@ jobs:
         run: |
           pip install git+https://github.com/open-mmlab/mmengine.git@main
           pip install -U openmim
-          mim install 'mmcv >= 2.0.0rc1'
+          mim install 'mmcv <= 2.0.0rc6'
           pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
           pip install -r requirements/tests.txt
       - name: Build and install

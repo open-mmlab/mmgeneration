@@ -61,7 +61,7 @@ jobs:
           command: |
             pip install git+https://github.com/open-mmlab/mmengine.git@main
             pip install -U openmim
-            mim install 'mmcv >= 2.0.0rc1'
+            mim install 'mmcv <= 2.0.0rc6'
             pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
             pip install -r requirements/tests.txt
       - run:
@@ -106,7 +106,7 @@ jobs:
           command: |
             docker exec mmgen pip install -e /mmengine
             docker exec mmgen pip install -U openmim
-            docker exec mmgen mim install 'mmcv >= 2.0.0rc1'
+            docker exec mmgen mim install 'mmcv <= 2.0.0rc6'
             docker exec mmgen pip install -e /mmclassification
             docker exec mmgen pip install -r requirements/tests.txt
       - run:
