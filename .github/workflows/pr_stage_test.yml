@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   build_cpu:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version: [3.7]
@@ -24,9 +24,9 @@ jobs:
           - torch: 1.8.1
             torchvision: 0.9.1
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Upgrade pip
@@ -61,7 +61,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3
 
   build_cu102:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     container:
       image: pytorch/pytorch:1.8.1-cuda10.2-cudnn7-devel
     strategy:
@@ -71,19 +71,19 @@ jobs:
           - torch: 1.8.1
             cuda: 10.2
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Upgrade pip
-        run: python -m pip install pip --upgrade
+        run: pip install pip --upgrade
       - name: Fetch GPG keys
         run: |
           apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
           apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub
       - name: Install PyTorch
-        run: python -m pip install torch==1.8.1+cpu torchvision==0.9.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        run: pip install torch==1.8.1+cpu torchvision==0.9.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
       - name: Get MMCV_TORCH and MMCV_CUDA as environment variables
         run: . .github/workflows/scripts/get_mmcv_var.sh ${{matrix.torch}} ${{matrix.cuda}}
         shell: bash
@@ -96,12 +96,11 @@ jobs:
           apt-get install -y ffmpeg libsm6 libxext6 git ninja-build libglib2.0-0 libxrender-dev
       - name: Install mmgen dependencies
         run: |
-          python -m pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/${MMCV_CUDA}/torch${MMCV_TORCH}/index.html
-          python -m pip install -r requirements.txt
+          pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/${MMCV_CUDA}/torch${MMCV_TORCH}/index.html
+          pip install -r requirements.txt
       - name: Build and install
         run: |
-          python setup.py check -m -s
-          TORCH_CUDA_ARCH_LIST=7.0 python -m pip install -e .
+          pip install -e .
       - name: Setup tmate session
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
