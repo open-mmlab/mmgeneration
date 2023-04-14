@@ -37,13 +37,17 @@ jobs:
       - name: Install PyTorch
         run: pip install torch==${{matrix.torch}}+cpu torchvision==${{matrix.torchvision}}+cpu -f https://download.pytorch.org/whl/torch_stable.html
       - name: Install MMEngine
-        run: pip install git+https://github.com/open-mmlab/mmengine.git@main
+        run: |
+          pip install -U openmim
+          mim install 'mmengine <= 0.7.2'
       - name: Install MMCV
         run: |
           pip install -U openmim
           mim install 'mmcv <= 2.0.0rc6'
       - name: Install MMCls
-        run: pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
+        run: |
+          pip install -U openmim
+          mim install 'mmcls <= 1.0.0rc2'
       - name: Install other dependencies
         run: pip install -r requirements/tests.txt
       - name: Build and install
@@ -83,13 +87,17 @@ jobs:
       - name: Install PyTorch
         run: pip install torch==${{matrix.torch}}+cpu torchvision==${{matrix.torchvision}}+cpu -f https://download.pytorch.org/whl/torch_stable.html
       - name: Install MMEngine
-        run: pip install git+https://github.com/open-mmlab/mmengine.git@main
+        run: |
+          pip install -U openmim
+          mim install 'mmengine <= 0.7.2'
       - name: Install MMCV
         run: |
           pip install -U openmim
           mim install 'mmcv <= 2.0.0rc6'
       - name: Install MMCls
-        run: pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
+        run: |
+          pip install -U openmim
+          mim install 'mmcls <= 1.0.0rc2'
       - name: Install other dependencies
         run: pip install -r requirements/tests.txt
       - name: Build and install
@@ -142,10 +150,10 @@ jobs:
           apt-get update && apt-get install -y ffmpeg libsm6 libxext6 git ninja-build libglib2.0-0 libsm6 libxrender-dev libxext6
       - name: Install mmgen dependencies
         run: |
-          pip install git+https://github.com/open-mmlab/mmengine.git@main
           pip install -U openmim
+          mim install 'mmengine <= 0.7.2'
           mim install 'mmcv <= 2.0.0rc6'
-          pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
+          mim install 'mmcls <= 1.0.0rc2'
           pip install -r requirements/tests.txt
       - name: Build and install
         run: |
@@ -171,10 +179,10 @@ jobs:
         run: pip install torch==1.8.1+${{matrix.platform}} torchvision==0.9.1+${{matrix.platform}} -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html
       - name: Install mmgen dependencies
         run: |
-          pip install git+https://github.com/open-mmlab/mmengine.git@main
           pip install -U openmim
+          mim install 'mmengine <= 0.7.2'
           mim install 'mmcv <= 2.0.0rc6'
-          pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
+          mim install 'mmcls <= 1.0.0rc2'
           pip install -r requirements/tests.txt
       - name: Build and install
         run: |

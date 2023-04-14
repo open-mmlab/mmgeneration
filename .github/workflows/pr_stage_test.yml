@@ -46,7 +46,7 @@ jobs:
       - name: Install MMCls
         run: |
           pip install -U openmim
-          mim install 'mmcls <= 1.0.0rc5'
+          mim install 'mmcls <= 1.0.0rc2'
       - name: Install other dependencies
         run: pip install -r requirements/tests.txt
       - name: Build and install
@@ -96,7 +96,7 @@ jobs:
       - name: Install MMCls
         run: |
           pip install -U openmim
-          mim install 'mmcls <= 1.0.0rc5'
+          mim install 'mmcls <= 1.0.0rc2'
       - name: Install other dependencies
         run: pip install -r requirements/tests.txt
       - name: Build and install
@@ -152,7 +152,7 @@ jobs:
           pip install -U openmim
           mim install 'mmengine <= 0.7.2'
           mim install 'mmcv <= 2.0.0rc6'
-          mim install 'mmcls <= 1.0.0rc5'
+          mim install 'mmcls <= 1.0.0rc2'
           pip install -r requirements/tests.txt
       - name: Build and install
         run: |
@@ -181,7 +181,7 @@ jobs:
           pip install -U openmim
           mim install 'mmengine <= 0.7.2'
           mim install 'mmcv <= 2.0.0rc6'
-          mim install 'mmcls <= 1.0.0rc5'
+          mim install 'mmcls <= 1.0.0rc2'
           pip install -r requirements/tests.txt
       - name: Build and install
         run: |
