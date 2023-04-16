@@ -128,13 +128,17 @@ class Resize:
             assert size_factor is not None, (
                 'When max_size is used, '
                 f'size_factor should also be set. But received {size_factor}.')
-        if isinstance(scale, float):
+        if isinstance(scale, float, int):
+            assert keep_ratio, ('When scale is a single float/int,'
+                                ' keep_ratio must be ture')
             if scale <= 0:
                 raise ValueError(f'Invalid scale {scale}, must be positive.')
         elif mmcv.is_tuple_of(scale, int):
             max_long_edge = max(scale)
             max_short_edge = min(scale)
             if max_short_edge == -1:
+                assert keep_ratio, ('When scale includes a -1, '
+                                    'keep_ratio must be ture')
                 # assign np.inf to long edge for rescaling short edge later.
                 scale = (np.inf, max_long_edge)
         elif scale is not None:
@@ -159,7 +163,7 @@ class Resize:
             tuple: Tuple contains resized image and scale factor in resize
                 process.
         """
-        if self.keep_ratio:
+        if isinstance(scale, (float, int)):
             img, scale_factor = mmcv.imrescale(
                 img,
                 scale,
@@ -196,16 +200,18 @@ class Resize:
                 new_w = min(self.max_size - (self.max_size % self.size_factor),
                             new_w)
             scale = (new_w, new_h)
-        elif isinstance(self.scale, tuple) and (np.inf in self.scale):
+        elif isinstance(self.scale, tuple):
             # find inf in self.scale, calculate ``scale`` manually
-            h, w = results[self.keys[0]].shape[:2]
-            if h < w:
-                scale = (int(self.scale[-1] / h * w), self.scale[-1])
+            if np.inf in self.scale:
+                h, w = results[self.keys[0]].shape[:2]
+                if h < w:
+                    scale = (int(self.scale[-1] / h * w), self.scale[-1])
+                else:
+                    scale = (self.scale[-1], int(self.scale[-1] / w * h))
             else:
-                scale = (self.scale[-1], int(self.scale[-1] / w * h))
+                scale = self.scale[::-1]
         else:
-            # direct use the given ones
-            scale = self.scale
+            scale = float(self.scale)
 
         # here we assume all images in self.keys have the same input size
         for key in self.keys:
