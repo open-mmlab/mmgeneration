@@ -161,6 +161,7 @@ if __name__ == '__main__':
     with open(osp.join(args.pkl_dir, args.pklname), 'wb') as f:
         pickle.dump(
             {
+                'act': features,
                 'mean': mean,
                 'cov': cov,
                 'size': num_samples,
