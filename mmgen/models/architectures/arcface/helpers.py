@@ -20,7 +20,7 @@ class Flatten(Module):
 
 
 def l2_norm(input, axis=1):
-    """l2 normalization.
+    """L2 normalization.
 
     Args:
         input (torch.Tensor): The input tensor.

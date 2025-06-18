@@ -8,7 +8,7 @@ from torchvision import models as tv
 class vgg16(torch.nn.Module):
     r"""VGG16 feature extractor for LPIPS metric.
 
-        Ref : https://github.com/richzhang/PerceptualSimilarity/blob/master/lpips/pretrained_networks.py # noqa
+    Ref : https://github.com/richzhang/PerceptualSimilarity/blob/master/lpips/pretrained_networks.py # noqa
     """
 
     def __init__(self, requires_grad=False, pretrained=True):

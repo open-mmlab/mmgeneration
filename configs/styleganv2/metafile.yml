@@ -5,7 +5,7 @@ Collections:
   Name: StyleGANv2
   Paper:
   - https://openaccess.thecvf.com/content_CVPR_2020/html/Karras_Analyzing_and_Improving_the_Image_Quality_of_StyleGAN_CVPR_2020_paper.html
-  README: configs/styleganv2/README.md
+  README: configs\styleganv2\README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv2/stylegan2_c2_ffhq_1024_b4x8.py
   In Collection: StyleGANv2

@@ -166,7 +166,7 @@ class NetLinLayer(nn.Module):
 
 
 class Dist2LogitLayer(nn.Module):
-    """takes 2 distances, puts through fc layers, spits out value between [0,
+    """Takes 2 distances, puts through fc layers, spits out value between [0,
     1] (if use_sigmoid is True)"""
 
     def __init__(self, chn_mid=32, use_sigmoid=True):

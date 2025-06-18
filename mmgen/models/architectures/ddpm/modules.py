@@ -37,6 +37,7 @@ if 'SiLU' not in ACTIVATION_LAYERS:
     @ACTIVATION_LAYERS.register_module()
     class SiLU(nn.Module):
         r"""Applies the Sigmoid Linear Unit (SiLU) function, element-wise.
+
         The SiLU function is also known as the swish function.
         Args:
             input (bool, optional): Use inplace operation or not.

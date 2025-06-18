@@ -89,7 +89,7 @@ def get_task_dict(md_file):
     Returns:
         dict: Task name of each method.
     """
-    with open(md_file, 'r') as md:
+    with open(md_file, 'r', encoding='utf-8') as md:
         lines = md.readlines()
     i = 0
     task_dict = dict()

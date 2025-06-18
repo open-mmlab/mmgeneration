@@ -5,7 +5,7 @@ Collections:
   Name: SAGAN
   Paper:
   - https://proceedings.mlr.press/v97/zhang19d.html
-  README: configs/sagan/README.md
+  README: configs\sagan\README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sagan/sagan_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1.py
   In Collection: SAGAN

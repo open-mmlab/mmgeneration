@@ -40,6 +40,7 @@ def _get_filter_size(f):
 
 def upsample2d(x, f, up=2, padding=0, flip_filter=False, gain=1, impl='cuda'):
     r"""Upsample a batch of 2D images using the given 2D FIR filter.
+
     By default, the result is padded so that its shape is a multiple of the
     input.
     User-specified padding is applied on top of that, with negative values
@@ -93,6 +94,7 @@ def setup_filter(f,
                  gain=1,
                  separable=None):
     r"""Convenience function to setup 2D FIR filter for `upfirdn2d()`.
+
     Args:
         f:           Torch tensor, numpy array, or python list of the shape
                      `[filter_height, filter_width]` (non-separable),
@@ -144,6 +146,7 @@ def downsample2d(x,
                  gain=1,
                  impl='cuda'):
     r"""Downsample a batch of 2D images using the given 2D FIR filter.
+
     By default, the result is padded so that its shape is a fraction of the
     input.
     User-specified padding is applied on top of that, with negative values

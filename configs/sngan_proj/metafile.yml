@@ -5,7 +5,7 @@ Collections:
   Name: SNGAN
   Paper:
   - https://openreview.net/forum?id=B1QRgziT-
-  README: configs/sngan_proj/README.md
+  README: configs\sngan_proj\README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/sngan_proj/sngan_proj_32_woReLUinplace_lr-2e-4_ndisc5_cifar10_b64x1.py
   In Collection: SNGAN

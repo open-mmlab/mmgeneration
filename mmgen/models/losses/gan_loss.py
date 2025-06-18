@@ -45,7 +45,7 @@ class GANLoss(nn.Module):
                 f'GAN type {self.gan_type} is not implemented.')
 
     def _wgan_loss(self, input, target):
-        """wgan loss.
+        """Wgan loss.
 
         Args:
             input (Tensor): Input tensor.

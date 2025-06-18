@@ -5,7 +5,7 @@ Collections:
   Name: ADA
   Paper:
   - https://arxiv.org/pdf/2006.06676.pdf
-  README: configs/ada/README.md
+  README: configs\ada\README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/styleganv3/stylegan3_t_ada_fp16_gamma6.6_metfaces_1024_b4x8.py
   In Collection: ADA

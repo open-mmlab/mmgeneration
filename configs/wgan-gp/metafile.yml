@@ -5,7 +5,7 @@ Collections:
   Name: WGAN-GP
   Paper:
   - https://arxiv.org/abs/1704.00028
-  README: configs/wgan-gp/README.md
+  README: configs\wgan-gp\README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/wgan-gp/wgangp_GN_celeba-cropped_128_b64x1_160kiter.py
   In Collection: WGAN-GP

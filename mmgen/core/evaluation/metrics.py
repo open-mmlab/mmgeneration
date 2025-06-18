@@ -307,7 +307,7 @@ def sliced_wasserstein(distribution_a,
                        distribution_b,
                        dir_repeats=4,
                        dirs_per_repeat=128):
-    r"""sliced Wasserstein distance of two sets of patches.
+    r"""Sliced Wasserstein distance of two sets of patches.
 
     Ref: https://github.com/tkarras/progressive_growing_of_gans/blob/master/metrics/ms_ssim.py  # noqa
 
@@ -441,15 +441,15 @@ class Metric(ABC):
 
     @abstractmethod
     def prepare(self, *args, **kwargs):
-        """please implement in subclass."""
+        """Please implement in subclass."""
 
     @abstractmethod
     def feed_op(self, batch, mode):
-        """please implement in subclass."""
+        """Please implement in subclass."""
 
     @abstractmethod
     def summary(self):
-        """please implement in subclass."""
+        """Please implement in subclass."""
 
 
 @METRICS.register_module()
@@ -787,46 +787,46 @@ class SWD(Metric):
 class PR(Metric):
     r"""Improved Precision and recall metric.
 
-        In this metric, we draw real and generated samples respectively, and
-        embed them into a high-dimensional feature space using a pre-trained
-        classifier network. We use these features to estimate the corresponding
-        manifold. We obtain the estimation by calculating pairwise Euclidean
-        distances between all feature vectors in the set and, for each feature
-        vector, construct a hypersphere with radius equal to the distance to its
-        kth nearest neighbor. Together, these hyperspheres define a volume in
-        the feature space that serves as an estimate of the true manifold.
-        Precision is quantified by querying for each generated image whether
-        the image is within the estimated manifold of real images.
-        Symmetrically, recall is calculated by querying for each real image
-        whether the image is within estimated manifold of generated image.
+    In this metric, we draw real and generated samples respectively, and
+    embed them into a high-dimensional feature space using a pre-trained
+    classifier network. We use these features to estimate the corresponding
+    manifold. We obtain the estimation by calculating pairwise Euclidean
+    distances between all feature vectors in the set and, for each feature
+    vector, construct a hypersphere with radius equal to the distance to its
+    kth nearest neighbor. Together, these hyperspheres define a volume in
+    the feature space that serves as an estimate of the true manifold.
+    Precision is quantified by querying for each generated image whether
+    the image is within the estimated manifold of real images.
+    Symmetrically, recall is calculated by querying for each real image
+    whether the image is within estimated manifold of generated image.
 
-        Ref: https://github.com/NVlabs/stylegan2-ada-pytorch/blob/main/metrics/precision_recall.py  # noqa
+    Ref: https://github.com/NVlabs/stylegan2-ada-pytorch/blob/main/metrics/precision_recall.py  # noqa
 
-        Note that we highly recommend that users should download the vgg16
-        script module from the following address. Then, the `vgg16_script` can
-        be set with user's local path. If not given, we will use the vgg16 from
-        pytorch model zoo. However, this may bring significant different in the
-        final results.
+    Note that we highly recommend that users should download the vgg16
+    script module from the following address. Then, the `vgg16_script` can
+    be set with user's local path. If not given, we will use the vgg16 from
+    pytorch model zoo. However, this may bring significant different in the
+    final results.
 
-        Tero's vgg16: https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/vgg16.pt
+    Tero's vgg16: https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/vgg16.pt
 
-        Args:
-            num_images (int): The number of evaluated generated samples.
-            image_shape (tuple): Image shape in order "CHW". Defaults to None.
-            num_real_need (int | None, optional): The number of real images.
-                Defaults to None.
-            full_dataset (bool, optional): Whether to use full dataset for
-                evaluation. Defaults to False.
-            k (int, optional): Kth nearest parameter. Defaults to 3.
-            bgr2rgb (bool, optional): Whether to change the order of image
-                channel. Defaults to True.
-            vgg16_script (str, optional): Path for the Tero's vgg16 module.
-                Defaults to 'work_dirs/cache/vgg16.pt'.
-            row_batch_size (int, optional): The batch size of row data.
-                Defaults to 10000.
-            col_batch_size (int, optional): The batch size of col data.
-                Defaults to 10000.
-        """
+    Args:
+        num_images (int): The number of evaluated generated samples.
+        image_shape (tuple): Image shape in order "CHW". Defaults to None.
+        num_real_need (int | None, optional): The number of real images.
+            Defaults to None.
+        full_dataset (bool, optional): Whether to use full dataset for
+            evaluation. Defaults to False.
+        k (int, optional): Kth nearest parameter. Defaults to 3.
+        bgr2rgb (bool, optional): Whether to change the order of image
+            channel. Defaults to True.
+        vgg16_script (str, optional): Path for the Tero's vgg16 module.
+            Defaults to 'work_dirs/cache/vgg16.pt'.
+        row_batch_size (int, optional): The batch size of row data.
+            Defaults to 10000.
+        col_batch_size (int, optional): The batch size of col data.
+            Defaults to 10000.
+    """
     name = 'PR'
 
     def __init__(self,
@@ -1193,25 +1193,25 @@ class IS(Metric):
 class PPL(Metric):
     r"""Perceptual path length.
 
-        Measure the difference between consecutive images (their VGG16
-        embeddings) when interpolating between two random inputs. Drastic
-        changes mean that multiple features have changed together and that
-        they might be entangled.
+    Measure the difference between consecutive images (their VGG16
+    embeddings) when interpolating between two random inputs. Drastic
+    changes mean that multiple features have changed together and that
+    they might be entangled.
 
-        Ref: https://github.com/rosinality/stylegan2-pytorch/blob/master/ppl.py # noqa
+    Ref: https://github.com/rosinality/stylegan2-pytorch/blob/master/ppl.py # noqa
 
-        Args:
-            num_images (int): The number of evaluated generated samples.
-            image_shape (tuple, optional): Image shape in order "CHW". Defaults
-                to None.
-            crop (bool, optional): Whether crop images. Defaults to True.
-            epsilon (float, optional): Epsilon parameter for path sampling.
-                Defaults to 1e-4.
-            space (str, optional): Latent space. Defaults to 'W'.
-            sampling (str, optional): Sampling mode, whether sampling in full
-                path or endpoints. Defaults to 'end'.
-            latent_dim (int, optional): Latent dimension of input noise.
-                Defaults to 512.
+    Args:
+        num_images (int): The number of evaluated generated samples.
+        image_shape (tuple, optional): Image shape in order "CHW". Defaults
+            to None.
+        crop (bool, optional): Whether crop images. Defaults to True.
+        epsilon (float, optional): Epsilon parameter for path sampling.
+            Defaults to 1e-4.
+        space (str, optional): Latent space. Defaults to 'W'.
+        sampling (str, optional): Sampling mode, whether sampling in full
+            path or endpoints. Defaults to 'end'.
+        latent_dim (int, optional): Latent dimension of input noise.
+            Defaults to 512.
     """
     name = 'PPL'
 
@@ -1389,11 +1389,11 @@ class PPLSampler:
 
 @METRICS.register_module()
 class GaussianKLD(Metric):
-    r"""Gaussian KLD (Kullback-Leibler divergence) metric. We calculate the
-    KLD between two gaussian distribution via `mean` and `log_variance`.
-    The passed batch should be a dict instance and contain ``mean_pred``,
-    ``mean_target``, ``logvar_pred``, ``logvar_target``.
-    When call ``feed`` operation, only ``reals`` mode is needed,
+    r"""Gaussian KLD (Kullback-Leibler divergence) metric. We calculate the KLD
+    between two gaussian distribution via `mean` and `log_variance`. The passed
+    batch should be a dict instance and contain ``mean_pred``, ``mean_target``,
+    ``logvar_pred``, ``logvar_target``. When call ``feed`` operation, only
+    ``reals`` mode is needed,
 
     The calculation of KLD can be formulated as:
 
@@ -1421,7 +1421,6 @@ class GaussianKLD(Metric):
             by batchsize. If ``reduction == 'sum'``, the output will be summed.
             If ``reduction == 'mean'``, the output will be divided by the
             number of elements in the output. Defaults to ``'batchmean'``.
-
     """
     name = 'GaussianKLD'
 

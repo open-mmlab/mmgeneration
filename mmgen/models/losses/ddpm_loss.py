@@ -366,16 +366,16 @@ class DDPMLoss(nn.Module):
 
 @MODULES.register_module()
 class DDPMVLBLoss(DDPMLoss):
-    """Variational lower-bound loss for DDPM-based models.
-    In this loss, we calculate VLB of different timesteps with different
-    method. In detail, ``DiscretizedGaussianLogLikelihoodLoss`` is used at
-    timesteps = 0 and ``GaussianKLDLoss`` at other timesteps.
-    To control the data flow for loss calculation, users should define
-    ``data_info`` and ``data_info_t_0`` for ``GaussianKLDLoss`` and
-    ``DiscretizedGaussianLogLikelihoodLoss`` respectively. If not passed
-    ``_default_data_info`` and ``_default_data_info_t_0`` would be used.
-    To be noted that, we only penalize 'variance' in this loss term, and
-    tensors in output dict corresponding to 'mean' would be detached.
+    """Variational lower-bound loss for DDPM-based models. In this loss, we
+    calculate VLB of different timesteps with different method. In detail,
+    ``DiscretizedGaussianLogLikelihoodLoss`` is used at timesteps = 0 and
+    ``GaussianKLDLoss`` at other timesteps. To control the data flow for loss
+    calculation, users should define ``data_info`` and ``data_info_t_0`` for
+    ``GaussianKLDLoss`` and ``DiscretizedGaussianLogLikelihoodLoss``
+    respectively. If not passed ``_default_data_info`` and
+    ``_default_data_info_t_0`` would be used. To be noted that, we only
+    penalize 'variance' in this loss term, and tensors in output dict
+    corresponding to 'mean' would be detached.
 
     Additionally, we support another log collection function called
     ``name_log_collection``. In this collection method, we would directly

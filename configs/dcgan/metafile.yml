@@ -7,7 +7,7 @@ Collections:
     Networks
   Paper:
   - https://arxiv.org/abs/1511.06434
-  README: configs/dcgan/README.md
+  README: configs\dcgan\README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/dcgan/dcgan_mnist-64_b128x1_Glr4e-4_Dlr1e-4_5k.py
   In Collection: Unsupervised Representation Learning with Deep Convolutional Generative

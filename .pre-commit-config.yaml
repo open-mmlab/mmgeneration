@@ -29,7 +29,13 @@ repos:
     rev: v2.1.0
     hooks:
       - id: codespell
-        args: ["--skip", "*.ipynb,tools/data/hvu/label_map.json,docs/zh_cn/*", "-L", "formating,te,nd,thre,Gool,gool,lod"]
+        args:
+          [
+            "--skip",
+            "*.ipynb,tools/data/hvu/label_map.json,docs/zh_cn/*",
+            "-L",
+            "formating,te,nd,thre,Gool,gool,lod",
+          ]
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.9
     hooks:
@@ -50,7 +56,7 @@ repos:
         files: ^configs/.*\.md$
         require_serial: true
   - repo: https://github.com/myint/docformatter
-    rev: v1.3.1
+    rev: v1.7.7
     hooks:
       - id: docformatter
         args: ["--in-place", "--wrap-descriptions", "79"]

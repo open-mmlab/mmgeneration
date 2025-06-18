@@ -158,8 +158,8 @@ class InceptionV3(nn.Module):
 def fid_inception_v3(load_ckpt=True):
     """Build pretrained Inception model for FID computation.
 
-    The Inception model for FID computation uses a different set of weights
-    and has a slightly different structure than torchvision's Inception.
+    The Inception model for FID computation uses a different set of weights and
+    has a slightly different structure than torchvision's Inception.
 
     This method first constructs torchvision's Inception and then patches the
     necessary parts that are different in the FID Inception model.
