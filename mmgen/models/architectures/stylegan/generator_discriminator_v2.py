@@ -239,7 +239,7 @@ class StyleGANv2Generator(nn.Module):
         return super(StyleGANv2Generator, self).train(mode)
 
     def make_injected_noise(self):
-        """make noises that will be injected into feature maps.
+        """Make noises that will be injected into feature maps.
 
         Returns:
             list[Tensor]: List of layer-wise noise tensor.

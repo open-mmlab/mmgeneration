@@ -10,7 +10,7 @@ LPIPS_WEIGHTS_URL = 'https://download.openmmlab.com/mmgen/evaluation/lpips/weigh
 class PerceptualLoss(torch.nn.Module):
     r"""LPIPS metric with VGG using our perceptually-learned weights.
 
-        Ref: https://github.com/rosinality/stylegan2-pytorch/blob/master/lpips/__init__.py # noqa
+    Ref: https://github.com/rosinality/stylegan2-pytorch/blob/master/lpips/__init__.py # noqa
     """
 
     def __init__(self,

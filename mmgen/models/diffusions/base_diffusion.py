@@ -500,6 +500,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                     show_pbar=False,
                     **kwargs):
         """DDPM sample from random noise.
+
         Args:
             model (torch.nn.Module): Denoising model used to sample images.
             noise (torch.Tensor | callable | None): You can directly give a
@@ -577,7 +578,7 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
         """Prepare for variables used in the diffusion process."""
         self.betas = self.get_betas()
         self.alphas = 1.0 - self.betas
-        self.alphas_bar = np.cumproduct(self.alphas, axis=0)
+        self.alphas_bar = np.cumprod(self.alphas, axis=0)
         self.alphas_bar_prev = np.append(1.0, self.alphas_bar[:-1])
         self.alphas_bar_next = np.append(self.alphas_bar[1:], 0.0)
 
@@ -706,8 +707,8 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                                   t,
                                   need_var=True,
                                   logvar=False):
-        r"""Get mean and variance of diffusion posterior
-            `q(x_{t-1} | x_t, x_0)`.
+        r"""Get mean and variance of diffusion posterior `q(x_{t-1} | x_t,
+        x_0)`.
 
         Args:
             x_0 (torch.tensor): The original image before diffusion, shape as
@@ -751,8 +752,8 @@ class BasicGaussianDiffusion(nn.Module, metaclass=ABCMeta):
                         t,
                         clip_denoised=True,
                         denoised_fn=None):
-        r"""Get mean, variance, log variance of denoising process
-        `p(x_{t-1} | x_{t})` and predicted `x_0`.
+        r"""Get mean, variance, log variance of denoising process `p(x_{t-1} |
+        x_{t})` and predicted `x_0`.
 
         Args:
             denoising_output (dict[torch.Tensor]): The output from denoising

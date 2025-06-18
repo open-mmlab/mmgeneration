@@ -17,13 +17,12 @@ except ImportError:
 
 
 def nan_to_num(x, nan=0.0, posinf=None, neginf=None, *, out=None):
-    r"""Replaces :literal:`NaN`, positive infinity, and negative infinity
-    values in :attr:`input` with the values specified by :attr:`nan`,
-    :attr:`posinf`, and :attr:`neginf`, respectively. By default,
-    :literal:`NaN`s are replaced with zero, positive infinity is replaced with
-    the greatest finite value representable by :attr:`input`'s dtype, and
-    negative infinity is replaced with the least finite value representable by
-    :attr:`input`'s dtype.
+    r"""Replaces :literal:`NaN`, positive infinity, and negative infinity values
+    in :attr:`input` with the values specified by :attr:`nan`, :attr:`posinf`,
+    and :attr:`neginf`, respectively. By default, :literal:`NaN`s are replaced
+    with zero, positive infinity is replaced with the greatest finite value
+    representable by :attr:`input`'s dtype, and negative infinity is replaced
+    with the least finite value representable by :attr:`input`'s dtype.
 
     .. note::
 

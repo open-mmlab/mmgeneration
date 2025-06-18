@@ -1,8 +1,9 @@
-r"""
-    This app is used to invert the styleGAN series synthesis network. We find
-    the matching latent vector w for given images so that we can manipulate
-    images in the latent feature space.
-    Ref: https://github.com/rosinality/stylegan2-pytorch/blob/master/projector.py # noqa
+r"""This app is used to invert the styleGAN series synthesis network.
+
+We find
+the matching latent vector w for given images so that we can manipulate
+images in the latent feature space.
+Ref: https://github.com/rosinality/stylegan2-pytorch/blob/master/projector.py # noqa
 """
 import argparse
 import os

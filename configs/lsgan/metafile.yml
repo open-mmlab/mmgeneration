@@ -5,7 +5,7 @@ Collections:
   Name: LSGAN
   Paper:
   - https://openaccess.thecvf.com/content_iccv_2017/html/Mao_Least_Squares_Generative_ICCV_2017_paper.html
-  README: configs/lsgan/README.md
+  README: configs\lsgan\README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/lsgan/lsgan_dcgan-archi_lr-1e-3_celeba-cropped_64_b128x1_12m.py
   In Collection: LSGAN

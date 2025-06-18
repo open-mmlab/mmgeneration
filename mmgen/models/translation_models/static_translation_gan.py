@@ -125,7 +125,7 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
         return module
 
     def _get_target_generator(self, domain):
-        """get target generator."""
+        """Get target generator."""
         assert self.is_domain_reachable(
             domain
         ), f'{domain} domain is not reachable, available domain list is\
@@ -134,7 +134,7 @@ class StaticTranslationGAN(BaseTranslationModel, BaseGAN):
         return self.get_module(self.generators)[domain]
 
     def _get_target_discriminator(self, domain):
-        """get target discriminator."""
+        """Get target discriminator."""
         assert self.is_domain_reachable(
             domain
         ), f'{domain} domain is not reachable, available domain list is\

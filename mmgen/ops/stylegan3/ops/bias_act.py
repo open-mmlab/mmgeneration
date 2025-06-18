@@ -133,12 +133,12 @@ def bias_act(x,
              gain=None,
              clamp=None,
              impl='cuda'):
-    r"""Fused bias and activation function.
-    Adds bias `b` to activation tensor `x`, evaluates activation function
-    `act`, and scales the result by `gain`. Each of the steps is optional.
-    In most cases, the fused op is considerably more efficient than performing
-    the same calculation using standard PyTorch ops. It supports first and
-    second order gradients, but not third order gradients.
+    r"""Fused bias and activation function. Adds bias `b` to activation tensor
+    `x`, evaluates activation function `act`, and scales the result by `gain`.
+    Each of the steps is optional. In most cases, the fused op is considerably
+    more efficient than performing the same calculation using standard PyTorch
+    ops. It supports first and second order gradients, but not third order
+    gradients.
 
     Args:
         x:      Input activation tensor. Can be of any shape.

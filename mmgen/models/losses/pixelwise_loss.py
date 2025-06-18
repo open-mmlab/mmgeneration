@@ -41,8 +41,8 @@ def mse_loss(pred, target):
 @weighted_loss
 def gaussian_kld(mean_target, mean_pred, logvar_target, logvar_pred, base='e'):
     r"""Calculate KLD (Kullback-Leibler divergence) of two gaussian
-    distribution.
-    To be noted that in this function, KLD is calcuated in base `e`.
+    distribution. To be noted that in this function, KLD is calcuated in base
+    `e`.
 
     .. math::
         :nowrap:
@@ -83,7 +83,8 @@ def gaussian_kld(mean_target, mean_pred, logvar_target, logvar_pred, base='e'):
 
 
 def approx_gaussian_cdf(x):
-    r"""Approximate the cumulative distribution function of the gaussian distribution.
+    r"""Approximate the cumulative distribution function of the gaussian
+    distribution.
 
     Refers to:
     Approximations to the Cumulative Normal Function and its Inverse for Use on a Pocket Calculator  # noqa
@@ -102,7 +103,6 @@ def approx_gaussian_cdf(x):
 
     Returns:
         torch.Tensor: Calculated cumulative distribution.
-
     """
     factor = np.sqrt(2.0 / np.pi)
     y = factor * (x + 0.044715 * torch.pow(x, 3))

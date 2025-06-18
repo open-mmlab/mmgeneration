@@ -205,7 +205,7 @@ class SNGANGenResBlock(nn.Module):
 
 @MODULES.register_module()
 class SNGANDiscResBlock(nn.Module):
-    """resblock used in discriminator of sngan / proj-gan.
+    """Resblock used in discriminator of sngan / proj-gan.
 
     args:
         in_channels (int): input channels.

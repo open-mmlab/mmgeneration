@@ -114,12 +114,12 @@ class BaseTranslationModel(nn.Module, metaclass=ABCMeta):
         return domain in self._reachable_domains
 
     def get_other_domains(self, domain):
-        """get other domains."""
+        """Get other domains."""
         return list(set(self._related_domains) - set([domain]))
 
     @abstractmethod
     def _get_target_generator(self, domain):
-        """get target generator."""
+        """Get target generator."""
 
     def translation(self, image, target_domain=None, **kwargs):
         """Translation Image to target style.

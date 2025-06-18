@@ -5,7 +5,7 @@ Collections:
   Name: Improved-DDPM
   Paper:
   - https://arxiv.org/abs/2102.09672
-  README: configs/improved_ddpm/README.md
+  README: configs\improved_ddpm\README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/blob/master/configs/improved_ddpm/ddpm_cosine_hybird_timestep-4k_drop0.3_cifar10_32x32_b8x16_500k.py
   In Collection: Improved-DDPM

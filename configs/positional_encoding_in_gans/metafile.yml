@@ -5,7 +5,7 @@ Collections:
   Name: Positional Encoding in GANs
   Paper:
   - https://openaccess.thecvf.com/content/CVPR2021/html/Xu_Positional_Encoding_As_Spatial_Inductive_Bias_in_GANs_CVPR_2021_paper.html
-  README: configs/positional_encoding_in_gans/README.md
+  README: configs\positional_encoding_in_gans\README.md
 Models:
 - Config: https://github.com/open-mmlab/mmgeneration/tree/master/configs/positional_encoding_in_gans/stylegan2_c2_ffhq_256_b3x8_1100k.py
   In Collection: Positional Encoding in GANs
